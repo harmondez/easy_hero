@@ -2,13 +2,24 @@
 
 # 🗡️ Easy Hero
 
-**Un roguelike de ruta con combate JRPG por turnos.**
-*Minimalista en forma, denso en decisiones.*
+### Roguelike de ruta con combate JRPG por turnos
 
-![estado](https://img.shields.io/badge/estado-prototipo-orange)
-![sin build](https://img.shields.io/badge/build-ninguno-brightgreen)
-![js](https://img.shields.io/badge/JavaScript-vanilla-yellow)
-![idioma](https://img.shields.io/badge/idioma-espa%C3%B1ol-blue)
+*Minimalista en forma. Denso en decisiones.*
+
+<br>
+
+[![▶ JUGAR AHORA](https://img.shields.io/badge/%E2%96%B6%20JUGAR%20AHORA-harmondez.github.io%2Feasy__hero-f59e0b?style=for-the-badge&labelColor=1f2937)](https://harmondez.github.io/easy_hero/)
+
+<br>
+
+![Estado](https://img.shields.io/badge/estado-prototipo-orange?style=flat-square)
+![JavaScript](https://img.shields.io/badge/JavaScript-vanilla-f7df1e?style=flat-square&logo=javascript&logoColor=black)
+![Sin build](https://img.shields.io/badge/build-ninguno-22c55e?style=flat-square)
+![Assets](https://img.shields.io/badge/assets-0-3b82f6?style=flat-square)
+![GitHub Pages](https://img.shields.io/badge/hosting-GitHub%20Pages-181717?style=flat-square&logo=github)
+![Idioma](https://img.shields.io/badge/idioma-espa%C3%B1ol-ef4444?style=flat-square)
+
+[Idea](#-la-idea) · [Cómo se juega](#-cómo-se-juega) · [Estilos](#%EF%B8%8F-tres-estilos-seis-tipos-de-daño) · [Estado](#-estado-actual) · [Hoja de ruta](#%EF%B8%8F-hoja-de-ruta) · [Desarrollo](#-desarrollo)
 
 </div>
 
@@ -16,99 +27,118 @@
 
 ## ✨ La idea
 
-Todos empiezan con **el mismo héroe**, sin nada. No hay pantalla de elegir clase: **la clase emerge de tus decisiones**.
-Cada camino que tomas, cada cofre que abres y cada evento que resuelves te empuja hacia un estilo de juego distinto.
+> [!IMPORTANT]
+> **Todos empiezan con el mismo héroe.** No hay pantalla de elegir clase: **la clase emerge de tus decisiones.**
 
-Recorres una **ruta que se ramifica** como en *Slay the Spire*, y cada combate es un pequeño puzle de **JRPG por turnos**
-al estilo *Octopath Traveler*: leer las debilidades del enemigo, romper su escudo y aprovechar el turno libre.
+Recorres una **ruta que se ramifica** como en *Slay the Spire*. Cada combate es un pequeño puzle de **JRPG por turnos** al estilo *Octopath Traveler*: lees las debilidades del enemigo, rompes su escudo y aprovechas el turno libre.
 
-> 🎯 Una partida dura entre **25 y 40 minutos**: un acto largo, un jefe final al fondo de la ruta.
+| ⏱️ Partida | 🗺️ Mapa | ⚔️ Combate | 🌱 Progreso |
+|:---:|:---:|:---:|:---:|
+| **25–40 min** | Procedural, con caminos que se bifurcan | Por turnos, hasta 3 enemigos | La clase surge de tus elecciones |
+
+---
 
 ## 🧭 Cómo se juega
 
-```
-        🐉  Jefe final
-       ╱ │ ╲
-     🧰  💀  🔥        elige tu camino: monstruos, élites, hogueras,
-     │ ╲ │ ╱ │         eventos, tiendas y cofres
-     👹  👹  🎲
-      ╲  │  ╱
-        🚪  Inicio
+```mermaid
+flowchart BT
+    S(["🚪 Inicio"]) --> A["👹 Monstruo"] & B["👹 Monstruo"]
+    A --> C["🧰 Cofre"] & D["🔥 Hoguera"]
+    B --> D & E["🎲 Evento"]
+    C --> F["💀 Élite"]
+    D --> F & G["🛒 Tienda"]
+    E --> G
+    F --> H(["🐉 Jefe final"])
+    G --> H
 ```
 
-1. **Elige tu ruta.** El mapa es procedural y muestra a qué te enfrentarás. Ir a por lo fácil o arriesgarte por la mejor recompensa es una decisión real.
-2. **Combate por turnos.** Menú clásico: ⚔️ Atacar · 🛡️ Defender · ✨ Habilidades · 🏃 Huir. Un **orden de turnos visible** y hasta **3 enemigos** por encuentro.
-3. **Rompe al enemigo.** Cada enemigo tiene un escudo y **debilidades**. Golpéalas para romperlo: pierde su turno y recibe más daño.
-4. **Crece a tu manera.** Lo que eliges te da **afinidad** con un estilo y desbloquea habilidades y sinergias.
+1. **🗺️ Elige tu ruta.** El mapa te muestra a qué te enfrentarás. Ir a lo seguro o arriesgarte por mejor botín es una decisión real.
+2. **⚔️ Combate por turnos.** Menú clásico: **Atacar · Defender · Habilidades · Huir**, con un **orden de turnos visible**.
+3. **💥 Rompe al enemigo.** Cada enemigo tiene un escudo y **debilidades**. Golpéalas para romperlo: pierde su turno y recibe más daño.
+4. **🌱 Crece a tu manera.** Lo que eliges te da **afinidad** con un estilo y desbloquea habilidades y sinergias.
+
+---
 
 ## ⚔️ Tres estilos, seis tipos de daño
 
-La clase no se elige: se **descubre**. Cada familia domina dos tipos de daño, y los enemigos son débiles a tipos distintos,
-así que **tu build condiciona qué ruta te conviene tomar**.
+La clase no se elige: se **descubre**. Los enemigos son débiles a tipos distintos, así que **tu build condiciona qué ruta te conviene**.
 
-| Estilo | Filosofía | Daño |
-|--------|-----------|------|
-| 🛡️ **Guerrero** | Aguante, defensa y golpes contundentes | 🗡️ Filo · 🔨 Contundente |
-| 🏹 **Pícaro** | Velocidad, críticos y venenos | 🏹 Perforante · ☠️ Veneno |
-| 🔥 **Elementalista** | Daño elemental y control | 🔥 Fuego · ⚡ Rayo |
+| | Estilo | Filosofía | Daño |
+|:---:|---|---|---|
+| 🛡️ | **Guerrero** | Aguante, defensa y golpes contundentes | 🗡️ Filo · 🔨 Contundente |
+| 🏹 | **Pícaro** | Velocidad, críticos y venenos | 🏹 Perforante · ☠️ Veneno |
+| 🔥 | **Elementalista** | Daño elemental y control | 🔥 Fuego · ⚡ Rayo |
 
-Nada te obliga a quedarte en uno: mezclar familias es posible… y a veces es la mejor jugada.
+> [!TIP]
+> Mezclar familias está permitido, y a veces es la mejor jugada.
 
-## 📊 Atributos
+### 📊 Atributos
 
-Pocos números, muy legibles:
-
-| Atributo | Para qué sirve |
-|----------|----------------|
-| **ATK** | Daño que infliges |
-| **HP** | Vida |
-| **DEF** | Daño que reduces |
-| **SPD** | Decide el orden de los turnos |
-| **MP** | Coste de las habilidades |
+| **ATK** | **HP** | **DEF** | **SPD** | **MP** |
+|:---:|:---:|:---:|:---:|:---:|
+| Daño | Vida | Reducción | Orden de turno | Coste de habilidades |
 
 Los monstruos empiezan débiles y **escalan a medida que avanzas**.
 
-## 🧱 Filosofía de diseño
+---
 
-- **Minimalista:** emojis y CSS. Cero imágenes, cero assets.
-- **Denso:** la profundidad viene de los sistemas y del contenido, no del arte.
-- **Contenido como datos:** enemigos, habilidades y eventos viven en archivos de datos, separados del motor. Añadir contenido es escribir datos, no reescribir el juego.
-- **Reproducible:** el motor es puro y usa un generador aleatorio con semilla, así se puede probar y repetir una ruta.
+## 🧱 Principios
+
+- 🎨 **Minimalista** — emojis y CSS. Cero imágenes, cero assets.
+- 🧠 **Denso** — la profundidad viene de los sistemas y del contenido, no del arte.
+- 🗃️ **Contenido como datos** — enemigos, habilidades y eventos viven aparte del motor.
+- 🎲 **Reproducible** — motor puro con aleatoriedad por semilla: cualquier ruta se puede repetir y probar.
+
+---
 
 ## 🚧 Estado actual
 
-Es un **prototipo**. Ya funciona el bucle básico; el resto está por construir.
+> [!NOTE]
+> Es un **prototipo**: el bucle básico ya funciona y el resto está por construir.
 
-| Pieza | Estado |
-|-------|--------|
-| Mapa procedural de ruta (10 pisos, caminos que no se cruzan) | ✅ |
-| Nodos de monstruo, cofre, sub-jefe y jefe final | ✅ |
-| Combate por turnos 1 contra 1 con menú | ✅ |
-| Escalado de monstruos por piso | ✅ |
-| Orden de turnos, SPD y MP | ⬜ |
-| Varios enemigos, debilidades y Ruptura | ⬜ |
-| Afinidades y clases emergentes | ⬜ |
-| Hogueras, eventos y tiendas | ⬜ |
-| Guardado de partida | ⬜ |
-| Publicación en GitHub Pages | ⬜ |
+| | Pieza |
+|:---:|---|
+| ✅ | Mapa procedural (10 pisos, caminos que no se cruzan) |
+| ✅ | Nodos de monstruo, cofre, sub-jefe y jefe final |
+| ✅ | Combate por turnos 1 contra 1 con menú |
+| ✅ | Escalado de monstruos por piso |
+| ⬜ | Orden de turnos, SPD y MP |
+| ⬜ | Varios enemigos, debilidades y Ruptura |
+| ⬜ | Afinidades y clases emergentes |
+| ⬜ | Hogueras, eventos y tiendas |
+| ⬜ | Guardado de partida |
 
 ## 🗺️ Hoja de ruta
 
-1. **M0 · Base** — Pages, semilla aleatoria, guardado y pantalla final de partida.
-2. **M1 · Núcleo de combate** — SPD, MP, varios enemigos, elementos, debilidades y Ruptura.
-3. **M2 · Contenido y builds** — enemigos, habilidades y afinidades como datos; recompensa «elige 1 de 3».
-4. **M3 · Más nodos** — hoguera, evento, tienda y élite.
-5. **M4 · Equilibrio y pulido** — números, resumen de partida y semillas compartibles.
+| Hito | Contenido |
+|:---:|---|
+| **M0** | Base: semilla aleatoria, guardado y pantalla final |
+| **M1** | Núcleo de combate: SPD, MP, varios enemigos, elementos, debilidades y Ruptura |
+| **M2** | Contenido y builds: enemigos, habilidades y afinidades como datos; recompensa «elige 1 de 3» |
+| **M3** | Más nodos: hoguera, evento, tienda y élite |
+| **M4** | Equilibrio, resumen de partida y semillas compartibles |
 
-## 🚀 Ejecutarlo en local
+---
+
+## 🛠️ Desarrollo
+
+<details>
+<summary><b>🚀 Ejecutarlo en local</b></summary>
+
+<br>
 
 Necesita servirse por HTTP (los módulos ES no funcionan con `file://`):
 
 ```bash
-npm run dev            # http://127.0.0.1:8770  (usa python -m http.server)
+npm run dev    # http://127.0.0.1:8770
 ```
 
-Tests:
+</details>
+
+<details>
+<summary><b>🧪 Tests</b></summary>
+
+<br>
 
 ```bash
 npm install                        # solo la primera vez
@@ -118,9 +148,14 @@ npm run test:browser               # partida completa en el navegador
 npm test                           # ambos
 ```
 
-## 📁 Estructura
+</details>
 
-```
+<details>
+<summary><b>📁 Estructura del proyecto</b></summary>
+
+<br>
+
+```text
 ├── index.html        Página única
 ├── style.css         Estilo del juego
 ├── src/
@@ -128,15 +163,17 @@ npm test                           # ambos
 │   ├── ui.js         Presentación
 │   └── main.js       Estado de la partida y eventos
 ├── tests/            Tests del motor y del navegador
-└── docs/             Notas de diseño del prototipo
+└── docs/             Notas de diseño
 ```
 
-Las reglas y los números actuales del prototipo están en [docs/prototipo-v0.md](docs/prototipo-v0.md).
+Las reglas y números actuales del prototipo están en [`docs/prototipo-v0.md`](docs/prototipo-v0.md).
+
+</details>
 
 ---
 
 <div align="center">
 
-*JavaScript vanilla · sin build · hecho para GitHub Pages*
+**[▶ Jugar ahora](https://harmondez.github.io/easy_hero/)** · JavaScript vanilla · sin build · hecho para GitHub Pages
 
 </div>
