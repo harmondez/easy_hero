@@ -1,2 +1,34 @@
+# Dependencias
 node_modules/
+package-lock.json.bak
+
+# Carpeta semilla del prototipo (ya copiada a la raíz)
 rpg-pack/
+
+# Salida de tests (Playwright)
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Logs y temporales
+*.log
+npm-debug.log*
+*.tmp
+.cache/
+
+# Secretos locales
+.env
+.env.*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Configuración local de Claude Code
+.claude/settings.local.json
