@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Hit RPG (título provisional)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20260920a">
+</head>
+<body>
+    <header class="game-header">
+        <span class="game-title">EASY HIT <span class="game-title-accent">RPG</span></span>
+        <span class="game-version">v1.0 · en desarrollo</span>
+    </header>
+
+    <main class="main-content">
+        <section class="section-container full-width" id="section-rpg">
+            <div class="section-header">
+                <h2>🗡️ Modo RPG</h2>
+                <p>Un solo héroe, casi sin nada. Traza tu ruta, hazte más fuerte y llega hasta el jefe final.</p>
+            </div>
+
+            <!-- Vista 1: la Carta de Héroe -->
+            <div id="rpgStartView" class="rpg-view">
+                <div class="rpg-start">
+                    <div id="rpgHeroCard" class="rpg-hero-card"></div>
+                    <p class="rpg-start-note">Los monstruos de los primeros pisos son débiles; se hacen más fuertes a medida que avanzas. Aquí los atributos usan su propia escala.</p>
+                    <button type="button" id="btnRpgStart" class="btn-forge">🗡️ COMENZAR RUTA</button>
+                </div>
+            </div>
+
+            <!-- Vista 2: mapa de ruta -->
+            <div id="rpgMapView" class="rpg-view" style="display:none;">
+                <div class="rpg-topbar">
+                    <div class="rpg-hero-panel" id="rpgHeroPanel"></div>
+                    <div class="rpg-topbar-actions">
+                        <button type="button" id="btnRpgNewMap" class="btn-secondary">🔀 NUEVA RUTA</button>
+                        <button type="button" id="btnRpgAbandon" class="btn-secondary">← ABANDONAR RUTA</button>
+                    </div>
+                </div>
+                <div class="rpg-legend" id="rpgLegend"></div>
+                <div class="rpg-map-wrap">
+                    <div class="rpg-map" id="rpgMap"></div>
+                    <div class="rpg-map-start">🚪 INICIO DE LA RUTA</div>
+                </div>
+                <div class="rpg-log" id="rpgLog">
+                    <div class="rpg-log-title">📜 Diario de la ruta</div>
+                    <div class="rpg-log-content" id="rpgLogContent"></div>
+                </div>
+            </div>
+
+            <!-- Vista 3: combate (héroe a la izquierda, monstruo a la derecha) -->
+            <div id="rpgCombatView" class="rpg-view" style="display:none;">
+                <div class="rpg-combat-title" id="rpgCombatTitle"></div>
+                <div class="rpg-arena">
+                    <div id="rpgCombatHero" class="rpg-fighter-slot"></div>
+                    <div class="rpg-arena-vs">VS</div>
+                    <div id="rpgCombatMonster" class="rpg-fighter-slot"></div>
+                </div>
+                <div class="rpg-actions" id="rpgCombatActions"></div>
+                <div class="rpg-combat-result" id="rpgCombatResult" style="display:none;"></div>
+                <div class="rpg-log">
+                    <div class="rpg-log-title">📜 Combate</div>
+                    <div class="rpg-log-content" id="rpgCombatLogContent"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script type="module" src="src/main.js?v=20260920a"></script>
+</body>
+</html>
