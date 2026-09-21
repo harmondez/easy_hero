@@ -2,9 +2,9 @@
 
 # 🗡️ Easy Hero
 
-### Roguelike de ruta con combate JRPG por turnos
+### Elige tu ruta. Toma decisiones. Descubre quién eres.
 
-*Minimalista en forma. Denso en decisiones.*
+*Un juego de aventuras por turnos que se juega en el navegador, en 25-40 minutos.*
 
 <br>
 
@@ -12,14 +12,13 @@
 
 <br>
 
-![Estado](https://img.shields.io/badge/estado-prototipo-orange?style=flat-square)
-![JavaScript](https://img.shields.io/badge/JavaScript-vanilla-f7df1e?style=flat-square&logo=javascript&logoColor=black)
-![Sin build](https://img.shields.io/badge/build-ninguno-22c55e?style=flat-square)
-![Assets](https://img.shields.io/badge/assets-0-3b82f6?style=flat-square)
-![GitHub Pages](https://img.shields.io/badge/hosting-GitHub%20Pages-181717?style=flat-square&logo=github)
-![Idioma](https://img.shields.io/badge/idioma-espa%C3%B1ol-ef4444?style=flat-square)
+![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
+![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
+![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
+![Móvil y PC](https://img.shields.io/badge/m%C3%B3vil%20y%20PC-8b5cf6?style=flat-square)
+![Español](https://img.shields.io/badge/idioma-espa%C3%B1ol-ef4444?style=flat-square)
 
-[Idea](#-la-idea) · [Cómo se juega](#-cómo-se-juega) · [Estilos](#%EF%B8%8F-tres-estilos-seis-tipos-de-daño) · [Estado](#-estado-actual) · [Hoja de ruta](#%EF%B8%8F-hoja-de-ruta) · [Desarrollo](#-desarrollo)
+[La idea](#-la-idea) · [Cómo se juega](#-cómo-se-juega) · [Tu héroe](#%EF%B8%8F-tu-héroe) · [Eventos](#-eventos-15-historias-2-decisiones) · [Estado](#-estado-del-juego) · [Qué viene](#-qué-viene)
 
 </div>
 
@@ -28,151 +27,208 @@
 ## ✨ La idea
 
 > [!IMPORTANT]
-> **Todos empiezan con el mismo héroe.** No hay pantalla de elegir clase: **la clase emerge de tus decisiones.**
+> **Todos empiezan con el mismo héroe.** No eliges clase al principio: **la descubres por las decisiones que tomas.**
 
-Recorres una **ruta que se ramifica** como en *Slay the Spire*. Cada combate es un pequeño puzle de **JRPG por turnos** al estilo *Octopath Traveler*: lees las debilidades del enemigo, rompes su escudo y aprovechas el turno libre.
+Recorres un **mapa que se ramifica** y en cada paso eliges a dónde ir: un combate, un cofre, un evento o un peligro mayor.
+Cada combate es por turnos, como en los grandes JRPG. Lo que decides por el camino convierte a tu héroe en guerrero,
+pícaro o elementalista.
 
-| ⏱️ Partida | 🗺️ Mapa | ⚔️ Combate | 🌱 Progreso |
+| ⏱️ Una partida | 🗺️ El mapa | ⚔️ El combate | 🌱 Tu héroe |
 |:---:|:---:|:---:|:---:|
-| **25–40 min** | Procedural, con caminos que se bifurcan | Por turnos, hasta 3 enemigos | La clase surge de tus elecciones |
+| **25-40 minutos** | Nuevo en cada partida | Por turnos, con menú | Cambia según tus elecciones |
 
 ---
 
 ## 🧭 Cómo se juega
 
-```mermaid
-flowchart BT
-    S(["🚪 Inicio"]) --> A["👹 Monstruo"] & B["👹 Monstruo"]
-    A --> C["🧰 Cofre"] & D["🔥 Hoguera"]
-    B --> D & E["🎲 Evento"]
-    C --> F["💀 Élite"]
-    D --> F & G["🛒 Tienda"]
-    E --> G
-    F --> H(["🐉 Jefe final"])
-    G --> H
-```
+<p align="center">
+  <img src="docs/img/mapa.jpg" alt="El mapa de la ruta: 16 pisos con caminos que se ramifican" width="620">
+</p>
 
-1. **🗺️ Elige tu ruta.** El mapa te muestra a qué te enfrentarás. Ir a lo seguro o arriesgarte por mejor botín es una decisión real.
-2. **⚔️ Combate por turnos.** Menú clásico: **Atacar · Defender · Habilidades · Huir**, con un **orden de turnos visible**.
-3. **💥 Rompe al enemigo.** Cada enemigo tiene un escudo y **debilidades**. Golpéalas para romperlo: pierde su turno y recibe más daño.
-4. **🌱 Crece a tu manera.** Lo que eliges te da **afinidad** con un estilo y desbloquea habilidades y sinergias.
+1. **🗺️ Elige tu camino.** Cada punto del mapa es un combate, un cofre, un evento o un sub-jefe. Avanzas hacia arriba, hasta el **jefe final**.
+2. **⚔️ Combate por turnos.** Atacas, te defiendes, usas habilidades o intentas huir.
+3. **🎲 Decide en los eventos.** Te encuentras con una situación y **dos decisiones**. Ninguna sale gratis.
+4. **🌱 Crece a tu manera.** Lo que ganas y lo que pierdes te va haciendo distinto a otros héroes.
+
+### El combate
+
+<p align="center">
+  <img src="docs/img/combate.jpg" alt="Un combate contra El Lector, el enemigo que lee tus movimientos" width="620">
+</p>
+
+| Acción | Qué hace |
+|--------|----------|
+| 🗡️ **Atacar** | Golpeas una vez |
+| 🛡️ **Defender** | El próximo golpe que recibas hace la mitad |
+| ✨ **Habilidades** | Golpe de Fuego: 5 de daño, tarda 3 rondas en volver a estar listo |
+| 🏃 **Huir** | Sales del combate (te hacen daño al irte). No se puede huir de sub-jefes ni de jefes |
 
 ---
 
-## ⚔️ Tres estilos, seis tipos de daño
+## 🛡️ Tu héroe
 
-La clase no se elige: se **descubre**. Los enemigos son débiles a tipos distintos, así que **tu build condiciona qué ruta te conviene**.
+Empiezas con **ATK 1** (tu fuerza de ataque) y **25 de vida**. Nada más. A partir de ahí depende de ti.
 
-| | Estilo | Filosofía | Daño |
-|:---:|---|---|---|
+### Tres estilos, seis tipos de daño
+
+Tu estilo no se elige: **se revela** según lo que recoges y decides. Cada estilo domina dos tipos de daño.
+
+| | Estilo | Cómo se juega | Tipos de daño |
+|:---:|--------|---------------|---------------|
 | 🛡️ | **Guerrero** | Aguante y golpes contundentes | 🗡️ Filo · 🔨 Contundente |
-| 🏹 | **Pícaro** | Velocidad, críticos y venenos | 🏹 Perforante · ☠️ Veneno |
-| 🔥 | **Elementalista** | Daño elemental y control | 🔥 Fuego · ⚡ Rayo |
+| 🏹 | **Pícaro** | Rapidez, críticos y venenos | 🏹 Perforante · ☠️ Veneno |
+| 🔥 | **Elementalista** | Poder elemental | 🔥 Fuego · ⚡ Rayo |
 
 > [!TIP]
-> Mezclar familias está permitido, y a veces es la mejor jugada.
+> Mezclar estilos está permitido, y a veces es la mejor jugada.
 
-### 📊 Atributos
+### 🎒 Tu equipo *(en camino)*
 
-| **ATK** | **HP** | **SPD** | **MP** |
-|:---:|:---:|:---:|:---:|
-| Daño | Vida | Orden de turno | Coste de habilidades |
+Llevarás **4 objetos**, sin mochila ni líos: cuando encuentras uno, decides al momento si te lo pones o no.
 
-Los monstruos empiezan débiles y **escalan a medida que avanzas**.
+| Ranura | Qué aporta |
+|--------|-----------|
+| ⚔️ **Arma principal** | Tu fuerza y **el tipo de daño de tus golpes** |
+| 🛡️ **Escudo, arma o foco** | Defender mejor, un golpe extra o habilidades más potentes |
+| 🧥 **Armadura** | Más vida y un efecto especial |
+| 💍 **Accesorio** | Un efecto pasivo |
 
----
-
-## 🧱 Principios
-
-- 🎨 **Minimalista** — emojis y CSS. Cero imágenes, cero assets.
-- 🧠 **Denso** — la profundidad viene de los sistemas y del contenido, no del arte.
-- 🗃️ **Contenido como datos** — enemigos, habilidades y eventos viven aparte del motor.
-- 🎲 **Reproducible** — motor puro con aleatoriedad por semilla: cualquier ruta se puede repetir y probar.
+Los objetos tienen **5 rarezas**: ⚪ común · 🟢 poco común · 🔵 rara · 🟣 épica · 🟠 legendaria.
+Cuanto más rara, más efectos trae, y cuanto más profundo lo encuentras, más fuerte es.
 
 ---
 
-## 🚧 Estado actual
+## 🎲 Eventos: 15 historias, 2 decisiones
 
-> [!NOTE]
-> Es un **prototipo**: el bucle básico ya funciona y el resto está por construir.
+En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo o arriesga algo, y **no se repiten en la misma partida**.
 
-| | Pieza |
-|:---:|---|
-| ✅ | Mapa procedural largo y denso (16 pisos, 7 columnas, 6 caminos que no se cruzan) |
-| ✅ | Nodos de monstruo, cofre, evento, sub-jefe y jefe final |
-| ✅ | Combate por turnos 1 contra 1 con menú |
-| ✅ | Escalado de monstruos por piso |
-| ⬜ | Orden de turnos, SPD y MP |
-| ⬜ | Varios enemigos, debilidades y Ruptura |
-| ⬜ | Afinidades y clases emergentes |
-| ✅ | **15 eventos** con una situación y dos decisiones ([ver catálogo](docs/eventos.md)) |
-| ✅ | Votos, mejoras de habilidad y un enemigo con IA (el Lector) |
-| ⬜ | Hogueras y tiendas |
-| ⬜ | Guardado de partida |
-
-## 🗺️ Hoja de ruta
-
-| Hito | Contenido |
-|:---:|---|
-| **M0** | Base: semilla aleatoria, guardado y pantalla final |
-| **M1** | Núcleo de combate: SPD, MP, varios enemigos, elementos, debilidades y Ruptura |
-| **M2** | Contenido y builds: enemigos, habilidades y afinidades como datos; recompensa «elige 1 de 3» |
-| **M3** | Más nodos: hoguera, tienda y élite (los eventos ya están) |
-| **M4** | Equilibrio, resumen de partida y semillas compartibles |
-
----
-
-## 🛠️ Desarrollo
+<p align="center">
+  <img src="docs/img/evento.jpg" alt="Un evento: El Lector te hace una pregunta con dos respuestas" width="520">
+</p>
 
 <details>
-<summary><b>🚀 Ejecutarlo en local</b></summary>
+<summary><b>👀 Ver los 15 eventos (contiene pequeños adelantos)</b></summary>
 
 <br>
 
-Necesita servirse por HTTP (los módulos ES no funcionan con `file://`):
+| | Evento | La situación |
+|:-:|--------|--------------|
+| 🩹 | **La chica herida** | Alguien te pide ayuda en plena mazmorra… ¿confías? |
+| 🥷 | **El extraño encapuchado** | Dice conocer un camino seguro |
+| 📦 | **El cofre susurrante** | Murmura tu nombre |
+| 🏕️ | **El campamento abandonado** | Brasas calientes y nadie a la vista |
+| 🪞 | **El espejo oscuro** | Tu reflejo se mueve solo |
+| 🗿 | **La estatua del caballero caído** | Sostiene una espada con un brillo extraño |
+| ⛲ | **El pozo de los deseos** | Salud o poder, pero no las dos |
+| 🌉 | **El puente de cuerdas** | Acorta el camino, si aguanta |
+| 🚪 | **La puerta sellada** | Solo los fuertes la abren |
+| ⚗️ | **El alquimista errante** | Una pócima sin etiqueta |
+| 🪨 | **El derrumbe** | Solo puedes salvar a una persona |
+| ⚖️ | **El juicio de las hermanas** | Una de las dos miente |
+| 🤞 | **El voto** | Poder a cambio de renunciar a algo para siempre |
+| 🥋 | **El maestro errante** | Una sola lección: cuerpo o llama |
+| 👁️ | **El Lector** | Tres preguntas… o un combate contra un enemigo que lee tus movimientos |
+
+</details>
+
+---
+
+## 🚧 Estado del juego
+
+> [!WARNING]
+> **Todavía está en desarrollo y el equilibrio no está terminado.** Ahora mismo el jefe final es **casi imposible de alcanzar**.
+> Es lo primero que vamos a arreglar (ver *Qué viene*).
+
+### ✅ Ya se puede jugar
+
+- 🗺️ Mapa de **16 pisos** que cambia en cada partida
+- ⚔️ Combate por turnos: atacar, defender, habilidad y huir
+- 🎲 **15 eventos** con dos decisiones cada uno
+- 💀 Sub-jefes, cofres y un jefe final
+- 🧠 Un enemigo especial, **El Lector**, que aprende de lo que haces
+- 🤞 Promesas que cambian tu forma de jugar (por ejemplo, renunciar a huir)
+- 📱 Funciona en móvil y en ordenador
+
+### 🔜 En camino
+
+Todo lo que viene está explicado, con sus motivos, en **[planning.md](planning.md)**.
+
+---
+
+## 🔮 Qué viene
+
+Lo haremos en **cuatro entregas**. Empezamos por hacer el juego **ganable y claro**, y después añadimos profundidad.
+
+| Entrega | Nombre | Qué trae |
+|:-------:|--------|----------|
+| **A** | 🎯 **Jugable** | Ver qué va a hacer cada enemigo · 🔥 Hogueras para descansar · Ajustar la dificultad (objetivo: **ganar 1 de cada 5**) · Guardar tu partida y una pantalla final |
+| **B** | 🎒 **Tu build** | Equipo de 4 ranuras y 5 rarezas · Elegir 1 de 3 mejoras tras cada combate · **Despertar como clase** |
+| **C** | 💥 **Táctico** | Debilidades y **Ruptura** (rompe al enemigo y actúa otra vez) · Combates con varios enemigos y orden de turnos |
+| **D** | 📖 **A largo plazo** | Bestiario, logros y el **Legado** de tu héroe caído · Niveles de riesgo para los que ya ganaron |
+
+### 💡 Algunas ideas que nos hacen ilusión
+
+- **Romper al enemigo cancela su ataque.** Verás el golpe fuerte que viene y podrás romperlo antes de que caiga.
+- **El Legado.** Si tu héroe cae, otra partida puede encontrar su tumba y recuperar uno de sus objetos.
+- **Tu arma cambia contra quién eres fuerte.** Otra arma, otro tipo de daño, otra ruta.
+- **La ruta del día.** El mismo mapa para todos, para comparar quién llega más lejos.
+
+---
+
+## 📚 Para saber más
+
+| Documento | Qué cuenta |
+|-----------|-----------|
+| 📋 [planning.md](planning.md) | **El plan completo** de lo que viene y por qué |
+| 🎲 [Eventos](docs/eventos.md) | Los 15 eventos con todos sus resultados |
+| 🔎 [Cómo funcionan los juegos de este género](jrpg-trend.md) | La investigación que guía el diseño |
+| 📖 [Diseño de sistemas RPG](Diseño%20de%20Sistemas%20RPG%20Minimalista.md) | Investigación complementaria |
+| 🧪 [Cómo lo comprobamos](test-method.md) | Cómo verificamos que todo funciona |
+
+---
+
+## 🛠️ Para quien quiera colaborar
+
+<details>
+<summary><b>💻 Probarlo en tu ordenador</b></summary>
+
+<br>
+
+Necesitas tener **Node.js** y **Python** instalados. Desde la carpeta del proyecto:
 
 ```bash
-npm run dev    # http://127.0.0.1:8770
+npm run dev      # abre el juego en http://127.0.0.1:8770
 ```
 
 </details>
 
 <details>
-<summary><b>🧪 Tests</b></summary>
+<summary><b>✅ Comprobar que todo funciona</b></summary>
 
 <br>
 
 ```bash
 npm install                        # solo la primera vez
 npx playwright install chromium    # solo la primera vez
-npm run test:engine                # lógica pura: héroe, monstruos, mapas, combate
-npm run test:events                # los 15 eventos, votos, IA del Lector y 3000 rutas simuladas
-npm run test:browser               # partida completa en el navegador (Chromium)
-npm test                           # los tres
+npm test                           # ejecuta todas las comprobaciones
 ```
+
+Son 226 comprobaciones automáticas. Las dos primeras tardan unos 2 segundos; la del navegador, un minuto y medio.
 
 </details>
 
 <details>
-<summary><b>📁 Estructura del proyecto</b></summary>
+<summary><b>📁 Qué hay en cada carpeta</b></summary>
 
 <br>
 
 ```text
-├── index.html        Página única
-├── style.css         Estilo del juego
-├── src/
-│   ├── engine.js     Lógica pura, sin DOM: héroe, mapa y combate
-│   ├── events.js     Motor de eventos (interpreta los datos)
-│   ├── data/
-│   │   └── events.js Contenido: los 15 eventos, sus monstruos y preguntas
-│   ├── ui.js         Presentación
-│   └── main.js       Estado de la partida y flujo
-├── tests/            Tests del motor y del navegador
-└── docs/             Catálogo de eventos y notas de diseño
+├── index.html      La página del juego
+├── style.css       El aspecto
+├── src/            La lógica del juego, los eventos y sus textos
+├── tests/          Las comprobaciones automáticas
+└── docs/           Documentación e imágenes
 ```
-
-Las reglas y números actuales del prototipo están en [`docs/prototipo-v0.md`](docs/prototipo-v0.md).
 
 </details>
 
@@ -180,6 +236,6 @@ Las reglas y números actuales del prototipo están en [`docs/prototipo-v0.md`](
 
 <div align="center">
 
-**[▶ Jugar ahora](https://harmondez.github.io/easy_hero/)** · JavaScript vanilla · sin build · hecho para GitHub Pages
+**[▶ Jugar ahora](https://harmondez.github.io/easy_hero/)** · Gratis · Sin instalar nada · En español
 
 </div>
