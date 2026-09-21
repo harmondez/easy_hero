@@ -1,14 +1,14 @@
-import * as Engine from './engine.js?v=20260921b';
-import { RPG_EVENTS, EVENT_MONSTERS } from './data/events.js?v=20260921b';
+import * as Engine from './engine.js?v=20260922a';
+import { RPG_EVENTS, RPG_SPECIAL_EVENTS, EVENT_MONSTERS } from './data/events.js?v=20260922a';
 
 // =============================================
 // 🎲 RPG-pack — motor de eventos (puro, sin DOM)
 // Interpreta los datos de src/data/events.js: efectos, azar, condiciones,
 // varias pantallas y combates. El generador aleatorio se recibe por parámetro.
 // =============================================
-export { RPG_EVENTS, EVENT_MONSTERS };
+export { RPG_EVENTS, RPG_SPECIAL_EVENTS, EVENT_MONSTERS };
 
-const EVENT_BY_ID = new Map(RPG_EVENTS.map(e => [e.id, e]));
+const EVENT_BY_ID = new Map([...RPG_EVENTS, ...RPG_SPECIAL_EVENTS].map(e => [e.id, e]));
 export function getRpgEvent(id) { return EVENT_BY_ID.get(id) || null; }
 
 const AFFINITY_LABELS = { guerrero: '⚔️ Guerrero', picaro: '🗡️ Pícaro', elementalista: '🔥 Elementalista' };
@@ -33,6 +33,7 @@ export function applyRpgFx(hero, fx = {}) {
     }
     if (fx.atq) hero.atq = Math.max(1, hero.atq + fx.atq);
     if (fx.heal === 'full') hero.hp = hero.maxHp;
+    if (fx.healPct) hero.hp = Math.min(hero.maxHp, hero.hp + Math.max(1, Math.floor(hero.maxHp * fx.healPct)));
     if (fx.hp) hero.hp = Math.min(hero.maxHp, Math.max(1, hero.hp + fx.hp));
 
     if (fx.vows) {
@@ -167,7 +168,7 @@ export function createEventMonster(monsterId, hero, floor, hpFactor = 1) {
         hp = maxHp;
     }
     hp = Math.max(1, Math.round(hp * hpFactor));
-    const monster = { type: 'event', floor: f, name: def.name, icon: def.icon, color: def.color, tag: def.tag, atq, hp, maxHp };
+    const monster = { type: 'event', floor: f, name: def.name, icon: def.icon, color: def.color, tag: def.tag, atq, hp, maxHp, pattern: def.pattern };
     if (def.ai) monster.ai = def.ai;
     return monster;
 }

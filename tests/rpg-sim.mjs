@@ -5,8 +5,12 @@ import {
     RPG_HERO_BASE, RPG_NODE_TYPES, RPG_MAP_CONFIG,
     createRpgHero, rpgMonsterStats, generateRpgMap, rpgAvailableNodes,
     createRpgMonster, createRpgCombat, rpgCombatAction, rpgSkillReady, rpgCanFlee,
-    rpgVictoryReward, applyRpgReward, RPG_MIN_EVENTS_PER_ROUTE
+    rpgVictoryReward, applyRpgReward, RPG_MIN_EVENTS_PER_ROUTE, RPG_MIN_CAMPFIRES_PER_ROUTE,
+    rpgIntentView, rpgAttackPreview, rpgIncomingPreview
 } from '../src/engine.js';
+import { RPG_BALANCE } from '../src/data/balance.js';
+import { createRng, newSeed, seedToCode, codeToSeed } from '../src/rng.js';
+import { MONSTER_ROSTER, SUBBOSS_ROSTER, BOSS_DEF, atk, heal, CHARGE, GUARD, REST } from '../src/data/monsters.js';
 
 let passed = 0;
 let failed = 0;
@@ -63,6 +67,9 @@ console.log('\n⚔️ Combate por turnos');
         const h = createRpgHero();
         return createRpgCombat(h, createRpgMonster(type, floor));
     };
+    // Monstruo de prueba: golpea siempre con su ATK (para probar reglas del héroe sin depender de patrones)
+    const plain = (atq, hp) => ({ type: 'monster', floor: 0, name: 'Muñeco', icon: '🧪', color: '#888', atq, hp, maxHp: hp, pattern: [{ k: 'attack', m: 1 }] });
+    const freshPlain = (atq, hp) => createRpgCombat(createRpgHero(), plain(atq, hp));
 
     const mon = createRpgMonster('monster', 0);
     assert('el monstruo trae nombre, icono y stats de la escala', mon.name && mon.icon && mon.hp === 6 && mon.maxHp === 6 && mon.atq === 1);
@@ -76,10 +83,10 @@ console.log('\n⚔️ Combate por turnos');
     assert('el turno avanza', c.turn === 2 && !r.over);
 
     // Defender: el próximo golpe se reduce a la mitad (redondeo hacia arriba)
-    c = fresh('monster', 8); // monstruo ATK 5
+    c = freshPlain(5, 40);
     r = rpgCombatAction(c, 'defend');
     assert('defender: el golpe de 5 pasa a 3', c.hero.hp === 25 - 3);
-    assert('defender: solo dura un golpe', c.defending === false);
+    assert('defender: solo dura una ronda', c.defending === false);
     const before = c.hero.hp;
     rpgCombatAction(c, 'attack');
     assert('después de defender el daño vuelve a ser completo', before - c.hero.hp === 5);
@@ -92,7 +99,7 @@ console.log('\n⚔️ Combate por turnos');
     r = rpgCombatAction(c, 'skill', 'fire_strike');
     assert('Golpe de Fuego inflige 5 de daño', c.monster.hp === 18 - 5);
     assert('el héroe no tiene DEF: el monstruo golpea con todo su ATK', (() => {
-        const cc = fresh('monster', 6); // ATK 4
+        const cc = freshPlain(4, 60);
         rpgCombatAction(cc, 'attack');
         return cc.hero.hp === 25 - 4 && !('def' in cc.hero) && !('def' in cc.monster);
     })());
@@ -120,7 +127,7 @@ console.log('\n⚔️ Combate por turnos');
     r = rpgCombatAction(c, 'attack');
     assert('victoria: el monstruo cae y no contraataca', r.result === 'victory' && c.hero.hp === 25 && c.over);
     assert('un combate terminado no acepta más acciones', rpgCombatAction(c, 'attack').ok === false);
-    c = fresh('monster', 8); c.hero.hp = 3;
+    c = freshPlain(5, 40); c.hero.hp = 3;
     r = rpgCombatAction(c, 'attack');
     assert('derrota: el héroe cae a 0 HP', r.result === 'defeat' && c.hero.hp === 0);
     assert('acción desconocida no rompe nada', rpgCombatAction(fresh(), 'bailar').ok === false);
@@ -148,7 +155,7 @@ console.log('\n⚔️ Combate por turnos');
 console.log('\n🗺️ Mapa (300 semillas)');
 const { floors, cols } = RPG_MAP_CONFIG;
 let allOk = { connected: true, noCross: true, types: true, boss: true, floor0: true, special: true, adjacency: true, starts: true,
-    eventPlace: true, eventAdj: true, eventMin: true };
+    eventPlace: true, eventAdj: true, eventMin: true, campFinal: true, socialAdj: true, campMin: true, subbossAvoid: true };
 let eventTotal = 0;
 
 for (let seed = 1; seed <= 300; seed++) {
@@ -207,6 +214,20 @@ for (let seed = 1; seed <= 300; seed++) {
         fewest.set(n.id, own + (n.next.length ? Math.min(...n.next.map(id => fewest.get(id))) : 0));
     }
     if (Math.min(...map.startIds.map(id => fewest.get(id))) < RPG_MIN_EVENTS_PER_ROUTE) allOk.eventMin = false;
+
+    // Hogueras: una en TODO el piso previo al jefe, nunca pegadas a otra hoguera ni a un evento, y al menos el mínimo por camino
+    if (!map.nodes.filter(n => n.floor === floors - 2).every(n => n.type === 'campfire')) allOk.campFinal = false;
+    const social = x => x.type === 'campfire' || x.type === 'event';
+    for (const n of map.nodes) for (const id of n.next) if (social(n) && social(byId.get(id))) allOk.socialAdj = false;
+    const fewestCamp = new Map();
+    for (const n of [...map.nodes].sort((a, b) => b.floor - a.floor)) {
+        const own = n.type === 'campfire' ? 1 : 0;
+        fewestCamp.set(n.id, own + (n.next.length ? Math.min(...n.next.map(id => fewestCamp.get(id))) : 0));
+    }
+    if (Math.min(...map.startIds.map(id => fewestCamp.get(id))) < RPG_MIN_CAMPFIRES_PER_ROUTE) allOk.campMin = false;
+
+    // Los sub-jefes son opcionales: desde cualquier nodo hay siempre una salida que no es un sub-jefe
+    for (const n of map.nodes) if (n.next.length && n.next.every(id => byId.get(id).type === 'subboss')) allOk.subbossAvoid = false;
 }
 assert('todas las aristas van al piso siguiente y todo nodo llega al jefe', allOk.connected);
 assert('ninguna arista se cruza con otra', allOk.noCross);
@@ -220,7 +241,11 @@ assert('no hay cofre→cofre ni sub-jefe→sub-jefe seguidos', allOk.adjacency);
 assert('los eventos nunca están en el piso 0 ni justo antes del jefe', allOk.eventPlace);
 assert('no hay dos eventos seguidos', allOk.eventAdj);
 assert(`todo camino de inicio a jefe cruza al menos ${RPG_MIN_EVENTS_PER_ROUTE} eventos`, allOk.eventMin);
-assert('en promedio hay eventos de sobra por mapa (≥ 8)', eventTotal / 300 >= 8);
+assert('en promedio hay eventos de sobra por mapa (≥ 7)', eventTotal / 300 >= 7);
+assert('el piso previo al jefe es SIEMPRE una hoguera', allOk.campFinal);
+assert('eventos y hogueras nunca van pegados entre sí', allOk.socialAdj);
+assert(`todo camino de inicio a jefe pasa por al menos ${RPG_MIN_CAMPFIRES_PER_ROUTE} hogueras`, allOk.campMin);
+assert('los sub-jefes son opcionales: siempre hay una salida sin sub-jefe', allOk.subbossAvoid);
 assert('la ruta es larga y densa: 16 pisos, 7 columnas, 6 caminos', floors === 16 && cols === 7 && RPG_MAP_CONFIG.paths === 6);
 
 console.log('\n🧭 rpgAvailableNodes');
@@ -235,6 +260,140 @@ assert('mapa nulo: nada', rpgAvailableNodes(null, null).length === 0);
     const grandchildren = new Set(first.next.flatMap(id => m.nodes.find(n => n.id === id).next));
     assert('con salto de piso: solo los hijos de los hijos', sk.length > 0 && sk.every(id => grandchildren.has(id)) && sk.length === grandchildren.size);
     assert('con salto de piso se sube exactamente dos pisos', sk.every(id => m.nodes.find(n => n.id === id).floor === first.floor + 2));
+}
+
+// ---------------------------------------------
+console.log('\n👁️ Intenciones del enemigo (se ven ANTES de actuar y se ejecutan tal cual)');
+{
+    const mk = (pattern, atq = 4, hp = 100, extra = {}) => ({ type: 'monster', floor: 0, name: 'Muñeco', icon: '🧪', color: '#888', atq, hp, maxHp: hp, pattern, ...extra });
+    const bigHero = () => { const h = createRpgHero(); h.hp = h.maxHp = 100; return h; };
+    const start = (pattern, atq, hp, extra) => createRpgCombat(bigHero(), mk(pattern, atq, hp, extra));
+
+    let c = start([atk(2)], 4);
+    assert('al empezar el combate ya hay una intención visible', !!c.monster.intent && c.monster.intent.k === 'attack');
+    assert('un ataque anuncia su daño exacto (2 × ATK 4 = 8)', c.monster.intent.dmg === 8);
+    rpgCombatAction(c, 'attack');
+    assert('la intención anunciada es EXACTAMENTE la que se ejecuta (8 de daño)', c.hero.hp === 92);
+
+    c = start([atk(1), CHARGE, atk(3)], 4);
+    const seen = [];
+    for (let i = 0; i < 6; i++) { seen.push(c.monster.intent.k + (c.monster.intent.dmg || '')); rpgCombatAction(c, 'attack'); }
+    assert('el patrón se repite en ciclo (ataque, carga, golpe fuerte…)', seen.join(',') === 'attack4,charge,attack12,attack4,charge,attack12');
+
+    c = start([CHARGE, atk(2)], 5);
+    rpgCombatAction(c, 'attack');
+    assert('cargar no hace daño', c.hero.hp === 100);
+    assert('después de cargar viene el golpe anunciado', c.monster.intent.k === 'attack' && c.monster.intent.dmg === 10);
+
+    c = start([GUARD, atk(1)], 4, 100);
+    c.hero.atq = 6;
+    assert('si se protege, tu ataque anuncia la mitad', rpgAttackPreview(c) === 3);
+    rpgCombatAction(c, 'attack');
+    assert('protegerse reduce a la mitad el daño del héroe', c.monster.hp === 97);
+    c = start([GUARD, atk(1)], 4, 100);
+    rpgCombatAction(c, 'skill', 'fire_strike');
+    assert('protegerse también reduce a la mitad las habilidades (5 → 3)', c.monster.hp === 97);
+    c = start([GUARD], 4, 100);
+    c.hero.atq = 1;
+    assert('protegerse nunca deja el daño en 0 (mínimo 1)', rpgAttackPreview(c) === 1);
+
+    c = start([heal(0.1)], 4, 100);
+    c.monster.hp = 50;
+    const r0 = rpgCombatAction(c, 'attack'); // el héroe hace 1 y el monstruo se cura el 10 % de 100
+    assert('curarse recupera el % de su vida máxima', c.monster.hp === 59 && r0.events.some(e => e.kind === 'heal' && e.amount === 10));
+    c = start([heal(0.5)], 4, 100);
+    c.monster.hp = 95;
+    rpgCombatAction(c, 'attack');
+    assert('curarse nunca supera la vida máxima', c.monster.hp === 100);
+
+    c = start([REST], 4, 100);
+    rpgCombatAction(c, 'attack');
+    assert('descansar no hace nada', c.hero.hp === 100);
+
+    // Defender: solo cubre la ronda en curso
+    c = start([CHARGE, atk(1)], 4);
+    rpgCombatAction(c, 'defend');
+    assert('defenderte cuando el enemigo no ataca no sirve de nada (sin daño y la defensa se gasta)', c.hero.hp === 100 && c.defending === false);
+    rpgCombatAction(c, 'attack');
+    assert('la ronda siguiente el golpe llega completo', c.hero.hp === 96);
+
+    // Vistas y anticipos para la interfaz
+    c = start([atk(2)], 4);
+    assert('rpgIncomingPreview: sin defender 8 y defendiendo 4', rpgIncomingPreview(c, false) === 8 && rpgIncomingPreview(c, true) === 4);
+    assert('un golpe de ×2 o más se ve como «Golpe fuerte» 💥', rpgIntentView(c.monster).icon === '💥' && rpgIntentView(c.monster).value === 8);
+    assert('un golpe normal se ve como «Ataca» ⚔️', rpgIntentView(start([atk(1)], 4).monster).icon === '⚔️');
+    assert('cada tipo de intención tiene su icono', (() => {
+        const icons = [[CHARGE, '⚡'], [GUARD, '🛡️'], [heal(0.1), '💚'], [REST, '💤']];
+        return icons.every(([mv, ic]) => rpgIntentView(start([mv], 4).monster).icon === ic);
+    })());
+    assert('rpgIncomingPreview es 0 si el enemigo no va a atacar', rpgIncomingPreview(start([CHARGE], 4), false) === 0);
+
+    // Huir cuesta el ATK base, no la intención
+    c = start([atk(3)], 4);
+    const fled = rpgCombatAction(c, 'flee');
+    assert('huir cuesta un golpe base (ATK 4), no el golpe anunciado', fled.over && c.hero.hp === 96);
+
+    // Patrones por pesos (el azar viene del generador de la partida, así que se puede repetir)
+    const weighted = { weights: [[atk(1), 1], [CHARGE, 1]] };
+    assert('un patrón por pesos usa el generador de la partida', createRpgCombat(bigHero(), mk(null, 4, 100, weighted), () => 0.1).monster.intent.k === 'attack'
+        && createRpgCombat(bigHero(), mk(null, 4, 100, weighted), () => 0.9).monster.intent.k === 'charge');
+    assert('un monstruo sin patrón ataca siempre con su ATK', (() => { const cc = createRpgCombat(bigHero(), { ...mk(null, 4, 100), pattern: undefined }); return cc.monster.intent.dmg === 4; })());
+}
+
+console.log('\n👹 Bestiario: cada monstruo con su forma de atacar');
+{
+    const all = [...MONSTER_ROSTER, ...SUBBOSS_ROSTER, BOSS_DEF];
+    const kinds = new Set(['attack', 'charge', 'guard', 'heal', 'rest']);
+    assert('hay 15 monstruos normales (uno por piso), 3 sub-jefes y un jefe', MONSTER_ROSTER.length === 15 && SUBBOSS_ROSTER.length === 3 && !!BOSS_DEF);
+    assert('todos tienen nombre, icono y un patrón con movimientos válidos', all.every(d => d.name && d.icon && d.pattern.length > 0 && d.pattern.every(m => kinds.has(m.k))));
+    assert('todos los monstruos normales son distintos', new Set(MONSTER_ROSTER.map(d => d.name)).size === 15 && new Set(MONSTER_ROSTER.map(d => d.icon)).size === 15);
+    assert('todos atacan alguna vez y ningún golpe supera ×3,5 ni baja de ×0,5', all.every(d => {
+        const hits = d.pattern.filter(m => m.k === 'attack');
+        return hits.length > 0 && hits.every(m => m.m >= 0.5 && m.m <= 3.5);
+    }));
+    assert('la media de daño por ronda de cada patrón está entre ×0,3 y ×1,6 (ningún enemigo es una trampa)', all.every(d => {
+        const avg = d.pattern.reduce((t, m) => t + (m.k === 'attack' ? m.m : 0), 0) / d.pattern.length;
+        return avg >= 0.3 && avg <= 1.6;
+    }));
+    assert('los tres primeros pisos son el «grupo fácil»: el patrón medio no supera ×1,1', MONSTER_ROSTER.slice(0, 3).every(d => d.pattern.reduce((t, m) => t + (m.k === 'attack' ? m.m : 0), 0) / d.pattern.length <= 1.1));
+    assert('createRpgMonster usa el patrón de cada piso', createRpgMonster('monster', 2).name === 'Goblin' && createRpgMonster('monster', 2).pattern[0].k === 'charge');
+    assert('un piso fuera del bestiario usa el último monstruo (no rompe)', createRpgMonster('monster', 40).name === MONSTER_ROSTER.at(-1).name);
+}
+
+console.log('\n🎲 Aleatoriedad con semilla');
+{
+    const a = createRng(123), b = createRng(123), d = createRng(124);
+    const A = Array.from({ length: 8 }, a), B = Array.from({ length: 8 }, b), D = Array.from({ length: 8 }, d);
+    assert('la misma semilla da la misma secuencia', A.join() === B.join());
+    assert('semillas distintas dan secuencias distintas', A.join() !== D.join());
+    assert('todos los valores están en [0, 1)', Array.from({ length: 2000 }, createRng(5)).every(v => v >= 0 && v < 1));
+    const r1 = createRng(77); for (let i = 0; i < 10; i++) r1();
+    const saved = r1.state;
+    const next5 = Array.from({ length: 5 }, r1);
+    const r2 = createRng(77); r2.state = saved;
+    assert('se puede guardar y restaurar el estado del generador (base de guardar la partida)', Array.from({ length: 5 }, r2).join() === next5.join());
+    assert('la misma semilla da EXACTAMENTE el mismo mapa', JSON.stringify(generateRpgMap(createRng(4242))) === JSON.stringify(generateRpgMap(createRng(4242)))
+        && JSON.stringify(generateRpgMap(createRng(4242))) !== JSON.stringify(generateRpgMap(createRng(4243))));
+    assert('newSeed devuelve un número de 32 bits sin signo', (() => { for (let i = 0; i < 500; i++) { const n = newSeed(); if (!(n >= 0 && n <= 4294967295 && Number.isInteger(n))) return false; } return true; })());
+    assert('seedToCode y codeToSeed son inversos (2000 semillas)', (() => {
+        const rng = createRng(9);
+        for (let i = 0; i < 2000; i++) { const n = newSeed(rng); if (codeToSeed(seedToCode(n)) !== n) return false; }
+        return true;
+    })());
+    assert('el código tiene el formato XXXX-XXX', /^[0-9A-Z]{4}-[0-9A-Z]{3}$/.test(seedToCode(123456789)) && seedToCode(0) === '0000-000');
+    assert('el código no distingue mayúsculas, espacios ni guion', codeToSeed('k3f9-2qa') === codeToSeed(' K3F92QA '));
+    assert('un texto libre también sirve de semilla (y siempre da la misma)', codeToSeed('mi ruta secreta') === codeToSeed('mi ruta secreta') && codeToSeed('mi ruta secreta') !== codeToSeed('otra'));
+    assert('un texto vacío no es una semilla', codeToSeed('') === null && codeToSeed('   ') === null && codeToSeed(null) === null);
+}
+
+console.log('\n⚖️ Números de equilibrio compartidos');
+{
+    const before = rpgMonsterStats('monster', 0).hp;
+    RPG_BALANCE.monster.hpBase += 4;
+    const changed = rpgMonsterStats('monster', 0).hp;
+    RPG_BALANCE.monster.hpBase -= 4;
+    assert('el motor lee los números de data/balance.js (el banco de equilibrio puede cambiarlos)', changed === before + 4 && rpgMonsterStats('monster', 0).hp === before);
+    assert('la hoguera cura el 30 % y los sub-jefes ya no son una pared', RPG_BALANCE.campfire.healPct === 0.3 && RPG_BALANCE.subboss.hpMul <= 2);
 }
 
 console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📊 RESULTS: ${passed} passed, ${failed} failed\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);

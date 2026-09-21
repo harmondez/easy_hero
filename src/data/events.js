@@ -6,7 +6,7 @@
 //   outcome := {
 //     text:      string | string[]                    líneas que se cuentan al jugador
 //     fx:        { hp, maxHp, atq, heal: 'full',      cambios sobre el héroe
-//                  vows, skillMods, affinity }
+//                  healPct, vows, skillMods, affinity }   (healPct: cura ese % de la vida máxima)
 //     chance:    [{ w, outcome }]                     sorteo ponderado de un resultado
 //     ifStat:    { stat, min, then, else }            depende de un atributo del héroe
 //     combat:    { monster, hpFactor, onWin, onWinText }
@@ -19,13 +19,35 @@
 // El daño de un evento nunca mata: deja al héroe como mínimo en 1 HP.
 // =============================================
 
+import { RPG_BALANCE } from './balance.js?v=20260922a';
+import { atk, CHARGE } from './monsters.js?v=20260922a';
+
+// `pattern` = los movimientos que repite en ciclo (ver data/monsters.js); el jugador ve el siguiente antes de actuar.
 export const EVENT_MONSTERS = {
-    jefe_bandidos: { name: 'Jefe de los bandidos', icon: '🥷', color: '#ef4444', tag: 'Emboscada', base: 'monster', atqBonus: 1, hpMul: 2 },
-    mimico:        { name: 'Mímico', icon: '📦', color: '#f59e0b', tag: 'Mímico', base: 'monster', atqBonus: 1, hpMul: 1.5 },
-    merodeador:    { name: 'Merodeador nocturno', icon: '🐺', color: '#ef4444', tag: 'Emboscada', base: 'monster', atqBonus: 1, hpMul: 1.3 },
-    reflejo:       { name: 'Tu reflejo', icon: '🪞', color: '#94a3b8', tag: 'Duelo', copyHero: true },
-    lector:        { name: 'El Lector', icon: '👁️', color: '#c084fc', tag: 'Enemigo inteligente', base: 'subboss', atqBonus: 2, hpMul: 1.5, ai: 'reader' }
+    jefe_bandidos: { name: 'Jefe de los bandidos', icon: '🥷', color: '#ef4444', tag: 'Emboscada', base: 'monster', atqBonus: 1, hpMul: 2, pattern: [atk(1), CHARGE, atk(2)] },
+    mimico:        { name: 'Mímico', icon: '📦', color: '#f59e0b', tag: 'Mímico', base: 'monster', atqBonus: 1, hpMul: 1.5, pattern: [atk(1.5), atk(0.75)] },
+    merodeador:    { name: 'Merodeador nocturno', icon: '🐺', color: '#ef4444', tag: 'Emboscada', base: 'monster', atqBonus: 1, hpMul: 1.3, pattern: [atk(1)] },
+    reflejo:       { name: 'Tu reflejo', icon: '🪞', color: '#94a3b8', tag: 'Duelo', copyHero: true, pattern: [atk(1)] },
+    lector:        { name: 'El Lector', icon: '👁️', color: '#c084fc', tag: 'Enemigo inteligente', base: 'subboss', atqBonus: 2, hpMul: 1.5, ai: 'reader', pattern: [atk(1)] }
 };
+
+// Eventos que NO forman parte del catálogo aleatorio de 15: los provocan nodos concretos del mapa.
+export const RPG_SPECIAL_EVENTS = [
+    {
+        id: 'hoguera', icon: '🔥', title: 'Hoguera',
+        text: 'Un fuego crepita en un rincón tranquilo de la mazmorra. Por un momento, nadie te persigue.',
+        options: [
+            { label: `Descansar (cura el ${Math.round(RPG_BALANCE.campfire.healPct * 100)} %)`, outcome: {
+                text: 'Te sientas junto al fuego y recuperas las fuerzas.',
+                fx: { healPct: RPG_BALANCE.campfire.healPct }
+            } },
+            { label: 'Afilar tu arma (+1 ATK)', outcome: {
+                text: 'Pasas la piedra por el filo hasta que brilla. Tu próximo golpe será más certero.',
+                fx: { atq: 1 }
+            } }
+        ]
+    }
+];
 
 // --- Banco de adivinanzas del Lector (se sortean 3 por evento) ---
 export const LECTOR_RIDDLES = [

@@ -71,6 +71,11 @@ assert('El mapa es largo y denso: 16 pisos y al menos 40 nodos',
 assert('Hay nodos de evento 🎲 en el mapa y en la leyenda',
     (await page.$$eval('#rpgMap .rpg-node.type-event', els => els.length)) >= 6
     && (await page.$eval('#rpgLegend', el => el.textContent)).includes('Evento'));
+assert('Hay hogueras 🔥 en el mapa y en la leyenda',
+    (await page.$$eval('#rpgMap .rpg-node.type-campfire', els => els.length)) >= 8
+    && (await page.$eval('#rpgLegend', el => el.textContent)).includes('Hoguera'));
+assert('Los sub-jefes son minoría en el mapa (menos del 15 % de los nodos)',
+    (await page.$$eval('#rpgMap .rpg-node.type-subboss', els => els.length)) < 0.15 * (await page.$$eval('#rpgMap .rpg-node', els => els.length)));
 await page.screenshot({ path: shot('mapa-escritorio'), fullPage: true });
 
 console.log('\n⚔️ Combate');
@@ -85,11 +90,15 @@ assert('Ambos se muestran como carta con ATK/HP',
     (await page.$$eval('.rpg-fighter-card .rpg-stat', els => els.length)) === 4);
 const labels = await page.$$eval('#rpgCombatActions .rpg-action-label', els => els.map(e => e.textContent.trim()));
 assert('Acciones: Atacar / Defender / Habilidades / Huir', labels.join(',') === 'ATACAR,DEFENDER,HABILIDADES,HUIR');
+assert('El enemigo muestra su INTENCIÓN antes de que elijas: «Ataca 1» (el Slime empieza atacando)',
+    /Ataca/.test(await page.$eval('#rpgCombatMonster .rpg-intent', el => el.textContent)) && (await page.$$('#rpgCombatMonster .rpg-intent.is-attack')).length === 1);
 
 await page.click('[data-rpg-action="defend"]');
 await sleep(150);
 assert('Defender queda anotado',
     (await page.$$eval('#rpgCombatLogContent .log-entry', els => els.map(e => e.textContent).join('|'))).includes('se defiende'));
+assert('La intención cambia cada ronda: tras atacar, el Slime anuncia que DESCANSA',
+    /Descansa/.test(await page.$eval('#rpgCombatMonster .rpg-intent', el => el.textContent)) && (await page.$$('#rpgCombatMonster .rpg-intent.is-rest')).length === 1);
 
 await page.click('[data-rpg-action="skills"]');
 await sleep(100);
@@ -263,10 +272,10 @@ assert('Con el Voto de Silencio el botón HABILIDADES está bloqueado en combate
 
 // -- El puente de cuerdas: salto de piso
 await openEvent('puente_cuerdas');
-await page.evaluate(() => { window.__realRandom = Math.random; Math.random = () => 0.1; });
+await page.evaluate(() => { window.__realRng = window.gameState.rpg.rng; window.gameState.rpg.rng = () => 0.1; }); // fuerza «el puente aguanta»
 await page.click('[data-rpg-event-opt="0"]');
 await sleep(120);
-await page.evaluate(() => { Math.random = window.__realRandom; });
+await page.evaluate(() => { window.gameState.rpg.rng = window.__realRng; });
 await page.click('#btnRpgEventContinue');
 await sleep(200);
 const skipCheck = await page.evaluate(() => {
@@ -335,31 +344,328 @@ await page.screenshot({ path: shot('combate-lector'), fullPage: true });
 await page.evaluate(() => { const h = window.gameState.rpg.hero; h.atq = 999; });
 await finishCombat();
 
+// ---------------------------------------------
+async function walkTo(type) {
+    await page.click('#btnRpgNewMap');
+    await sleep(300);
+    await page.evaluate(() => { const h = window.gameState.rpg.hero; h.atq = 999; h.hp = h.maxHp = 999; });
+    for (let step = 0; step < 25; step++) {
+        const target = await page.$(`#rpgMap .rpg-node.type-${type}.is-available`);
+        if (target) return target;
+        const avail = await page.$$('#rpgMap .rpg-node.is-available');
+        if (!avail.length) throw new Error('sin nodos disponibles');
+        await stepNode(avail[0]);
+    }
+    throw new Error(`no se encontró un nodo ${type} en la ruta`);
+}
+
+console.log('\n🔥 Hoguera');
+{
+    const camp = await walkTo('campfire');
+    await page.evaluate(() => { const h = window.gameState.rpg.hero; h.hp = 50; h.maxHp = 100; });
+    await camp.click();
+    await sleep(150);
+    assert('Pisar una hoguera abre la vista de descanso con 2 decisiones', await visible('#rpgEventView')
+        && (await eventText()).includes('Hoguera') && (await page.$$('#rpgEventBody [data-rpg-event-opt]')).length === 2);
+    const opts = await page.$$eval('.rpg-event-option', els => els.map(e => e.textContent));
+    assert('Las opciones son Descansar (con la cura a la vista) y Afilar el arma', /Descansar.*30 %/.test(opts[0]) && /Afilar/.test(opts[1]));
+    await page.screenshot({ path: shot('hoguera'), fullPage: true });
+    await page.click('[data-rpg-event-opt="0"]');
+    await sleep(150);
+    assert('Descansar cura el 30 % de la vida máxima (+30 HP) y lo muestra', (await chips()).join('|') === '+30 HP' && (await heroNow()).hp === 80);
+    await page.click('#btnRpgEventContinue');
+    await sleep(200);
+    assert('La hoguera queda como tu posición en el mapa', await visible('#rpgMapView') && (await page.$$('#rpgMap .rpg-node.is-current.type-campfire')).length === 1);
+    assert('La hoguera cuenta en la partida y no gasta ningún evento del catálogo',
+        await page.evaluate(() => window.gameState.rpg.stats.campfires === 1 && !window.gameState.rpg.usedEvents.includes('hoguera')));
+
+    const camp2 = await walkTo('campfire');
+    await camp2.click();
+    await sleep(150);
+    const atqBeforeSharpen = (await heroNow()).atq;
+    await page.click('[data-rpg-event-opt="1"]');
+    await sleep(150);
+    assert('Afilar el arma da +1 ATK', (await chips()).join('|') === '+1 ATK' && (await heroNow()).atq === atqBeforeSharpen + 1);
+    await page.click('#btnRpgEventContinue');
+    await sleep(150);
+}
+
+// Abre un combate concreto (héroe con 500 de vida y 1 de ATK) para probar la interfaz sin depender del mapa
+async function showCombat(type, floor, heroHp = 500) {
+    await page.evaluate(({ type, floor, heroHp }) => {
+        const r = window.gameState.rpg;
+        r.hero.hp = heroHp; r.hero.maxHp = Math.max(heroHp, r.hero.maxHp); r.hero.atq = 1;
+        r.combat = window.Engine.createRpgCombat(r.hero, window.Engine.createRpgMonster(type, floor), r.rng);
+        r.pendingNodeId = r.map.nodes[0].id; r.combatMenu = 'main';
+        window.UI.toggleRpgView('rpgCombatView');
+        window.UI.hideRpgCombatResult(); window.UI.clearRpgCombatLog();
+        window.UI.renderRpgCombat(r.combat, { menu: 'main' });
+    }, { type, floor, heroHp });
+    await sleep(150);
+}
+
+console.log('\n👁️ Intenciones visibles');
+{
+    const intentText = () => page.$eval('#rpgCombatMonster .rpg-intent', el => el.textContent.replace(/\s+/g, ' ').trim());
+    const hint = act => page.$eval(`[data-rpg-action="${act}"] .rpg-action-hint`, el => el.textContent);
+    const heroHp = () => page.evaluate(() => window.gameState.rpg.hero.hp);
+
+    // Orco (piso 8): carga y luego golpe fuerte
+    await showCombat('monster', 7);
+    assert('El Orco empieza «reuniendo fuerzas» (⚡) y no ataca', /Reúne fuerzas/.test(await intentText()) && (await page.$$('#rpgCombatMonster .rpg-intent.is-charge')).length === 1);
+    assert('Si no va a atacar, la pista de Defender lo dice', /no te ataca/i.test(await hint('defend')));
+    await page.click('[data-rpg-action="defend"]');
+    await sleep(150);
+    assert('Defenderte cuando no ataca no sirve de nada: no pierdes vida', await heroHp() === 500);
+    assert('La siguiente intención es un GOLPE FUERTE (💥) con su daño a la vista',
+        (await page.$$('#rpgCombatMonster .rpg-intent.is-heavy')).length === 1 && /Golpe fuerte/.test(await intentText()));
+    const dmg = Number(await page.$eval('#rpgCombatMonster .rpg-intent-value', el => el.textContent));
+    const shown = await hint('defend');
+    assert('La pista de Defender calcula lo que recibirías: «Recibiría X en vez de Y»',
+        new RegExp(`Recibiría ${Math.ceil(dmg / 2)} en vez de ${dmg}`).test(shown));
+    await page.screenshot({ path: shot('combate-intencion'), fullPage: true });
+    const before = await heroHp();
+    await page.click('[data-rpg-action="defend"]');
+    await sleep(150);
+    assert('Defender ante el golpe fuerte lo reduce a la mitad, justo como anunciaba', before - (await heroHp()) === Math.ceil(dmg / 2));
+
+    // Esqueleto (piso 6): se protege primero
+    await showCombat('monster', 5);
+    assert('El Esqueleto anuncia que SE PROTEGE (🛡️)', /Se protege/.test(await intentText()) && (await page.$$('#rpgCombatMonster .rpg-intent.is-guard')).length === 1);
+    assert('La pista de Atacar avisa de que el daño se reducirá', /se protege/.test(await hint('attack')));
+    await page.evaluate(() => { window.gameState.rpg.hero.atq = 6; window.UI.renderRpgCombat(window.gameState.rpg.combat, { menu: 'main' }); });
+    const mhp = await page.evaluate(() => window.gameState.rpg.combat.monster.hp);
+    await page.click('[data-rpg-action="attack"]');
+    await sleep(150);
+    assert('Atacar a un enemigo que se protege hace la mitad (6 → 3)', mhp - (await page.evaluate(() => window.gameState.rpg.combat.monster.hp)) === 3);
+    assert('La intención es siempre visible mientras el combate sigue', (await page.$$('#rpgCombatMonster .rpg-intent')).length === 1);
+
+    // Al terminar el combate la intención desaparece
+    await page.evaluate(() => { window.gameState.rpg.hero.atq = 9999; });
+    await page.click('[data-rpg-action="attack"]');
+    await sleep(150);
+    assert('Al vencer, la carta del enemigo ya no muestra intención', (await page.$$('#rpgCombatMonster .rpg-intent')).length === 0);
+    // salir del combate ficticio
+    await page.evaluate(() => { const r = window.gameState.rpg; r.combat = null; r.combatResult = null; window.UI.hideRpgCombatResult(); window.UI.toggleRpgView('rpgMapView'); });
+}
+
+console.log('\n🏁 Fin de partida');
+{
+    await page.click('#btnRpgNewMap');
+    await sleep(300);
+    const start = await page.evaluate(() => ({ seed: window.gameState.rpg.seed, map: JSON.stringify(window.gameState.rpg.map) }));
+    await page.evaluate(() => { window.gameState.rpg.hero.hp = 1; });
+    await (await page.$('#rpgMap .rpg-node.is-available')).click();
+    await sleep(200);
+    for (let i = 0; i < 40 && !(await page.$('#btnRpgCombatContinue')); i++) {
+        await page.click('[data-rpg-action="attack"]');
+        await sleep(40);
+    }
+    assert('Al caer, el panel de combate ofrece VER RESUMEN', (await page.$eval('#btnRpgCombatContinue', el => el.textContent)).includes('VER RESUMEN'));
+    await page.click('#btnRpgCombatContinue');
+    await sleep(200);
+    const endText = await page.$eval('#rpgEndBody', el => el.textContent);
+    assert('Aparece la pantalla de fin de partida (derrota)', await visible('#rpgEndView') && !(await visible('#rpgCombatView')) && endText.includes('Has caído') && endText.includes('💀'));
+    assert('La derrota dice quién te ha vencido y en qué piso', endText.includes('Slime') && endText.includes('piso 1 de 15'));
+    assert('La derrota incluye la línea de «casi» con el % de vida que le quedaba', /¡Casi!|aún conservaba/.test(endText) && /\d+ %/.test(endText));
+    assert('El resumen muestra 6 datos: combates, eventos, hogueras, cofres, ATK y HP máx', (await page.$$('#rpgEndBody .rpg-end-stat')).length === 6);
+    assert('Se muestra la semilla con su código (XXXX-XXX) y se puede copiar',
+        /^[0-9A-Z]{4}-[0-9A-Z]{3}$/.test(await page.$eval('#rpgEndSeed', el => el.textContent)) && !!(await page.$('#btnRpgCopySeed')));
+    assert('Hay tres salidas: nueva ruta, repetir con la misma semilla e inicio',
+        !!(await page.$('#btnRpgEndNew')) && !!(await page.$('#btnRpgEndRepeat')) && !!(await page.$('#btnRpgEndHome')));
+    await page.screenshot({ path: shot('fin-derrota'), fullPage: true });
+
+    await page.click('#btnRpgEndRepeat');
+    await sleep(400);
+    const again = await page.evaluate(() => ({ seed: window.gameState.rpg.seed, map: JSON.stringify(window.gameState.rpg.map), atq: window.gameState.rpg.hero.atq, hp: window.gameState.rpg.hero.hp }));
+    assert('REPETIR CON LA MISMA SEMILLA da el mismo mapa exacto y un héroe nuevo', await visible('#rpgMapView') && again.seed === start.seed && again.map === start.map && again.atq === 1 && again.hp === 25);
+
+    await page.evaluate(() => { window.gameState.rpg.hero.hp = 1; });
+    await (await page.$('#rpgMap .rpg-node.is-available')).click();
+    await sleep(200);
+    for (let i = 0; i < 40 && !(await page.$('#btnRpgCombatContinue')); i++) { await page.click('[data-rpg-action="attack"]'); await sleep(40); }
+    await page.click('#btnRpgCombatContinue');
+    await sleep(200);
+    await page.click('#btnRpgEndNew');
+    await sleep(400);
+    const fresh = await page.evaluate(() => ({ seed: window.gameState.rpg.seed, atq: window.gameState.rpg.hero.atq }));
+    assert('NUEVA RUTA empieza otra partida con otra semilla', await visible('#rpgMapView') && fresh.seed !== start.seed && fresh.atq === 1);
+}
+
+console.log('\n🌱 Semilla');
+{
+    await page.click('#btnRpgAbandon');
+    await sleep(200);
+    const mapOf = async text => {
+        await page.fill('#rpgSeedInput', text);
+        await page.click('#btnRpgStart');
+        await sleep(300);
+        const m = await page.evaluate(() => JSON.stringify(window.gameState.rpg.map));
+        await page.click('#btnRpgAbandon');
+        await sleep(200);
+        return m;
+    };
+    const a1 = await mapOf('mi ruta secreta');
+    const a2 = await mapOf('MI-RUTA  secreta');
+    const b = await mapOf('otra ruta');
+    assert('La misma semilla escrita a mano da siempre el mismo mapa (sin importar mayúsculas, espacios ni guiones)', a1 === a2);
+    assert('Otra semilla da otro mapa', a1 !== b);
+}
+
+console.log('\n💾 Guardar y retomar');
+{
+    const goStart = async () => { await page.reload({ waitUntil: 'load' }); await sleep(500); };
+    const seedText = () => page.evaluate(() => window.gameState.rpg.seed);
+    await page.evaluate(() => localStorage.clear());
+    await goStart();
+    assert('Sin partida guardada no aparece el botón de continuar', !(await visible('#btnRpgContinue')));
+
+    // 1) A mitad de un combate
+    await page.click('#btnRpgStart');
+    await sleep(300);
+    const seed1 = await seedText();
+    await (await page.$('#rpgMap .rpg-node.is-available')).click();
+    await sleep(200);
+    await page.click('[data-rpg-action="attack"]');
+    await sleep(150);
+    const inFight = await page.evaluate(() => { const c = window.gameState.rpg.combat; return { mhp: c.monster.hp, hhp: window.gameState.rpg.hero.hp, intent: JSON.stringify(c.monster.intent), turn: c.turn, name: c.monster.name }; });
+    await goStart();
+    assert('Tras recargar, en el inicio aparece CONTINUAR con el piso, la vida y la semilla', await visible('#btnRpgContinue')
+        && /CONTINUAR/.test(await page.$eval('#btnRpgContinue', el => el.textContent)) && /HP/.test(await page.$eval('#btnRpgContinue', el => el.textContent)));
+    await page.click('#btnRpgContinue');
+    await sleep(300);
+    const restored = await page.evaluate(() => { const c = window.gameState.rpg.combat; return { mhp: c.monster.hp, hhp: window.gameState.rpg.hero.hp, intent: JSON.stringify(c.monster.intent), turn: c.turn, name: c.monster.name, seed: window.gameState.rpg.seed }; });
+    assert('Retomas EN MEDIO DEL COMBATE: mismo enemigo, misma vida, misma ronda y la misma intención',
+        await visible('#rpgCombatView') && restored.mhp === inFight.mhp && restored.hhp === inFight.hhp && restored.turn === inFight.turn
+        && restored.intent === inFight.intent && restored.name === inFight.name && restored.seed === seed1);
+    assert('El combate retomado se ve completo: intención y acciones disponibles',
+        (await page.$$('#rpgCombatMonster .rpg-intent')).length === 1 && (await page.$$('#rpgCombatActions .rpg-action')).length === 4);
+    for (let i = 0; i < 40 && !(await page.$('#btnRpgCombatContinue')); i++) { await page.click('[data-rpg-action="attack"]'); await sleep(40); }
+    await page.click('#btnRpgCombatContinue');
+    await sleep(250);
+
+    // 2) En el mapa
+    const onMap = await page.evaluate(() => ({ cur: window.gameState.rpg.currentId, hp: window.gameState.rpg.hero.hp, atq: window.gameState.rpg.hero.atq, visited: window.gameState.rpg.visitedIds.length, mapJson: JSON.stringify(window.gameState.rpg.map) }));
+    await goStart();
+    await page.click('#btnRpgContinue');
+    await sleep(300);
+    const backOnMap = await page.evaluate(() => ({ cur: window.gameState.rpg.currentId, hp: window.gameState.rpg.hero.hp, atq: window.gameState.rpg.hero.atq, visited: window.gameState.rpg.visitedIds.length, mapJson: JSON.stringify(window.gameState.rpg.map) }));
+    assert('Retomas EN EL MAPA: misma posición, mismo héroe, mismo recorrido y mismo mapa',
+        await visible('#rpgMapView') && JSON.stringify(backOnMap) === JSON.stringify(onMap));
+    assert('El nodo actual se ve marcado y los siguientes están disponibles', (await page.$$('#rpgMap .rpg-node.is-current')).length === 1 && (await page.$$('#rpgMap .rpg-node.is-available')).length >= 1);
+    assert('El diario de la ruta se recupera', (await page.$$('#rpgLogContent .log-entry')).length >= 2);
+
+    // 3) En medio de un evento (y con el resultado ya mostrado)
+    await openEvent('pozo_deseos');
+    await goStart();
+    await page.click('#btnRpgContinue');
+    await sleep(300);
+    assert('Retomas EN MEDIO DE UN EVENTO: la misma situación con sus 2 decisiones',
+        await visible('#rpgEventView') && (await eventText()).includes('El pozo de los deseos') && (await page.$$('#rpgEventBody [data-rpg-event-opt]')).length === 2);
+    await page.click('[data-rpg-event-opt="0"]');
+    await sleep(150);
+    const chipsBefore = await chips();
+    await goStart();
+    await page.click('#btnRpgContinue');
+    await sleep(300);
+    assert('Retomas con el RESULTADO del evento a la vista (mismos cambios y botón para seguir)',
+        (await chips()).join('|') === chipsBefore.join('|') && !!(await page.$('#btnRpgEventContinue')));
+    await page.click('#btnRpgEventContinue');
+    await sleep(200);
+    assert('Tras continuar vuelves al mapa sin haber repetido el evento', await visible('#rpgMapView') && (await page.$$('#rpgMap .rpg-node.is-current.type-event')).length === 1);
+
+    // 4) Evento con combate: se retoma el combate y, al ganar, se aplica el premio del evento una sola vez
+    await openEvent('chica_herida');
+    await page.click('[data-rpg-event-opt="0"]');
+    await sleep(150);
+    await page.click('#btnRpgEventContinue');
+    await sleep(250);
+    const atqBeforeFight = (await heroNow()).atq;
+    await goStart();
+    await page.click('#btnRpgContinue');
+    await sleep(300);
+    assert('Retomas un COMBATE DE EVENTO (los bandidos)', await visible('#rpgCombatView') && (await page.$eval('#rpgCombatMonster', el => el.textContent)).includes('Jefe de los bandidos'));
+    for (let i = 0; i < 60 && !(await page.$('#btnRpgCombatContinue')); i++) { await page.click('[data-rpg-action="attack"]'); await sleep(40); }
+    await goStart();
+    await page.click('#btnRpgContinue');
+    await sleep(300);
+    assert('Retomas con el panel de VICTORIA a la vista, sin haber cobrado el premio dos veces',
+        !!(await page.$('#btnRpgCombatContinue')) && (await heroNow()).atq === atqBeforeFight + 1);
+    await page.click('#btnRpgCombatContinue');
+    await sleep(250);
+
+    // 5) Al terminar la partida, el guardado se borra
+    await showCombat('monster', 5, 1); // héroe con 1 de vida contra un Esqueleto: caerá enseguida
+    for (let i = 0; i < 40 && !(await page.$('#btnRpgCombatContinue')); i++) { await page.click('[data-rpg-action="attack"]'); await sleep(40); }
+    await page.click('#btnRpgCombatContinue');
+    await sleep(200);
+    assert('Al terminar la partida se borra el guardado', await page.evaluate(() => localStorage.getItem('easy-hero-save') === null));
+    await goStart();
+    assert('Tras una partida terminada no se ofrece continuar', !(await visible('#btnRpgContinue')));
+
+    // 6) Guardados de otra versión, dañados o ausentes
+    await page.evaluate(() => localStorage.setItem('easy-hero-save', JSON.stringify({ v: 999, hero: {} })));
+    await goStart();
+    assert('Un guardado de otra versión se descarta con un aviso y sin botón de continuar',
+        !(await visible('#btnRpgContinue')) && /otra versión/.test(await page.$eval('#rpgStartNotice', el => el.textContent))
+        && await page.evaluate(() => localStorage.getItem('easy-hero-save') === null));
+    await page.evaluate(() => localStorage.setItem('easy-hero-save', '{esto no es json'));
+    await goStart();
+    assert('Un guardado dañado no rompe el juego: se descarta y se puede empezar de nuevo',
+        !(await visible('#btnRpgContinue')) && await visible('#btnRpgStart'));
+    await page.click('#btnRpgStart');
+    await sleep(300);
+    assert('Tras un guardado dañado se puede jugar con normalidad', await visible('#rpgMapView') && (await page.$$('#rpgMap .rpg-node.is-available')).length === 6);
+
+    // 7) Sin almacenamiento (modo privado)
+    const blocked = await (await browser.newContext({ viewport: { width: 1100, height: 800 } })).newPage();
+    const blockedErrors = [];
+    blocked.on('pageerror', e => blockedErrors.push(e.message));
+    await blocked.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('bloqueado'); } }); });
+    await blocked.goto(url, { waitUntil: 'load' });
+    await sleep(500);
+    await blocked.click('#btnRpgStart');
+    await sleep(300);
+    await (await blocked.$('#rpgMap .rpg-node.is-available')).click();
+    await sleep(200);
+    assert('Con el almacenamiento bloqueado el juego sigue funcionando (sin guardar y sin errores)',
+        await blocked.$eval('#rpgCombatView', el => getComputedStyle(el).display !== 'none') && blockedErrors.length === 0);
+    await blocked.context().close();
+}
+
 // -- Recorrido completo hasta el jefe pasando por todo tipo de nodos
-console.log('\n🐉 Ruta completa hasta el jefe final (pasando por los eventos)');
-await page.click('#btnRpgNewMap');
+console.log('\n🐉 Ruta completa hasta el jefe final (pasando por eventos y hogueras)');
+await page.evaluate(() => localStorage.clear());
+await page.reload({ waitUntil: 'load' });
+await sleep(500);
+await page.click('#btnRpgStart');
 await sleep(300);
 await page.evaluate(() => { const h = window.gameState.rpg.hero; h.atq = 999; h.hp = h.maxHp = 999; });
-let reachedBoss = false;
+let ended = false;
 let eventsCrossed = 0;
-for (let step = 0; step < 40 && !reachedBoss; step++) {
+let campfiresCrossed = 0;
+for (let step = 0; step < 45 && !ended; step++) {
     const avail = await page.$$('#rpgMap .rpg-node.is-available');
     if (avail.length === 0) break;
     const pick = avail[0];
-    if (await pick.evaluate(el => el.classList.contains('type-event'))) eventsCrossed++;
+    const cls = await pick.evaluate(el => el.className);
+    if (/type-event/.test(cls)) eventsCrossed++;
+    if (/type-campfire/.test(cls)) campfiresCrossed++;
     await stepNode(pick);
-    reachedBoss = (await page.$$('#rpgMap .type-boss.is-current')).length === 1;
+    ended = await visible('#rpgEndView');
 }
-assert('Recorriendo la ruta (peleando y resolviendo eventos) se llega al jefe final', reachedBoss);
-assert('Por el camino se cruzaron eventos', eventsCrossed >= 1);
-assert('Tras el jefe final no queda nada por pisar', (await page.$$('#rpgMap .rpg-node.is-available')).length === 0);
-assert('El diario registró el recorrido', (await page.$$('#rpgLogContent .log-entry')).length >= 8);
-await page.screenshot({ path: shot('mapa-completado'), fullPage: true });
+const winText = ended ? await page.$eval('#rpgEndBody', el => el.textContent) : '';
+assert('Recorriendo la ruta (peleando y resolviendo eventos y hogueras) se vence al jefe y aparece la pantalla de VICTORIA',
+    ended && winText.includes('¡Ruta completada!') && winText.includes('🏆'));
+assert('Se cruzaron eventos y hogueras por el camino', eventsCrossed >= 1 && campfiresCrossed >= 1);
+assert('El resumen de victoria cuenta lo vivido (eventos incluidos)', (await page.$$('#rpgEndBody .rpg-end-stat')).length === 6 && /Eventos vividos/.test(winText));
+assert('Una victoria no muestra la línea de «casi»', !(await page.$('#rpgEndBody .rpg-end-almost')));
+assert('Al ganar no queda nada guardado', await page.evaluate(() => localStorage.getItem('easy-hero-save') === null));
+await page.screenshot({ path: shot('fin-victoria'), fullPage: true });
 
-await page.click('#btnRpgAbandon');
+await page.click('#btnRpgEndHome');
 await sleep(200);
-assert('Abandonar la ruta devuelve a la carta del héroe',
-    await page.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
+assert('INICIO devuelve a la carta del héroe', await page.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
 assert('Sin errores de página durante toda la partida', pageErrors.length === 0);
 if (pageErrors.length) console.log('     ', pageErrors.slice(0, 3));
 

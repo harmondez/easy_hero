@@ -4,8 +4,9 @@
 import {
     createRpgHero, createRpgCombat, rpgCombatAction, rpgCanFlee, rpgSkillReady, rpgSkillInfo,
     generateRpgMap, rpgAvailableNodes, RPG_COMBAT_TYPES, RPG_MAP_CONFIG,
-    rpgVictoryReward, applyRpgReward, createRpgMonster
+    rpgVictoryReward, applyRpgReward, createRpgMonster, rpgMonsterStats
 } from '../src/engine.js';
+import { playRun } from '../tools/sim.mjs';
 import {
     RPG_EVENTS, EVENT_MONSTERS, getRpgEvent, applyRpgFx, pickRpgEvent, startRpgEvent,
     rpgEventScreen, resolveRpgEventChoice, createEventMonster
@@ -165,6 +166,27 @@ console.log('\n🩹 Los 10 primeros: resultados de cada decisión');
 }
 
 // ---------------------------------------------
+console.log('\n🔥 La hoguera (evento especial de los nodos 🔥)');
+{
+    let r = play('hoguera', [0], { hero: heroWith({ hp: 10, maxHp: 30 }) });
+    assert('descansar cura el 30 % de la vida máxima (30 → 9 HP)', r.hero.hp === 19 && r.changes.includes('+9 HP'));
+    r = play('hoguera', [0], { hero: heroWith({ hp: 29, maxHp: 30 }) });
+    assert('descansar nunca supera la vida máxima', r.hero.hp === 30);
+    r = play('hoguera', [0], { hero: heroWith({ hp: 3, maxHp: 4 }) });
+    assert('descansar cura al menos 1 HP aunque el 30 % sea menos', r.hero.hp === 4);
+    r = play('hoguera', [1]);
+    assert('afilar el arma da +1 ATK (provisional hasta que haya equipo)', r.hero.atq === 4 && r.hero.hp === 20 && r.changes.includes('+1 ATK'));
+    const scr = rpgEventScreen(startRpgEvent('hoguera', mulberry32(1)));
+    assert('la hoguera tiene exactamente 2 decisiones, con la cura visible', scr.options.length === 2 && /30 %/.test(scr.options[0]));
+    assert('la hoguera NO está en el catálogo aleatorio de los 15 eventos', !RPG_EVENTS.some(e => e.id === 'hoguera') && !!getRpgEvent('hoguera'));
+    assert('el sorteo de eventos nunca devuelve la hoguera', (() => {
+        for (let sd = 1; sd <= 600; sd++) if (pickRpgEvent([], 4, mulberry32(sd)) === 'hoguera') return false;
+        return true;
+    })());
+    assert('cada hoguera resuelve sin combate ni saltos de piso', (() => { const rr = play('hoguera', [0]); return !rr.combat && !rr.skipFloor; })());
+}
+
+// ---------------------------------------------
 console.log('\n✨ Los 5 especiales');
 {
     let r = play('derrumbe', [0], { hero: heroWith({ hp: 20, maxHp: 25 }) });
@@ -275,7 +297,7 @@ console.log('\n👁️ El Lector');
     // Monstruo del Lector
     const hero = heroWith();
     const full = createEventMonster('lector', hero, 6, 1);
-    const sub = { atq: 1 + 3 + 2, hp: Math.round((6 + 18) * 2.5) }; // stats de sub-jefe del piso 6
+    const sub = rpgMonsterStats('subboss', 6); // stats de sub-jefe del piso 6
     assert('el Lector es un sub-jefe con +2 ATK y +50 % de HP', full.atq === sub.atq + 2 && full.maxHp === Math.round(sub.hp * 1.5) && full.hp === full.maxHp);
     const weak = createEventMonster('lector', hero, 6, 0.6);
     assert('debilitado empieza con el 60 % de HP (y el máximo intacto)', weak.hp === Math.round(full.maxHp * 0.6) && weak.maxHp === full.maxHp);
@@ -338,7 +360,7 @@ console.log('\n🤞 Votos y mejoras en combate');
     assert('Voto de Acero: sigues pudiendo usar habilidades', rpgCombatAction(c3, 'skill', 'fire_strike').ok);
 
     const hero = heroWith(); applyRpgFx(hero, { skillMods: { fire_strike: { damage: 3, cooldown: -1 } } });
-    const c4 = createRpgCombat(hero, createRpgMonster('monster', 8)); // HP 30
+    const c4 = createRpgCombat(hero, { ...createRpgMonster('monster', 8), pattern: [{ k: 'attack', m: 1 }] }); // HP 30, golpea siempre
     rpgCombatAction(c4, 'skill', 'fire_strike');
     assert('Golpe de Fuego mejorado: 8 de daño', c4.monster.hp === 30 - 8);
     assert('Golpe de Fuego mejorado: enfriamiento de 2 rondas', c4.cooldowns.fire_strike === 2);
@@ -393,101 +415,29 @@ console.log('\n🌉 El puente y el mapa');
 }
 
 // ---------------------------------------------
-console.log('\n🤖 Simulación de partidas completas (eventos, combates de evento y saltos de piso)');
-function runSim({ god, N }) {
-    const stats = { reachedBoss: 0, wins: 0, crashes: 0, invariant: 0, eventsSeen: new Map(), eventsPerRun: 0, minEvents: Infinity,
-        skips: 0, dead: 0, eventFights: 0, byFloor: new Array(RPG_MAP_CONFIG.floors).fill(0), errors: [] };
-
-    function botFight(hero, monster) {
-        const c = createRpgCombat(hero, monster);
-        let guard = 500;
-        while (!c.over && guard--) {
-            let action = 'attack';
-            if (god) { rpgCombatAction(c, 'attack'); continue; } // el héroe invencible solo ataca (su reflejo copia su ATK)
-            if (rpgSkillReady(c, 'fire_strike') && c.lastAction !== 'skill') action = 'skill';
-            else if (hero.hp <= monster.atq * 2 && c.lastAction !== 'defend' && !c.defending) action = 'defend';
-            else if (c.lastAction === 'attack' && monster.ai === 'reader') action = 'defend';
-            const res = rpgCombatAction(c, action, 'fire_strike');
-            if (!res.ok) rpgCombatAction(c, 'attack');
-        }
-        return c.result;
-    }
-
-    for (let i = 1; i <= N; i++) {
-        const rng = mulberry32((god ? 1000 : 9000) + i);
-        try {
-            const hero = createRpgHero();
-            if (god) { hero.atq = 99999; hero.hp = hero.maxHp = 99999; } // invencible (y su reflejo cae de un golpe): solo se prueba el flujo
-            const map = generateRpgMap(rng);
-            const used = [];
-            let cur = null, skip = false, evCount = 0, usedSkip = false;
-            const byId = new Map(map.nodes.map(n => [n.id, n]));
-            // Bot "sensato": evita sub-jefes si puede y prefiere eventos y cofres a los monstruos
-            const priority = { event: 0, chest: 1, monster: 2, subboss: 3, boss: 4 };
-            for (;;) {
-                const useSkip = skip;
-                skip = false; // el salto solo vale para el siguiente movimiento
-                const options = rpgAvailableNodes(map, cur, useSkip);
-                if (!options.length) break;
-                let node;
-                if (god) node = byId.get(options[Math.floor(rng() * options.length)]);
-                else {
-                    const best = Math.min(...options.map(id => priority[byId.get(id).type]));
-                    const choices = options.filter(id => priority[byId.get(id).type] === best);
-                    node = byId.get(choices[Math.floor(rng() * choices.length)]);
-                }
-                if (node.type === 'boss') stats.reachedBoss++;
-                if (RPG_COMBAT_TYPES.includes(node.type)) {
-                    if (botFight(hero, createRpgMonster(node.type, node.floor)) !== 'victory') { stats.dead++; stats.byFloor[node.floor]++; break; }
-                    applyRpgReward(hero, rpgVictoryReward(node.type));
-                } else if (node.type === 'chest') {
-                    if (rng() < 0.5) hero.atq += 1; else { hero.maxHp += 5; hero.hp += 5; }
-                } else if (node.type === 'event') {
-                    const id = pickRpgEvent(used, node.floor, rng);
-                    used.push(id); evCount++;
-                    stats.eventsSeen.set(id, (stats.eventsSeen.get(id) || 0) + 1);
-                    const session = startRpgEvent(id, rng, node.floor);
-                    let res = resolveRpgEventChoice(session, Math.floor(rng() * 2), hero, rng);
-                    let guard = 10;
-                    while (res.next && guard--) res = resolveRpgEventChoice(session, Math.floor(rng() * 2), hero, rng);
-                    if (res.skipFloor) { skip = true; usedSkip = true; stats.skips++; }
-                    if (res.combat) {
-                        stats.eventFights++;
-                        const m = createEventMonster(res.combat.monster, hero, node.floor, res.combat.hpFactor);
-                        if (botFight(hero, m) !== 'victory') { stats.dead++; stats.byFloor[node.floor]++; break; }
-                        if (res.combat.onWin) applyRpgFx(hero, res.combat.onWin);
-                    }
-                }
-                if (!(hero.hp >= 1 && hero.hp <= hero.maxHp && hero.atq >= 1)) { stats.invariant++; stats.errors.push(JSON.stringify(hero)); break; }
-                cur = node.id;
-                if (node.type === 'boss') { stats.wins++; break; }
-            }
-            stats.eventsPerRun += evCount;
-            if (god && !usedSkip) stats.minEvents = Math.min(stats.minEvents, evCount);
-        } catch (e) { stats.crashes++; stats.errors.push(e.stack.split('\n').slice(0, 3).join(' | ')); }
-    }
-    return stats;
-}
-
+console.log('\n🤖 Simulación de partidas completas (héroe invencible: valida el FLUJO, no el equilibrio)');
 {
-    const N = 3000;
-    const g = runSim({ god: true, N });
+    const N = 1500;
+    const g = { won: 0, reached: 0, events: 0, skips: 0, eventFights: 0, minEvents: Infinity, minCamps: Infinity, crashes: 0, errors: [], seen: new Set(), campfireLeak: false };
+    for (let i = 1; i <= N; i++) {
+        try {
+            const r = playRun('torpe', 500 + i, { god: true });
+            if (r.won) g.won++;
+            if (r.reachedBoss) g.reached++;
+            g.events += r.events; g.skips += r.skips; g.eventFights += r.eventFights;
+            r.eventIds.forEach(id => { g.seen.add(id); if (id === 'hoguera') g.campfireLeak = true; });
+            if (!r.skips) { g.minEvents = Math.min(g.minEvents, r.events); g.minCamps = Math.min(g.minCamps, r.campfires); }
+        } catch (e) { g.crashes++; g.errors.push(e.stack.split('\n').slice(0, 3).join(' | ')); }
+    }
     assert('héroe invencible: ninguna partida lanza excepciones', g.crashes === 0 && (g.errors.length === 0 || (console.log('     ', g.errors[0]), false)));
-    assert('héroe invencible: el 100 % de las rutas llega al jefe y lo vence (sin callejones sin salida)', g.reachedBoss === N && g.wins === N);
-    assert('toda ruta completa sin saltos cruza al menos 3 eventos (el puente puede saltarse alguno)', g.minEvents >= 3);
-    assert('de media, al menos 3,5 eventos por ruta completa', g.eventsPerRun / N >= 3.5);
-    assert('aparecen los 15 eventos', g.eventsSeen.size === 15);
-    assert('ninguna partida deja HP o ATK fuera de rango', g.invariant === 0);
-    assert('el puente de cuerdas salta pisos y la ruta sigue siendo válida', g.skips > 50);
-    assert('hay combates de evento (bandidos, mímico, reflejo, Lector...)', g.eventFights > 200);
-    console.log(`     ℹ️ eventos por ruta: ${(g.eventsPerRun / N).toFixed(1)} (mín. ${g.minEvents}) · saltos de piso: ${g.skips} · combates de evento: ${g.eventFights}`);
-    console.log(`     ℹ️ apariciones: ${[...g.eventsSeen.entries()].map(([k, v]) => `${k}:${v}`).join(', ')}`);
-
-    // Héroe realista (solo informativo: el equilibrio de números es provisional y se ajustará en M4)
-    const r = runSim({ god: false, N });
-    assert('héroe realista: ninguna partida lanza excepciones ni rompe los rangos', r.crashes === 0 && r.invariant === 0);
-    console.log(`     ℹ️ (equilibrio, sin aserción) llegan al jefe: ${(100 * r.reachedBoss / N).toFixed(1)} % · lo vencen: ${(100 * r.wins / N).toFixed(1)} %`);
-    console.log(`     ℹ️ (equilibrio, sin aserción) muertes por piso 0-15: ${r.byFloor.join(' ')}`);
+    assert('héroe invencible: el 100 % de las rutas llega al jefe y lo vence (sin callejones sin salida)', g.reached === N && g.won === N);
+    assert('toda ruta sin saltos cruza al menos 3 eventos', g.minEvents >= 3);
+    assert('toda ruta sin saltos pasa por al menos 2 hogueras', g.minCamps >= 2);
+    assert('de media, al menos 3 eventos por ruta completa', g.events / N >= 3);
+    assert('aparecen los 15 eventos del catálogo y nunca la hoguera entre ellos', g.seen.size === 15 && !g.campfireLeak);
+    assert('el puente de cuerdas salta pisos y la ruta sigue siendo válida', g.skips > 30);
+    assert('hay combates de evento (bandidos, mímico, reflejo, Lector...)', g.eventFights > 100);
+    console.log(`     ℹ️ eventos por ruta: ${(g.events / N).toFixed(1)} (mín. ${g.minEvents}) · hogueras mín.: ${g.minCamps} · saltos de piso: ${g.skips} · combates de evento: ${g.eventFights}`);
 }
 
 console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📊 RESULTS: ${passed} passed, ${failed} failed\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);

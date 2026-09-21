@@ -1,4 +1,4 @@
-import * as Engine from './engine.js?v=20260921b';
+import * as Engine from './engine.js?v=20260922a';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -55,7 +55,7 @@ export function playHitAnimation(selector, isAlly) {
 // --- 🗡️ MODO RPG (Carta de Héroe + mapa de ruta) ---
 
 export function toggleRpgView(view) {
-    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgCombatView'].forEach(id => {
+    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgCombatView', 'rpgEndView'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = id === view ? 'block' : 'none';
     });
@@ -196,13 +196,24 @@ export function clearRpgLog() {
 
 // --- ⚔️ Combate RPG (héroe a la izquierda, monstruo a la derecha) ---
 
-function _rpgFighterCard(f, tag, status) {
+// La intención del monstruo: lo que va a hacer en su turno, visible ANTES de elegir la acción
+function _rpgIntentHtml(monster) {
+    const v = Engine.rpgIntentView(monster);
+    if (!v) return '';
+    const value = v.value != null ? ` <span class="rpg-intent-value">${v.value}</span>` : '';
+    return `<div class="rpg-intent is-${esc(v.kind)}" title="${esc(v.hint)}">
+        <span class="rpg-intent-icon">${v.icon}</span><span class="rpg-intent-text"><b>${esc(v.label)}</b>${value}</span>
+    </div>`;
+}
+
+function _rpgFighterCard(f, tag, status, intentHtml = '') {
     const hpPct = Math.max(0, Math.min(100, (f.hp / f.maxHp) * 100));
     return `
         <article class="rpg-fighter-card ${f.hp <= 0 ? 'is-down' : ''}" style="--accent: ${esc(f.color)}">
             <div class="rpg-fighter-tag">${esc(tag)}</div>
             <div class="rpg-fighter-icon">${f.icon}</div>
             <div class="rpg-fighter-name">${esc(f.name)}</div>
+            ${intentHtml}
             <div class="rpg-fighter-hpbar"><div class="rpg-fighter-hpfill" style="width:${hpPct}%"></div></div>
             <div class="rpg-fighter-stats">
                 <div class="rpg-stat atk"><b>ATK</b> ${f.atq}</div>
@@ -241,7 +252,7 @@ export function renderRpgCombat(combat, opts = {}) {
     const heroSlot = document.getElementById('rpgCombatHero');
     if (heroSlot) heroSlot.innerHTML = _rpgFighterCard(hero, `Nivel ${hero.level}`, combat.defending ? '🛡️ Defendiendo' : '');
     const monSlot = document.getElementById('rpgCombatMonster');
-    if (monSlot) monSlot.innerHTML = _rpgFighterCard(monster, monster.tag || tags[monster.type] || 'Monstruo', _rpgMonsterStatus(combat));
+    if (monSlot) monSlot.innerHTML = _rpgFighterCard(monster, monster.tag || tags[monster.type] || 'Monstruo', _rpgMonsterStatus(combat), combat.over ? '' : _rpgIntentHtml(monster));
 
     const bar = document.getElementById('rpgCombatActions');
     if (!bar) return;
@@ -258,14 +269,19 @@ export function renderRpgCombat(combat, opts = {}) {
         return;
     }
 
-    const dmg = Math.max(1, hero.atq);
+    const dmg = Engine.rpgAttackPreview(combat);
+    const guarded = monster.intent && monster.intent.k === 'guard';
+    const incoming = Engine.rpgIncomingPreview(combat, false);
+    const defendHint = incoming > 0
+        ? `Recibiría ${Engine.rpgIncomingPreview(combat, true)} en vez de ${incoming}`
+        : 'Ahora no te ataca: defenderte no aporta nada';
     const canFlee = Engine.rpgCanFlee(combat);
     const noSkills = !!(hero.vows && hero.vows.noSkills);
     const fleeHint = canFlee ? 'Salgo del combate (me golpean al huir)'
         : (hero.vows && hero.vows.noFlee ? 'Tu voto de acero lo impide' : 'No se puede huir de este combate');
     bar.innerHTML =
-        _rpgActionButton('data-rpg-action="attack"', '🗡️', 'ATACAR', `Ataco una vez: ${dmg} de daño`, false) +
-        _rpgActionButton('data-rpg-action="defend"', '🛡️', 'DEFENDER', 'El próximo golpe me hace la mitad', false) +
+        _rpgActionButton('data-rpg-action="attack"', '🗡️', 'ATACAR', `Ataco una vez: ${dmg} de daño${guarded ? ' (se protege)' : ''}`, false) +
+        _rpgActionButton('data-rpg-action="defend"', '🛡️', 'DEFENDER', defendHint, false) +
         _rpgActionButton('data-rpg-action="skills"', '✨', 'HABILIDADES', noSkills ? 'Tu voto de silencio lo impide' : 'Golpe de Fuego y más', noSkills) +
         _rpgActionButton('data-rpg-action="flee"', '🏃', 'HUIR', fleeHint, !canFlee);
 }
@@ -328,6 +344,7 @@ export function renderRpgEventScreen(view) {
     const options = (view.options || []).map((label, i) =>
         `<button type="button" class="rpg-event-option" data-rpg-event-opt="${i}"><span class="rpg-event-option-key">${i === 0 ? 'A' : 'B'}</span><span>${esc(label)}</span></button>`).join('');
     el.className = 'rpg-event-card';
+    if (view.accent) el.style.setProperty('--accent', view.accent); else el.style.removeProperty('--accent');
     el.innerHTML = `
         <div class="rpg-event-icon">${view.icon}</div>
         <div class="rpg-event-title">${esc(view.title)}</div>
@@ -345,10 +362,57 @@ export function renderRpgEventResult(view) {
         return `<span class="rpg-event-chip ${cls}">${esc(c)}</span>`;
     }).join('');
     el.className = 'rpg-event-card is-result';
+    el.style.removeProperty('--accent');
     el.innerHTML = `
         <div class="rpg-event-icon">${view.icon}</div>
         <div class="rpg-event-title">${esc(view.title)}</div>
         ${(view.lines || []).map(l => `<p class="rpg-event-text">${esc(l)}</p>`).join('')}
         ${changes ? `<div class="rpg-event-changes">${changes}</div>` : ''}
         <button type="button" id="btnRpgEventContinue" class="btn-forge">${esc(view.button || 'CONTINUAR')}</button>`;
+}
+
+// --- ▶️ Inicio: continuar partida guardada ---
+
+/** save: { floorText, hpText, seedCode } o null si no hay partida guardada. */
+export function renderRpgContinue(save) {
+    const btn = document.getElementById('btnRpgContinue');
+    if (!btn) return;
+    if (!save) { btn.style.display = 'none'; btn.innerHTML = ''; return; }
+    btn.style.display = '';
+    btn.innerHTML = `▶️ CONTINUAR LA RUTA <span class="rpg-continue-detail">${esc(save.floorText)} · ${esc(save.hpText)} · semilla ${esc(save.seedCode)}</span>`;
+}
+
+// --- 🏁 Fin de partida ---
+
+/**
+ * summary: { result: 'victory'|'defeat', title, cause, almost, floorText, stats: [{icon, label, value}],
+ *            events: [texto], seedCode, build: [texto] }
+ */
+export function renderRpgEnd(summary) {
+    const el = document.getElementById('rpgEndBody');
+    if (!el || !summary) return;
+    const win = summary.result === 'victory';
+    const stats = (summary.stats || []).map(x =>
+        `<div class="rpg-end-stat"><span class="rpg-end-stat-icon">${x.icon}</span><span class="rpg-end-stat-value">${esc(String(x.value))}</span><span class="rpg-end-stat-label">${esc(x.label)}</span></div>`).join('');
+    const events = (summary.events || []).length
+        ? `<div class="rpg-end-events"><b>Eventos vividos:</b> ${summary.events.map(esc).join(' · ')}</div>` : '';
+    const build = (summary.build || []).length
+        ? `<div class="rpg-end-build">${summary.build.map(b => `<span class="rpg-hero-tag">${esc(b)}</span>`).join('')}</div>` : '';
+    el.className = `rpg-end-card ${win ? 'is-victory' : 'is-defeat'}`;
+    el.innerHTML = `
+        <div class="rpg-end-icon">${win ? '🏆' : '💀'}</div>
+        <div class="rpg-end-title">${esc(summary.title)}</div>
+        <p class="rpg-end-cause">${esc(summary.cause)}</p>
+        ${summary.almost ? `<p class="rpg-end-almost">${esc(summary.almost)}</p>` : ''}
+        <div class="rpg-end-floor">${esc(summary.floorText)}</div>
+        <div class="rpg-end-stats">${stats}</div>
+        ${build}
+        ${events}
+        <div class="rpg-end-seed">Semilla <code id="rpgEndSeed">${esc(summary.seedCode)}</code>
+            <button type="button" id="btnRpgCopySeed" class="btn-secondary">Copiar</button></div>
+        <div class="rpg-end-actions">
+            <button type="button" id="btnRpgEndNew" class="btn-forge">🗡️ NUEVA RUTA</button>
+            <button type="button" id="btnRpgEndRepeat" class="btn-secondary">🔁 REPETIR CON LA MISMA SEMILLA</button>
+            <button type="button" id="btnRpgEndHome" class="btn-secondary">← INICIO</button>
+        </div>`;
 }
