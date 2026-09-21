@@ -1,3 +1,6 @@
+> ⚠️ **Documento histórico del prototipo v0.** Describe el mapa antiguo (10 pisos × 5 columnas). El juego actual tiene
+> 16 pisos × 7 columnas, nodos de evento y sin DEF; ver el [README](../README.md) y el [catálogo de eventos](eventos.md).
+
 # RPG-pack — semilla de un juego roguelike de ruta
 
 > Título provisional: **Easy Hit RPG**. Este paquete es el modo RPG de Easy Hit extraído como un proyecto

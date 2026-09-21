@@ -1,8 +1,10 @@
-import * as UI from './ui.js?v=20260921a';
-import * as Engine from './engine.js?v=20260921a';
+import * as UI from './ui.js?v=20260921b';
+import * as Engine from './engine.js?v=20260921b';
+import * as Events from './events.js?v=20260921b';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
+window.Events = Events;
 window.UI = UI;
 
 const gameState = {
@@ -13,7 +15,12 @@ const gameState = {
         visitedIds: [],
         combat: null,
         combatMenu: 'main',
-        pendingNodeId: null
+        pendingNodeId: null,
+        // Eventos
+        event: null,          // { node, session, result } mientras hay un evento abierto
+        eventCombat: null,    // spec del combate de evento en curso ({ onWin, onWinText, ... })
+        usedEvents: [],       // ids ya vistos en esta partida (no se repiten)
+        skipNext: false       // el puente de cuerdas: el próximo movimiento se salta un piso
     }
 };
 window.gameState = gameState;
@@ -47,8 +54,20 @@ function _rpgRefreshMap(animate) {
         currentId: r.currentId,
         visitedIds: r.visitedIds,
         heroIcon: r.hero ? r.hero.icon : '',
+        skip: r.skipNext,
         animate: !!animate
     });
+}
+
+function _rpgResetRun() {
+    const r = gameState.rpg;
+    r.combat = null;
+    r.pendingNodeId = null;
+    r.event = null;
+    r.eventCombat = null;
+    r.usedEvents = [];
+    r.skipNext = false;
+    UI.hideRpgCombatResult();
 }
 
 function _rpgNewMap() {
@@ -61,15 +80,24 @@ function _rpgNewMap() {
 function _rpgStartRun() {
     const r = gameState.rpg;
     r.hero = Engine.createRpgHero();
-    r.combat = null;
-    r.pendingNodeId = null;
-    UI.hideRpgCombatResult();
+    _rpgResetRun();
     _rpgNewMap();
     UI.toggleRpgView('rpgMapView');
     UI.renderRpgLegend();
     UI.clearRpgLog();
     UI.addRpgLog(`${r.hero.icon} ${r.hero.name} entra en la ruta con ATK ${r.hero.atq} · HP ${r.hero.hp}. Elige por dónde empezar.`, 'system');
     _rpgRefreshMap(true);
+}
+
+function _rpgBackToStart() {
+    const r = gameState.rpg;
+    _rpgResetRun();
+    r.hero = null;
+    r.map = null;
+    r.currentId = null;
+    r.visitedIds = [];
+    UI.toggleRpgView('rpgStartView');
+    UI.renderRpgHeroCard(Engine.createRpgHero());
 }
 
 // Botín de cofre (provisional): demuestra que el héroe crece durante la ruta.
@@ -82,12 +110,13 @@ function _rpgAdvanceTo(nodeId) {
     const r = gameState.rpg;
     r.currentId = nodeId;
     r.visitedIds.push(nodeId);
+    r.skipNext = false;
 }
 
 function _rpgEnterNode(nodeId) {
     const r = gameState.rpg;
-    if (!r.map || !r.hero || r.combat) return;
-    if (!Engine.rpgAvailableNodes(r.map, r.currentId).includes(nodeId)) return;
+    if (!r.map || !r.hero || r.combat || r.event) return;
+    if (!Engine.rpgAvailableNodes(r.map, r.currentId, r.skipNext).includes(nodeId)) return;
     const node = r.map.nodes.find(n => n.id === nodeId);
     if (!node) return;
 
@@ -95,11 +124,78 @@ function _rpgEnterNode(nodeId) {
         _rpgStartCombat(node);
         return;
     }
-    // Cofre (el único nodo sin combate)
+    if (node.type === 'event') {
+        _rpgStartEvent(node);
+        return;
+    }
+    // Cofre
     _rpgAdvanceTo(nodeId);
     const reward = RPG_CHEST_REWARDS[Math.floor(Math.random() * RPG_CHEST_REWARDS.length)];
     reward.apply(r.hero);
     UI.addRpgLog(`🧰 ${r.hero.name} abre un cofre: ${reward.label}.`, 'victory');
+    _rpgRefreshMap(false);
+}
+
+// --- 🎲 Eventos ---
+function _rpgStartEvent(node) {
+    const r = gameState.rpg;
+    const eventId = Events.pickRpgEvent(r.usedEvents, node.floor);
+    r.usedEvents.push(eventId);
+    const session = Events.startRpgEvent(eventId, Math.random, node.floor);
+    r.event = { node, session, result: null };
+    UI.toggleRpgView('rpgEventView');
+    UI.renderRpgEventScreen(Events.rpgEventScreen(session));
+    UI.addRpgLog(`🎲 ${Events.getRpgEvent(eventId).title} (piso ${node.floor + 1}).`, 'system');
+}
+
+function _rpgEventChoose(index) {
+    const r = gameState.rpg;
+    const ev = r.event;
+    if (!ev || ev.result) return;
+    const res = Events.resolveRpgEventChoice(ev.session, index, r.hero);
+    if (!res.ok) return;
+
+    res.lines.forEach(l => UI.addRpgLog(l, 'system'));
+    if (res.changes.length) UI.addRpgLog(`🎲 ${res.changes.join(' · ')}`, 'victory');
+
+    if (res.next) {
+        // El evento continúa: siguiente pantalla con lo que acaba de pasar como introducción
+        UI.renderRpgEventScreen({ ...Events.rpgEventScreen(ev.session), intro: res.lines });
+        return;
+    }
+    ev.result = res;
+    const screen = Events.getRpgEvent(ev.session.eventId);
+    UI.renderRpgEventResult({
+        icon: screen.icon,
+        title: screen.title,
+        lines: res.lines,
+        changes: res.changes,
+        button: res.combat ? '⚔️ ¡A COMBATIR!' : 'CONTINUAR LA RUTA'
+    });
+}
+
+function _rpgEventContinue() {
+    const r = gameState.rpg;
+    const ev = r.event;
+    if (!ev || !ev.result) return;
+    const { node, result } = ev;
+
+    if (result.combat) {
+        const spec = result.combat;
+        const monster = Events.createEventMonster(spec.monster, r.hero, node.floor, spec.hpFactor);
+        r.event = null;
+        r.eventCombat = spec;
+        _rpgStartCombat(node, monster);
+        return;
+    }
+
+    r.event = null;
+    _rpgAdvanceTo(node.id);
+    if (result.skipFloor) {
+        r.skipNext = true;
+        UI.addRpgLog('🌉 Te saltas un piso: el próximo paso puede ir dos pisos más allá.', 'victory');
+    }
+    UI.toggleRpgView('rpgMapView');
     _rpgRefreshMap(false);
 }
 
@@ -109,16 +205,18 @@ function _rpgRefreshCombat() {
     if (r.combat) UI.renderRpgCombat(r.combat, { menu: r.combatMenu });
 }
 
-function _rpgStartCombat(node) {
+function _rpgStartCombat(node, customMonster) {
     const r = gameState.rpg;
-    const monster = Engine.createRpgMonster(node.type, node.floor);
+    const monster = customMonster || Engine.createRpgMonster(node.type, node.floor);
     r.combat = Engine.createRpgCombat(r.hero, monster);
     r.combatMenu = 'main';
     r.pendingNodeId = node.id;
     UI.toggleRpgView('rpgCombatView');
     UI.hideRpgCombatResult();
     UI.clearRpgCombatLog();
-    UI.addRpgCombatLog(`${monster.icon} ${monster.name} bloquea el camino. ¡Elige tu acción!`, 'system');
+    UI.addRpgCombatLog(customMonster
+        ? `${monster.icon} ${monster.name} te corta el paso. ¡Elige tu acción!`
+        : `${monster.icon} ${monster.name} bloquea el camino. ¡Elige tu acción!`, 'system');
     _rpgRefreshCombat();
 }
 
@@ -143,14 +241,22 @@ function _rpgFinishCombat() {
     const c = r.combat;
     const m = c.monster;
     if (c.result === 'victory') {
-        const reward = Engine.rpgVictoryReward(m.type);
-        Engine.applyRpgReward(r.hero, reward);
-        const parts = [reward.atq && `+${reward.atq} ATK`, reward.hp && `+${reward.hp} HP`].filter(Boolean);
         const isBoss = m.type === 'boss';
+        let detail;
+        if (r.eventCombat) {
+            // Combate de evento: solo cuenta lo que promete el propio evento
+            const changes = r.eventCombat.onWin ? Events.applyRpgFx(r.hero, r.eventCombat.onWin) : [];
+            detail = [r.eventCombat.onWinText, changes.length ? changes.join(' · ') : ''].filter(Boolean).join(' ');
+        } else {
+            const reward = Engine.rpgVictoryReward(m.type);
+            Engine.applyRpgReward(r.hero, reward);
+            const parts = [reward.atq && `+${reward.atq} ATK`, reward.hp && `+${reward.hp} HP`].filter(Boolean);
+            detail = isBoss ? `${r.hero.name} derrota al ${m.name}.` : (parts.length ? `${r.hero.name} se hace más fuerte: ${parts.join(', ')}.` : '');
+        }
         UI.showRpgCombatResult({
             result: 'victory',
             title: isBoss ? '¡Ruta completada!' : '¡Victoria!',
-            detail: isBoss ? `${r.hero.name} derrota al ${m.name}.` : (parts.length ? `${r.hero.name} se hace más fuerte: ${parts.join(', ')}.` : ''),
+            detail,
             button: isBoss ? 'VOLVER AL MAPA' : 'CONTINUAR LA RUTA'
         });
     } else if (c.result === 'fled') {
@@ -167,17 +273,12 @@ function _rpgCombatContinue() {
     const m = c.monster;
     const result = c.result;
     r.combat = null;
+    r.eventCombat = null;
     UI.hideRpgCombatResult();
 
     if (result === 'defeat') {
         UI.addRpgLog(`💀 ${r.hero.name} cae ante ${m.name} en el piso ${m.floor + 1}. Fin de la ruta.`, 'system');
-        r.hero = null;
-        r.map = null;
-        r.currentId = null;
-        r.visitedIds = [];
-        r.pendingNodeId = null;
-        UI.toggleRpgView('rpgStartView');
-        UI.renderRpgHeroCard(Engine.createRpgHero());
+        _rpgBackToStart();
         return;
     }
 
@@ -209,6 +310,11 @@ function initEvents() {
         if (!gameState.rpg.hero) return;
         _rpgStartRun();
     });
+    safeListener('rpgEventView', 'click', (e) => {
+        const opt = e.target.closest('[data-rpg-event-opt]');
+        if (opt) { _rpgEventChoose(Number(opt.dataset.rpgEventOpt)); return; }
+        if (e.target.closest('#btnRpgEventContinue')) _rpgEventContinue();
+    });
     safeListener('rpgCombatActions', 'click', (e) => {
         const btn = e.target.closest('[data-rpg-action]');
         if (!btn || btn.disabled) return;
@@ -223,18 +329,7 @@ function initEvents() {
     safeListener('rpgCombatResult', 'click', (e) => {
         if (e.target.closest('#btnRpgCombatContinue')) _rpgCombatContinue();
     });
-    safeListener('btnRpgAbandon', 'click', () => {
-        const r = gameState.rpg;
-        r.combat = null;
-        r.pendingNodeId = null;
-        UI.hideRpgCombatResult();
-        r.hero = null;
-        r.map = null;
-        r.currentId = null;
-        r.visitedIds = [];
-        UI.toggleRpgView('rpgStartView');
-        UI.renderRpgHeroCard(Engine.createRpgHero());
-    });
+    safeListener('btnRpgAbandon', 'click', () => _rpgBackToStart());
 }
 
 initEvents();

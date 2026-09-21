@@ -5,7 +5,7 @@ import {
     RPG_HERO_BASE, RPG_NODE_TYPES, RPG_MAP_CONFIG,
     createRpgHero, rpgMonsterStats, generateRpgMap, rpgAvailableNodes,
     createRpgMonster, createRpgCombat, rpgCombatAction, rpgSkillReady, rpgCanFlee,
-    rpgVictoryReward, applyRpgReward
+    rpgVictoryReward, applyRpgReward, RPG_MIN_EVENTS_PER_ROUTE
 } from '../src/engine.js';
 
 let passed = 0;
@@ -29,9 +29,12 @@ const hero = createRpgHero();
 assert('el héroe empieza con ATK 1 / HP 25', hero.atq === 1 && hero.hp === 25);
 assert('maxHp = HP inicial y nivel 1', hero.maxHp === 25 && hero.level === 1);
 assert('createRpgHero devuelve una copia (no muta la base)', (hero.atq = 99, RPG_HERO_BASE.atq === 1));
-assert('el héroe solo tiene atributos básicos (sin DEF, pasivas, ultimates, Fervor, elementos ni clase)', (() => {
-    const keys = Object.keys(createRpgHero()).sort().join(',');
-    return keys === 'atq,color,hp,icon,level,maxHp,name';
+assert('el héroe solo tiene ATK y HP como atributos (sin DEF) más votos, mejoras y afinidades vacíos', (() => {
+    const h = createRpgHero();
+    const keys = Object.keys(h).sort().join(',');
+    return keys === 'affinity,atq,color,hp,icon,level,maxHp,name,skillMods,vows'
+        && Object.keys(h.vows).length === 0 && Object.keys(h.skillMods).length === 0
+        && Object.values(h.affinity).every(v => v === 0);
 })());
 assert('todas las partidas empiezan con el mismo héroe', JSON.stringify(createRpgHero()) === JSON.stringify(createRpgHero()));
 
@@ -144,7 +147,9 @@ console.log('\n⚔️ Combate por turnos');
 
 console.log('\n🗺️ Mapa (300 semillas)');
 const { floors, cols } = RPG_MAP_CONFIG;
-let allOk = { connected: true, noCross: true, types: true, boss: true, floor0: true, special: true, adjacency: true, starts: true };
+let allOk = { connected: true, noCross: true, types: true, boss: true, floor0: true, special: true, adjacency: true, starts: true,
+    eventPlace: true, eventAdj: true, eventMin: true };
+let eventTotal = 0;
 
 for (let seed = 1; seed <= 300; seed++) {
     const map = generateRpgMap(mulberry32(seed));
@@ -188,7 +193,20 @@ for (let seed = 1; seed <= 300; seed++) {
     for (const n of map.nodes) for (const id of n.next) {
         const t = byId.get(id);
         if (n.type === t.type && (n.type === 'chest' || n.type === 'subboss')) allOk.adjacency = false;
+        if (n.type === 'event' && t.type === 'event') allOk.eventAdj = false;
     }
+
+    // Eventos: nunca en el piso 0 ni en el piso previo al jefe, y todo camino cruza al menos el mínimo
+    for (const n of map.nodes.filter(n => n.type === 'event')) {
+        eventTotal++;
+        if (n.floor === 0 || n.floor >= floors - 2) allOk.eventPlace = false;
+    }
+    const fewest = new Map();
+    for (const n of [...map.nodes].sort((a, b) => b.floor - a.floor)) {
+        const own = n.type === 'event' ? 1 : 0;
+        fewest.set(n.id, own + (n.next.length ? Math.min(...n.next.map(id => fewest.get(id))) : 0));
+    }
+    if (Math.min(...map.startIds.map(id => fewest.get(id))) < RPG_MIN_EVENTS_PER_ROUTE) allOk.eventMin = false;
 }
 assert('todas las aristas van al piso siguiente y todo nodo llega al jefe', allOk.connected);
 assert('ninguna arista se cruza con otra', allOk.noCross);
@@ -199,6 +217,12 @@ assert('nº de rutas de inicio = paths configurados', allOk.starts);
 assert('siempre hay al menos un sub-jefe y un cofre intermedio', allOk.special);
 assert('no hay cofre→cofre ni sub-jefe→sub-jefe seguidos', allOk.adjacency);
 
+assert('los eventos nunca están en el piso 0 ni justo antes del jefe', allOk.eventPlace);
+assert('no hay dos eventos seguidos', allOk.eventAdj);
+assert(`todo camino de inicio a jefe cruza al menos ${RPG_MIN_EVENTS_PER_ROUTE} eventos`, allOk.eventMin);
+assert('en promedio hay eventos de sobra por mapa (≥ 8)', eventTotal / 300 >= 8);
+assert('la ruta es larga y densa: 16 pisos, 7 columnas, 6 caminos', floors === 16 && cols === 7 && RPG_MAP_CONFIG.paths === 6);
+
 console.log('\n🧭 rpgAvailableNodes');
 const m = generateRpgMap(mulberry32(7));
 assert('sin posición: solo el piso 0', rpgAvailableNodes(m, null).join() === m.startIds.join());
@@ -206,6 +230,12 @@ const first = m.nodes.find(n => n.id === m.startIds[0]);
 assert('desde un nodo: sus hijos', rpgAvailableNodes(m, first.id).join() === first.next.join());
 assert('desde el jefe: nada', rpgAvailableNodes(m, m.bossId).length === 0);
 assert('mapa nulo: nada', rpgAvailableNodes(null, null).length === 0);
+{
+    const sk = rpgAvailableNodes(m, first.id, true);
+    const grandchildren = new Set(first.next.flatMap(id => m.nodes.find(n => n.id === id).next));
+    assert('con salto de piso: solo los hijos de los hijos', sk.length > 0 && sk.every(id => grandchildren.has(id)) && sk.length === grandchildren.size);
+    assert('con salto de piso se sube exactamente dos pisos', sk.every(id => m.nodes.find(n => n.id === id).floor === first.floor + 2));
+}
 
 console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📊 RESULTS: ${passed} passed, ${failed} failed\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 process.exit(failed > 0 ? 1 : 0);

@@ -98,14 +98,16 @@ Los monstruos empiezan débiles y **escalan a medida que avanzas**.
 
 | | Pieza |
 |:---:|---|
-| ✅ | Mapa procedural (10 pisos, caminos que no se cruzan) |
-| ✅ | Nodos de monstruo, cofre, sub-jefe y jefe final |
+| ✅ | Mapa procedural largo y denso (16 pisos, 7 columnas, 6 caminos que no se cruzan) |
+| ✅ | Nodos de monstruo, cofre, evento, sub-jefe y jefe final |
 | ✅ | Combate por turnos 1 contra 1 con menú |
 | ✅ | Escalado de monstruos por piso |
 | ⬜ | Orden de turnos, SPD y MP |
 | ⬜ | Varios enemigos, debilidades y Ruptura |
 | ⬜ | Afinidades y clases emergentes |
-| ⬜ | Hogueras, eventos y tiendas |
+| ✅ | **15 eventos** con una situación y dos decisiones ([ver catálogo](docs/eventos.md)) |
+| ✅ | Votos, mejoras de habilidad y un enemigo con IA (el Lector) |
+| ⬜ | Hogueras y tiendas |
 | ⬜ | Guardado de partida |
 
 ## 🗺️ Hoja de ruta
@@ -115,7 +117,7 @@ Los monstruos empiezan débiles y **escalan a medida que avanzas**.
 | **M0** | Base: semilla aleatoria, guardado y pantalla final |
 | **M1** | Núcleo de combate: SPD, MP, varios enemigos, elementos, debilidades y Ruptura |
 | **M2** | Contenido y builds: enemigos, habilidades y afinidades como datos; recompensa «elige 1 de 3» |
-| **M3** | Más nodos: hoguera, evento, tienda y élite |
+| **M3** | Más nodos: hoguera, tienda y élite (los eventos ya están) |
 | **M4** | Equilibrio, resumen de partida y semillas compartibles |
 
 ---
@@ -144,8 +146,9 @@ npm run dev    # http://127.0.0.1:8770
 npm install                        # solo la primera vez
 npx playwright install chromium    # solo la primera vez
 npm run test:engine                # lógica pura: héroe, monstruos, mapas, combate
-npm run test:browser               # partida completa en el navegador
-npm test                           # ambos
+npm run test:events                # los 15 eventos, votos, IA del Lector y 3000 rutas simuladas
+npm run test:browser               # partida completa en el navegador (Chromium)
+npm test                           # los tres
 ```
 
 </details>
@@ -159,11 +162,14 @@ npm test                           # ambos
 ├── index.html        Página única
 ├── style.css         Estilo del juego
 ├── src/
-│   ├── engine.js     Lógica pura, sin DOM
+│   ├── engine.js     Lógica pura, sin DOM: héroe, mapa y combate
+│   ├── events.js     Motor de eventos (interpreta los datos)
+│   ├── data/
+│   │   └── events.js Contenido: los 15 eventos, sus monstruos y preguntas
 │   ├── ui.js         Presentación
-│   └── main.js       Estado de la partida y eventos
+│   └── main.js       Estado de la partida y flujo
 ├── tests/            Tests del motor y del navegador
-└── docs/             Notas de diseño
+└── docs/             Catálogo de eventos y notas de diseño
 ```
 
 Las reglas y números actuales del prototipo están en [`docs/prototipo-v0.md`](docs/prototipo-v0.md).

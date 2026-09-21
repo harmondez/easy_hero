@@ -1,4 +1,4 @@
-import * as Engine from './engine.js?v=20260921a';
+import * as Engine from './engine.js?v=20260921b';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -55,7 +55,7 @@ export function playHitAnimation(selector, isAlly) {
 // --- 🗡️ MODO RPG (Carta de Héroe + mapa de ruta) ---
 
 export function toggleRpgView(view) {
-    ['rpgStartView', 'rpgMapView', 'rpgCombatView'].forEach(id => {
+    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgCombatView'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = id === view ? 'block' : 'none';
     });
@@ -83,9 +83,27 @@ export function renderRpgLegend() {
         <span class="rpg-legend-item type-${esc(t.id)}"><span class="rpg-legend-icon">${t.icon}</span>${esc(t.name)}</span>`).join('');
 }
 
+/** Etiquetas del héroe: votos, mejoras de habilidad y afinidades (solo las que existen). */
+export function rpgHeroTags(hero) {
+    const tags = [];
+    const vows = (hero && hero.vows) || {};
+    if (vows.noFlee) tags.push({ icon: '🚫', text: 'Sin huir' });
+    if (vows.noSkills) tags.push({ icon: '🤐', text: 'Sin habilidades' });
+    for (const [id, mods] of Object.entries((hero && hero.skillMods) || {})) {
+        const skill = Engine.RPG_SKILLS[id];
+        if (skill && (mods.damage || mods.cooldown)) tags.push({ icon: skill.icon, text: `${skill.name} mejorado` });
+    }
+    const names = { guerrero: ['⚔️', 'Guerrero'], picaro: ['🗡️', 'Pícaro'], elementalista: ['🔥', 'Elementalista'] };
+    for (const [k, v] of Object.entries((hero && hero.affinity) || {})) {
+        if (v > 0 && names[k]) tags.push({ icon: names[k][0], text: `${names[k][1]} ${v}` });
+    }
+    return tags;
+}
+
 export function renderRpgHeroPanel(hero, progressText) {
     const el = document.getElementById('rpgHeroPanel');
     if (!el || !hero) return;
+    const tagsHtml = rpgHeroTags(hero).map(t => `<span class="rpg-hero-tag">${t.icon} ${esc(t.text)}</span>`).join('');
     const hpPct = Math.max(0, Math.min(100, (hero.hp / hero.maxHp) * 100));
     el.style.setProperty('--accent', hero.color);
     el.innerHTML = `
@@ -96,6 +114,7 @@ export function renderRpgHeroPanel(hero, progressText) {
             <div class="rpg-hero-stats">
                 <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
             </div>
+            ${tagsHtml ? `<div class="rpg-hero-tags">${tagsHtml}</div>` : ''}
         </div>
         <div class="rpg-hero-progress">${esc(progressText || '')}</div>`;
 }
@@ -112,17 +131,22 @@ export function renderRpgMap(map, state = {}) {
     const visitedIds = state.visitedIds || [];
     const visited = new Set(visitedIds);
     const currentId = state.currentId || null;
-    const available = new Set(Engine.rpgAvailableNodes(map, currentId));
+    const skip = !!state.skip;
+    const available = new Set(Engine.rpgAvailableNodes(map, currentId, skip));
     const byId = new Map(map.nodes.map(n => [n.id, n]));
     const pos = n => ({ x: (n.col + 0.5) / cols * 100, y: (floors - 1 - n.floor + 0.5) / floors * 100 });
 
     const taken = new Set();
     for (let i = 1; i < visitedIds.length; i++) taken.add(`${visitedIds[i - 1]}>${visitedIds[i]}`);
 
+    const current = byId.get(currentId);
+    const openFrom = new Set([currentId]);
+    if (skip && current) current.next.forEach(id => openFrom.add(id));
+
     const lines = map.nodes.flatMap(n => n.next.map(id => {
         const a = pos(n);
         const b = pos(byId.get(id));
-        const cls = taken.has(`${n.id}>${id}`) ? 'is-taken' : (n.id === currentId ? 'is-open' : '');
+        const cls = taken.has(`${n.id}>${id}`) ? 'is-taken' : (openFrom.has(n.id) ? 'is-open' : '');
         return `<line class="rpg-edge ${cls}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" vector-effect="non-scaling-stroke"/>`;
     })).join('');
 
@@ -152,7 +176,7 @@ export function renderRpgMap(map, state = {}) {
         ${nodesHtml}
         <div class="rpg-boss-tag" style="left:${bp.x}%;top:${bp.y}%">JEFE FINAL</div>`;
 
-    if (state.animate) setTimeout(() => el.classList.remove('animate'), 1600);
+    if (state.animate) setTimeout(() => el.classList.remove('animate'), 1200);
 }
 
 export function addRpgLog(msg, type = 'system') {
@@ -196,6 +220,15 @@ function _rpgActionButton(attrs, icon, label, hint, disabled) {
     </button>`;
 }
 
+const RPG_ACTION_NAMES = { attack: 'ATACAR', defend: 'DEFENDER', skill: 'HABILIDADES' };
+
+// Enemigo con IA: avisa de la acción que ha memorizado (repetirla = golpe doble)
+function _rpgMonsterStatus(combat) {
+    if (combat.monster.ai !== 'reader') return '';
+    const last = RPG_ACTION_NAMES[combat.lastAction];
+    return last ? `👁️ Recuerda ${last}: repítela y golpea doble` : '👁️ Lee tus movimientos';
+}
+
 /** Dibuja las dos cartas y el menú de acciones. opts.menu: 'main' | 'skills' */
 export function renderRpgCombat(combat, opts = {}) {
     if (!combat) return;
@@ -208,14 +241,15 @@ export function renderRpgCombat(combat, opts = {}) {
     const heroSlot = document.getElementById('rpgCombatHero');
     if (heroSlot) heroSlot.innerHTML = _rpgFighterCard(hero, `Nivel ${hero.level}`, combat.defending ? '🛡️ Defendiendo' : '');
     const monSlot = document.getElementById('rpgCombatMonster');
-    if (monSlot) monSlot.innerHTML = _rpgFighterCard(monster, tags[monster.type] || 'Monstruo', '');
+    if (monSlot) monSlot.innerHTML = _rpgFighterCard(monster, monster.tag || tags[monster.type] || 'Monstruo', _rpgMonsterStatus(combat));
 
     const bar = document.getElementById('rpgCombatActions');
     if (!bar) return;
     if (combat.over) { bar.innerHTML = ''; return; }
 
     if (opts.menu === 'skills') {
-        const skillButtons = Object.values(Engine.RPG_SKILLS).map(s => {
+        const skillButtons = Object.keys(Engine.RPG_SKILLS).map(id => {
+            const s = Engine.rpgSkillInfo(hero, id);
             const cd = combat.cooldowns[s.id];
             const hint = cd > 0 ? `${s.desc} · Enfriando (${cd})` : `${s.desc} · Listo`;
             return _rpgActionButton(`data-rpg-action="skill" data-rpg-skill="${esc(s.id)}"`, s.icon, s.name, hint, cd > 0);
@@ -226,11 +260,14 @@ export function renderRpgCombat(combat, opts = {}) {
 
     const dmg = Math.max(1, hero.atq);
     const canFlee = Engine.rpgCanFlee(combat);
+    const noSkills = !!(hero.vows && hero.vows.noSkills);
+    const fleeHint = canFlee ? 'Salgo del combate (me golpean al huir)'
+        : (hero.vows && hero.vows.noFlee ? 'Tu voto de acero lo impide' : 'No se puede huir de este combate');
     bar.innerHTML =
         _rpgActionButton('data-rpg-action="attack"', '🗡️', 'ATACAR', `Ataco una vez: ${dmg} de daño`, false) +
         _rpgActionButton('data-rpg-action="defend"', '🛡️', 'DEFENDER', 'El próximo golpe me hace la mitad', false) +
-        _rpgActionButton('data-rpg-action="skills"', '✨', 'HABILIDADES', 'Golpe de Fuego y más', false) +
-        _rpgActionButton('data-rpg-action="flee"', '🏃', 'HUIR', canFlee ? 'Salgo del combate (me golpean al huir)' : 'No se puede huir de este combate', !canFlee);
+        _rpgActionButton('data-rpg-action="skills"', '✨', 'HABILIDADES', noSkills ? 'Tu voto de silencio lo impide' : 'Golpe de Fuego y más', noSkills) +
+        _rpgActionButton('data-rpg-action="flee"', '🏃', 'HUIR', fleeHint, !canFlee);
 }
 
 /** Números flotantes y sacudida sobre la carta que recibe el golpe, en secuencia. */
@@ -275,4 +312,43 @@ export function showRpgCombatResult(info) {
 export function hideRpgCombatResult() {
     const el = document.getElementById('rpgCombatResult');
     if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+}
+
+// --- 🎲 Eventos (una situación, dos decisiones) ---
+
+function _rpgParagraphs(text, cls = '') {
+    return String(text || '').split('\n').filter(Boolean).map(t => `<p class="rpg-event-text ${cls}">${esc(t)}</p>`).join('');
+}
+
+/** Pantalla de decisión. view: { icon, title, text, options: [label, label], intro?: [líneas] } */
+export function renderRpgEventScreen(view) {
+    const el = document.getElementById('rpgEventBody');
+    if (!el || !view) return;
+    const intro = (view.intro || []).map(l => `<p class="rpg-event-text is-intro">${esc(l)}</p>`).join('');
+    const options = (view.options || []).map((label, i) =>
+        `<button type="button" class="rpg-event-option" data-rpg-event-opt="${i}"><span class="rpg-event-option-key">${i === 0 ? 'A' : 'B'}</span><span>${esc(label)}</span></button>`).join('');
+    el.className = 'rpg-event-card';
+    el.innerHTML = `
+        <div class="rpg-event-icon">${view.icon}</div>
+        <div class="rpg-event-title">${esc(view.title)}</div>
+        ${intro}
+        ${_rpgParagraphs(view.text)}
+        <div class="rpg-event-options">${options}</div>`;
+}
+
+/** Resultado de la decisión. view: { icon, title, lines, changes, button } */
+export function renderRpgEventResult(view) {
+    const el = document.getElementById('rpgEventBody');
+    if (!el || !view) return;
+    const changes = (view.changes || []).map(c => {
+        const cls = /^\+/.test(c) ? 'is-good' : (/^−/.test(c) ? 'is-bad' : '');
+        return `<span class="rpg-event-chip ${cls}">${esc(c)}</span>`;
+    }).join('');
+    el.className = 'rpg-event-card is-result';
+    el.innerHTML = `
+        <div class="rpg-event-icon">${view.icon}</div>
+        <div class="rpg-event-title">${esc(view.title)}</div>
+        ${(view.lines || []).map(l => `<p class="rpg-event-text">${esc(l)}</p>`).join('')}
+        ${changes ? `<div class="rpg-event-changes">${changes}</div>` : ''}
+        <button type="button" id="btnRpgEventContinue" class="btn-forge">${esc(view.button || 'CONTINUAR')}</button>`;
 }

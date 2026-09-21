@@ -294,7 +294,7 @@ body {
 .rpg-map-wrap {
     max-width: 860px;
     margin: 0 auto;
-    padding: 28px clamp(12px, 3vw, 34px) 12px;
+    padding: 52px clamp(12px, 3vw, 34px) 12px;
     background:
         radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.10), transparent 40%),
         radial-gradient(circle at 50% 100%, rgba(99, 102, 241, 0.10), transparent 45%),
@@ -308,7 +308,7 @@ body {
     --rpg-floors: 10;
     position: relative;
     width: 100%;
-    height: calc(var(--rpg-floors) * clamp(64px, 9vw, 84px));
+    height: calc(var(--rpg-floors) * clamp(52px, 7vw, 72px));
 }
 
 .rpg-map-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -325,7 +325,7 @@ body {
 
 .rpg-node {
     --node-color: #ef4444;
-    --node-size: clamp(42px, 6.4vw, 54px);
+    --node-size: clamp(34px, 6.4vw, 54px);
     position: absolute;
     display: flex;
     align-items: center;
@@ -347,8 +347,8 @@ body {
 
 .rpg-node.type-monster { --node-color: #ef4444; }
 .rpg-node.type-chest { --node-color: var(--gold); }
-.rpg-node.type-subboss { --node-color: #a78bfa; --node-size: clamp(50px, 7.6vw, 64px); }
-.rpg-node.type-boss { --node-color: #f97316; --node-size: clamp(64px, 10vw, 88px); border-width: 4px; box-shadow: 0 0 34px -4px rgba(249, 115, 22, 0.7); }
+.rpg-node.type-subboss { --node-color: #a78bfa; --node-size: clamp(42px, 7.6vw, 64px); }
+.rpg-node.type-boss { --node-color: #f97316; --node-size: clamp(56px, 10vw, 88px); border-width: 4px; box-shadow: 0 0 34px -4px rgba(249, 115, 22, 0.7); }
 
 .rpg-node.is-locked { opacity: 0.42; filter: saturate(0.35); }
 .rpg-node.is-visited { opacity: 0.75; filter: saturate(0.6); }
@@ -396,11 +396,11 @@ body {
     from { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
     to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
-.rpg-map.animate .rpg-node { animation: rpgNodeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: calc(var(--i) * 18ms); }
+.rpg-map.animate .rpg-node { animation: rpgNodeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: calc(var(--i) * 9ms); }
 
 .rpg-boss-tag {
     position: absolute;
-    transform: translate(-50%, 58px);
+    transform: translate(-50%, calc(-100% - clamp(32px, 5.4vw, 48px)));
     padding: 2px 10px;
     font-size: 0.65rem; font-weight: 900; letter-spacing: 2px;
     color: #fed7aa;
@@ -435,6 +435,7 @@ body {
 .rpg-log-content .log-entry.victory { color: var(--gold); font-weight: 700; }
 
 @media (max-width: 600px) {
+    .rpg-hero-panel { flex-wrap: wrap; }
     .rpg-hero-progress { text-align: left; width: 100%; }
     .rpg-topbar-actions { width: 100%; }
     .rpg-topbar-actions .btn-secondary { flex: 1; }
@@ -570,3 +571,79 @@ body {
 
 .rpg-log-content .log-entry.player { color: #93c5fd; }
 .rpg-log-content .log-entry.enemy { color: #fca5a5; }
+
+/* --- 🎲 Eventos (una situación, dos decisiones) --- */
+.rpg-hero-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.rpg-hero-tag {
+    padding: 1px 8px;
+    font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px;
+    color: var(--text-light);
+    background: rgba(2, 6, 23, 0.55);
+    border: 1px solid var(--border-strong);
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.rpg-event-card {
+    --accent: #22d3ee;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 30px clamp(18px, 4vw, 36px) 28px;
+    text-align: center;
+    background:
+        radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 60%),
+        linear-gradient(160deg, var(--bg-card-elevated), var(--bg-card));
+    border: 1px solid var(--border-color);
+    border-top: 3px solid var(--accent);
+    border-radius: 18px;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-elevated);
+}
+.rpg-event-card.is-result { --accent: var(--gold); }
+.rpg-event-icon { font-size: 4rem; line-height: 1; filter: drop-shadow(0 8px 18px color-mix(in srgb, var(--accent) 55%, transparent)); }
+.rpg-event-title { margin: 10px 0 14px; font-size: 1.35rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+.rpg-event-text { margin: 0 0 12px; font-size: 0.98rem; line-height: 1.6; color: var(--text-light); }
+.rpg-event-text.is-intro { color: var(--accent); font-style: italic; }
+
+.rpg-event-options { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.rpg-event-option {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%; padding: 14px 16px;
+    text-align: left;
+    font-family: inherit; font-size: 1rem; font-weight: 700; color: var(--text-main);
+    background: linear-gradient(160deg, var(--bg-card-elevated), var(--border-color));
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.rpg-event-option:hover, .rpg-event-option:focus-visible {
+    outline: none;
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.rpg-event-option:active { transform: scale(0.98); }
+.rpg-event-option-key {
+    flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    font-size: 0.85rem; font-weight: 900; color: #0b1220;
+    background: var(--accent);
+    border-radius: 50%;
+}
+
+.rpg-event-changes { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 6px 0 20px; }
+.rpg-event-chip {
+    padding: 4px 12px;
+    font-size: 0.82rem; font-weight: 800; font-family: 'Courier New', monospace;
+    color: var(--text-light);
+    background: rgba(2, 6, 23, 0.55);
+    border: 1px solid var(--border-strong);
+    border-radius: 20px;
+}
+.rpg-event-chip.is-good { color: #86efac; border-color: rgba(34, 197, 94, 0.55); }
+.rpg-event-chip.is-bad { color: #fca5a5; border-color: rgba(239, 68, 68, 0.55); }
+.rpg-event-card.is-result .btn-forge { margin-top: 6px; }
+
+.rpg-legend-item.type-event { --node-color: #22d3ee; }
+.rpg-node.type-event { --node-color: #22d3ee; }

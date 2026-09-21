@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "python -m http.server 8770 --bind 127.0.0.1",
     "test:engine": "node tests/rpg-sim.mjs",
+    "test:events": "node tests/events-sim.mjs",
     "test:browser": "node tests/browser.test.mjs",
-    "test": "node tests/rpg-sim.mjs && node tests/browser.test.mjs"
+    "test": "node tests/rpg-sim.mjs && node tests/events-sim.mjs && node tests/browser.test.mjs"
   },
   "devDependencies": {
     "playwright": "^1.60.0"
