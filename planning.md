@@ -44,7 +44,7 @@
 
 ---
 
-## 🟢 Estado: la entrega A está hecha (v1.1)
+## 🟢 Estado: la entrega A está hecha (1.0.1)
 
 | # | Principal | Estado | Cómo quedó |
 |:-:|-----------|:------:|-----------|

@@ -56,6 +56,9 @@ assert('Solo hay RPG: sin motor ni datos del Easy Hit original', await page.eval
     typeof window.Engine.OFFICIAL_CARDS === 'undefined' && typeof window.Engine.ULTIMATE_DB === 'undefined'
     && typeof window.Engine.MAX_FERVOR === 'undefined' && !document.getElementById('tab-library')));
 
+assert('La cabecera muestra la versión del juego (la misma de package.json)',
+    (await page.$eval('.game-version', el => el.textContent)).includes(JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version));
+
 await page.click('#btnRpgStart');
 await sleep(700);
 

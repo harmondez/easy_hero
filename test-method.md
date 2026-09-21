@@ -11,18 +11,20 @@ La idea en una frase: **casi todo se prueba sobre el motor puro, con miles de ca
 | **Eventos** | `tests/events-sim.mjs` | Los 15 eventos, la hoguera, votos, IA, 1500 rutas con un héroe invencible | 118 | **7,8 s** |
 | **Guardado** | `tests/save-sim.mjs` | Guardar y retomar (combate y evento a medias), versiones, datos dañados | 36 | **0,4 s** |
 | **Equilibrio** | `tests/balance-guard.mjs` | Que el juego siga siendo ganable, sin ser trivial (1500 partidas de 3 bots) | 12 | **9,9 s** |
-| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas de página | 110 | **156 s** |
+| **Versiones** | `tests/version-check.mjs` | La versión coincide en todos los sitios; el script de publicación (en simulacro) | 27 | **0,2 s** |
+| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas de página | 111 | **131 s** |
 
 Una regla útil: **si algo se puede comprobar en el motor, no se comprueba en el navegador.** Por eso las cuatro capas de arriba
-suman 270 tests en unos 20 s y la de abajo, con 110, tarda 8 veces más.
+suman 297 tests en unos 20 s y la de abajo, con 111, tarda 8 veces más.
 
 ```bash
 npm run test:engine     # 1,8 s   ← se ejecuta tras cada cambio
 npm run test:events     # 7,8 s   ← se ejecuta tras cada cambio
 npm run test:save       # 0,4 s
 npm run test:balance    # 9,9 s   ← tras tocar números de equilibrio
-npm run test:browser    # 156 s   ← antes de subir, o al tocar la interfaz
-npm test                # los cinco (380 comprobaciones)
+npm run test:browser    # 131 s   ← antes de subir, o al tocar la interfaz
+npm run test:version    # 0,2 s   ← comprueba que la versión está sincronizada
+npm test                # los seis (408 comprobaciones)
 npm run balance         # NO es un test: la tabla de equilibrio (ver docs/equilibrio.md)
 ```
 
@@ -159,5 +161,5 @@ imprime lo mínimo. Se mide antes de opinar; los umbrales salen de la **distribu
 - **Guardado de partida:** aún no existe.
 - **Otros navegadores:** solo Chromium. Firefox y Safari no se han probado.
 - **Accesibilidad y rendimiento en móviles reales:** solo se emula un móvil de 390 × 844.
-- **El test del navegador es lento (156 s)** por las esperas fijas (`sleep`), las recargas y por recorrer rutas completas. Se puede
+- **El test del navegador es lento (131 s)** por las esperas fijas (`sleep`), las recargas y por recorrer rutas completas. Se puede
   acelerar sustituyendo las esperas por esperas a condiciones, si empieza a estorbar.

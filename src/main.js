@@ -1,14 +1,16 @@
-import * as UI from './ui.js?v=20260922a';
-import * as Engine from './engine.js?v=20260922a';
-import * as Events from './events.js?v=20260922a';
-import * as Save from './save.js?v=20260922a';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=20260922a';
+import * as UI from './ui.js?v=1.0.1';
+import * as Engine from './engine.js?v=1.0.1';
+import * as Events from './events.js?v=1.0.1';
+import * as Save from './save.js?v=1.0.1';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.0.1';
+import { GAME_VERSION } from './version.js?v=1.0.1';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
 window.Events = Events;
 window.UI = UI;
 window.Save = Save;
+window.GAME_VERSION = GAME_VERSION;
 
 // El guardado vive en el navegador; si está bloqueado (modo privado, etc.) el juego sigue funcionando sin guardar
 const storage = (() => {
@@ -491,6 +493,8 @@ function initEvents() {
 }
 
 initEvents();
+const versionLabel = document.querySelector('.game-version');
+if (versionLabel) versionLabel.textContent = `v${GAME_VERSION} · en desarrollo`;
 UI.toggleRpgView('rpgStartView');
 UI.renderRpgHeroCard(Engine.createRpgHero());
 refreshContinueButton();

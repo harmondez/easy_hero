@@ -1,5 +1,5 @@
-import { RPG_BALANCE } from './data/balance.js?v=20260922a';
-import { pickMonsterDef } from './data/monsters.js?v=20260922a';
+import { RPG_BALANCE } from './data/balance.js?v=1.0.1';
+import { pickMonsterDef } from './data/monsters.js?v=1.0.1';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)

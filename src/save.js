@@ -1,4 +1,5 @@
-import { createRng } from './rng.js?v=20260922a';
+import { createRng } from './rng.js?v=1.0.1';
+import { GAME_VERSION } from './version.js?v=1.0.1';
 
 // =============================================
 // 💾 Guardado de partida (puro: recibe el almacenamiento por parámetro, así se prueba sin navegador)
@@ -18,6 +19,7 @@ export function snapshotRun(rpg) {
     const c = rpg.combat;
     return clone({
         v: SAVE_VERSION,
+        gameVersion: GAME_VERSION, // con qué versión del juego se guardó (solo para diagnosticar; la compatibilidad la decide `v`)
         savedAt: Date.now(),
         seed: rpg.seed,
         rngState: rpg.rng ? rpg.rng.state : null,

@@ -1,4 +1,4 @@
-import * as Engine from './engine.js?v=20260922a';
+import * as Engine from './engine.js?v=1.0.1';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)

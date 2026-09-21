@@ -1,6 +1,6 @@
 # ⚖️ Equilibrio — cómo se mide y dónde está
 
-> Resultado de la **entrega A** (v1.1). El objetivo de diseño es que **un jugador medio gane 1 de cada 5 partidas (20 %)**.
+> Resultado de la **entrega A** (1.0.1). El objetivo de diseño es que **un jugador medio gane 1 de cada 5 partidas (20 %)**.
 > Todo lo que hay aquí sale de `npm run balance`: se puede repetir y comprobar.
 
 ## 1. Cómo se mide

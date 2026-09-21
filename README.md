@@ -12,15 +12,33 @@
 
 <br>
 
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.1-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
 ![Móvil y PC](https://img.shields.io/badge/m%C3%B3vil%20y%20PC-8b5cf6?style=flat-square)
 ![Español](https://img.shields.io/badge/idioma-espa%C3%B1ol-ef4444?style=flat-square)
 
-[La idea](#-la-idea) · [Cómo se juega](#-cómo-se-juega) · [Tu héroe](#%EF%B8%8F-tu-héroe) · [Eventos](#-eventos-15-historias-2-decisiones) · [Estado](#-estado-del-juego) · [Qué viene](#-qué-viene)
+[Novedades](#-novedades) · [La idea](#-la-idea) · [Cómo se juega](#-cómo-se-juega) · [Tu héroe](#%EF%B8%8F-tu-héroe) · [Eventos](#-eventos-15-historias-2-decisiones) · [Estado](#-estado-del-juego) · [Qué viene](#-qué-viene)
 
 </div>
+
+---
+
+## 🆕 Novedades
+
+**Versión 1.0.1** · 21 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+
+| | Qué hay de nuevo |
+|:-:|------------------|
+| 👁️ | **Ves lo que va a hacer el enemigo antes de elegir**, y cada uno de los 15 monstruos ataca a su manera |
+| 🔥 | **Hogueras** para descansar o afilar tu arma. Siempre hay una antes del jefe |
+| 💀 | **Los sub-jefes son opcionales**: siempre puedes elegir un camino sin ellos |
+| ⚖️ | **Ahora se puede ganar**: un jugador medio gana 1 de cada 5 partidas |
+| 💾 | **Guardado automático**: cierra la pestaña y continúa donde lo dejaste, incluso en mitad de un combate |
+| 🏁 | **Pantalla final** con tu resumen y cuánto te faltó para vencer («casi») |
+| 🌱 | **Semilla**: cada ruta tiene un código y puedes repetirla, o escribir el tuyo |
+| 🏷️ | **Versiones**: el juego muestra su versión y hay un registro de cambios |
 
 ---
 
@@ -152,7 +170,7 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.1, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane 1 de cada 5 partidas**
+> **Versión 1.0.1, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane 1 de cada 5 partidas**
 > (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
 
 ### ✅ Ya se puede jugar
@@ -182,7 +200,7 @@ Lo haremos en **cuatro entregas**. Empezamos por hacer el juego **ganable y clar
 
 | Entrega | Nombre | Qué trae |
 |:-------:|--------|----------|
-| **A** ✅ | 🎯 **Jugable** | **Hecha (v1.1).** Ver qué va a hacer cada enemigo · Hogueras · Dificultad ajustada a **ganar 1 de cada 5** · Guardado de partida, semilla y pantalla final |
+| **A** ✅ | 🎯 **Jugable** | **Hecha (1.0.1).** Ver qué va a hacer cada enemigo · Hogueras · Dificultad ajustada a **ganar 1 de cada 5** · Guardado de partida, semilla y pantalla final |
 | **B** | 🎒 **Tu build** | Equipo de 4 ranuras y 5 rarezas · Elegir 1 de 3 mejoras tras cada combate · **Despertar como clase** |
 | **C** | 💥 **Táctico** | Debilidades y **Ruptura** (rompe al enemigo y actúa otra vez) · Combates con varios enemigos y orden de turnos |
 | **D** | 📖 **A largo plazo** | Bestiario, logros y el **Legado** de tu héroe caído · Niveles de riesgo para los que ya ganaron |
@@ -201,6 +219,8 @@ Lo haremos en **cuatro entregas**. Empezamos por hacer el juego **ganable y clar
 | Documento | Qué cuenta |
 |-----------|-----------|
 | 📋 [planning.md](planning.md) | **El plan completo** de lo que viene y por qué |
+| 📜 [Registro de cambios](CHANGELOG.md) | Qué trae cada versión del juego |
+| 🏷️ [Versiones](docs/versiones.md) | Cómo se numeran y se publican las versiones |
 | 🎲 [Eventos](docs/eventos.md) | Los 15 eventos con todos sus resultados |
 | ⚖️ [Equilibrio](docs/equilibrio.md) | Cómo se ajusta la dificultad y dónde está ahora |
 | 🔎 [Cómo funcionan los juegos de este género](jrpg-trend.md) | La investigación que guía el diseño |
@@ -235,9 +255,23 @@ npx playwright install chromium    # solo la primera vez
 npm test                           # ejecuta todas las comprobaciones
 ```
 
-Son 380 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
+Son 408 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
 
 Para ver cómo está el equilibrio: `npm run balance` juega miles de partidas simuladas y cuenta cuántas llegan al jefe.
+
+</details>
+
+<details>
+<summary><b>🏷️ Publicar una versión nueva</b></summary>
+
+<br>
+
+```bash
+npm run release              # ¿está todo sincronizado con la versión actual?
+npm run release -- patch     # 1.0.1 → 1.0.2  (también minor o major)
+```
+
+Cambia la versión en todos los sitios a la vez y prepara el registro de cambios. Los pasos completos están en [docs/versiones.md](docs/versiones.md).
 
 </details>
 
