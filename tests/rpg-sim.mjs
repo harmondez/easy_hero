@@ -26,32 +26,32 @@ function mulberry32(seed) {
 
 console.log('\n🗡️ Héroe y monstruos (escala propia del RPG)');
 const hero = createRpgHero();
-assert('el héroe empieza con ATK 1 / HP 25 / DEF 0', hero.atq === 1 && hero.hp === 25 && hero.def === 0);
+assert('el héroe empieza con ATK 1 / HP 25', hero.atq === 1 && hero.hp === 25);
 assert('maxHp = HP inicial y nivel 1', hero.maxHp === 25 && hero.level === 1);
 assert('createRpgHero devuelve una copia (no muta la base)', (hero.atq = 99, RPG_HERO_BASE.atq === 1));
-assert('el héroe solo tiene atributos básicos (sin pasivas, ultimates, Fervor, elementos ni clase)', (() => {
+assert('el héroe solo tiene atributos básicos (sin DEF, pasivas, ultimates, Fervor, elementos ni clase)', (() => {
     const keys = Object.keys(createRpgHero()).sort().join(',');
-    return keys === 'atq,color,def,hp,icon,level,maxHp,name';
+    return keys === 'atq,color,hp,icon,level,maxHp,name';
 })());
 assert('todas las partidas empiezan con el mismo héroe', JSON.stringify(createRpgHero()) === JSON.stringify(createRpgHero()));
 
 const m0 = rpgMonsterStats('monster', 0);
-assert('el primer monstruo es más débil que el héroe inicial', m0.atq <= 1 && m0.hp < 25 && m0.def === 0);
+assert('el primer monstruo es más débil que el héroe inicial', m0.atq <= 1 && m0.hp < 25);
 let monotone = true;
 for (let f = 1; f <= 8; f++) {
     const prev = rpgMonsterStats('monster', f - 1);
     const cur = rpgMonsterStats('monster', f);
-    if (cur.hp < prev.hp || cur.atq < prev.atq || cur.def < prev.def) monotone = false;
+    if (cur.hp < prev.hp || cur.atq < prev.atq) monotone = false;
 }
 assert('los monstruos nunca se debilitan al subir de piso', monotone);
 const hi = rpgMonsterStats('monster', 8);
-assert('el monstruo del piso 8 supera al del piso 0 en todo', hi.atq > m0.atq && hi.hp > m0.hp && hi.def > m0.def);
+assert('el monstruo del piso 8 supera al del piso 0 en todo', hi.atq > m0.atq && hi.hp > m0.hp);
 const sb = rpgMonsterStats('subboss', 5);
 const mo = rpgMonsterStats('monster', 5);
-assert('un sub-jefe es más fuerte que un monstruo del mismo piso', sb.atq > mo.atq && sb.hp > mo.hp && sb.def > mo.def);
+assert('un sub-jefe es más fuerte que un monstruo del mismo piso', sb.atq > mo.atq && sb.hp > mo.hp);
 const bo = rpgMonsterStats('boss', RPG_MAP_CONFIG.floors - 1);
 const sbLate = rpgMonsterStats('subboss', RPG_MAP_CONFIG.floors - 2);
-assert('el jefe final es más fuerte que cualquier sub-jefe', bo.atq > sbLate.atq && bo.hp > sbLate.hp && bo.def > sbLate.def);
+assert('el jefe final es más fuerte que cualquier sub-jefe', bo.atq > sbLate.atq && bo.hp > sbLate.hp);
 assert('piso negativo/decimal no rompe la escala', rpgMonsterStats('monster', -3).hp === 6 && Number.isInteger(rpgMonsterStats('monster', 2.7).hp));
 
 console.log('\n⚔️ Combate por turnos');
@@ -68,7 +68,7 @@ console.log('\n⚔️ Combate por turnos');
     // Atacar: el héroe pega y el monstruo responde
     let c = fresh();
     let r = rpgCombatAction(c, 'attack');
-    assert('atacar: el monstruo pierde ATK del héroe (mín. 1)', c.monster.hp === 5);
+    assert('atacar: el monstruo pierde el ATK del héroe', c.monster.hp === 5);
     assert('atacar: el monstruo responde con su golpe', c.hero.hp === 24 && r.events.length === 2);
     assert('el turno avanza', c.turn === 2 && !r.over);
 
@@ -88,10 +88,10 @@ console.log('\n⚔️ Combate por turnos');
     c = fresh('monster', 4); // HP 18
     r = rpgCombatAction(c, 'skill', 'fire_strike');
     assert('Golpe de Fuego inflige 5 de daño', c.monster.hp === 18 - 5);
-    assert('Golpe de Fuego ignora la DEF del monstruo', (() => {
-        const cc = fresh('monster', 6); // DEF 2
-        rpgCombatAction(cc, 'skill');
-        return cc.monster.hp === cc.monster.maxHp - 5;
+    assert('el héroe no tiene DEF: el monstruo golpea con todo su ATK', (() => {
+        const cc = fresh('monster', 6); // ATK 4
+        rpgCombatAction(cc, 'attack');
+        return cc.hero.hp === 25 - 4 && !('def' in cc.hero) && !('def' in cc.monster);
     })());
     assert('la habilidad queda enfriándose (3)', c.cooldowns.fire_strike === 3 && !rpgSkillReady(c, 'fire_strike'));
     r = rpgCombatAction(c, 'skill');
@@ -128,7 +128,7 @@ console.log('\n⚔️ Combate por turnos');
     assert('victoria sobre monstruo: +1 ATK, +4 HP máx (y curación) y nivel 2', h.atq === 2 && h.maxHp === 29 && h.hp === 29 && h.level === 2);
     const h2 = createRpgHero(); h2.hp = 10;
     applyRpgReward(h2, rpgVictoryReward('subboss'));
-    assert('victoria sobre sub-jefe: +2 ATK, +1 DEF, +8 HP', h2.atq === 3 && h2.def === 1 && h2.maxHp === 33 && h2.hp === 18);
+    assert('victoria sobre sub-jefe: +2 ATK, +8 HP', h2.atq === 3 && h2.maxHp === 33 && h2.hp === 18);
 
     // Un héroe que va creciendo debería poder con los primeros monstruos
     const grow = createRpgHero();

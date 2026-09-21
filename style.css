@@ -116,12 +116,11 @@ body {
 .btn-secondary:hover { background: linear-gradient(160deg, var(--border-strong), var(--bg-card-elevated)); border-color: var(--primary-light); }
 .btn-secondary:active { transform: scale(0.96); }
 
-/* --- Atributos básicos (ATK / HP / DEF) --- */
+/* --- Atributos básicos (ATK / HP) --- */
 .rpg-stat { font-family: 'Courier New', monospace; }
 .rpg-stat b { margin-right: 6px; letter-spacing: 0.5px; }
 .rpg-stat.atk { color: #f59e0b; }
 .rpg-stat.hp { color: #ef4444; }
-.rpg-stat.def { color: #49BBEB; }
 
 /* --- Números de daño flotantes --- */
 .dmg-float {
@@ -134,7 +133,6 @@ body {
     animation: dmg-rise 0.9s ease-out forwards;
 }
 .dmg-float.hp { color: #ef4444; }
-.dmg-float.def { color: #3b82f6; }
 .dmg-float.heal { color: #10b981; }
 @keyframes dmg-rise {
     0% { opacity: 1; transform: translateY(0) scale(1); }

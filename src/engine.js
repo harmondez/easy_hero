@@ -1,6 +1,6 @@
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)
-// Solo atributos básicos: ATK / HP / DEF. Nada del Easy Hit original: sin Fervor,
+// Solo atributos básicos: ATK / HP. Nada del Easy Hit original: sin Fervor,
 // pasivas de carta, ultimates ni catálogo de campeones.
 // =============================================
 
@@ -9,7 +9,7 @@
 // se especializa en guerrero, pícaro o elementalista).
 export const RPG_HERO_BASE = {
     name: 'Héroe', icon: '🗡️', color: '#fbbf24',
-    atq: 1, hp: 25, def: 0
+    atq: 1, hp: 25
 };
 
 export function createRpgHero() {
@@ -20,9 +20,9 @@ export function createRpgHero() {
 // (sub-jefe y jefe final multiplican la base del piso donde aparecen)
 export function rpgMonsterStats(type, floor) {
     const f = Math.max(0, floor | 0);
-    const base = { atq: 1 + Math.floor(f / 2), hp: 6 + 3 * f, def: Math.floor(f / 3) };
-    if (type === 'subboss') return { atq: base.atq + 2, hp: Math.round(base.hp * 2.5), def: base.def + 1 };
-    if (type === 'boss') return { atq: base.atq + 5, hp: Math.round(base.hp * 3.5), def: base.def + 2 };
+    const base = { atq: 1 + Math.floor(f / 2), hp: 6 + 3 * f };
+    if (type === 'subboss') return { atq: base.atq + 2, hp: Math.round(base.hp * 2.5) };
+    if (type === 'boss') return { atq: base.atq + 5, hp: Math.round(base.hp * 3.5) };
     return base;
 }
 
@@ -138,7 +138,7 @@ export const RPG_SKILLS = {
     fire_strike: {
         id: 'fire_strike', name: 'Golpe de Fuego', icon: '🔥', element: 'Fuego',
         damage: 5, cooldown: 3,
-        desc: 'Inflige 5 de daño de fuego (ignora la DEF).'
+        desc: 'Inflige 5 de daño de fuego.'
     }
 };
 
@@ -155,7 +155,7 @@ export function createRpgMonster(type, floor) {
     if (type === 'boss') { name = 'Dragón Ancestral'; icon = '🐉'; color = '#f97316'; }
     else if (type === 'subboss') { [name, icon] = RPG_SUBBOSS_POOL[f % RPG_SUBBOSS_POOL.length]; color = '#a78bfa'; }
     else { [name, icon] = RPG_MONSTER_POOL[Math.min(f, RPG_MONSTER_POOL.length - 1)]; color = '#ef4444'; }
-    return { type, floor: f, name, icon, color, atq: stats.atq, hp: stats.hp, maxHp: stats.hp, def: stats.def };
+    return { type, floor: f, name, icon, color, atq: stats.atq, hp: stats.hp, maxHp: stats.hp };
 }
 
 export function createRpgCombat(hero, monster) {
@@ -177,8 +177,8 @@ export function rpgCanFlee(combat) {
     return !!combat && !combat.over && combat.monster.type === 'monster';
 }
 
-function _rpgHit(attacker, defender) {
-    return Math.max(1, attacker.atq - defender.def);
+function _rpgHit(attacker) {
+    return Math.max(1, attacker.atq);
 }
 
 /**
@@ -193,7 +193,7 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
     let usedSkill = null;
 
     if (action === 'attack') {
-        const dmg = _rpgHit(hero, monster);
+        const dmg = _rpgHit(hero);
         monster.hp = Math.max(0, monster.hp - dmg);
         events.push({ actor: 'hero', target: 'monster', kind: 'attack', amount: dmg, text: `🗡️ ${hero.name} ataca a ${monster.name}: ${dmg} de daño.` });
     } else if (action === 'skill') {
@@ -211,7 +211,7 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
         events.push({ actor: 'hero', target: 'hero', kind: 'defend', amount: 0, text: `🛡️ ${hero.name} se defiende: el próximo golpe hará la mitad.` });
     } else if (action === 'flee') {
         if (!rpgCanFlee(combat)) return { ok: false, error: 'No se puede huir de este combate.', events: [], over: false, result: null };
-        const dmg = _rpgHit(monster, hero);
+        const dmg = _rpgHit(monster);
         hero.hp = Math.max(0, hero.hp - dmg);
         events.push({ actor: 'monster', target: 'hero', kind: 'attack', amount: dmg, text: `${monster.icon} ${monster.name} te golpea mientras huyes: ${dmg} de daño.` });
         combat.over = true;
@@ -231,13 +231,13 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
     }
 
     // Respuesta del monstruo (defender reduce a la mitad, redondeando hacia arriba)
-    let dmg = _rpgHit(monster, hero);
+    let dmg = _rpgHit(monster);
     const halved = combat.defending;
     if (halved) dmg = Math.ceil(dmg / 2);
     combat.defending = false;
     hero.hp = Math.max(0, hero.hp - dmg);
     events.push({ actor: 'monster', target: 'hero', kind: 'attack', amount: dmg,
-        text: `${monster.icon} ${monster.name} golpea a ${hero.name}: ${dmg} de daño${halved ? ' (reducido por la defensa)' : ''}.` });
+        text: `${monster.icon} ${monster.name} golpea a ${hero.name}: ${dmg} de daño${halved ? ' (reducido al defender)' : ''}.` });
 
     if (hero.hp <= 0) {
         combat.over = true;
@@ -256,16 +256,15 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
 
 // Recompensa provisional de victoria (para que el héroe crezca y la ruta sea recorrible)
 export function rpgVictoryReward(type) {
-    if (type === 'subboss') return { atq: 2, hp: 8, def: 1 };
-    if (type === 'boss') return { atq: 0, hp: 0, def: 0 };
-    return { atq: 1, hp: 4, def: 0 };
+    if (type === 'subboss') return { atq: 2, hp: 8 };
+    if (type === 'boss') return { atq: 0, hp: 0 };
+    return { atq: 1, hp: 4 };
 }
 
 export function applyRpgReward(hero, reward) {
     hero.atq += reward.atq;
-    hero.def += reward.def;
     hero.maxHp += reward.hp;
     hero.hp = Math.min(hero.maxHp, hero.hp + reward.hp);
-    if (reward.atq || reward.hp || reward.def) hero.level += 1;
+    if (reward.atq || reward.hp) hero.level += 1;
     return hero;
 }

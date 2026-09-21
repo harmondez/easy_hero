@@ -12,12 +12,12 @@ importan, combates por turnos y un jefe final al fondo de la ruta.
 Las ideas que definen el juego:
 
 1. **Todos empiezan con el mismo héroe y las mismas estadísticas.** No hay pantalla de elegir personaje.
-   El héroe inicial es siempre el mismo: **ATK 1 · HP 25 · DEF 0**.
+   El héroe inicial es siempre el mismo: **ATK 1 · HP 25**.
 2. **El héroe se hace más fuerte con el tiempo, y cómo lo hace depende del jugador.** Según los caminos que
    tome (monstruos, cofres, sub-jefes) y las decisiones que vaya tomando, el héroe evoluciona. En lugar de
    elegir una clase al principio, **la clase emerge de las decisiones**: puede acabar siendo
    **guerrero**, **pícaro** o **elementalista**.
-3. **Solo atributos básicos.** ATK, HP y DEF, con su **propia escala** (números pequeños). Nada de las
+3. **Solo atributos básicos.** ATK y HP, con su **propia escala** (números pequeños). Nada de las
    habilidades, pasivas, Fervor, ultimates ni cartas del Easy Hit normal: este juego se define por sí mismo.
    Las habilidades que existan aquí (hoy solo *Golpe de Fuego*) son del RPG.
 4. **Los monstruos empiezan débiles y escalan** a medida que el héroe avanza (y se hace más fuerte).
@@ -28,7 +28,7 @@ Las ideas que definen el juego:
 
 | Pieza | Estado |
 |-------|--------|
-| Héroe único (ATK 1 / HP 25 / DEF 0) con nivel | ✅ |
+| Héroe único (ATK 1 / HP 25) con nivel | ✅ |
 | Mapa de ruta: 10 pisos × 5 columnas, 4 caminos que no se cruzan, jefe final arriba | ✅ |
 | Nodos: monstruo 👹, cofre 🧰, sub-jefe 💀, jefe final 🐉 | ✅ |
 | Combate por turnos con cartas de héroe (izquierda) y monstruo (derecha) | ✅ |
@@ -42,15 +42,15 @@ Las ideas que definen el juego:
 
 ### Reglas que ya están en el código
 
-- **Daño** = `max(1, ATK atacante − DEF defensor)`.
+- **Daño** = el `ATK` del atacante (no hay DEF).
 - **Atacar**: un golpe. **Defender**: el próximo golpe recibido se reduce a la mitad (redondeo hacia arriba;
-  dura un golpe). **Golpe de Fuego**: 5 de daño fijo que ignora la DEF, enfriamiento de 3 rondas.
+  dura un golpe). **Golpe de Fuego**: 5 de daño fijo, enfriamiento de 3 rondas.
   **Huir**: solo de monstruos normales; te golpean al salir y vuelves al mapa **sin avanzar** (puedes elegir
   otro camino); no se puede huir de sub-jefes ni del jefe final.
-- **Monstruos** (piso `f`, empezando en 0): `ATK = 1 + ⌊f/2⌋`, `HP = 6 + 3f`, `DEF = ⌊f/3⌋`.
-  Sub-jefe: `ATK +2`, `HP ×2,5`, `DEF +1`. Jefe final: `ATK +5`, `HP ×3,5`, `DEF +2`.
-- **Recompensas provisionales**: victoria sobre monstruo `+1 ATK, +4 HP`; sobre sub-jefe `+2 ATK, +1 DEF, +8 HP`;
-  cofre: una mejora al azar (`+1 ATK`, `+5 HP` o `+1 DEF`). El HP se conserva entre combates.
+- **Monstruos** (piso `f`, empezando en 0): `ATK = 1 + ⌊f/2⌋`, `HP = 6 + 3f`.
+  Sub-jefe: `ATK +2`, `HP ×2,5`. Jefe final: `ATK +5`, `HP ×3,5`.
+- **Recompensas provisionales**: victoria sobre monstruo `+1 ATK, +4 HP`; sobre sub-jefe `+2 ATK, +8 HP`;
+  cofre: una mejora al azar (`+1 ATK` o `+5 HP`). El HP se conserva entre combates.
 - **Mapa**: el piso 0 son monstruos, el piso previo al jefe son cofres, los sub-jefes aparecen desde el piso 4,
   nunca hay dos cofres ni dos sub-jefes seguidos, y siempre hay al menos un sub-jefe y un cofre intermedio.
 - Con el héroe base y solo atacando se llega hasta el **primer sub-jefe (piso 5)**, donde cae. Es intencionado
@@ -122,7 +122,7 @@ Separación de responsabilidades (mantenerla al crecer):
 
 **Cómo podrían emerger guerrero, pícaro y elementalista** (a validar):
 - Las mejoras que aparecen en cofres, altares y eventos se agrupan en tres "familias" afines a cada clase
-  (aguante y DEF · golpes rápidos y esquiva/crítico · daño elemental y control).
+  (aguante y HP · golpes rápidos y esquiva/crítico · daño elemental y control).
 - El héroe acumula **afinidad** con cada familia según lo que elige; cuando una supera un umbral se
   convierte en su especialización y **desbloquea habilidades** en el menú *Habilidades* (ya preparado).
 - Elegir un camino de monstruos, de cofres o de sub-jefes inclina hacia unas familias u otras.

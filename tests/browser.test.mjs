@@ -46,8 +46,8 @@ console.log('\n🗡️ Inicio — la Carta de Héroe');
 const cardBox = await (await page.$('#rpgHeroCard')).boundingBox();
 assert('La Carta de Héroe y el botón Comenzar son visibles en pantalla', !!cardBox && cardBox.width > 0 && await page.isVisible('#btnRpgStart'));
 const heroCardText = await page.$eval('#rpgHeroCard', el => el.textContent);
-assert('La carta muestra ATK 1 / HP 25 / DEF 0',
-    /ATK\s*1\b/.test(heroCardText) && /HP\s*25\b/.test(heroCardText) && /DEF\s*0\b/.test(heroCardText));
+assert('La carta muestra ATK 1 / HP 25 y ninguna DEF',
+    /ATK\s*1\b/.test(heroCardText) && /HP\s*25\b/.test(heroCardText) && !/DEF/.test(heroCardText));
 assert('Solo hay RPG: sin motor ni datos del Easy Hit original', await page.evaluate(() =>
     typeof window.Engine.OFFICIAL_CARDS === 'undefined' && typeof window.Engine.ULTIMATE_DB === 'undefined'
     && typeof window.Engine.MAX_FERVOR === 'undefined' && !document.getElementById('tab-library')));
@@ -70,8 +70,8 @@ assert('Pulsar un monstruo abre el combate',
 const heroBox = await (await page.$('#rpgCombatHero .rpg-fighter-card')).boundingBox();
 const monBox = await (await page.$('#rpgCombatMonster .rpg-fighter-card')).boundingBox();
 assert('Héroe a la izquierda y monstruo a la derecha', heroBox && monBox && heroBox.x + heroBox.width <= monBox.x);
-assert('Ambos se muestran como carta con ATK/HP/DEF',
-    (await page.$$eval('.rpg-fighter-card .rpg-stat', els => els.length)) === 6);
+assert('Ambos se muestran como carta con ATK/HP',
+    (await page.$$eval('.rpg-fighter-card .rpg-stat', els => els.length)) === 4);
 const labels = await page.$$eval('#rpgCombatActions .rpg-action-label', els => els.map(e => e.textContent.trim()));
 assert('Acciones: Atacar / Defender / Habilidades / Huir', labels.join(',') === 'ATACAR,DEFENDER,HABILIDADES,HUIR');
 
@@ -117,7 +117,7 @@ assert('El héroe se hizo más fuerte', await page.evaluate(() =>
     window.gameState.rpg.hero.atq === 2 && window.gameState.rpg.hero.level === 2));
 
 console.log('\n🐉 Ruta completa hasta el jefe final');
-await page.evaluate(() => { const h = window.gameState.rpg.hero; h.atq = 999; h.def = 99; h.hp = h.maxHp = 999; });
+await page.evaluate(() => { const h = window.gameState.rpg.hero; h.atq = 999; h.hp = h.maxHp = 999; });
 let reachedBoss = false;
 for (let step = 0; step < 14 && !reachedBoss; step++) {
     const avail = await page.$$('#rpgMap .rpg-node.is-available');

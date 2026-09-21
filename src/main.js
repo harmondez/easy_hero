@@ -1,5 +1,5 @@
-import * as UI from './ui.js?v=20260920a';
-import * as Engine from './engine.js?v=20260920a';
+import * as UI from './ui.js?v=20260921a';
+import * as Engine from './engine.js?v=20260921a';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
@@ -29,7 +29,7 @@ function safeListener(id, eventType, callback) {
 
 // =============================================
 // 🗡️ MODO RPG — un solo héroe → recorrer la ruta → jefe final
-// Solo atributos básicos (ATK/HP/DEF). Estado en memoria: aún no se persiste.
+// Solo atributos básicos (ATK/HP). Estado en memoria: aún no se persiste.
 // =============================================
 function _rpgProgressText() {
     const r = gameState.rpg;
@@ -68,15 +68,14 @@ function _rpgStartRun() {
     UI.toggleRpgView('rpgMapView');
     UI.renderRpgLegend();
     UI.clearRpgLog();
-    UI.addRpgLog(`${r.hero.icon} ${r.hero.name} entra en la ruta con ATK ${r.hero.atq} · HP ${r.hero.hp} · DEF ${r.hero.def}. Elige por dónde empezar.`, 'system');
+    UI.addRpgLog(`${r.hero.icon} ${r.hero.name} entra en la ruta con ATK ${r.hero.atq} · HP ${r.hero.hp}. Elige por dónde empezar.`, 'system');
     _rpgRefreshMap(true);
 }
 
 // Botín de cofre (provisional): demuestra que el héroe crece durante la ruta.
 const RPG_CHEST_REWARDS = [
     { label: '+1 ATK', apply: h => { h.atq += 1; } },
-    { label: '+5 HP', apply: h => { h.maxHp += 5; h.hp += 5; } },
-    { label: '+1 DEF', apply: h => { h.def += 1; } }
+    { label: '+5 HP', apply: h => { h.maxHp += 5; h.hp += 5; } }
 ];
 
 function _rpgAdvanceTo(nodeId) {
@@ -146,7 +145,7 @@ function _rpgFinishCombat() {
     if (c.result === 'victory') {
         const reward = Engine.rpgVictoryReward(m.type);
         Engine.applyRpgReward(r.hero, reward);
-        const parts = [reward.atq && `+${reward.atq} ATK`, reward.hp && `+${reward.hp} HP`, reward.def && `+${reward.def} DEF`].filter(Boolean);
+        const parts = [reward.atq && `+${reward.atq} ATK`, reward.hp && `+${reward.hp} HP`].filter(Boolean);
         const isBoss = m.type === 'boss';
         UI.showRpgCombatResult({
             result: 'victory',

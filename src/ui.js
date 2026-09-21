@@ -1,4 +1,4 @@
-import * as Engine from './engine.js?v=20260920a';
+import * as Engine from './engine.js?v=20260921a';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -73,7 +73,6 @@ export function renderRpgHeroCard(hero) {
         <div class="rpg-hero-card-stats">
             <div class="rpg-stat atk"><b>ATK</b> ${hero.atq}</div>
             <div class="rpg-stat hp"><b>HP</b> ${hero.hp}</div>
-            <div class="rpg-stat def"><b>DEF</b> ${hero.def}</div>
         </div>`;
 }
 
@@ -96,7 +95,6 @@ export function renderRpgHeroPanel(hero, progressText) {
             <div class="rpg-hero-hp"><div class="rpg-hero-hp-fill" style="width:${hpPct}%"></div><span><b>HP</b> ${hero.hp} / ${hero.maxHp}</span></div>
             <div class="rpg-hero-stats">
                 <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
-                <span class="rpg-stat def"><b>DEF</b> ${hero.def}</span>
             </div>
         </div>
         <div class="rpg-hero-progress">${esc(progressText || '')}</div>`;
@@ -138,7 +136,7 @@ export function renderRpgMap(map, state = {}) {
         let info = t.desc;
         if (n.type === 'monster' || n.type === 'subboss' || n.type === 'boss') {
             const s = Engine.rpgMonsterStats(n.type, n.floor);
-            info = `${t.desc} ATK ${s.atq} · HP ${s.hp} · DEF ${s.def}`;
+            info = `${t.desc} ATK ${s.atq} · HP ${s.hp}`;
         }
         return `<button type="button" class="rpg-node type-${esc(n.type)} ${st}" data-rpg-node="${esc(n.id)}"
             style="left:${p.x}%;top:${p.y}%;--i:${i}" ${st === 'is-available' ? '' : 'disabled'}${hero}
@@ -185,7 +183,6 @@ function _rpgFighterCard(f, tag, status) {
             <div class="rpg-fighter-stats">
                 <div class="rpg-stat atk"><b>ATK</b> ${f.atq}</div>
                 <div class="rpg-stat hp"><b>HP</b> ${f.hp} / ${f.maxHp}</div>
-                <div class="rpg-stat def"><b>DEF</b> ${f.def}</div>
             </div>
             <div class="rpg-fighter-status">${status || '&nbsp;'}</div>
         </article>`;
@@ -227,7 +224,7 @@ export function renderRpgCombat(combat, opts = {}) {
         return;
     }
 
-    const dmg = Math.max(1, hero.atq - monster.def);
+    const dmg = Math.max(1, hero.atq);
     const canFlee = Engine.rpgCanFlee(combat);
     bar.innerHTML =
         _rpgActionButton('data-rpg-action="attack"', '🗡️', 'ATACAR', `Ataco una vez: ${dmg} de daño`, false) +

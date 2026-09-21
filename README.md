@@ -65,7 +65,7 @@ La clase no se elige: se **descubre**. Los enemigos son débiles a tipos distint
 
 | | Estilo | Filosofía | Daño |
 |:---:|---|---|---|
-| 🛡️ | **Guerrero** | Aguante, defensa y golpes contundentes | 🗡️ Filo · 🔨 Contundente |
+| 🛡️ | **Guerrero** | Aguante y golpes contundentes | 🗡️ Filo · 🔨 Contundente |
 | 🏹 | **Pícaro** | Velocidad, críticos y venenos | 🏹 Perforante · ☠️ Veneno |
 | 🔥 | **Elementalista** | Daño elemental y control | 🔥 Fuego · ⚡ Rayo |
 
@@ -74,9 +74,9 @@ La clase no se elige: se **descubre**. Los enemigos son débiles a tipos distint
 
 ### 📊 Atributos
 
-| **ATK** | **HP** | **DEF** | **SPD** | **MP** |
-|:---:|:---:|:---:|:---:|:---:|
-| Daño | Vida | Reducción | Orden de turno | Coste de habilidades |
+| **ATK** | **HP** | **SPD** | **MP** |
+|:---:|:---:|:---:|:---:|
+| Daño | Vida | Orden de turno | Coste de habilidades |
 
 Los monstruos empiezan débiles y **escalan a medida que avanzas**.
 
