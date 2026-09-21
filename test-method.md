@@ -7,18 +7,23 @@ La idea en una frase: **casi todo se prueba sobre el motor puro, con miles de ca
 
 | Capa | Archivo | Qué prueba | Tests | Tiempo |
 |------|---------|-----------|:-----:|:------:|
-| **Motor** | `tests/rpg-sim.mjs` | Héroe, escala de monstruos, combate, 300 mapas | 56 | **0,2 s** |
-| **Eventos** | `tests/events-sim.mjs` | Los 15 eventos, votos, IA, 3000 rutas simuladas | 111 | **2,2 s** |
-| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium (escritorio y móvil) | 59 | **88 s** |
+| **Motor** | `tests/rpg-sim.mjs` | Héroe, combate e **intenciones**, bestiario, semilla, 300 mapas (hogueras, sub-jefes evitables…) | 104 | **1,8 s** |
+| **Eventos** | `tests/events-sim.mjs` | Los 15 eventos, la hoguera, votos, IA, 1500 rutas con un héroe invencible | 118 | **7,8 s** |
+| **Guardado** | `tests/save-sim.mjs` | Guardar y retomar (combate y evento a medias), versiones, datos dañados | 36 | **0,4 s** |
+| **Equilibrio** | `tests/balance-guard.mjs` | Que el juego siga siendo ganable, sin ser trivial (1500 partidas de 3 bots) | 12 | **9,9 s** |
+| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas de página | 110 | **156 s** |
 
-Una regla útil: **si algo se puede comprobar en el motor, no se comprueba en el navegador.** Por eso las dos capas
-de arriba suman 167 tests en 2,4 s y la de abajo, con 59, tarda 36 veces más.
+Una regla útil: **si algo se puede comprobar en el motor, no se comprueba en el navegador.** Por eso las cuatro capas de arriba
+suman 270 tests en unos 20 s y la de abajo, con 110, tarda 8 veces más.
 
 ```bash
-npm run test:engine     # 0,2 s   ← se ejecuta tras cada cambio
-npm run test:events     # 2,2 s   ← se ejecuta tras cada cambio
-npm run test:browser    # 88 s    ← antes de subir, o al tocar la interfaz
-npm test                # los tres
+npm run test:engine     # 1,8 s   ← se ejecuta tras cada cambio
+npm run test:events     # 7,8 s   ← se ejecuta tras cada cambio
+npm run test:save       # 0,4 s
+npm run test:balance    # 9,9 s   ← tras tocar números de equilibrio
+npm run test:browser    # 156 s   ← antes de subir, o al tocar la interfaz
+npm test                # los cinco (380 comprobaciones)
+npm run balance         # NO es un test: la tabla de equilibrio (ver docs/equilibrio.md)
 ```
 
 ## 2. Los principios
@@ -63,7 +68,12 @@ evento a mano:
 
 Al añadir el evento 16, estos tests lo cubren solos y avisan si rompe la regla de las 2 decisiones.
 
-### 2.5 Dos tipos de simulación, con dos objetivos distintos
+### 2.5 Un simulador compartido, con tres bots y un modo invencible
+
+Toda la simulación vive en `tools/sim.mjs`, que usan los tests **y** el banco de equilibrio (`npm run balance`). Así, lo que se mide es lo que se
+prueba. Tiene **tres bots** (torpe, sensato, experto) y un **modo invencible** (`{ god: true }`).
+
+### 2.6 Dos tipos de simulación, con dos objetivos distintos
 
 | | Héroe invencible | Héroe realista |
 |--|------------------|----------------|
@@ -74,19 +84,27 @@ Al añadir el evento 16, estos tests lo cubren solos y avisan si rompe la regla 
 Mezclar las dos fue el primer error: al exigir que el bot ganara, los tests fallaban por **equilibrio**, no por
 **bugs**. Separarlas hizo que un test rojo signifique siempre «algo está roto» y no «el juego es difícil».
 
-### 2.6 El navegador, solo para lo que solo el navegador demuestra
+### 2.7 El equilibrio se vigila, no se fija
+
+`tests/balance-guard.mjs` **no** exige números exactos: solo bandas anchas (por ejemplo, «el sensato gana entre el 10 % y el 30 %») y
+propiedades («un sub-jefe se vence con la vida completa»). Así un cambio pequeño no lo rompe, pero uno que deja el juego injugable, sí.
+Los números se ajustan con `npm run balance` y se explican en [docs/equilibrio.md](docs/equilibrio.md).
+
+### 2.8 El navegador, solo para lo que solo el navegador demuestra
 Se prueba en Chromium lo que el motor no puede saber:
 
 - Que la vista se muestra, se oculta y cambia bien; que los botones están o no habilitados.
 - Que no hay errores de JavaScript en la página (`pageerror`).
 - Que el texto hostil no inyecta HTML.
+- Que **recargar la página** en un combate, un evento o el mapa **retoma exactamente** donde estabas (recargas reales, con `localStorage`).
+- Que un guardado viejo, dañado o un navegador con el almacenamiento bloqueado **no rompen** el juego.
 - Que en el móvil no hay scroll horizontal ni nodos solapados.
 
 Para llegar rápido a lo que se quiere ver, se **manipula el estado** en vez de jugar hasta allí:
 
 ```js
 await openEvent('lector');   // camina hasta un nodo 🎲 y fuerza qué evento sale (usedEvents)
-window.Math.random = () => 0.1;   // fuerza la rama «el puente aguanta»
+window.gameState.rpg.rng = () => 0.1;   // fuerza la rama «el puente aguanta» (el azar sale del generador de la partida)
 hero.atq = 999; hero.hp = 999;    // héroe casi invencible para cruzar combates sin esfuerzo
 ```
 
@@ -109,6 +127,10 @@ Antes de tocar el código hay que decidir **de quién es el fallo**:
 |---------|-----------|-------------|
 | 30 de 300 mapas con una ruta de < 3 eventos | **Bug del juego**: el generador no lo garantizaba | Se cambió el algoritmo y se comprobó con 5000 mapas |
 | El héroe invencible moría contra el reflejo | **Mala prueba**: el reflejo copia el ATK, y el bot abría con una habilidad débil | Se ajustó el bot |
+| `codeToSeed('k3f9-2qa')` ≠ `codeToSeed(' K3F92QA ')` | **Bug del juego**: los espacios y guiones cambiaban la semilla | Se normalizó el texto antes de convertirlo |
+| Las variantes del banco de equilibrio daban todas lo mismo | **Bug del montaje**: el navegador carga los módulos con y sin `?v=` y JavaScript los trata como copias distintas | Los números de equilibrio son ahora un único objeto compartido |
+| El puente ya no se podía forzar con `Math.random` | **Cambio del juego**: ahora el azar sale de la semilla de la partida | El test sustituye el generador de la partida |
+| El jefe tenía menos vida que un sub-jefe | **Diseño**: el banco lo dejaba así, pero se ve mal | Se retocó con el banco hasta cumplir también esa regla |
 | «Más de 50 nodos» fallaba a veces | **Mala prueba**: el umbral no salía de ningún dato | Se midieron 20 000 mapas (mín. 46) y se bajó a 40 |
 | Nodos «pequeños» en el móvil | **Mala prueba**: medía durante la animación de entrada | Se espera a que termine |
 | Nadie llega al jefe | **Diseño**: el equilibrio, no un bug | Se documentó, sin aserción |
@@ -137,5 +159,5 @@ imprime lo mínimo. Se mide antes de opinar; los umbrales salen de la **distribu
 - **Guardado de partida:** aún no existe.
 - **Otros navegadores:** solo Chromium. Firefox y Safari no se han probado.
 - **Accesibilidad y rendimiento en móviles reales:** solo se emula un móvil de 390 × 844.
-- **El test del navegador es lento (88 s)** por las esperas fijas (`sleep`) y por recorrer rutas completas. Se puede
+- **El test del navegador es lento (156 s)** por las esperas fijas (`sleep`), las recargas y por recorrer rutas completas. Se puede
   acelerar sustituyendo las esperas por esperas a condiciones, si empieza a estorbar.

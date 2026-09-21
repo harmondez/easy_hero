@@ -44,6 +44,30 @@
 
 ---
 
+## 🟢 Estado: la entrega A está hecha (v1.1)
+
+| # | Principal | Estado | Cómo quedó |
+|:-:|-----------|:------:|-----------|
+| **P1** | Intenciones visibles | ✅ | 15 monstruos, 3 sub-jefes y el jefe, cada uno con su patrón (ataca, golpe fuerte, carga, se protege, se cura, descansa). La intención mostrada es la que se ejecuta |
+| **P2** | Hoguera | ✅ | Cura el 30 % o afila (+1 ATK). Una siempre antes del jefe, nunca junto a un evento ni a otra hoguera, y todo camino pasa por ≥ 2 |
+| **P3** | Curva y banco de equilibrio | ✅ | `npm run balance` con 3 bots. **Sensato 18,8 %** (objetivo 20), experto 53,8 %, torpe 12,5 %. Detalle en [docs/equilibrio.md](docs/equilibrio.md) |
+| **P4** | Guardado, fin y semilla | ✅ | Guardado automático (evento y combate a medias incluidos), pantalla final con «casi», semilla con código, repetir la ruta |
+
+**Diferencias respecto al plan (decididas al implementar):**
+
+| Plan | Realidad |
+|------|----------|
+| Bot torpe ~3 % | **12,5 %**: el juego perdona a quien solo ataca. Se anota en `docs/equilibrio.md` |
+| Coste por combate 10-15 % | **6-17 %**, y un sub-jefe sano cuesta 23-42 % |
+| «La misma semilla da el mismo botín» | **Mismo mapa siempre.** Los eventos y el azar se repiten **si tomas las mismas decisiones** (el generador es uno solo y se consume en orden) |
+| Grupo fácil en los 3 primeros pisos | Lo dan los propios patrones (Slime, Rata, Goblin): sus estadísticas siguen la escala normal |
+| Sub-jefe ×1,6 / +1 (hipótesis) | **×1,3 / +1**; el jefe pasa a **×1,5 / +2** para superar siempre a un sub-jefe |
+
+**Nuevo en el equilibrio:** todos los números viven en `src/data/balance.js` y `npm run test:balance` vigila que un cambio no rompa el juego.
+**Pendiente conocido:** pico de dificultad en el piso 14 (el Jabalí, justo antes de la hoguera final).
+
+---
+
 ## 2. Punto de partida (lo que sabemos hoy)
 
 | Hecho | Origen |
@@ -69,10 +93,10 @@
 
 | # | Principal | Qué aporta al jugador | Esfuerzo | Entrega |
 |:-:|-----------|----------------------|:--------:|:-------:|
-| **P1** | Intenciones visibles del enemigo | Combates que se **entienden** y se ganan con cabeza | 🟡 | A |
-| **P2** | Hoguera 🔥 | Ritmo, respiro y una **decisión** en cada tramo | 🟡 | A |
-| **P3** | Curva de dificultad y banco de equilibrio | Que **se pueda ganar** (objetivo 20 %), con datos | 🟡 | A |
-| **P4** | Fin de partida, guardado y reintento | «Una partida más»: la derrota **enseña** | 🟡 | A |
+| **P1** ✅ | Intenciones visibles del enemigo | Combates que se **entienden** y se ganan con cabeza | 🟡 | A |
+| **P2** ✅ | Hoguera 🔥 | Ritmo, respiro y una **decisión** en cada tramo | 🟡 | A |
+| **P3** ✅ | Curva de dificultad y banco de equilibrio | Que **se pueda ganar** (objetivo 20 %), con datos | 🟡 | A |
+| **P4** ✅ | Fin de partida, guardado y reintento | «Una partida más»: la derrota **enseña** | 🟡 | A |
 | **P5** | 🛡️ **Equipo**: 4 ranuras y 5 rarezas | **Botín con emoción**; tu héroe se ve y se siente distinto | 🔴 | B |
 | **P6** | Mejoras pasivas «elige 1 de 3» | Una **elección** tras cada combate | 🟡 | B |
 | **P7** | Afinidad y clase emergente | **Identidad** y logro: «has despertado como…» | 🟡 | B |
@@ -333,7 +357,7 @@ Cada entrega termina con **tests verdes, banco de equilibrio, capturas revisadas
 
 | Entrega | Contenido | Resultado para el jugador |
 |:-------:|-----------|---------------------------|
-| **A · Jugable** | P1 intenciones · P2 hoguera · P3 curva y banco · P4 guardado y fin | **Se puede ganar**, se entiende lo que pasa y se puede retomar |
+| **A · Jugable** ✅ | P1 intenciones · P2 hoguera · P3 curva y banco · P4 guardado y fin | **Se puede ganar**, se entiende lo que pasa y se puede retomar |
 | **B · Con build** | **B1:** P5 equipo · **B2:** P6 mejoras + P7 afinidad | Cada cofre y cada combate **recompensan**; aparece la identidad |
 | **C · Táctico** | P8 Ruptura · P9 varios enemigos y turnos | El combate JRPG de verdad |
 | **D · Largo plazo** | P10 crónica y legado · P11 riesgo | Horas de juego y rejugabilidad |

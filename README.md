@@ -45,10 +45,11 @@ pícaro o elementalista.
   <img src="docs/img/mapa.jpg" alt="El mapa de la ruta: 16 pisos con caminos que se ramifican" width="620">
 </p>
 
-1. **🗺️ Elige tu camino.** Cada punto del mapa es un combate, un cofre, un evento o un sub-jefe. Avanzas hacia arriba, hasta el **jefe final**.
-2. **⚔️ Combate por turnos.** Atacas, te defiendes, usas habilidades o intentas huir.
-3. **🎲 Decide en los eventos.** Te encuentras con una situación y **dos decisiones**. Ninguna sale gratis.
-4. **🌱 Crece a tu manera.** Lo que ganas y lo que pierdes te va haciendo distinto a otros héroes.
+1. **🗺️ Elige tu camino.** Cada punto del mapa es un combate, un cofre, un evento, una hoguera o un sub-jefe. Avanzas hacia arriba, hasta el **jefe final**.
+2. **⚔️ Combate por turnos.** Ves lo que va a hacer el enemigo **antes** de elegir, y decides: atacar, defenderte, usar una habilidad o huir.
+3. **🔥 Recupera fuerzas.** En las hogueras puedes descansar o afilar tu arma. **Siempre hay una antes del jefe.**
+4. **🎲 Decide en los eventos.** Te encuentras con una situación y **dos decisiones**. Ninguna sale gratis.
+5. **💾 Retómalo cuando quieras.** El juego se guarda solo: cierras la pestaña y sigues justo donde lo dejaste.
 
 ### El combate
 
@@ -59,9 +60,24 @@ pícaro o elementalista.
 | Acción | Qué hace |
 |--------|----------|
 | 🗡️ **Atacar** | Golpeas una vez |
-| 🛡️ **Defender** | El próximo golpe que recibas hace la mitad |
+| 🛡️ **Defender** | El golpe de esta ronda hace la mitad. Solo sirve si el enemigo va a atacar |
 | ✨ **Habilidades** | Golpe de Fuego: 5 de daño, tarda 3 rondas en volver a estar listo |
 | 🏃 **Huir** | Sales del combate (te hacen daño al irte). No se puede huir de sub-jefes ni de jefes |
+
+#### 👁️ Ves lo que va a hacer el enemigo
+
+Sobre cada enemigo aparece **su próximo movimiento**, y ese movimiento es exactamente el que hará. Así, Defender deja de ser una apuesta y pasa a ser una decisión.
+
+| Lo que ves | Qué significa |
+|:----------:|---------------|
+| ⚔️ **Ataca 5** | Te hará 5 de daño |
+| 💥 **Golpe fuerte 9** | Un golpe grande: es el momento de defenderte |
+| ⚡ **Reúne fuerzas** | No ataca ahora, pero prepara algo fuerte |
+| 🛡️ **Se protege** | Este turno recibirá la mitad de daño |
+| 💚 **Se cura** | Recupera vida |
+| 💤 **Descansa** | No hace nada |
+
+Cada uno de los **15 monstruos** tiene su forma de atacar: el Goblin carga y golpea fuerte, el Esqueleto se protege, el Murciélago se cura…
 
 ---
 
@@ -135,18 +151,23 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 
 ## 🚧 Estado del juego
 
-> [!WARNING]
-> **Todavía está en desarrollo y el equilibrio no está terminado.** Ahora mismo el jefe final es **casi imposible de alcanzar**.
-> Es lo primero que vamos a arreglar (ver *Qué viene*).
+> [!NOTE]
+> **Versión 1.1, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane 1 de cada 5 partidas**
+> (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
 
 ### ✅ Ya se puede jugar
 
 - 🗺️ Mapa de **16 pisos** que cambia en cada partida
 - ⚔️ Combate por turnos: atacar, defender, habilidad y huir
+- 👁️ **Ves lo que va a hacer cada enemigo** antes de elegir, y **15 monstruos** con su propia forma de atacar
+- 🔥 **Hogueras** para descansar o afilar tu arma, con una siempre antes del jefe
 - 🎲 **15 eventos** con dos decisiones cada uno
-- 💀 Sub-jefes, cofres y un jefe final
+- 💀 Sub-jefes **opcionales** (siempre hay un camino sin ellos), cofres y un jefe final
 - 🧠 Un enemigo especial, **El Lector**, que aprende de lo que haces
 - 🤞 Promesas que cambian tu forma de jugar (por ejemplo, renunciar a huir)
+- 💾 **Guardado automático**: cierra la pestaña y continúa donde lo dejaste
+- 🏁 **Pantalla final** con tu resumen y la línea de «casi»: cuánto te faltó
+- 🌱 **Semilla**: cada ruta tiene un código; con el mismo código y las mismas decisiones, la partida se repite igual
 - 📱 Funciona en móvil y en ordenador
 
 ### 🔜 En camino
@@ -161,7 +182,7 @@ Lo haremos en **cuatro entregas**. Empezamos por hacer el juego **ganable y clar
 
 | Entrega | Nombre | Qué trae |
 |:-------:|--------|----------|
-| **A** | 🎯 **Jugable** | Ver qué va a hacer cada enemigo · 🔥 Hogueras para descansar · Ajustar la dificultad (objetivo: **ganar 1 de cada 5**) · Guardar tu partida y una pantalla final |
+| **A** ✅ | 🎯 **Jugable** | **Hecha (v1.1).** Ver qué va a hacer cada enemigo · Hogueras · Dificultad ajustada a **ganar 1 de cada 5** · Guardado de partida, semilla y pantalla final |
 | **B** | 🎒 **Tu build** | Equipo de 4 ranuras y 5 rarezas · Elegir 1 de 3 mejoras tras cada combate · **Despertar como clase** |
 | **C** | 💥 **Táctico** | Debilidades y **Ruptura** (rompe al enemigo y actúa otra vez) · Combates con varios enemigos y orden de turnos |
 | **D** | 📖 **A largo plazo** | Bestiario, logros y el **Legado** de tu héroe caído · Niveles de riesgo para los que ya ganaron |
@@ -181,6 +202,7 @@ Lo haremos en **cuatro entregas**. Empezamos por hacer el juego **ganable y clar
 |-----------|-----------|
 | 📋 [planning.md](planning.md) | **El plan completo** de lo que viene y por qué |
 | 🎲 [Eventos](docs/eventos.md) | Los 15 eventos con todos sus resultados |
+| ⚖️ [Equilibrio](docs/equilibrio.md) | Cómo se ajusta la dificultad y dónde está ahora |
 | 🔎 [Cómo funcionan los juegos de este género](jrpg-trend.md) | La investigación que guía el diseño |
 | 📖 [Diseño de sistemas RPG](Diseño%20de%20Sistemas%20RPG%20Minimalista.md) | Investigación complementaria |
 | 🧪 [Cómo lo comprobamos](test-method.md) | Cómo verificamos que todo funciona |
@@ -213,7 +235,9 @@ npx playwright install chromium    # solo la primera vez
 npm test                           # ejecuta todas las comprobaciones
 ```
 
-Son 226 comprobaciones automáticas. Las dos primeras tardan unos 2 segundos; la del navegador, un minuto y medio.
+Son 380 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
+
+Para ver cómo está el equilibrio: `npm run balance` juega miles de partidas simuladas y cuenta cuántas llegan al jefe.
 
 </details>
 

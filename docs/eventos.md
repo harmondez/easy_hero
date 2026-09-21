@@ -182,3 +182,13 @@ y el héroe no tiene forma de curarse entre combates (las hogueras llegan en M3)
 
 Casi todas las muertes ocurren en los sub-jefes (pisos 5-9). Es trabajo de M4, junto con las hogueras, pero conviene
 tenerlo presente al probar: **ahora mismo el jefe final es prácticamente inalcanzable jugando de forma normal**.
+
+## 🔥 La hoguera (evento especial)
+
+Desde la entrega A, los nodos 🔥 usan la misma pantalla de decisiones que los eventos, pero **no forman parte del catálogo de 15**:
+no se sortean, no gastan ninguno y no salen en el resumen como «evento vivido». Tiene dos decisiones:
+
+| Decisión | Efecto |
+|----------|--------|
+| **Descansar** | Cura el 30 % de la vida máxima (mínimo 1 HP) |
+| **Afilar tu arma** | +1 ATK *(provisional: en la entrega B pasa a ser elegir 1 de 3 objetos)* |
