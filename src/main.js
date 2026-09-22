@@ -1,12 +1,12 @@
-import * as UI from './ui.js?v=1.2.0';
-import * as Engine from './engine.js?v=1.2.0';
-import * as Events from './events.js?v=1.2.0';
-import * as Save from './save.js?v=1.2.0';
-import * as Items from './items.js?v=1.2.0';
-import * as Meta from './meta.js?v=1.2.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.2.0';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.2.0';
-import { GAME_VERSION } from './version.js?v=1.2.0';
+import * as UI from './ui.js?v=1.3.0';
+import * as Engine from './engine.js?v=1.3.0';
+import * as Events from './events.js?v=1.3.0';
+import * as Save from './save.js?v=1.3.0';
+import * as Items from './items.js?v=1.3.0';
+import * as Meta from './meta.js?v=1.3.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.3.0';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.3.0';
+import { GAME_VERSION } from './version.js?v=1.3.0';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
@@ -146,6 +146,8 @@ function _rpgStartRun(seed) {
     r.rng = createRng(r.seed);
     r.hero = Engine.createRpgHero();
     r.hero.trophy = meta.trophyItem ? { ...meta.trophyItem } : null; // una copia: nunca se pierde, esté equipado o no
+    for (const k of Meta.PRIMARY_KEYS) r.hero.primary[k] += meta.primary[k] || 0; // puntos de nivel YA invertidos, permanentes
+    Engine.refreshPrimaryStats(r.hero);
     r.map = Engine.generateRpgMap(r.rng);
     r.currentId = null;
     r.visitedIds = [];
@@ -310,6 +312,7 @@ function _rpgLootDecide(action) {
 
     if (action === 'equip') {
         const { old, stored } = Items.equipAndStash(r.hero, item);
+        Engine.refreshPrimaryStats(r.hero); // el bono de STR/INT depende del tipo de daño del arma equipada
         r.stats.equipped++;
         Meta.recordItemEquipped(meta, item);
         persistMeta();
@@ -338,6 +341,18 @@ function _rpgOpenCharView() {
     r.charSelection = null;
     UI.toggleRpgView('rpgCharView');
     _rpgRefreshCharView();
+}
+
+// Gastar un punto de nivel (permanente: se queda en meta.js para siempre) en una primaria de esta ruta
+function _rpgSpendPoint(key) {
+    const r = gameState.rpg;
+    if (!r.hero || !Meta.spendStatPoint(meta, key)) return;
+    r.hero.primary[key] += 1;
+    Engine.refreshPrimaryStats(r.hero);
+    persistMeta();
+    log(`📈 ${r.hero.name} invierte un punto en ${key.toUpperCase()} (para siempre).`, 'victory');
+    _rpgRefreshCharView();
+    persist();
 }
 
 function _rpgCharSelect(from, extra) {
@@ -393,6 +408,7 @@ function _rpgCharAction(action) {
     } else {
         return;
     }
+    Engine.refreshPrimaryStats(hero); // el bono de STR/INT depende del tipo de daño del arma equipada
     _rpgRefreshCharView();
     persist();
 }
@@ -623,11 +639,14 @@ function _rpgCombatContinue() {
         Meta.recordCombatWin(meta);
         const gold = RPG_BALANCE.gold[m.type] || RPG_BALANCE.gold.monster;
         Meta.recordGold(meta, gold);
+        const xp = Meta.XP_REWARD[m.type] || Meta.XP_REWARD.monster;
+        const lvl = Meta.recordXp(meta, xp);
         persistMeta();
         _rpgAdvanceTo(r.pendingNodeId);
         log(m.type === 'boss'
-            ? `🐉 ${r.hero.name} derrota al ${m.name}. ¡Ruta completada! (+${gold} 🪙)`
-            : `${m.icon} ${r.hero.name} vence a ${m.name} (piso ${m.floor + 1}). +${gold} 🪙`, 'victory');
+            ? `🐉 ${r.hero.name} derrota al ${m.name}. ¡Ruta completada! (+${gold} 🪙 · +${xp} XP)`
+            : `${m.icon} ${r.hero.name} vence a ${m.name} (piso ${m.floor + 1}). +${gold} 🪙 · +${xp} XP`, 'victory');
+        if (lvl.levelsGained > 0) log(`✨ ¡Subes a nivel de personaje ${lvl.newLevel}! Tienes ${lvl.statPoints} puntos por repartir (pantalla de Personaje).`, 'victory');
         if (m.type === 'boss') {
             r.pendingNodeId = null;
             r.pendingBossMonster = m;
@@ -671,6 +690,8 @@ function initEvents() {
     safeListener('btnRpgChar', 'click', () => _rpgOpenCharView());
     safeListener('btnCharBack', 'click', () => { UI.toggleRpgView('rpgMapView'); _rpgRefreshMap(false); });
     safeListener('charBody', 'click', (e) => {
+        const spend = e.target.closest('[data-char-spend]');
+        if (spend) { _rpgSpendPoint(spend.dataset.charSpend); return; }
         const action = e.target.closest('[data-char-action]');
         if (action) { _rpgCharAction(action.dataset.charAction); return; }
         const pick = e.target.closest('[data-char-pick]');

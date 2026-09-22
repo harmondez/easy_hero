@@ -1,5 +1,5 @@
-import { createRng } from './rng.js?v=1.2.0';
-import { GAME_VERSION } from './version.js?v=1.2.0';
+import { createRng } from './rng.js?v=1.3.0';
+import { GAME_VERSION } from './version.js?v=1.3.0';
 
 // =============================================
 // 💾 Guardado de partida (puro: recibe el almacenamiento por parámetro, así se prueba sin navegador)
@@ -9,7 +9,7 @@ import { GAME_VERSION } from './version.js?v=1.2.0';
 // El guardado lleva una versión: si el formato cambia en el futuro, uno antiguo se descarta con aviso en lugar de romper el juego.
 // =============================================
 export const SAVE_KEY = 'easy-hero-save';
-export const SAVE_VERSION = 2;   // 2: el héroe lleva equipo y hay botín pendiente
+export const SAVE_VERSION = 3;   // 3: el héroe lleva primarias (STR/DEX/INT/VIT) y crítico/esquiva/resistencia
 
 const clone = o => JSON.parse(JSON.stringify(o));
 
@@ -54,7 +54,7 @@ export function restoreRun(data) {
         if (!data || data.v !== SAVE_VERSION) return null;
         if (!data.hero || !data.map || !Array.isArray(data.map.nodes) || typeof data.seed !== 'number') return null;
         if (!Number.isFinite(data.hero.hp) || !Number.isFinite(data.hero.maxHp) || !Number.isFinite(data.hero.atq)) return null;
-        if (!data.hero.equipment) return null;
+        if (!data.hero.equipment || !data.hero.primary) return null;
         const rng = createRng(data.seed);
         if (data.rngState != null) rng.state = data.rngState;
         const rpg = {

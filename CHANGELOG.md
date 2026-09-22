@@ -5,6 +5,20 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.3.0] - 2026-09-22
+
+### ✨ Novedades
+- 🧬 **Estadísticas primarias**: Fuerza, Destreza, Inteligencia y Vitalidad. Generan tu ATK, tu vida máxima, tu probabilidad de **crítico** y de **esquiva**, y tu **resistencia física** — sin cambiar nada de lo ya calibrado (con las 4 en su valor base, el héroe se comporta exactamente igual que antes de que existiera este sistema).
+- ⚔️ **Físico y elemental, según el arma**: Filo/Contundente/Perforante los potencia la Fuerza; Veneno/Fuego/Rayo, la Inteligencia. Cambiar de arma cambia qué estadística importa.
+- 🧬 **Nivel de personaje, PERMANENTE**: ganas experiencia al vencer combates, subes de nivel y repartes tú mismo los puntos entre las 4 primarias, desde la pantalla de Personaje. A diferencia del equipo (que se reinicia cada ruta), el nivel y los puntos invertidos **te acompañan para siempre**, en todas tus partidas futuras.
+
+### ⚠️ Decisión de diseño
+- Esto **reabre a propósito** la regla «meta-progresión solo horizontal, nunca poder fijo» fijada al principio del proyecto: ahora sí hay una fuente de poder permanente entre partidas. Decisión explícita del usuario, con conocimiento de la regla que cambia. Detalle en [historial.md](historial.md).
+
+### 🛠️ Por dentro
+- `src/stats.js` nuevo (fórmulas puras); `meta.charLevel/xp/statPoints/primary` en `src/meta.js`; `SAVE_VERSION` sube a 3 (las partidas de antes de este cambio se descartan con aviso).
+- 39 comprobaciones nuevas en `tests/stats-sim.mjs`; 26 nuevas en `tests/browser.test.mjs`.
+
 ## [1.2.0] - 2026-09-22
 
 ### ✨ Novedades

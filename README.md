@@ -12,7 +12,7 @@
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.2.0-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.3.0-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -27,17 +27,17 @@
 
 ## 🆕 Novedades
 
-**Versión 1.2.0** · 22 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.3.0** · 22 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 | | Qué hay de nuevo |
 |:-:|------------------|
+| 🧬 | **Estadísticas primarias**: Fuerza, Destreza, Inteligencia y Vitalidad, con crítico, esquiva y resistencia de verdad |
+| 📈 | **Nivel de personaje, permanente**: gana experiencia, sube de nivel y reparte tú mismo los puntos — te acompaña en todas tus rutas futuras |
 | 🧍 | **Pantalla de Personaje**: tu héroe, su equipo y un **inventario de 10 ranuras** para guardar objetos sin equiparlos |
 | 🪙 | **Oro**: los monstruos dejan monedas al vencerlos; se acumula para siempre, incluso si mueres |
 | 🐉 | **El trofeo del jefe**: vence al Dragón Ancestral y te quedas con un objeto legendario para todas tus rutas futuras |
 | 🏰 | **Nueva ambientación**: fantasía oscura de mazmorra, piedra y forja en vez del azul genérico de antes |
 | 📖🎒🏆 | **Bestiario, colección y 15 logros**, accesibles desde el menú de la cabecera |
-| 💾 | **Importar / exportar tu progreso** como un texto, desde el panel de Opciones |
-| 👁️ | Ves lo que va a hacer el enemigo antes de elegir, y cada uno de los 15 monstruos ataca a su manera |
 
 ---
 
@@ -101,6 +101,23 @@ Cada uno de los **15 monstruos** tiene su forma de atacar: el Goblin carga y gol
 ## 🛡️ Tu héroe
 
 Empiezas con **ATK 1** (tu fuerza de ataque) y **25 de vida**. Nada más. A partir de ahí depende de ti.
+
+### 🧬 Estadísticas primarias y nivel de personaje
+
+Detrás de tu ATK y tu vida hay 4 números: **Fuerza, Destreza, Inteligencia y Vitalidad**. Ganas experiencia
+venciendo combates, subes de nivel y **repartes tú mismo** los puntos entre las 4, desde la pantalla de
+Personaje.
+
+| | Primaria | Qué da |
+|:-:|----------|--------|
+| 💪 | **Fuerza** | Daño físico (Filo, Contundente, Perforante) y algo de vida |
+| 🏹 | **Destreza** | Probabilidad de golpe **crítico** y de **esquivar** un golpe entero |
+| 🧠 | **Inteligencia** | Daño elemental (Veneno, Fuego, Rayo) |
+| ❤️ | **Vitalidad** | Vida máxima y resistencia física |
+
+> [!IMPORTANT]
+> A diferencia del equipo (que se reinicia cada ruta), **tu nivel y tus puntos son permanentes**: te acompañan
+> en todas tus partidas futuras, aunque mueras. Es la única fuerza del juego que nunca se pierde, junto con el oro.
 
 ### Tres estilos, seis tipos de daño
 
@@ -171,13 +188,14 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.2.0, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane algo más de 1 de cada 5 partidas**
+> **Versión 1.3.0, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane algo más de 1 de cada 5 partidas**
 > (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
 
 ### ✅ Ya se puede jugar
 
 - 🗺️ Mapa de **16 pisos** que cambia en cada partida
 - ⚔️ Combate por turnos: atacar, defender, habilidad y huir
+- 🧬 **Estadísticas primarias y nivel permanente**: Fuerza, Destreza, Inteligencia y Vitalidad; sube de nivel y reparte tú mismo los puntos
 - 🧍 **Pantalla de Personaje**: tu equipo, un **inventario de 10 ranuras** y tu oro, todo en un vistazo
 - 🎒 **Equipo de 4 ranuras y 5 rarezas**, con 122 objetos y 24 afijos (ver más abajo)
 - 👁️ **Ves lo que va a hacer cada enemigo** antes de elegir, y **15 monstruos** con su propia forma de atacar
@@ -263,7 +281,7 @@ npx playwright install chromium    # solo la primera vez
 npm test                           # ejecuta todas las comprobaciones
 ```
 
-Son 625 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
+Son 671 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
 
 Para ver cómo está el equilibrio: `npm run balance` juega miles de partidas simuladas y cuenta cuántas llegan al jefe.
 
@@ -276,7 +294,7 @@ Para ver cómo está el equilibrio: `npm run balance` juega miles de partidas si
 
 ```bash
 npm run release              # ¿está todo sincronizado con la versión actual?
-npm run release -- patch     # 1.0.2 → 1.0.3  (también minor o major)
+npm run release -- patch     # 1.3.0 → 1.3.1  (también minor o major)
 ```
 
 Cambia la versión en todos los sitios a la vez y prepara el registro de cambios. Los pasos completos están en [docs/versiones.md](docs/versiones.md).

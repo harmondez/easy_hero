@@ -1,6 +1,7 @@
-import * as Engine from './engine.js?v=1.2.0';
-import * as Items from './items.js?v=1.2.0';
-import * as Meta from './meta.js?v=1.2.0';
+import * as Engine from './engine.js?v=1.3.0';
+import * as Items from './items.js?v=1.3.0';
+import * as Meta from './meta.js?v=1.3.0';
+import * as Stats from './stats.js?v=1.3.0';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -529,6 +530,33 @@ function _charDetailHtml(hero, selection) {
         <div class="char-detail-actions">${actions.join('')}</div>`;
 }
 
+// Barra de XP + reparto de puntos (permanente: se guarda en meta.js para siempre, aunque mueras o cambies de ruta)
+function _charLevelHtml(hero, meta) {
+    const level = meta.charLevel || 1;
+    const need = Stats.xpToNext(level);
+    const pct = Math.max(0, Math.min(100, Math.round(100 * meta.xp / need)));
+    const points = meta.statPoints || 0;
+    const primaryRows = Stats.PRIMARY_KEYS.map(k => {
+        const info = Stats.PRIMARY_INFO[k];
+        return `<div class="char-primary-row">
+            <span class="char-primary-icon" title="${esc(info.desc)}">${info.icon}</span>
+            <span class="char-primary-name">${info.short}</span>
+            <span class="char-primary-value">${hero.primary[k]}</span>
+            ${points > 0 ? `<button type="button" class="char-primary-plus" data-char-spend="${k}" title="Invertir un punto en ${esc(info.name)} (para siempre)">+1</button>` : ''}
+        </div>`;
+    }).join('');
+    return `
+        <div class="char-level">
+            <div class="char-level-header">
+                <span class="char-level-badge">🧬 Nivel de personaje ${level}</span>
+                ${points > 0 ? `<span class="char-level-points">✨ ${points} punto${points === 1 ? '' : 's'} por repartir</span>` : ''}
+            </div>
+            <div class="panel-progress-bar"><div class="panel-progress-fill" style="width:${pct}%"></div></div>
+            <p class="panel-progress-label">${meta.xp} / ${need} XP</p>
+            <div class="char-primary-grid">${primaryRows}</div>
+        </div>`;
+}
+
 /** view: { hero, meta, selection } */
 export function renderCharacterView(hero, meta, selection) {
     const el = document.getElementById('charBody');
@@ -543,6 +571,12 @@ export function renderCharacterView(hero, meta, selection) {
     const trophyTile = hero.trophy
         ? `<div class="char-trophy">${_charInvTile({ ...hero.trophy }, trophySel, true)}<span class="char-trophy-label">Trofeo</span></div>`
         : '';
+    const extraStats = [
+        hero.critChance > 0 ? `<span class="rpg-stat crit">💥 ${Math.round(hero.critChance * 100)}% crítico</span>` : '',
+        hero.dodgeChance > 0 ? `<span class="rpg-stat dodge">💨 ${Math.round(hero.dodgeChance * 100)}% esquiva</span>` : '',
+        hero.physResist > 0 ? `<span class="rpg-stat resist">🛡️ ${Math.round(hero.physResist * 100)}% resist. física</span>` : '',
+        hero.elemDmgBonus > 0 ? `<span class="rpg-stat elem">🔮 +${hero.elemDmgBonus} daño elemental</span>` : ''
+    ].filter(Boolean).join('');
 
     el.innerHTML = `
         <div class="char-detail" id="charDetail">${_charDetailHtml(hero, selection)}</div>
@@ -552,7 +586,9 @@ export function renderCharacterView(hero, meta, selection) {
                 <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
                 <span class="rpg-stat hp"><b>HP</b> ${hero.hp} / ${hero.maxHp}</span>
                 ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
+                ${extraStats}
             </div>
+            ${meta ? _charLevelHtml(hero, meta) : ''}
             <div class="char-inventory">
                 <div class="char-inventory-title">🎒 Inventario · ${inv.length} / ${Items.INVENTORY_SIZE}</div>
                 <div class="char-inventory-grid">${invTiles}</div>

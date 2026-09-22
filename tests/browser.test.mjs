@@ -331,7 +331,13 @@ await sleep(150);
 
 // -- El Lector: fallar todo = combate contra un enemigo que lee tus movimientos
 await openEvent('lector');
-await page.evaluate(() => { const h = window.gameState.rpg.hero; h.atq = 1; h.hp = h.maxHp = 9999; });
+await page.evaluate(() => {
+    const h = window.gameState.rpg.hero;
+    // Equipo limpio: un arma con reglas recogida antes en la prueba (golpe furtivo, frenesí…) podría rematarlo
+    // de un solo golpe y el combate nunca llegaría a la segunda ronda que esta prueba necesita.
+    h.equipment = { weapon: window.Items.createStarterItem(), secondary: null, armor: null, accessory: null };
+    h.atq = 1; h.hp = h.maxHp = 9999;
+});
 await page.click('[data-rpg-event-opt="0"]');
 await sleep(100);
 for (let i = 0; i < 3; i++) {
@@ -462,8 +468,49 @@ console.log('\n🧍 Personaje: equipo, inventario y oro');
     // Si la ranura estaba ocupada, lo anterior vuelve al inventario (mismo recuento); si estaba vacía, el inventario baja en 1
     assert('Equipar desde el inventario cambia el equipo y el inventario nunca crece',
         after.eq !== before.eq && after.inv <= before.inv);
+
+    console.log('\n🧬 Nivel de personaje (STR/DEX/INT/VIT): permanente, con puntos por repartir');
+    // Los combates previos de esta prueba ya han dado algo de XP: se deja en cero para partir de un estado conocido
+    await page.evaluate(() => { window.gameMeta.statPoints = 0; });
+    await page.click('#btnCharBack'); // aún estábamos en Personaje tras el paso anterior; se recarga la vista
+    await sleep(100);
+    await page.click('#btnRpgChar');
+    await sleep(150);
+    assert('Sin puntos por repartir, no aparece ningún botón de +1', (await page.$$('[data-char-spend]')).length === 0);
+    const primaryBefore = await page.evaluate(() => window.gameState.rpg.hero.primary.vit);
+    await page.evaluate(() => { window.gameMeta.statPoints = 3; }); // como si se acabara de subir de nivel
+    await page.click('#btnCharBack');
+    await sleep(100);
+    await page.click('#btnRpgChar'); // recargar la vista para que se vea el reparto
+    await sleep(150);
+    assert('Con puntos disponibles, aparece un botón +1 por cada una de las 4 primarias', (await page.$$('[data-char-spend]')).length === 4);
+    await page.screenshot({ path: shot('personaje-nivel'), fullPage: true });
+    await page.click('[data-char-spend="vit"]');
+    await sleep(150);
+    const afterState = await page.evaluate(() => ({ primaryVit: window.gameState.rpg.hero.primary.vit, metaVit: window.gameMeta.primary.vit, points: window.gameMeta.statPoints, maxHp: window.gameState.rpg.hero.maxHp }));
+    assert('Gastar un punto en VIT sube esa primaria y la vida máxima de verdad, y descuenta el punto',
+        afterState.primaryVit === primaryBefore + 1 && afterState.points === 2 && afterState.maxHp > 25);
+    assert('El punto invertido se guarda en el progreso permanente (meta), no solo en la ruta', afterState.metaVit === 1);
+    await page.reload({ waitUntil: 'load' });
+    await sleep(500);
+    const afterReload = await page.evaluate(() => window.gameMeta.primary.vit);
+    assert('Sobrevive a recargar la página: es permanente de verdad', afterReload === 1);
+    await page.click('#btnRpgContinue');
+    await sleep(300);
+    await page.click('#btnRpgChar');
+    await sleep(150);
+    assert('Al retomar la ruta, el punto ya invertido se ve reflejado en el héroe (base 5 + 1 invertido)',
+        (await page.evaluate(() => window.gameState.rpg.hero.primary.vit)) === primaryBefore + 1);
     await page.click('#btnCharBack');
     await sleep(150);
+    await page.click('#btnRpgNewMap');
+    await sleep(400);
+    assert('Y en una ruta completamente NUEVA, el punto permanente sigue ahí (empieza igual salvo por lo invertido)',
+        (await page.evaluate(() => window.gameState.rpg.hero.primary.vit)) === primaryBefore + 1);
+
+    // Limpieza: el punto es permanente A PROPÓSITO (así lo decidió el usuario), pero el resto de pruebas de este
+    // mismo archivo asumen una cuenta nueva sin nada invertido — se retira aquí para no contaminarlas.
+    await page.evaluate(() => { window.gameMeta.primary = { str: 0, dex: 0, int: 0, vit: 0 }; });
 }
 
 // Abre un combate concreto (héroe con 500 de vida y 1 de ATK) para probar la interfaz sin depender del mapa

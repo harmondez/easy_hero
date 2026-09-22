@@ -11,24 +11,26 @@ La idea en una frase: **casi todo se prueba sobre el motor puro, con miles de ca
 | **Eventos** | `tests/events-sim.mjs` | Los 15 eventos, la hoguera, votos, IA, 1500 rutas con un héroe invencible | 118 | **19 s** |
 | **Equipo** | `tests/items-sim.mjs` | Fabricación (6000 objetos), equipar/descartar/inventario (10 ranuras), botín «1 de 3», todas las reglas en combate, 1500 builds al azar | 148 | **0,2 s** |
 | **Progreso** | `tests/meta-sim.mjs` | Bestiario, colección, logros, oro y el trofeo del jefe — guardar/cargar, casos límite | 38 | **0,1 s** |
+| **Primarias** | `tests/stats-sim.mjs` | STR/DEX/INT/VIT, nivel y XP permanente, reparto de puntos, y su efecto real en combate (crítico, esquiva, resistencia) | 39 | **0,1 s** |
 | **Guardado** | `tests/save-sim.mjs` | Guardar y retomar (combate y evento a medias, equipo y botín pendiente), versiones, datos dañados | 36 | **1,1 s** |
 | **Equilibrio** | `tests/balance-guard.mjs` | Que el juego siga siendo ganable, sin ser trivial (1500 partidas de 3 bots) | 12 | **38 s** |
 | **Versiones** | `tests/version-check.mjs` | La versión coincide en todos los sitios; el script de publicación (en simulacro) | 27 | **0,1 s** |
-| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas, personaje/inventario/oro/trofeo, paneles (bestiario/colección/logros/opciones), importar/exportar | 142 | **~140 s** |
+| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas, personaje/inventario/oro/trofeo/nivel, paneles (bestiario/colección/logros/opciones), importar/exportar | 149 | **~145 s** |
 
 Una regla útil: **si algo se puede comprobar en el motor, no se comprueba en el navegador.** Por eso las siete capas de arriba
-suman 483 tests en poco más de 1 minuto y la de abajo, con 142, tarda varias veces más.
+suman 522 tests en poco más de 1 minuto y la de abajo, con 149, tarda varias veces más.
 
 ```bash
 npm run test:engine     # 2,7 s   ← se ejecuta tras cada cambio
 npm run test:events     # 19 s    ← se ejecuta tras cada cambio
 npm run test:items      # 0,2 s   ← tras tocar objetos, rarezas, afijos o el inventario
 npm run test:meta       # 0,1 s   ← tras tocar bestiario, colección, logros, oro o el trofeo
+npm run test:stats      # 0,1 s   ← tras tocar las primarias, el nivel o la XP
 npm run test:save       # 1,1 s
 npm run test:balance    # 38 s    ← tras tocar números de equilibrio
-npm run test:browser    # ~140 s  ← antes de subir, o al tocar la interfaz
+npm run test:browser    # ~145 s  ← antes de subir, o al tocar la interfaz
 npm run test:version    # 0,1 s   ← comprueba que la versión está sincronizada
-npm test                # las ocho (625 comprobaciones)
+npm test                # las nueve (671 comprobaciones)
 npm run balance         # NO es un test: la tabla de equilibrio (ver docs/equilibrio.md)
 ```
 
@@ -140,6 +142,8 @@ Antes de tocar el código hay que decidir **de quién es el fallo**:
 | «Más de 50 nodos» fallaba a veces | **Mala prueba**: el umbral no salía de ningún dato | Se midieron 20 000 mapas (mín. 46) y se bajó a 40 |
 | Nodos «pequeños» en el móvil | **Mala prueba**: medía durante la animación de entrada | Se espera a que termine |
 | Nadie llega al jefe | **Diseño**: el equilibrio, no un bug | Se documentó, sin aserción |
+| Al añadir crítico/esquiva (primarias), 625 pruebas exactas corrían el riesgo de romperse | **Riesgo evitado a propósito**: cualquier `rng()` nuevo en el combate desplaza los números aleatorios de todo lo que viene después | Las fórmulas dan 0 en la base y el código NO tira el dado si la probabilidad es 0 (`if (chance > 0)`): un héroe sin invertir puntos consume exactamente los mismos números que antes |
+| «héroe nuevo, 25 HP» fallaba solo al final del archivo del navegador | **Mala prueba**: un punto de nivel permanente de una prueba anterior se quedaba puesto para el resto del archivo | Se limpia el progreso permanente (`gameMeta.primary`) al final de ese bloque de pruebas |
 
 El método para investigar: un **script pequeño y descartable** (fuera del repositorio) que reproduce el caso y
 imprime lo mínimo. Se mide antes de opinar; los umbrales salen de la **distribución real**, no de una corazonada.

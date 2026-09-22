@@ -28,6 +28,9 @@ Registro compacto de lo ya decidido, investigado y hecho. Formato de log, más a
   inicial = solo espada básica.
 - Fuera de la ronda, a propósito: cuadrícula 3×3, grupo de aliados, cartas/mazo, Boost Points, meta-progresión
   vertical, mochila de objetos, calendario tipo Persona, MP como recurso (se retoma en la entrega C).
+  > ⚠️ **Revisado el 2026-09-22**: tanto «meta-progresión vertical» como «mochila de objetos» se reabrieron a
+  > propósito (decisión explícita del usuario, no un descuido). Mochila → ver la entrada de inventario más abajo.
+  > Meta-progresión vertical → ver «Estadísticas primarias y nivel permanente» más abajo.
 
 ## 2026-09-21 · Entrega A (v1.0.0 → v1.0.1) — «Jugable»
 **P1** intenciones visibles del enemigo · **P2** hoguera (30 % o afilar +1 ATK, provisional) · **P3** curva y banco
@@ -146,6 +149,57 @@ señalado al usuario antes de construirlo, no en silencio.
   inventario, el trofeo persiste a través de una recarga y de una ruta nueva). **625 comprobaciones en total**,
   todas en verde. Capturas revisadas a mano.
 - Publicado como **1.2.0** (entrega, no patch: mismo criterio que el decorado).
+
+## 2026-09-22 · Estadísticas primarias y nivel permanente — sin publicar
+El usuario propuso, de golpe, un sistema de estadísticas de ARPG completo: 4 primarias (STR/DEX/INT/VIT) + ~28
+secundarias (daño físico/elemental, resistencias, crítico, esquiva, velocidad de ataque, daño por sangrado/
+veneno/quemadura, daño contra 8 tipos de criatura, probabilidades de aturdir/quemar/envenenar, vida/maná y su
+regeneración, oro y experiencia totales). Se le explicó la tensión con el pilar del proyecto («solo ATK y HP,
+minimalista») y se pidió que hiciera **preguntas antes de planificar** — dos rondas de preguntas (8 en total)
+resolvieron la arquitectura antes de tocar código.
+
+**Decisiones (con el usuario), en orden de impacto:**
+1. **Las primarias GENERAN ATK/HP, no los sustituyen.** Con las 4 en su base (5/5/5/5, sin invertir nada), todas
+   las fórmulas dan 0 de bono: el héroe se comporta exactamente igual que antes de que este sistema existiera.
+   Así el resto del motor, los 122 objetos, los 24 monstruos y el banco de equilibrio siguieron funcionando sin
+   tocarlos — las 625 comprobaciones de antes de este cambio pasan **sin modificar ni una**, salvo la lista
+   exacta de campos del héroe (que crece con los nuevos).
+2. **El crecimiento viene de un nivel con experiencia, y es PERMANENTE.** El usuario confirmó esto explícitamente
+   sabiendo que **reabre la regla «meta-progresión solo horizontal, nunca poder fijo»** fijada al principio del
+   proyecto (se le avisó de la tensión antes de construirlo). Ganas XP al vencer combates (solo eso, como el
+   oro), subes de nivel y repartes **tú mismo** los puntos entre las 4 primarias desde la pantalla de Personaje.
+   A diferencia del equipo y el inventario (que se reinician cada ruta), el nivel y los puntos invertidos se
+   guardan en `meta.js` y te acompañan **para siempre**, en todas las partidas futuras.
+3. **Físico/elemental ligados al tipo de arma**: Filo/Contundente/Perforante los potencia STR; Veneno/Fuego/Rayo,
+   INT. Conecta con la afinidad de clase ya planeada (P7).
+4. **Fuera de esta fase, anotado para después**: velocidad de ataque/orden de turnos (ya es P9, entrega C) y daño
+   contra 8 tipos de criatura (los 24 del bestiario no están etiquetados por tipo todavía). También quedan sin
+   construir: sangrado como tercer DOT, probabilidades de aturdir/quemar/envenenar (hoy el veneno y la quemadura
+   son garantizados al golpear, no una tirada), maná (sigue siendo de la entrega C) y daño/resistencia elemental
+   aplicados de verdad (los monstruos no tienen tipo de daño propio todavía, así que la resistencia elemental se
+   calcula y se ve, pero no hace nada en combate hasta que lo tengan).
+
+**Fórmulas de la fase 1** (`src/stats.js`, todas 0 en la base 5/5/5/5):
+- `maxHp += (VIT−5) × 4` (siempre) · `ATK += ⌊(STR−5)/10⌋` (solo con arma física) · `daño elemental += ⌊(INT−5)/10⌋`
+  (solo con arma elemental) · `crítico = (DEX−5) × 0,4 %` (×1,5 de daño) · `esquiva = (DEX−5) × 0,3 %` ·
+  `resist. física = (VIT−5) × 0,4 %` · `resist. elemental = (INT−5) × 0,4 %` (sin efecto todavía, ver arriba).
+- Nivel: XP por victoria `{monstruo 5, sub-jefe 15, jefe 50}` · siguiente nivel = `40 + nivel × 20` · 2 puntos por
+  nivel. Todo de relleno, sin calibrar contra el banco de equilibrio (como el oro): se recalibrará cuando el
+  sistema esté completo.
+- **Riesgo técnico real y cómo se evitó**: crítico y esquiva tiran un dado (`combat.rng()`) en pleno combate; con
+  DEX en la base eso podría desincronizar el generador aleatorio y romper cientos de pruebas con valores exactos.
+  Se resolvió con un guardián `if (probabilidad > 0)`: en la base la probabilidad es 0 y el dado **no se llega a
+  tirar**, así que el generador aleatorio consume exactamente los mismos números que antes para cualquier héroe
+  sin puntos invertidos.
+- **Bug real encontrado al escribir las pruebas**: la primera vez, `hero.primary.vit` se comparó contra `1` (el
+  punto invertido) en vez de `6` (base 5 + 1): eran fallos de la prueba, no del juego. Y el punto permanente
+  invertido en una prueba se filtraba a las pruebas siguientes del mismo archivo (un héroe "nuevo" ya no tenía
+  25 HP) — se corrigió limpiando `meta.primary` al final del bloque de pruebas, ya que la persistencia entre
+  partidas es aquí comportamiento correcto del juego, no un defecto.
+- **Verificación**: `tests/stats-sim.mjs` nuevo (39 comprobaciones: fórmulas, curva de nivel, reparto de puntos,
+  migración de un progreso antiguo sin primarias, y el efecto real en combate — crítico, esquiva y resistencia
+  forzados con un generador de números fijo). 26 nuevas en `tests/browser.test.mjs` (pantalla de nivel, repartir
+  un punto, que sobreviva a recargar la página y a empezar una ruta nueva). `SAVE_VERSION` sube a 3.
 
 ---
 

@@ -1,6 +1,7 @@
-import { RPG_BALANCE } from './data/balance.js?v=1.2.0';
-import { pickMonsterDef } from './data/monsters.js?v=1.2.0';
-import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.2.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.3.0';
+import { pickMonsterDef } from './data/monsters.js?v=1.3.0';
+import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.3.0';
+import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.3.0';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)
@@ -18,15 +19,46 @@ export const RPG_HERO_BASE = {
 
 // vows: renuncias permanentes (noFlee, noSkills) · skillMods: mejoras de habilidades · affinity: hacia dónde se inclina el build
 // equipment: { weapon, secondary, armor, accessory } · guard: cuánto más reduce Defender (lo suman los escudos)
+// primary: { str, dex, int, vit } — base 5/5/5/5; main.js le suma los puntos permanentes ya invertidos (meta.primary)
 export function createRpgHero() {
     const hero = {
         ...RPG_HERO_BASE, maxHp: RPG_HERO_BASE.hp, level: 1, guard: 0,
         vows: {}, skillMods: {}, affinity: { guerrero: 0, picaro: 0, elementalista: 0 },
         equipment: { weapon: null, secondary: null, armor: null, accessory: null },
         inventory: [],   // hasta 10 objetos guardados sin equipar; se reinicia cada ruta
-        trophy: null     // el objeto legendario del jefe final, si ya lo ganaste; lo rellena main.js desde el progreso persistente
+        trophy: null,    // el objeto legendario del jefe final, si ya lo ganaste; lo rellena main.js desde el progreso persistente
+        primary: { ...PRIMARY_BASE },
+        critChance: 0, critMult: 1.5, dodgeChance: 0, physResist: 0, elemResist: 0,
+        _primaryBonus: { atq: 0, maxHp: 0 }
     };
     equipItem(hero, createStarterItem());
+    refreshPrimaryStats(hero);
+    return hero;
+}
+
+/**
+ * Recalcula lo que dan las 4 primarias: hay que llamarla al crear el héroe, al cambiar de arma (el bono de
+ * ATK/daño elemental depende del tipo de daño del arma) y al invertir un punto de nivel. En la base (5/5/5/5,
+ * sin inversión) todo esto da 0 y el héroe queda exactamente como antes de que existiera este sistema.
+ */
+export function refreshPrimaryStats(hero) {
+    const weapon = hero.equipment && hero.equipment.weapon;
+    const bonus = derivePrimary(hero.primary, weapon && weapon.damaged);
+    const old = hero._primaryBonus || { atq: 0, maxHp: 0 };
+
+    hero.atq = Math.max(1, hero.atq - old.atq + bonus.atqBonus);
+    const dHp = bonus.maxHpBonus - old.maxHp;
+    if (dHp) {
+        hero.maxHp = Math.max(1, hero.maxHp + dHp);
+        hero.hp = Math.min(hero.maxHp, Math.max(1, hero.hp + Math.max(0, dHp)));
+    }
+    hero._primaryBonus = { atq: bonus.atqBonus, maxHp: bonus.maxHpBonus };
+    hero.elemDmgBonus = bonus.elemDmgBonus;
+    hero.critChance = bonus.critChance;
+    hero.critMult = bonus.critMult;
+    hero.dodgeChance = bonus.dodgeChance;
+    hero.physResist = bonus.physResist;
+    hero.elemResist = bonus.elemResist;
     return hero;
 }
 
@@ -388,12 +420,25 @@ function _rpgDefended(hero, dmg) {
     return Math.max(0, Math.ceil(dmg / 2) - (hero.guard || 0));
 }
 
+// Crítico (DEX): en la base (sin invertir puntos) critChance es 0 y esto no consume ningún número aleatorio,
+// así que no cambia nada de lo que ya pasaba antes de que existiera este sistema.
+function _rpgRollCrit(combat, dmg) {
+    const { hero } = combat;
+    if (hero.critChance > 0 && combat.rng() < hero.critChance) {
+        return { dmg: Math.max(dmg + 1, Math.round(dmg * (hero.critMult || 1.5))), crit: true };
+    }
+    return { dmg, crit: false };
+}
+
 // --- El golpe del héroe: ATK + reglas del equipo. `st` es el estado (se pasa una copia para previsualizar) ---
 function _rpgStrikeDamage(combat, st, hpNow) {
     const { hero, monster } = combat;
     const weapon = hero.equipment && hero.equipment.weapon;
     let dmg = _rpgHit(hero) + st.revenge;
-    if (weapon && weapon.damaged) dmg += ruleSum(hero, 'damage_type_bonus', weapon.damaged);
+    if (weapon && weapon.damaged) {
+        dmg += ruleSum(hero, 'damage_type_bonus', weapon.damaged);
+        if (isElementalDamage(weapon.damaged)) dmg += hero.elemDmgBonus || 0; // el bono de INT solo con arma elemental
+    }
     if (hasRule(hero, 'frenzy')) dmg += st.frenzy * ruleSum(hero, 'frenzy');
     if (st.attacks === 0) dmg *= Math.max(1, ruleMax(hero, 'first_attack_double'));
     const execute = ruleMax(hero, 'execute');
@@ -426,11 +471,14 @@ export function rpgAttackPreview(combat) {
     return rpgAttackHits(combat).reduce((a, b) => a + b, 0);
 }
 
-/** Daño que recibiría el héroe ahora mismo (0 si el monstruo no ataca). `defending` = si se defiende. */
+/** Daño que recibiría el héroe ahora mismo (0 si el monstruo no ataca). `defending` = si se defiende.
+ *  No cuenta la esquiva (es al azar); sí cuenta la resistencia física, que es fija. */
 export function rpgIncomingPreview(combat, defending = false) {
     const it = combat.monster.intent;
     if (!it || it.k !== 'attack') return 0;
-    return defending ? _rpgDefended(combat.hero, it.dmg) : it.dmg;
+    let dmg = defending ? _rpgDefended(combat.hero, it.dmg) : it.dmg;
+    if (combat.hero.physResist > 0) dmg = Math.max(0, Math.round(dmg * (1 - combat.hero.physResist)));
+    return dmg;
 }
 
 // Icono del tipo de daño del arma (🗡️ Filo, 🔥 Fuego…) para los textos del combate
@@ -532,10 +580,11 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
 
     if (action === 'attack') {
         const icon = _rpgWeaponIcon(hero);
-        const hits = _rpgAttackHits(combat, true);
-        hits.forEach(dmg => {
+        const hits = _rpgAttackHits(combat, true).map(dmg => _rpgRollCrit(combat, dmg));
+        hits.forEach(({ dmg, crit }) => {
             monster.hp = Math.max(0, monster.hp - dmg);
-            events.push({ actor: 'hero', target: 'monster', kind: 'attack', amount: dmg, text: `${icon} ${hero.name} ataca a ${monster.name}: ${dmg} de daño${guardNote}.` });
+            events.push({ actor: 'hero', target: 'monster', kind: crit ? 'crit' : 'attack', amount: dmg,
+                text: `${icon} ${hero.name} ataca a ${monster.name}: ${dmg} de daño${crit ? ' 💥 ¡CRÍTICO!' : ''}${guardNote}.` });
             _rpgOnHit(combat, dmg, events);
         });
         _rpgStatusSummary(monster, events, poisonBefore, burnBefore);
@@ -547,12 +596,12 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
             return { ok: false, error: `${skill.name} se está enfriando (${combat.cooldowns[skillId]}).`, events: [], over: false, result: null };
         }
         const info = rpgSkillInfo(hero, skillId, combat);
-        const dmg = _rpgGuarded(combat, info.damage);
+        const { dmg, crit } = _rpgRollCrit(combat, _rpgGuarded(combat, info.damage));
         monster.hp = Math.max(0, monster.hp - dmg);
         combat.cooldowns[skillId] = info.cooldown;
         usedSkill = skillId;
         combat.state.frenzy = 0;
-        events.push({ actor: 'hero', target: 'monster', kind: 'skill', amount: dmg, text: `${skill.icon} ${hero.name} usa ${skill.name}: ${dmg} de daño de fuego${guardNote}.` });
+        events.push({ actor: 'hero', target: 'monster', kind: 'skill', amount: dmg, text: `${skill.icon} ${hero.name} usa ${skill.name}: ${dmg} de daño de fuego${crit ? ' 💥 ¡CRÍTICO!' : ''}${guardNote}.` });
         if (info.burn) _applyBurn(monster, info.burn.dmg, info.burn.turns);
         _rpgStatusSummary(monster, events, poisonBefore, burnBefore);
     } else if (action === 'defend') {
@@ -600,13 +649,20 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
             dmg *= 2;
             events.push({ actor: 'monster', target: 'monster', kind: 'read', amount: 0, text: `👁️ ${monster.name} lee tus movimientos: ¡has repetido la acción y su golpe será doble!` });
         }
+        // Esquiva (DEX): si esquivas, el golpe no llega y no hay nada más que mitigar
+        const dodged = hero.dodgeChance > 0 && combat.rng() < hero.dodgeChance;
         const halved = combat.defending;
-        if (halved) dmg = _rpgDefended(hero, dmg);
+        if (dodged) dmg = 0;
+        else {
+            if (halved) dmg = _rpgDefended(hero, dmg);
+            if (hero.physResist > 0) dmg = Math.max(0, Math.round(dmg * (1 - hero.physResist))); // resistencia física (VIT)
+        }
         dmg = _rpgHeroTakesHit(combat, dmg, events);
         events.push({ actor: 'monster', target: 'hero', kind: 'attack', amount: dmg,
-            text: `${monster.icon} ${monster.name} golpea a ${hero.name}: ${dmg} de daño${halved ? ' (reducido al defender)' : ''}.` });
+            text: dodged ? `💨 ${hero.name} esquiva el golpe de ${monster.name}.`
+                : `${monster.icon} ${monster.name} golpea a ${hero.name}: ${dmg} de daño${halved ? ' (reducido al defender)' : ''}.` });
         // Espinas: mientras defiendes, quien te golpea recibe daño
-        const thorns = halved ? ruleSum(hero, 'thorns') : 0;
+        const thorns = (!dodged && halved) ? ruleSum(hero, 'thorns') : 0;
         if (thorns && hero.hp > 0) {
             const back = Math.min(monster.hp, thorns);
             monster.hp -= back;

@@ -19,8 +19,8 @@
 // El daño de un evento nunca mata: deja al héroe como mínimo en 1 HP.
 // =============================================
 
-import { RPG_BALANCE } from './balance.js?v=1.2.0';
-import { atk, CHARGE } from './monsters.js?v=1.2.0';
+import { RPG_BALANCE } from './balance.js?v=1.3.0';
+import { atk, CHARGE } from './monsters.js?v=1.3.0';
 
 // `pattern` = los movimientos que repite en ciclo (ver data/monsters.js); el jugador ve el siguiente antes de actuar.
 export const EVENT_MONSTERS = {

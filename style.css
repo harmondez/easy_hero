@@ -1075,3 +1075,44 @@ body {
     .char-detail { position: static; }
     .char-inventory-grid { max-width: 320px; }
 }
+
+.rpg-stat.crit { color: #f472b6; }
+.rpg-stat.dodge { color: #7dd3fc; }
+.rpg-stat.resist { color: var(--info); }
+.rpg-stat.elem { color: #c084fc; }
+
+/* --- Nivel de personaje: permanente, con XP y reparto de puntos --- */
+.char-level {
+    width: 100%; max-width: 420px;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+.char-level-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.char-level-badge { font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--text-light); }
+.char-level-points { font-size: 0.76rem; font-weight: 700; color: var(--gold); animation: rpgIntentPulse 1.4s ease-in-out infinite; }
+.char-level .panel-progress-bar { margin-top: 2px; }
+.char-level .panel-progress-label { text-align: center; margin: 4px 0 12px; }
+.char-primary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.char-primary-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.8rem;
+}
+.char-primary-icon { font-size: 1rem; cursor: help; }
+.char-primary-name { font-weight: 700; color: var(--text-muted); flex: 1; }
+.char-primary-value { font-family: 'Courier New', monospace; font-weight: 800; color: var(--text-main); }
+.char-primary-plus {
+    padding: 2px 8px;
+    font: inherit; font-size: 0.72rem; font-weight: 800;
+    color: var(--bg-main);
+    background: var(--gold);
+    border: none; border-radius: 6px;
+    cursor: pointer;
+}
+.char-primary-plus:hover { background: var(--primary-light); }
+@media (prefers-reduced-motion: reduce) { .char-level-points { animation: none; } }

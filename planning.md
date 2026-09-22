@@ -16,6 +16,11 @@
 pantalla de Personaje, inventario de 10 ranuras, oro y el trofeo del jefe final — hasta la versión 1.2.0.**
 Detalle en [historial.md](historial.md).
 
+**🚧 Sin publicar, listo para revisar:** estadísticas primarias (STR/DEX/INT/VIT) y nivel de personaje
+**permanente** con experiencia y reparto de puntos. Reabre a propósito «meta-progresión solo horizontal»
+(decisión explícita del usuario). Con las primarias en su base, el juego se comporta igual que antes — no hace
+falta recalibrar nada del equilibrio ya publicado. 671 comprobaciones en verde. Detalle en [historial.md](historial.md).
+
 **Backlog abierto de B1 (no bloquea nada, se retoma cuando convenga):**
 - Capturas de pantalla (`SHOT_DIR=…`) de la pantalla de botín y el panel de 4 ranuras, para revisar el aspecto.
 - Script de viabilidad de las 6 armas y cada afijo (que ninguna base o afijo domine). Sin datos todavía.
@@ -33,6 +38,22 @@ Detalle en [historial.md](historial.md).
   `describeItem()`, que ya existe); revisar si conviene ampliarla cuando lleguen las mejoras de B2.
 - Sin viabilidad medida de si 10 ranuras de inventario son demasiadas o pocas para una ruta de 16 pisos; se verá
   con el uso real.
+
+**Backlog abierto de las primarias/nivel (aplazado a propósito, fuera de la fase 1):**
+- **Velocidad de ataque** y **daño contra 8 tipos de criatura** (bestia/humanoide/no muerto/dragón/máquina/
+  elemental/goblin/orco): necesitan, respectivamente, el orden de turnos (P9) y etiquetar los 24 del bestiario
+  con un tipo que hoy no existe.
+- **Daño por sangrado** (un tercer DOT, junto a veneno y quemadura) y **probabilidades** de aturdir/quemar/
+  envenenar: hoy veneno y quemadura son garantizados al golpear (si tienes la regla), no una tirada. Aturdir no
+  existe (saltaría el turno del enemigo: es mecánica nueva).
+- **Maná (MP)**: sigue siendo de la entrega C, como ya estaba previsto; Golpe de Fuego sigue con enfriamiento.
+- **Resistencia elemental**: se calcula y se ve en la pantalla de Personaje, pero no hace nada todavía — los
+  monstruos no tienen un tipo de daño propio (solo las armas del héroe lo tienen). Falta dárselo.
+- **Calibrar los números** (XP por victoria, curva de nivel, puntos por nivel, cuánto valen crítico/esquiva/
+  resistencia) contra el banco de equilibrio: son de relleno, como lo fueron el oro y los primeros números del
+  equipo, pendientes de una pasada real cuando el sistema esté más completo.
+- Sin interfaz para **ver** las estadísticas secundarias derivadas en detalle (hoy se resumen como chips sueltos
+  en la pantalla de Personaje: crítico, esquiva, resistencia, daño elemental).
 
 **Siguiente paso: entrega B2** — P6 (mejoras) y P7 (afinidad), ver abajo.
 

@@ -1,6 +1,8 @@
-import { MONSTER_ROSTER, SUBBOSS_ROSTER, BOSS_DEF } from './data/monsters.js?v=1.2.0';
-import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.2.0';
-import { DAMAGE_TYPES } from './items.js?v=1.2.0';
+import { MONSTER_ROSTER, SUBBOSS_ROSTER, BOSS_DEF } from './data/monsters.js?v=1.3.0';
+import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.3.0';
+import { DAMAGE_TYPES } from './items.js?v=1.3.0';
+import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.3.0';
+export { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext };
 
 // =============================================
 // 🐺 Progreso persistente — bestiario, colección de objetos y logros.
@@ -31,7 +33,11 @@ const emptyMeta = () => ({
     eventsSeenEver: {},
     achievements: {},           // id -> timestamp (ms) del desbloqueo
     gold: 0,                    // nunca se pierde, ni al morir; todavía no se gasta en nada
-    trophyItem: null            // el objeto legendario del jefe final: una vez ganado, para siempre
+    trophyItem: null,           // el objeto legendario del jefe final: una vez ganado, para siempre
+    // --- Nivel de personaje: PERMANENTE, sobrevive a la muerte y a todas las rutas (decisión explícita del
+    // usuario: reabre a propósito la meta-progresión «solo horizontal» — ver historial.md) ---
+    charLevel: 1, xp: 0, statPoints: 0,
+    primary: { str: 0, dex: 0, int: 0, vit: 0 }   // puntos YA INVERTIDOS, por encima de la base (5/5/5/5)
 });
 
 export function loadMeta(storage) {
@@ -59,6 +65,30 @@ export function recordRunEnd(meta, { result, floor }) {
 }
 export function recordCombatWin(meta) { meta.combatsWonTotal++; }
 export function recordGold(meta, amount) { meta.gold = Math.max(0, meta.gold + (amount | 0)); }
+
+/**
+ * Suma XP y sube de nivel las veces que hagan falta (permanente: no se reinicia nunca).
+ * Devuelve cuántos niveles se ganaron ahora mismo y cuántos puntos quedan por repartir en total.
+ */
+export function recordXp(meta, amount) {
+    meta.xp += Math.max(0, amount | 0);
+    let levelsGained = 0;
+    while (meta.xp >= xpToNext(meta.charLevel)) {
+        meta.xp -= xpToNext(meta.charLevel);
+        meta.charLevel++;
+        meta.statPoints += POINTS_PER_LEVEL;
+        levelsGained++;
+    }
+    return { levelsGained, newLevel: meta.charLevel, statPoints: meta.statPoints };
+}
+
+/** Gasta un punto de nivel en una primaria (str/dex/int/vit). Devuelve `false` si no quedan puntos. */
+export function spendStatPoint(meta, key) {
+    if (!PRIMARY_KEYS.includes(key) || meta.statPoints <= 0) return false;
+    meta.statPoints--;
+    meta.primary[key] = (meta.primary[key] || 0) + 1;
+    return true;
+}
 /** Ganar un trofeo nuevo del jefe: solo se guarda si no había uno, o si `replace` es explícito. */
 export function recordTrophy(meta, item, replace = false) {
     if (!meta.trophyItem || replace) meta.trophyItem = item;
