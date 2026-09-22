@@ -1,7 +1,7 @@
-import { RPG_BALANCE } from './data/balance.js?v=1.3.0';
-import { pickMonsterDef } from './data/monsters.js?v=1.3.0';
-import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.3.0';
-import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.3.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.3.1';
+import { pickMonsterDef } from './data/monsters.js?v=1.3.1';
+import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.3.1';
+import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.3.1';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)
@@ -79,7 +79,7 @@ export function rpgMonsterStats(type, floor) {
 }
 
 export const RPG_NODE_TYPES = {
-    monster:  { id: 'monster',  name: 'Monstruo', icon: '👹', desc: 'Combate contra un monstruo.' },
+    monster:  { id: 'monster',  name: 'Monstruo', icon: '👾', desc: 'Combate contra un monstruo.' },
     chest:    { id: 'chest',    name: 'Cofre',    icon: '🧰', desc: 'Un cofre con botín.' },
     event:    { id: 'event',    name: 'Evento',   icon: '🎲', desc: 'Una situación con dos decisiones.' },
     campfire: { id: 'campfire', name: 'Hoguera',  icon: '🔥', desc: 'Descansa o mejora tu arma.' },

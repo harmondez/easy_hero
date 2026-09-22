@@ -201,6 +201,23 @@ resolvieron la arquitectura antes de tocar código.
   forzados con un generador de números fijo). 26 nuevas en `tests/browser.test.mjs` (pantalla de nivel, repartir
   un punto, que sobreviva a recargar la página y a empezar una ruta nueva). `SAVE_VERSION` sube a 3.
 
+## 2026-09-22 · Mapa: se le da la vuelta y niebla de guerra
+- **El mapa se dibuja al revés que antes**: el piso 0 (los primeros monstruos) ahora aparece **arriba**, y el
+  jefe final abajo — antes era al contrario (`pos()` en `src/ui.js` invertía el eje Y). Solo cambió la fórmula
+  de posición; el motor (`generateRpgMap`, floor 0 = inicio) no se tocó. La etiqueta «INICIO DE LA RUTA» se movió
+  de debajo del mapa a encima, coherente con el nuevo sentido.
+- **Niebla de guerra**: los nodos a más de 3 pisos por delante de la posición actual (`RPG_FOG_AHEAD` en
+  `src/ui.js`) se cubren — icono ❓, sin revelar tipo ni nombre — y se despejan solos a medida que avanzas
+  (se recalcula en cada `renderRpgMap` a partir de `currentId`). Antes del primer paso (piso −1 implícito) se ven
+  los pisos 0-2; el jefe casi siempre queda en niebla («???» en vez de «JEFE FINAL») hasta estar cerca.
+  Los nodos ya visitados o disponibles para pisar nunca se cubren, solo los bloqueados lejanos.
+- Puramente de presentación: no toca `generateRpgMap`, `rpgAvailableNodes` ni ningún dato del motor, así que las
+  671 comprobaciones existentes pasaron sin cambiar ninguna (esta parte no tiene test dedicado: se verificó a
+  ojo con capturas, como el resto del aspecto visual del mapa/combate).
+- De paso, a petición del usuario: el icono genérico de nodo-monstruo y el del Orco pasan de 👹 a 👾 (motor,
+  datos y pantalla de inicio; el CHANGELOG y el documento histórico del prototipo v0 se dejan tal cual, son
+  registro de lo ya publicado).
+
 ---
 
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)

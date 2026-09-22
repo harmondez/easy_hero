@@ -5,6 +5,20 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.3.1] - 2026-09-22
+
+### ✨ Novedades
+- 🗺️ El mapa se dibuja al revés: los primeros monstruos aparecen **arriba** y el jefe final al fondo, abajo. Es
+  puramente visual: el mapa en sí (qué piso es cada cosa) no cambia.
+- 🌫️ **Niebla de guerra**: lo que queda a más de 3 pisos por delante de tu posición se ve cubierto (❓), sin
+  revelar de qué se trata, hasta que te acerques; el jefe final se anuncia como «???» hasta entonces. Se despeja
+  sola a medida que avanzas por la ruta.
+- 👾 El icono de monstruo cambia de 👹 a 👾.
+
+### 🛠️ Por dentro
+- Todo el cambio vive en `renderRpgMap` (`src/ui.js`): se invierte el eje del piso en `pos()` y se añade
+  `RPG_FOG_AHEAD` para decidir qué nodos se cubren. No toca el motor ni los datos del mapa.
+
 ## [1.3.0] - 2026-09-22
 
 ### ✨ Novedades

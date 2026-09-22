@@ -19,7 +19,9 @@ Detalle en [historial.md](historial.md).
 **🚧 Sin publicar, listo para revisar:** estadísticas primarias (STR/DEX/INT/VIT) y nivel de personaje
 **permanente** con experiencia y reparto de puntos. Reabre a propósito «meta-progresión solo horizontal»
 (decisión explícita del usuario). Con las primarias en su base, el juego se comporta igual que antes — no hace
-falta recalibrar nada del equilibrio ya publicado. 671 comprobaciones en verde. Detalle en [historial.md](historial.md).
+falta recalibrar nada del equilibrio ya publicado. Además, el mapa se dibuja al revés (piso 0 arriba, jefe abajo)
+y con niebla de guerra progresiva (`RPG_FOG_AHEAD = 3`); el icono de monstruo pasa de 👹 a 👾. 671 comprobaciones
+en verde. Detalle en [historial.md](historial.md).
 
 **Backlog abierto de B1 (no bloquea nada, se retoma cuando convenga):**
 - Capturas de pantalla (`SHOT_DIR=…`) de la pantalla de botín y el panel de 4 ranuras, para revisar el aspecto.

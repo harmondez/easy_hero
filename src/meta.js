@@ -1,7 +1,7 @@
-import { MONSTER_ROSTER, SUBBOSS_ROSTER, BOSS_DEF } from './data/monsters.js?v=1.3.0';
-import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.3.0';
-import { DAMAGE_TYPES } from './items.js?v=1.3.0';
-import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.3.0';
+import { MONSTER_ROSTER, SUBBOSS_ROSTER, BOSS_DEF } from './data/monsters.js?v=1.3.1';
+import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.3.1';
+import { DAMAGE_TYPES } from './items.js?v=1.3.1';
+import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.3.1';
 export { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext };
 
 // =============================================

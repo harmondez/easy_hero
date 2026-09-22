@@ -12,7 +12,7 @@
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.3.0-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.3.1-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -27,10 +27,11 @@
 
 ## 🆕 Novedades
 
-**Versión 1.3.0** · 22 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.3.1** · 22 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 | | Qué hay de nuevo |
 |:-:|------------------|
+| 🌫️ | **Niebla de guerra**: el mapa se recorre hacia abajo desde el piso 0 y lo que queda a más de 3 pisos por delante se cubre hasta que te acercas |
 | 🧬 | **Estadísticas primarias**: Fuerza, Destreza, Inteligencia y Vitalidad, con crítico, esquiva y resistencia de verdad |
 | 📈 | **Nivel de personaje, permanente**: gana experiencia, sube de nivel y reparte tú mismo los puntos — te acompaña en todas tus rutas futuras |
 | 🧍 | **Pantalla de Personaje**: tu héroe, su equipo y un **inventario de 10 ranuras** para guardar objetos sin equiparlos |
@@ -62,7 +63,7 @@ pícaro o elementalista.
   <img src="docs/img/mapa.jpg" alt="El mapa de la ruta: 16 pisos con caminos que se ramifican" width="620">
 </p>
 
-1. **🗺️ Elige tu camino.** Cada punto del mapa es un combate, un cofre, un evento, una hoguera o un sub-jefe. Avanzas hacia arriba, hasta el **jefe final**.
+1. **🗺️ Elige tu camino.** Cada punto del mapa es un combate, un cofre, un evento, una hoguera o un sub-jefe. Avanzas hacia abajo, hasta el **jefe final**; lo que queda lejos se ve cubierto por niebla de guerra hasta que te acercas.
 2. **⚔️ Combate por turnos.** Ves lo que va a hacer el enemigo **antes** de elegir, y decides: atacar, defenderte, usar una habilidad o huir.
 3. **🔥 Recupera fuerzas.** En las hogueras puedes descansar o afilar tu arma. **Siempre hay una antes del jefe.**
 4. **🎲 Decide en los eventos.** Te encuentras con una situación y **dos decisiones**. Ninguna sale gratis.
@@ -188,7 +189,7 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.3.0, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane algo más de 1 de cada 5 partidas**
+> **Versión 1.3.1, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane algo más de 1 de cada 5 partidas**
 > (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
 
 ### ✅ Ya se puede jugar

@@ -141,7 +141,7 @@ Reparto de nodos (los pisos intermedios):
 
 | Nodo | Peso | Reglas |
 |------|:----:|--------|
-| 👹 Monstruo | 45 % | Base |
+| 👾 Monstruo | 45 % | Base |
 | 🎲 **Evento** | **22 %** | Nunca dos seguidos; mínimo 3 por ruta; no en el piso 0 ni justo antes del jefe |
 | 🧰 Cofre | 13 % | Igual que ahora |
 | 💀 Sub-jefe | 20 % (desde el piso 5) | Igual que ahora, con más pisos para repartirlos |

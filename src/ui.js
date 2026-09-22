@@ -1,7 +1,7 @@
-import * as Engine from './engine.js?v=1.3.0';
-import * as Items from './items.js?v=1.3.0';
-import * as Meta from './meta.js?v=1.3.0';
-import * as Stats from './stats.js?v=1.3.0';
+import * as Engine from './engine.js?v=1.3.1';
+import * as Items from './items.js?v=1.3.1';
+import * as Meta from './meta.js?v=1.3.1';
+import * as Stats from './stats.js?v=1.3.1';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -136,9 +136,14 @@ export function renderRpgHeroPanel(hero, progressText, gold) {
         <div class="rpg-hero-progress">${esc(progressText || '')}</div>`;
 }
 
+// Niebla de guerra: cuántos pisos por delante de la posición actual se ven con claridad.
+// Piso actual + este número de opciones se ve; a partir de ahí, niebla, y se despeja según avanzas.
+const RPG_FOG_AHEAD = 3;
+
 /**
  * Dibuja el mapa: aristas en un SVG en porcentajes (se estira con el contenedor) y
- * nodos como botones posicionados en % (columna) / % (piso, el piso 0 abajo).
+ * nodos como botones posicionados en % (columna) / % (piso, el piso 0 arriba: se avanza hacia abajo).
+ * Los pisos que quedan a más de RPG_FOG_AHEAD opciones de la posición actual se cubren con niebla de guerra.
  * state: { currentId, visitedIds, heroIcon, animate }
  */
 export function renderRpgMap(map, state = {}) {
@@ -151,7 +156,7 @@ export function renderRpgMap(map, state = {}) {
     const skip = !!state.skip;
     const available = new Set(Engine.rpgAvailableNodes(map, currentId, skip));
     const byId = new Map(map.nodes.map(n => [n.id, n]));
-    const pos = n => ({ x: (n.col + 0.5) / cols * 100, y: (floors - 1 - n.floor + 0.5) / floors * 100 });
+    const pos = n => ({ x: (n.col + 0.5) / cols * 100, y: (n.floor + 0.5) / floors * 100 });
 
     const taken = new Set();
     for (let i = 1; i < visitedIds.length; i++) taken.add(`${visitedIds[i - 1]}>${visitedIds[i]}`);
@@ -160,38 +165,48 @@ export function renderRpgMap(map, state = {}) {
     const openFrom = new Set([currentId]);
     if (skip && current) current.next.forEach(id => openFrom.add(id));
 
+    const currentFloor = current ? current.floor : -1;
+    const isFogged = n => (n.floor - currentFloor) > RPG_FOG_AHEAD && n.id !== currentId
+        && !visited.has(n.id) && !available.has(n.id);
+
     const lines = map.nodes.flatMap(n => n.next.map(id => {
+        const to = byId.get(id);
         const a = pos(n);
-        const b = pos(byId.get(id));
+        const b = pos(to);
         const cls = taken.has(`${n.id}>${id}`) ? 'is-taken' : (openFrom.has(n.id) ? 'is-open' : '');
-        return `<line class="rpg-edge ${cls}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" vector-effect="non-scaling-stroke"/>`;
+        const fog = isFogged(to) ? ' is-fog' : '';
+        return `<line class="rpg-edge ${cls}${fog}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" vector-effect="non-scaling-stroke"/>`;
     })).join('');
 
     const nodesHtml = map.nodes.map((n, i) => {
         const t = Engine.RPG_NODE_TYPES[n.type];
         const p = pos(n);
+        const fogged = isFogged(n);
         const st = n.id === currentId ? 'is-current'
             : visited.has(n.id) ? 'is-visited'
             : available.has(n.id) ? 'is-available' : 'is-locked';
         const hero = st === 'is-current' ? ` data-hero="${esc(state.heroIcon || '')}"` : '';
-        let info = t.desc;
-        if (n.type === 'monster' || n.type === 'subboss' || n.type === 'boss') {
+        let icon = t.icon, name = t.name, info = t.desc;
+        if (fogged) {
+            icon = '❓'; name = 'Niebla de guerra'; info = 'Aún no has explorado tan lejos.';
+        } else if (n.type === 'monster' || n.type === 'subboss' || n.type === 'boss') {
             const s = Engine.rpgMonsterStats(n.type, n.floor);
             info = `${t.desc} ATK ${s.atq} · HP ${s.hp}`;
         }
-        return `<button type="button" class="rpg-node type-${esc(n.type)} ${st}" data-rpg-node="${esc(n.id)}"
+        return `<button type="button" class="rpg-node type-${esc(n.type)} ${st}${fogged ? ' is-fog' : ''}" data-rpg-node="${esc(n.id)}"
             style="left:${p.x}%;top:${p.y}%;--i:${i}" ${st === 'is-available' ? '' : 'disabled'}${hero}
-            title="${esc(t.name)} — ${esc(info)}" aria-label="${esc(t.name)}, piso ${n.floor + 1}">${t.icon}</button>`;
+            title="${esc(name)} — ${esc(info)}" aria-label="${fogged ? esc(name) : `${esc(name)}, piso ${n.floor + 1}`}">${icon}</button>`;
     }).join('');
 
     const boss = byId.get(map.bossId);
     const bp = pos(boss);
+    const bossFogged = isFogged(boss);
     el.style.setProperty('--rpg-floors', floors);
     el.classList.toggle('animate', !!state.animate);
     el.innerHTML = `
         <svg class="rpg-map-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>
         ${nodesHtml}
-        <div class="rpg-boss-tag" style="left:${bp.x}%;top:${bp.y}%">JEFE FINAL</div>`;
+        <div class="rpg-boss-tag${bossFogged ? ' is-fog' : ''}" style="left:${bp.x}%;top:${bp.y}%">${bossFogged ? '???' : 'JEFE FINAL'}</div>`;
 
     if (state.animate) setTimeout(() => el.classList.remove('animate'), 1200);
 }

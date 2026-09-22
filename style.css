@@ -383,7 +383,7 @@ body {
 .rpg-map-wrap {
     max-width: 860px;
     margin: 0 auto;
-    padding: 52px clamp(12px, 3vw, 34px) 12px;
+    padding: 36px clamp(12px, 3vw, 34px) 56px;
     background:
         radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.10), transparent 40%),
         radial-gradient(circle at 50% 100%, rgba(99, 102, 241, 0.10), transparent 45%),
@@ -411,6 +411,7 @@ body {
 }
 .rpg-edge.is-open { stroke: var(--primary-light); stroke-width: 3; stroke-dasharray: none; filter: drop-shadow(0 0 4px var(--primary-glow)); }
 .rpg-edge.is-taken { stroke: var(--gold); stroke-width: 3; stroke-dasharray: none; filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.rpg-edge.is-fog { stroke: rgba(100, 116, 139, 0.16); }
 
 .rpg-node {
     --node-color: #ef4444;
@@ -440,6 +441,13 @@ body {
 .rpg-node.type-boss { --node-color: #f97316; --node-size: clamp(56px, 10vw, 88px); border-width: 4px; box-shadow: 0 0 34px -4px rgba(249, 115, 22, 0.7); }
 
 .rpg-node.is-locked { opacity: 0.42; filter: saturate(0.35); }
+.rpg-node.is-fog {
+    --node-color: #64748b;
+    opacity: 0.55;
+    filter: blur(0.5px) saturate(0.2);
+    background: radial-gradient(circle at 35% 30%, rgba(100, 116, 139, 0.3), #0b1220);
+    box-shadow: 0 0 14px -2px rgba(100, 116, 139, 0.5);
+}
 .rpg-node.is-visited { opacity: 0.75; filter: saturate(0.6); }
 .rpg-node.is-visited::after {
     content: '✓';
@@ -499,14 +507,15 @@ body {
     white-space: nowrap;
     pointer-events: none;
 }
+.rpg-boss-tag.is-fog { color: var(--text-dim); background: rgba(51, 65, 85, 0.6); border-color: #64748b; }
 
 .rpg-map-start {
-    margin-top: 6px;
-    padding-top: 10px;
+    margin-bottom: 6px;
+    padding-bottom: 10px;
     text-align: center;
     font-size: 0.72rem; font-weight: 800; letter-spacing: 3px;
     color: var(--text-dim);
-    border-top: 1px dashed var(--border-color);
+    border-bottom: 1px dashed var(--border-color);
 }
 
 /* --- Diario --- */

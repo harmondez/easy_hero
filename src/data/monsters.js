@@ -1,5 +1,5 @@
 // =============================================
-// 👹 Monstruos — quién es cada uno y CÓMO ataca (solo datos)
+// 👾 Monstruos — quién es cada uno y CÓMO ataca (solo datos)
 //
 // Cada monstruo tiene un patrón de movimientos que se repite en ciclo. El jugador ve el siguiente movimiento
 // ANTES de elegir su acción (intención visible), y ese movimiento es exactamente el que se ejecuta.
@@ -25,7 +25,7 @@ export const MONSTER_ROSTER = [
     { name: 'Lobo',             icon: '🐺', pattern: [atk(1), atk(1), atk(1.5)] },
     { name: 'Esqueleto',        icon: '🦴', pattern: [GUARD, atk(1.6), atk(1.4)] },
     { name: 'Araña Venenosa',   icon: '🕷️', pattern: [atk(0.8), atk(1.2)] },
-    { name: 'Orco',             icon: '👹', pattern: [CHARGE, atk(2.5)] },
+    { name: 'Orco',             icon: '👾', pattern: [CHARGE, atk(2.5)] },
     { name: 'Gólem',            icon: '🗿', pattern: [GUARD, atk(2.2), REST] },
     { name: 'Cazador Sombrío',  icon: '🏹', pattern: [atk(1), atk(1), CHARGE, atk(2.5)] },
     { name: 'Necrófago',        icon: '🧟', pattern: [atk(1.2), heal(0.15), atk(1.2)] },

@@ -1,5 +1,5 @@
-import { createRng } from './rng.js?v=1.3.0';
-import { GAME_VERSION } from './version.js?v=1.3.0';
+import { createRng } from './rng.js?v=1.3.1';
+import { GAME_VERSION } from './version.js?v=1.3.1';
 
 // =============================================
 // 💾 Guardado de partida (puro: recibe el almacenamiento por parámetro, así se prueba sin navegador)
