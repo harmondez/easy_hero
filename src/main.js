@@ -1,10 +1,11 @@
-import * as UI from './ui.js?v=1.0.2';
-import * as Engine from './engine.js?v=1.0.2';
-import * as Events from './events.js?v=1.0.2';
-import * as Save from './save.js?v=1.0.2';
-import * as Items from './items.js?v=1.0.2';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.0.2';
-import { GAME_VERSION } from './version.js?v=1.0.2';
+import * as UI from './ui.js?v=1.1.0';
+import * as Engine from './engine.js?v=1.1.0';
+import * as Events from './events.js?v=1.1.0';
+import * as Save from './save.js?v=1.1.0';
+import * as Items from './items.js?v=1.1.0';
+import * as Meta from './meta.js?v=1.1.0';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.1.0';
+import { GAME_VERSION } from './version.js?v=1.1.0';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
@@ -12,6 +13,7 @@ window.Events = Events;
 window.UI = UI;
 window.Save = Save;
 window.Items = Items;
+window.Meta = Meta;
 window.openLoot = (source, floor) => _rpgOpenLoot(source, floor);   // para pruebas y depuración
 window.GAME_VERSION = GAME_VERSION;
 
@@ -20,7 +22,12 @@ const storage = (() => {
     try { const s = window.localStorage; s.getItem('easy-hero-probe'); return s; } catch { return null; }
 })();
 
-const newStats = () => ({ combatsWon: 0, events: [], campfires: 0, chests: 0, equipped: 0, discarded: 0 });
+// --- 🐺 Progreso persistente: bestiario, colección y logros (sobrevive a todas las partidas) ---
+const meta = Meta.loadMeta(storage);
+window.gameMeta = meta;
+function persistMeta() { Meta.saveMeta(storage, meta); }
+
+const newStats = () => ({ combatsWon: 0, events: [], campfires: 0, chests: 0, equipped: 0, discarded: 0, fled: 0 });
 
 const gameState = {
     rpg: {
@@ -143,6 +150,8 @@ function _rpgStartRun(seed) {
     UI.clearRpgLog();
     log(`${r.hero.icon} ${r.hero.name} entra en la ruta con ATK ${r.hero.atq} · HP ${r.hero.hp}. Semilla ${seedToCode(r.seed)}. Elige por dónde empezar.`, 'system');
     _rpgRefreshMap(true);
+    Meta.recordRunStart(meta);
+    persistMeta();
     persist();
 }
 
@@ -221,7 +230,10 @@ function _rpgEnterNode(nodeId) {
 // --- 🎁 Botín: 1 de 3 objetos; equipar (se pierde el anterior) o descartar (cura) ---
 function _rpgOpenLoot(source, floor) {
     const r = gameState.rpg;
-    r.loot = { source, floor, selected: null, offers: Items.rollLootOffers({ rng: r.rng, floor, source, hero: r.hero }) };
+    const offers = Items.rollLootOffers({ rng: r.rng, floor, source, hero: r.hero });
+    r.loot = { source, floor, selected: null, offers };
+    offers.forEach(item => Meta.recordItemSeen(meta, item));
+    persistMeta();
     UI.toggleRpgView('rpgLootView');
     UI.renderRpgLoot(_rpgLootView());
     persist();
@@ -265,6 +277,8 @@ function _rpgLootDecide(equip) {
     if (equip) {
         const old = Items.equipItem(r.hero, item);
         r.stats.equipped++;
+        Meta.recordItemEquipped(meta, item);
+        persistMeta();
         log(`${item.rarityIcon} ${r.hero.name} equipa ${item.icon} ${item.name}${old ? ` (deja ${old.icon} ${old.name})` : ''}.`, 'victory');
     } else {
         const healed = Items.discardItem(r.hero, item);
@@ -286,6 +300,8 @@ function _rpgStartEvent(node, forcedId) {
     if (!forcedId) {
         r.usedEvents.push(eventId);
         r.stats.events.push(eventId);
+        Meta.recordEventSeen(meta, eventId);
+        persistMeta();
     }
     const session = Events.startRpgEvent(eventId, r.rng, node.floor);
     r.event = { node, session, result: null, view: null };
@@ -364,6 +380,8 @@ function _rpgStartCombat(node, customMonster) {
     r.combat = Engine.createRpgCombat(r.hero, monster, r.rng);
     r.combatMenu = 'main';
     r.pendingNodeId = node.id;
+    Meta.recordMonsterSeen(meta, monster.name);
+    persistMeta();
     UI.toggleRpgView('rpgCombatView');
     UI.hideRpgCombatResult();
     UI.clearRpgCombatLog();
@@ -460,7 +478,12 @@ function _rpgBuildSummary(result, monster) {
 
 function _rpgEndRun(result, monster) {
     const r = gameState.rpg;
+    const floorReached = result === 'victory' ? r.map.floors - 1 : monster.floor;
+    Meta.recordRunEnd(meta, { result, floor: floorReached });
+    const newAchievements = Meta.checkAchievements(meta, { result, hero: r.hero, stats: r.stats }, { floors: r.map.floors });
+    persistMeta();
     const summary = _rpgBuildSummary(result, monster);
+    summary.newAchievements = newAchievements;
     r.ended = true;
     Save.clearRun(storage); // la partida ya terminó: no hay nada que retomar
     UI.toggleRpgView('rpgEndView');
@@ -486,6 +509,9 @@ function _rpgCombatContinue() {
 
     if (result === 'victory') {
         r.stats.combatsWon++;
+        Meta.recordMonsterDefeated(meta, m.name);
+        Meta.recordCombatWin(meta);
+        persistMeta();
         _rpgAdvanceTo(r.pendingNodeId);
         log(m.type === 'boss'
             ? `🐉 ${r.hero.name} derrota al ${m.name}. ¡Ruta completada!`
@@ -496,6 +522,7 @@ function _rpgCombatContinue() {
             return;
         }
     } else {
+        r.stats.fled++;
         log(`🏃 ${r.hero.name} huye de ${m.name} y elige otro rumbo.`, 'system');
     }
     r.pendingNodeId = null;
@@ -566,6 +593,55 @@ function initEvents() {
         }
     });
     safeListener('btnRpgAbandon', 'click', () => _rpgBackToStart());
+
+    // --- 📖🎒🏆⚙️ Cabecera: bestiario, colección, logros y opciones ---
+    safeListener('gameNav', 'click', (e) => {
+        const btn = e.target.closest('[data-panel]');
+        if (btn) _openPanel(btn.dataset.panel);
+    });
+    safeListener('btnPanelClose', 'click', () => UI.closePanel());
+    safeListener('panelOverlay', 'click', (e) => { if (e.target.id === 'panelOverlay') UI.closePanel(); });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.getElementById('panelOverlay').style.display !== 'none') UI.closePanel();
+    });
+}
+
+function _openPanel(kind) {
+    UI.openPanel();
+    if (kind === 'bestiary') UI.renderBestiaryPanel(meta);
+    else if (kind === 'collection') UI.renderCollectionPanel(meta);
+    else if (kind === 'achievements') UI.renderAchievementsPanel(meta);
+    else if (kind === 'options') {
+        const r = gameState.rpg;
+        UI.renderOptionsPanel({
+            seedCode: r.seed != null ? seedToCode(r.seed) : null,
+            onExport: _exportProgress,
+            onImport: _importProgress
+        });
+    }
+}
+window.openPanel = _openPanel; // para pruebas y depuración
+
+// --- 💾 Importar / exportar: tu ruta en curso (si hay) + todo lo descubierto, en un solo texto ---
+const EXPORT_PREFIX = 'EH1:';
+function _exportProgress() {
+    const payload = { gameVersion: GAME_VERSION, exportedAt: Date.now(), save: Save.snapshotRun(gameState.rpg), meta };
+    return EXPORT_PREFIX + btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+}
+function _importProgress(text) {
+    const raw = (text || '').trim();
+    if (!raw) return { ok: false, error: 'Pega primero un texto exportado.' };
+    if (!raw.startsWith(EXPORT_PREFIX)) return { ok: false, error: 'Ese texto no es un código de Easy Hero válido.' };
+    let payload;
+    try { payload = JSON.parse(decodeURIComponent(escape(atob(raw.slice(EXPORT_PREFIX.length))))); }
+    catch { return { ok: false, error: 'El texto está incompleto o dañado.' }; }
+    if (!payload || typeof payload !== 'object') return { ok: false, error: 'El texto está incompleto o dañado.' };
+    try {
+        if (payload.meta) Meta.saveMeta(storage, { ...Meta.loadMeta(null), ...payload.meta });
+        if (payload.save) storage.setItem(Save.SAVE_KEY, JSON.stringify(payload.save));
+        else Save.clearRun(storage);
+    } catch { return { ok: false, error: 'No se pudo guardar (¿almacenamiento bloqueado?).' }; }
+    return { ok: true, message: '✅ Importado. Recargando…', reload: true };
 }
 
 initEvents();

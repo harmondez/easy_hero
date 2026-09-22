@@ -12,7 +12,7 @@
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.2-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.1.0-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -27,17 +27,17 @@
 
 ## 🆕 Novedades
 
-**Versión 1.0.2** · 22 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.1.0** · 22 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 | | Qué hay de nuevo |
 |:-:|------------------|
-| 🎒 | **Equipo: 4 ranuras y 5 rarezas.** Arma, secundaria, armadura y accesorio, de ⚪ común a 🟠 legendaria |
-| 🧰 | **Los cofres ya dan objetos de verdad**: eliges 1 de 3, comparas y decides equipar o descartar |
-| 🔥 | La hoguera ahora ofrece **Descansar** o **Equiparte** (1 de 3 objetos) |
-| ☠️🔥 | **Veneno y quemadura**: nuevos estados que hacen daño ronda a ronda |
+| 🏰 | **Nueva ambientación**: fantasía oscura de mazmorra, piedra y forja en vez del azul genérico de antes |
+| 📖 | **Bestiario**: los 24 enemigos se revelan a medida que te los cruzas y vences |
+| 🎒 | **Colección**: las 122 bases de objeto se van descubriendo en cofres, hogueras y botín de sub-jefe |
+| 🏆 | **15 logros**, solo información y orgullo: nunca te hacen más fuerte |
+| 💾 | **Importar / exportar tu progreso** como un texto, desde el panel de Opciones |
+| 🎒 | Equipo de 4 ranuras y 5 rarezas; los cofres y la hoguera ya dan objetos de verdad |
 | 👁️ | Ves lo que va a hacer el enemigo antes de elegir, y cada uno de los 15 monstruos ataca a su manera |
-| 💾 | El guardado ahora incluye tu equipo y el botín a medio elegir |
-| 🌱 | **Semilla**: cada ruta tiene un código y puedes repetirla, o escribir el tuyo |
 
 ---
 
@@ -169,7 +169,7 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.0.2, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane algo más de 1 de cada 5 partidas**
+> **Versión 1.1.0, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane algo más de 1 de cada 5 partidas**
 > (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
 
 ### ✅ Ya se puede jugar
@@ -183,8 +183,10 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 - 💀 Sub-jefes **opcionales** (siempre hay un camino sin ellos), cofres con botín y un jefe final
 - 🧠 Un enemigo especial, **El Lector**, que aprende de lo que haces
 - 🤞 Promesas que cambian tu forma de jugar (por ejemplo, renunciar a huir)
+- 📖🎒🏆 **Bestiario, colección y 15 logros**, accesibles desde el menú de la cabecera en cualquier momento
+- ⚙️ **Importar y exportar tu progreso** como un texto, desde Opciones
 - 💾 **Guardado automático**: cierra la pestaña y continúa donde lo dejaste
-- 🏁 **Pantalla final** con tu resumen y la línea de «casi»: cuánto te faltó
+- 🏁 **Pantalla final** con tu resumen, tus logros y la línea de «casi»: cuánto te faltó
 - 🌱 **Semilla**: cada ruta tiene un código; con el mismo código y las mismas decisiones, la partida se repite igual
 - 📱 Funciona en móvil y en ordenador
 
@@ -201,9 +203,9 @@ Lo haremos en **cuatro entregas**. Empezamos por hacer el juego **ganable y clar
 | Entrega | Nombre | Qué trae |
 |:-------:|--------|----------|
 | **A** ✅ | 🎯 **Jugable** | **Hecha (1.0.1).** Ver qué va a hacer cada enemigo · Hogueras · Dificultad ajustada a **ganar 1 de cada 5** · Guardado de partida, semilla y pantalla final |
-| **B** 🚧 | 🎒 **Tu build** | **Equipo hecho (1.0.2):** 4 ranuras y 5 rarezas. Falta elegir 1 de 3 mejoras tras cada combate y **despertar como clase** |
+| **B** 🚧 | 🎒 **Tu build** | **Equipo hecho:** 4 ranuras y 5 rarezas. Falta elegir 1 de 3 mejoras tras cada combate y **despertar como clase** |
 | **C** | 💥 **Táctico** | Debilidades y **Ruptura** (rompe al enemigo y actúa otra vez) · Combates con varios enemigos y orden de turnos |
-| **D** | 📖 **A largo plazo** | Bestiario, logros y el **Legado** de tu héroe caído · Niveles de riesgo para los que ya ganaron |
+| **D** | 📖 **A largo plazo** | **Bestiario, colección y logros ya hechos** (1.1.0); falta el **Legado** de tu héroe caído y los niveles de riesgo para los que ya ganaron |
 
 ### 💡 Algunas ideas que nos hacen ilusión
 
@@ -218,7 +220,8 @@ Lo haremos en **cuatro entregas**. Empezamos por hacer el juego **ganable y clar
 
 | Documento | Qué cuenta |
 |-----------|-----------|
-| 📋 [planning.md](planning.md) | **El plan completo** de lo que viene y por qué |
+| 📋 [planning.md](planning.md) | **Lo que queda por hacer**, y por qué |
+| 📜 [historial.md](historial.md) | Lo ya decidido e implementado, en formato de log |
 | 📜 [Registro de cambios](CHANGELOG.md) | Qué trae cada versión del juego |
 | 🏷️ [Versiones](docs/versiones.md) | Cómo se numeran y se publican las versiones |
 | 🎲 [Eventos](docs/eventos.md) | Los 15 eventos con todos sus resultados |
@@ -255,7 +258,7 @@ npx playwright install chromium    # solo la primera vez
 npm test                           # ejecuta todas las comprobaciones
 ```
 
-Son 532 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
+Son 542 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
 
 Para ver cómo está el equilibrio: `npm run balance` juega miles de partidas simuladas y cuenta cuántas llegan al jefe.
 

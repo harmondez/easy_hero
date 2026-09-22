@@ -1,6 +1,6 @@
 {
   "name": "rpg-pack",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Juego RPG de ruta (estilo Slay the Spire) extraído de Easy Hit. Solo atributos básicos: ATK / HP.",
   "type": "module",
   "private": true,

@@ -5,6 +5,21 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.1.0] - 2026-09-22
+
+### ✨ Novedades
+- 🏰 **Nueva dirección visual**: fantasía oscura de mazmorra (piedra y forja) en vez de la paleta índigo/Inter por defecto. Tipografía Cinzel para títulos, Work Sans para el resto.
+- 📖 **Bestiario**: cada monstruo, sub-jefe, jefe y enemigo de evento (24 en total) se revela al cruzártelo, y se marca en verde al vencerlo. Persiste entre partidas.
+- 🎒 **Colección**: las 122 bases de objeto se van descubriendo (con las rarezas en que las has visto) a medida que aparecen en cofres, hogueras y botín de sub-jefe.
+- 🏆 **15 logros**, solo información y orgullo (nunca poder): desde «Primera sangre» hasta «Naturalista» (bestiario completo). Se anuncian en la pantalla de fin de ruta.
+- 💾 **Importar / exportar** tu progreso (ruta en curso + bestiario + colección + logros) como un texto para copiar y guardar.
+- ⚙️ Panel de **Opciones** con la semilla de la ruta actual y un «Sobre Easy Hero».
+- 🧭 Menú fijo en la cabecera para abrir estos 4 paneles en cualquier momento, sin abandonar la ruta.
+
+### 🛠️ Por dentro
+- Progreso persistente en `src/meta.js` (independiente del guardado de la partida).
+- 10 comprobaciones nuevas en `tests/browser.test.mjs` (123 en total).
+
 ## [1.0.2] - 2026-09-22
 
 ### ✨ Novedades

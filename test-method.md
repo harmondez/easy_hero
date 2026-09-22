@@ -13,10 +13,10 @@ La idea en una frase: **casi todo se prueba sobre el motor puro, con miles de ca
 | **Guardado** | `tests/save-sim.mjs` | Guardar y retomar (combate y evento a medias, equipo y botín pendiente), versiones, datos dañados | 36 | **1,1 s** |
 | **Equilibrio** | `tests/balance-guard.mjs` | Que el juego siga siendo ganable, sin ser trivial (1500 partidas de 3 bots) | 12 | **22 s** |
 | **Versiones** | `tests/version-check.mjs` | La versión coincide en todos los sitios; el script de publicación (en simulacro) | 27 | **0,1 s** |
-| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas de página, botín de cofre/hoguera/sub-jefe | 113 | **~131 s** |
+| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas, paneles (bestiario/colección/logros/opciones), importar/exportar | 123 | **~131 s** |
 
 Una regla útil: **si algo se puede comprobar en el motor, no se comprueba en el navegador.** Por eso las seis capas de arriba
-suman 419 tests en unos 38 s y la de abajo, con 113, tarda varias veces más.
+suman 419 tests en unos 38 s y la de abajo, con 123, tarda varias veces más.
 
 ```bash
 npm run test:engine     # 2,5 s   ← se ejecuta tras cada cambio
@@ -26,7 +26,7 @@ npm run test:save       # 1,1 s
 npm run test:balance    # 22 s    ← tras tocar números de equilibrio
 npm run test:browser    # ~131 s  ← antes de subir, o al tocar la interfaz
 npm run test:version    # 0,1 s   ← comprueba que la versión está sincronizada
-npm test                # los siete (532 comprobaciones)
+npm test                # los siete (542 comprobaciones)
 npm run balance         # NO es un test: la tabla de equilibrio (ver docs/equilibrio.md)
 ```
 

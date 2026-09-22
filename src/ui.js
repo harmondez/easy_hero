@@ -1,5 +1,6 @@
-import * as Engine from './engine.js?v=1.0.2';
-import * as Items from './items.js?v=1.0.2';
+import * as Engine from './engine.js?v=1.1.0';
+import * as Items from './items.js?v=1.1.0';
+import * as Meta from './meta.js?v=1.1.0';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -481,6 +482,10 @@ export function renderRpgEnd(summary) {
         ? `<div class="rpg-end-gear">${summary.gear.map(g => `<span class="rpg-hero-tag" style="border-color:${esc(g.color)}">${g.rarity} ${g.icon} ${esc(g.name)}</span>`).join('')}</div>` : '';
     const build = (summary.build || []).length
         ? `<div class="rpg-end-build">${summary.build.map(b => `<span class="rpg-hero-tag">${esc(b)}</span>`).join('')}</div>` : '';
+    const achievements = (summary.newAchievements || []).length
+        ? `<div class="rpg-end-achievements"><b>🏆 Logros desbloqueados:</b>
+            ${summary.newAchievements.map(a => `<span class="rpg-hero-tag is-achievement" title="${esc(a.desc)}">${a.icon} ${esc(a.name)}</span>`).join('')}
+           </div>` : '';
     el.className = `rpg-end-card ${win ? 'is-victory' : 'is-defeat'}`;
     el.innerHTML = `
         <div class="rpg-end-icon">${win ? '🏆' : '💀'}</div>
@@ -491,6 +496,7 @@ export function renderRpgEnd(summary) {
         <div class="rpg-end-stats">${stats}</div>
         ${gear}
         ${build}
+        ${achievements}
         ${events}
         <div class="rpg-end-seed">Semilla <code id="rpgEndSeed">${esc(summary.seedCode)}</code>
             <button type="button" id="btnRpgCopySeed" class="btn-secondary">Copiar</button></div>
@@ -499,4 +505,133 @@ export function renderRpgEnd(summary) {
             <button type="button" id="btnRpgEndRepeat" class="btn-secondary">🔁 REPETIR CON LA MISMA SEMILLA</button>
             <button type="button" id="btnRpgEndHome" class="btn-secondary">← INICIO</button>
         </div>`;
+}
+
+// =============================================
+// 📖🎒🏆⚙️ Paneles de la cabecera — consultables en cualquier momento, sin abandonar la ruta
+// =============================================
+export function openPanel() {
+    const el = document.getElementById('panelOverlay');
+    if (el) el.style.display = 'flex';
+}
+export function closePanel() {
+    const el = document.getElementById('panelOverlay');
+    if (el) { el.style.display = 'none'; document.getElementById('panelBody').innerHTML = ''; }
+}
+
+const _progressBar = (done, total, label) => `
+    <div class="panel-progress">
+        <div class="panel-progress-bar"><div class="panel-progress-fill" style="width:${total ? Math.round(100 * done / total) : 0}%"></div></div>
+        <p class="panel-progress-label">${done} / ${total} ${esc(label)}</p>
+    </div>`;
+
+const _panelHeader = (icon, title, sub) => `
+    <div class="panel-header"><span class="panel-icon">${icon}</span><div><h3 class="panel-title">${esc(title)}</h3>${sub ? `<p class="panel-sub">${esc(sub)}</p>` : ''}</div></div>`;
+
+/** 📖 Bestiario: todo lo que puede cruzarse en tu camino, revelado a medida que lo ves y lo vences. */
+export function renderBestiaryPanel(meta) {
+    const el = document.getElementById('panelBody');
+    if (!el) return;
+    const seen = meta.monstersSeen || {}, defeated = meta.monstersDefeated || {};
+    const tiles = Meta.BESTIARY.map(m => {
+        const isSeen = !!seen[m.name], isDefeated = !!defeated[m.name];
+        if (!isSeen) return `<div class="panel-tile is-locked"><span class="panel-tile-icon">❔</span><span class="panel-tile-name">???</span></div>`;
+        return `<div class="panel-tile" style="--rarity:${isDefeated ? 'var(--success)' : 'var(--border-strong)'}">
+            <span class="panel-tile-icon">${m.icon}</span><span class="panel-tile-name">${esc(m.name)}</span>
+            <span class="panel-tile-sub">${isDefeated ? 'Vencido' : 'Visto con vida'}</span></div>`;
+    }).join('');
+    const doneCount = Object.keys(seen).length;
+    el.innerHTML = _panelHeader('📖', 'Bestiario', 'Se revela cada enemigo que te cruzas; se marca en verde el que has vencido.')
+        + _progressBar(doneCount, Meta.BESTIARY.length, 'descubiertos')
+        + `<div class="panel-grid">${tiles}</div>`;
+}
+
+/** 🎒 Colección: las bases de objeto que has visto (en un cofre, hoguera o botín de sub-jefe), y en qué rarezas. */
+export function renderCollectionPanel(meta) {
+    const el = document.getElementById('panelBody');
+    if (!el) return;
+    const seen = meta.itemsSeen || {};
+    const bases = Items.ITEM_BASES;
+    const tiles = bases.map(b => {
+        const s = seen[b.id];
+        if (!s) return `<div class="panel-tile is-locked"><span class="panel-tile-icon">❔</span><span class="panel-tile-name">???</span></div>`;
+        const dots = Items.RARITIES.map(r => `<span style="color:${s.rarities.includes(r.id) ? r.color : 'var(--border-color)'}">●</span>`).join('');
+        return `<div class="panel-tile"><span class="panel-tile-icon">${b.icon}</span><span class="panel-tile-name">${esc(b.name)}</span>
+            <span class="panel-tile-sub" style="font-size:0.9rem;letter-spacing:1px">${dots}</span></div>`;
+    }).join('');
+    const doneCount = Object.keys(seen).length;
+    el.innerHTML = _panelHeader('🎒', 'Colección', 'Objetos vistos en cofres, hogueras y botín de sub-jefe. Los puntos son las rarezas en las que ya lo has visto.')
+        + _progressBar(doneCount, bases.length, 'bases descubiertas')
+        + `<div class="panel-grid">${tiles}</div>`;
+}
+
+/** 🏆 Logros: información, nunca poder — coherente con la meta-progresión horizontal del juego. */
+export function renderAchievementsPanel(meta) {
+    const el = document.getElementById('panelBody');
+    if (!el) return;
+    const rows = Meta.ACHIEVEMENTS.map(a => {
+        const done = !!meta.achievements[a.id];
+        return `<div class="panel-row ${done ? 'is-done' : 'is-locked'}">
+            <span class="panel-row-icon">${a.icon}</span>
+            <div class="panel-row-body"><div class="panel-row-name">${esc(a.name)}</div><div class="panel-row-desc">${esc(a.desc)}</div></div>
+            ${done ? '<span class="panel-row-check">✔️</span>' : ''}
+        </div>`;
+    }).join('');
+    const doneCount = Object.keys(meta.achievements).length;
+    el.innerHTML = _panelHeader('🏆', 'Logros', 'Solo información y orgullo: ningún logro te hace más fuerte.')
+        + _progressBar(doneCount, Meta.ACHIEVEMENTS.length, 'logros')
+        + `<div class="panel-list">${rows}</div>`;
+}
+
+/**
+ * ⚙️ Opciones: semilla de la partida en curso, importar/exportar el progreso y quiénes somos.
+ * handlers: { onExport, onImport(text) → {ok, error?}, seedCode }
+ */
+export function renderOptionsPanel(handlers = {}) {
+    const el = document.getElementById('panelBody');
+    if (!el) return;
+    el.innerHTML = _panelHeader('⚙️', 'Opciones', '')
+        + `<div class="panel-section">
+            <h4 class="panel-section-title">Semilla de la ruta actual</h4>
+            ${handlers.seedCode
+                ? `<div class="panel-field-hint">Compártela para que alguien recorra el mismo mapa: <code>${esc(handlers.seedCode)}</code></div>`
+                : `<div class="panel-field-hint">No hay ninguna ruta en marcha. La semilla se elige al pulsar «Entrar en la mazmorra».</div>`}
+        </div>
+        <div class="panel-section">
+            <h4 class="panel-section-title">Exportar tu progreso</h4>
+            <p class="panel-field-hint" style="margin-bottom:8px;">Copia este texto y guárdalo. Incluye tu ruta en curso (si hay una) y todo lo descubierto (bestiario, colección, logros).</p>
+            <div class="panel-field"><textarea id="panelExportText" rows="3" readonly onclick="this.select()"></textarea></div>
+            <div class="panel-actions-row"><button type="button" id="btnPanelExport" class="btn-secondary">📋 Generar y copiar</button></div>
+        </div>
+        <div class="panel-section">
+            <h4 class="panel-section-title">Importar</h4>
+            <p class="panel-field-hint" style="margin-bottom:8px;">Pega aquí un texto exportado antes. <b>Sustituye</b> tu ruta y tu progreso actuales.</p>
+            <div class="panel-field"><textarea id="panelImportText" rows="3" placeholder="Pega aquí el texto exportado…"></textarea></div>
+            <div class="panel-actions-row"><button type="button" id="btnPanelImport" class="btn-forge">📥 Importar</button></div>
+            <p class="panel-field-hint" id="panelImportStatus"></p>
+        </div>
+        <div class="panel-section panel-about">
+            <h4 class="panel-section-title">Sobre Easy Hero</h4>
+            <p>Easy Hero está <b>empezando</b>: esto es una primera ronda de contenido, no el juego terminado.</p>
+            <p>La idea es seguir creciendo: más clases y afinidades, debilidades y Ruptura, combates con varios enemigos, más mazmorras y una crónica que recuerde cada partida. El plan completo está en
+                <a href="https://github.com/harmondez/easy_hero/blob/main/planning.md" target="_blank" rel="noopener" style="color:var(--primary-light)">planning.md</a>.</p>
+            <p>Gratis, sin cuentas, sin anuncios. Todo lo que ves aquí vive solo en tu navegador.</p>
+        </div>`;
+    const btnExport = document.getElementById('btnPanelExport');
+    if (btnExport) btnExport.addEventListener('click', () => {
+        const text = handlers.onExport ? handlers.onExport() : '';
+        const ta = document.getElementById('panelExportText');
+        if (ta) { ta.value = text; ta.select(); }
+        Promise.resolve().then(() => navigator.clipboard.writeText(text))
+            .then(() => { btnExport.textContent = '✅ Copiado'; })
+            .catch(() => { btnExport.textContent = '📋 Generado (selecciona y copia)'; });
+    });
+    const btnImport = document.getElementById('btnPanelImport');
+    if (btnImport) btnImport.addEventListener('click', () => {
+        const ta = document.getElementById('panelImportText');
+        const status = document.getElementById('panelImportStatus');
+        const res = handlers.onImport ? handlers.onImport(ta ? ta.value : '') : { ok: false, error: 'No disponible.' };
+        if (status) { status.textContent = res.ok ? (res.message || '✅ Importado.') : `⚠️ ${res.error}`; status.style.color = res.ok ? 'var(--success)' : 'var(--danger)'; }
+        if (res.ok && res.reload) setTimeout(() => window.location.reload(), 900);
+    });
 }

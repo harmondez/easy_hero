@@ -3,31 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Easy Hit RPG (título provisional)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=1.0.2">
+    <title>Easy Hero</title>
+    <meta name="description" content="Un solo héroe, casi sin nada. Traza tu ruta, hazte más fuerte y llega hasta el jefe final.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=1.1.0">
 </head>
 <body>
     <header class="game-header">
-        <span class="game-title">EASY HIT <span class="game-title-accent">RPG</span></span>
-        <span class="game-version">v1.0.2 · en desarrollo</span>
+        <span class="game-title">EASY <span class="game-title-accent">HERO</span></span>
+        <nav class="game-nav" id="gameNav" aria-label="Progreso y opciones">
+            <button type="button" class="game-nav-btn" data-panel="bestiary" title="Bestiario"><span aria-hidden="true">📖</span><span class="game-nav-label">Bestiario</span></button>
+            <button type="button" class="game-nav-btn" data-panel="collection" title="Colección"><span aria-hidden="true">🎒</span><span class="game-nav-label">Colección</span></button>
+            <button type="button" class="game-nav-btn" data-panel="achievements" title="Logros"><span aria-hidden="true">🏆</span><span class="game-nav-label">Logros</span></button>
+            <button type="button" class="game-nav-btn" data-panel="options" title="Opciones"><span aria-hidden="true">⚙️</span><span class="game-nav-label">Opciones</span></button>
+        </nav>
+        <span class="game-version">v1.1.0 · en desarrollo</span>
     </header>
+
+    <!-- Paneles superpuestos: consultables en cualquier momento, sin abandonar la ruta en curso -->
+    <div id="panelOverlay" class="panel-overlay" style="display:none;">
+        <div class="panel-sheet" id="panelSheet" role="dialog" aria-modal="true">
+            <button type="button" class="panel-close" id="btnPanelClose" aria-label="Cerrar">✕</button>
+            <div id="panelBody" class="panel-body"></div>
+        </div>
+    </div>
 
     <main class="main-content">
         <section class="section-container full-width" id="section-rpg">
-            <div class="section-header">
-                <h2>🗡️ Modo RPG</h2>
-                <p>Un solo héroe, casi sin nada. Traza tu ruta, hazte más fuerte y llega hasta el jefe final.</p>
-            </div>
-
             <!-- Vista 1: la Carta de Héroe -->
             <div id="rpgStartView" class="rpg-view">
                 <div class="rpg-start">
+                    <p class="rpg-start-kicker">Una mazmorra de 16 pisos · una ruta distinta cada vez</p>
                     <div id="rpgHeroCard" class="rpg-hero-card"></div>
-                    <p class="rpg-start-note">Los monstruos de los primeros pisos son débiles; se hacen más fuertes a medida que avanzas. Aquí los atributos usan su propia escala.</p>
+                    <ul class="rpg-start-preview">
+                        <li><span aria-hidden="true">👹</span> Combates que se ven venir</li>
+                        <li><span aria-hidden="true">🎲</span> Decisiones que cuestan algo</li>
+                        <li><span aria-hidden="true">🔥</span> Hogueras para respirar</li>
+                        <li><span aria-hidden="true">🐉</span> Un jefe al final del descenso</li>
+                    </ul>
+                    <p class="rpg-start-note">Empiezas casi sin nada: una espada básica y 25 de vida. Lo que encuentres por el camino —armas, hogueras, decisiones— decide en qué te conviertes.</p>
                     <p id="rpgStartNotice" class="rpg-start-note is-notice" style="display:none;"></p>
                     <button type="button" id="btnRpgContinue" class="btn-forge is-continue" style="display:none;"></button>
-                    <button type="button" id="btnRpgStart" class="btn-forge">🗡️ COMENZAR RUTA</button>
+                    <button type="button" id="btnRpgStart" class="btn-forge">🗡️ Entrar en la mazmorra</button>
                     <label class="rpg-seed-field">Semilla <span>(opcional: la misma semilla da la misma ruta)</span>
                         <input type="text" id="rpgSeedInput" maxlength="24" autocomplete="off" placeholder="K3F9-2QA">
                     </label>
@@ -88,6 +107,6 @@
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script type="module" src="src/main.js?v=1.0.2"></script>
+    <script type="module" src="src/main.js?v=1.1.0"></script>
 </body>
 </html>

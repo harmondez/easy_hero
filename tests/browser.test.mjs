@@ -685,9 +685,60 @@ assert('Una victoria no muestra la línea de «casi»', !(await page.$('#rpgEndB
 assert('Al ganar no queda nada guardado', await page.evaluate(() => localStorage.getItem('easy-hero-save') === null));
 await page.screenshot({ path: shot('fin-victoria'), fullPage: true });
 
-await page.click('#btnRpgEndHome');
-await sleep(200);
-assert('INICIO devuelve a la carta del héroe', await page.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
+console.log('\n📖🎒🏆⚙️ Progreso persistente (bestiario, colección, logros) y opciones');
+assert('Ganar el jefe desbloquea logros y el resumen los muestra',
+    /Logros desbloqueados/.test(winText) && /La ruta es tuya/.test(winText));
+const metaAfterWin = await page.evaluate(() => window.gameMeta);
+assert('El progreso persistente registró la partida (monstruos, objetos y logros)',
+    metaAfterWin.runsWon >= 1 && Object.keys(metaAfterWin.monstersDefeated).length > 0
+    && Object.keys(metaAfterWin.itemsSeen).length > 0 && Object.keys(metaAfterWin.achievements).length > 0);
+
+await page.click('[data-panel="bestiary"]');
+await sleep(150);
+assert('El bestiario muestra progreso real: algún monstruo revelado y ninguna casilla vacía',
+    (await page.$$('.panel-tile:not(.is-locked)')).length > 0 && (await page.$$('.panel-tile')).length === 24);
+await page.screenshot({ path: shot('panel-bestiario'), fullPage: true });
+await page.click('#btnPanelClose');
+await sleep(100);
+assert('Cerrar el panel oculta la superposición', await page.$eval('#panelOverlay', el => getComputedStyle(el).display === 'none'));
+
+await page.click('[data-panel="collection"]');
+await sleep(150);
+assert('La colección refleja los objetos vistos en esta ruta', (await page.$$('.panel-tile:not(.is-locked)')).length > 0);
+await page.click('#btnPanelClose');
+await sleep(100);
+
+await page.click('[data-panel="achievements"]');
+await sleep(150);
+assert('Los logros conseguidos aparecen marcados', (await page.$$('.panel-row.is-done')).length > 0
+    && (await page.$$('.panel-row')).length === 15);
+await page.screenshot({ path: shot('panel-logros'), fullPage: true });
+await page.click('#btnPanelClose');
+await sleep(100);
+
+console.log('\n💾 Exportar / importar el progreso');
+await page.click('[data-panel="options"]');
+await sleep(150);
+await page.click('#btnPanelExport');
+await sleep(150);
+const exported = await page.$eval('#panelExportText', el => el.value);
+assert('Exportar genera un texto con el prefijo esperado', exported.startsWith('EH1:') && exported.length > 20);
+await page.fill('#panelImportText', 'esto no es un código válido');
+await page.click('#btnPanelImport');
+await sleep(100);
+assert('Importar un texto inválido avisa sin romper nada', /⚠️/.test(await page.$eval('#panelImportStatus', el => el.textContent)));
+await page.fill('#panelImportText', exported);
+const navigated = page.waitForNavigation({ timeout: 5000 }).catch(() => null);
+await page.click('#btnPanelImport');
+await sleep(150);
+assert('Importar el propio texto exportado funciona y avisa que va a recargar',
+    /Importado/.test(await page.$eval('#panelImportStatus', el => el.textContent)));
+await navigated;   // ui.js recarga la página ~900 ms después de un import correcto
+await sleep(400);
+const metaAfterImport = await page.evaluate(() => window.gameMeta);
+assert('Tras recargar, el progreso importado se conserva', metaAfterImport.runsWon >= 1 && Object.keys(metaAfterImport.achievements).length > 0);
+// La importación recarga la página entera: ya estamos de vuelta en la Carta de Héroe, como si hubiéramos pulsado INICIO
+assert('Tras importar (y recargar), la vista vuelve a la Carta de Héroe', await page.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
 assert('Sin errores de página durante toda la partida', pageErrors.length === 0);
 if (pageErrors.length) console.log('     ', pageErrors.slice(0, 3));
 

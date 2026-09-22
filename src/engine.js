@@ -1,6 +1,6 @@
-import { RPG_BALANCE } from './data/balance.js?v=1.0.2';
-import { pickMonsterDef } from './data/monsters.js?v=1.0.2';
-import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.0.2';
+import { RPG_BALANCE } from './data/balance.js?v=1.1.0';
+import { pickMonsterDef } from './data/monsters.js?v=1.1.0';
+import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.1.0';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)

@@ -2,44 +2,55 @@
    🎨 RPG-pack — base (tokens, página, botones, utilidades)
    El bloque de abajo ("MODO RPG") es la pantalla del juego en sí.
    ============================================= */
+/* =============================================
+   🎨 Dirección de arte: fantasía oscura de mazmorra.
+   Piedra, forja y antorcha — no el índigo/Inter por defecto. Toda la paleta sale de dos
+   acentos (ámbar de forja + oro de leyenda) sobre grises cálidos de piedra, nunca azulados.
+   Cinzel (grabado en piedra) solo para títulos y momentos de impacto; Work Sans para todo lo
+   demás, por legibilidad a tamaños pequeños; monoespaciada para los números, como un cómputo.
+   ============================================= */
 :root {
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --primary-light: #818cf8;
-    --primary-glow: rgba(99, 102, 241, 0.45);
+    --primary: #d9662c;
+    --primary-hover: #b8501f;
+    --primary-light: #f0895a;
+    --primary-glow: rgba(217, 102, 44, 0.45);
 
-    --bg-main: #0f172a;
-    --bg-card: #1e293b;
-    --bg-card-elevated: #253449;
+    --bg-main: #15100c;
+    --bg-card: #241a12;
+    --bg-card-elevated: #2f2317;
 
-    --text-main: #f8fafc;
-    --text-light: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-dim: #64748b;
+    --text-main: #f3ead9;
+    --text-light: #ddd0ba;
+    --text-muted: #a3927b;
+    --text-dim: #6e6151;
 
-    --border-color: #334155;
-    --border-strong: #475569;
+    --border-color: #3a2c1e;
+    --border-strong: #55402b;
 
-    --gold: #fbbf24;
-    --gold-glow: rgba(251, 191, 36, 0.4);
+    --gold: #f0b03c;
+    --gold-glow: rgba(240, 176, 60, 0.4);
 
-    --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --success: #22c55e;
-    --info: #3b82f6;
+    --danger: #d6432f;
+    --danger-hover: #b53523;
+    --success: #7a9c4e;
+    --info: #8b8172;
 
-    --shadow-elevated: 0 14px 34px -10px rgba(2, 6, 23, 0.65), 0 4px 14px rgba(2, 6, 23, 0.45);
+    --font-display: 'Cinzel', Georgia, serif;
+    --font-body: 'Work Sans', system-ui, sans-serif;
+
+    --shadow-elevated: 0 14px 34px -10px rgba(0, 0, 0, 0.7), 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 
 html { scroll-behavior: smooth; }
 
 body {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--font-body);
     background-color: var(--bg-main);
     background-image:
-        radial-gradient(circle at 100% 0%, rgba(99, 102, 241, 0.16), transparent 55%),
-        radial-gradient(circle at 0% 100%, rgba(6, 182, 212, 0.08), transparent 45%),
-        radial-gradient(circle at top right, #1e1b4b, transparent);
+        radial-gradient(circle at 15% -10%, rgba(217, 102, 44, 0.14), transparent 45%),
+        radial-gradient(circle at 100% 110%, rgba(0, 0, 0, 0.5), transparent 50%),
+        repeating-linear-gradient(115deg, rgba(0, 0, 0, 0.12) 0px, transparent 1.5px, transparent 3px),
+        linear-gradient(180deg, #1a140e, #100c08 60%);
     background-attachment: fixed;
     color: var(--text-main);
     margin: 0;
@@ -48,16 +59,77 @@ body {
 
 .game-header {
     display: flex;
-    align-items: baseline;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: space-between;
-    padding: 14px 24px;
-    background: linear-gradient(180deg, rgba(20, 27, 48, 0.97), rgba(15, 23, 42, 0.94));
+    gap: 10px 20px;
+    padding: 12px 24px;
+    background: linear-gradient(180deg, rgba(36, 26, 18, 0.97), rgba(21, 16, 12, 0.94));
     border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 12px 24px -16px rgba(2, 6, 23, 0.8);
+    box-shadow: 0 12px 24px -16px rgba(0, 0, 0, 0.85);
 }
-.game-title { font-weight: 900; letter-spacing: 2px; font-size: 1.05rem; }
+.game-title { font-family: var(--font-display); font-weight: 800; letter-spacing: 2px; font-size: 1.05rem; }
 .game-title-accent { color: var(--primary-light); }
-.game-version { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); }
+.game-version { font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); }
+
+/* --- Menú de cabecera: bestiario, colección, logros, opciones (paneles superpuestos) --- */
+.game-nav { display: flex; gap: 4px; order: 3; flex: 1 1 auto; justify-content: center; }
+.game-nav-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 12px;
+    color: var(--text-muted);
+    font: inherit; font-size: 0.78rem; font-weight: 600;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.game-nav-btn span:first-child { font-size: 1rem; }
+.game-nav-btn:hover, .game-nav-btn:focus-visible { color: var(--text-main); background: rgba(217, 102, 44, 0.12); border-color: var(--border-color); outline: none; }
+@media (max-width: 720px) {
+    .game-nav { order: 4; flex-basis: 100%; justify-content: space-between; }
+    .game-nav-btn { flex: 1; justify-content: center; padding: 8px 4px; }
+    .game-nav-label { display: none; }
+}
+
+/* --- Paneles superpuestos (bestiario, colección, logros, opciones) --- */
+.panel-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: min(6vh, 48px) 16px 16px;
+    background: rgba(8, 6, 4, 0.72);
+    backdrop-filter: blur(2px);
+    overflow-y: auto;
+    animation: panelFadeIn 0.2s ease both;
+}
+@keyframes panelFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.panel-sheet {
+    position: relative;
+    width: 100%; max-width: 760px;
+    background: linear-gradient(160deg, var(--bg-card-elevated), var(--bg-card));
+    border: 1px solid var(--border-strong);
+    border-top: 3px solid var(--primary);
+    border-radius: 18px;
+    box-shadow: var(--shadow-elevated);
+    animation: panelSheetIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes panelSheetIn { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+.panel-close {
+    position: absolute; top: 14px; right: 14px; z-index: 1;
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+.panel-close:hover { color: var(--text-main); border-color: var(--primary-light); }
+.panel-body { padding: 30px clamp(18px, 4vw, 34px) 28px; }
+@media (prefers-reduced-motion: reduce) { .panel-overlay, .panel-sheet { animation: none; } }
 
 .main-content { max-width: 1200px; margin: 0 auto; width: 90%; padding-bottom: 50px; }
 
@@ -164,19 +236,35 @@ body {
 /* =============================================
    🗡️ MODO RPG — selección de clase + mapa de ruta
    ============================================= */
-.rpg-view { animation: rpgViewIn 0.35s ease both; }
-@keyframes rpgViewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rpg-view { animation: rpgViewIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes rpgViewIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
 
 /* --- Inicio: la Carta de Héroe --- */
 .rpg-start {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
-    max-width: 420px;
-    margin: 0 auto;
+    gap: 18px;
+    max-width: 440px;
+    margin: 40px auto 0;
     text-align: center;
 }
+.rpg-start-kicker { margin: 0; font-size: 0.72rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--primary-light); }
+
+.rpg-start-preview {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 14px;
+    width: 100%;
+    margin: 0;
+    padding: 14px 16px;
+    list-style: none;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+.rpg-start-preview li { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-light); text-align: left; }
+.rpg-start-preview li span:first-child { font-size: 1.1rem; flex-shrink: 0; }
 
 .rpg-hero-card {
     --accent: var(--gold);
@@ -722,6 +810,9 @@ body {
 .rpg-end-stat-value { font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: 800; }
 .rpg-end-stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 .rpg-end-build { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 12px; }
+.rpg-end-achievements { margin-bottom: 14px; font-size: 0.82rem; color: var(--text-muted); }
+.rpg-end-achievements b { display: block; margin-bottom: 6px; color: var(--gold); }
+.rpg-hero-tag.is-achievement { border-color: var(--gold); color: var(--gold); }
 .rpg-end-events { margin-bottom: 14px; font-size: 0.82rem; line-height: 1.6; color: var(--text-muted); }
 .rpg-end-events b { color: var(--text-light); }
 .rpg-end-seed { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 18px; font-size: 0.8rem; color: var(--text-muted); }
@@ -779,4 +870,93 @@ body {
     .rpg-loot-offers { grid-template-columns: 1fr; }
     .rpg-loot-card { flex-direction: row; flex-wrap: wrap; justify-content: center; }
     .rpg-loot-card .rpg-loot-lines, .rpg-loot-card .rpg-loot-delta { width: 100%; }
+}
+
+/* ---------- 🖋️ Cinzel para los momentos de impacto; el resto se queda en Work Sans ---------- */
+.rpg-hero-card-name, .rpg-hero-name, .rpg-fighter-name,
+.rpg-combat-title, .rpg-arena-vs, .rpg-event-title, .rpg-end-title, .rpg-result-title,
+.panel-title, .rpg-log-title, .rpg-combat-result .rpg-result-title {
+    font-family: var(--font-display);
+}
+
+/* ---------- 📖🎒🏆⚙️ Paneles: bestiario, colección, logros y opciones ---------- */
+.panel-header { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+.panel-icon { font-size: 2.2rem; line-height: 1; }
+.panel-title { margin: 0; font-size: 1.35rem; font-weight: 700; letter-spacing: 1px; }
+.panel-sub { margin: 2px 0 0; font-size: 0.82rem; color: var(--text-muted); }
+.panel-progress { margin: 14px 0 20px; }
+.panel-progress-bar { height: 8px; background: rgba(0, 0, 0, 0.4); border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); }
+.panel-progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--gold)); transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.panel-progress-label { margin: 6px 0 0; font-size: 0.72rem; color: var(--text-dim); text-align: right; }
+
+.panel-tabs { display: flex; gap: 6px; margin: 18px 0 16px; flex-wrap: wrap; }
+.panel-tab {
+    padding: 6px 14px;
+    font: inherit; font-size: 0.78rem; font-weight: 600;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    cursor: pointer;
+}
+.panel-tab.is-active { color: var(--bg-main); background: var(--primary-light); border-color: var(--primary-light); }
+
+.panel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.panel-tile {
+    --rarity: var(--border-strong);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 14px 8px 10px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1.5px solid var(--rarity);
+    border-radius: 12px;
+}
+.panel-tile.is-locked { opacity: 0.4; filter: grayscale(0.6); }
+.panel-tile-icon { font-size: 1.9rem; line-height: 1; }
+.panel-tile-name { font-size: 0.72rem; font-weight: 700; line-height: 1.25; }
+.panel-tile-sub { font-size: 0.62rem; color: var(--text-dim); }
+
+.panel-list { display: flex; flex-direction: column; gap: 8px; }
+.panel-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+.panel-row.is-locked { opacity: 0.45; }
+.panel-row.is-done { border-color: color-mix(in srgb, var(--success) 55%, var(--border-color)); }
+.panel-row-icon { font-size: 1.5rem; line-height: 1.2; flex-shrink: 0; }
+.panel-row-body { flex: 1; min-width: 0; }
+.panel-row-name { font-size: 0.85rem; font-weight: 700; }
+.panel-row-desc { font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; }
+.panel-row-check { flex-shrink: 0; font-size: 1.1rem; color: var(--success); }
+
+.panel-empty { padding: 30px 10px; text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+
+.panel-section { margin-bottom: 26px; }
+.panel-section:last-child { margin-bottom: 0; }
+.panel-section-title { margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); }
+
+.panel-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; text-align: left; }
+.panel-field label { font-size: 0.78rem; font-weight: 600; color: var(--text-light); }
+.panel-field textarea, .panel-field input[type="text"] {
+    padding: 10px 12px;
+    font-family: 'Courier New', monospace; font-size: 0.82rem;
+    color: var(--text-main);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    resize: vertical;
+}
+.panel-field-hint { font-size: 0.72rem; color: var(--text-dim); }
+.panel-actions-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.panel-actions-row .btn-secondary, .panel-actions-row .btn-forge { width: auto; flex: 1 1 auto; }
+.panel-about p { font-size: 0.9rem; line-height: 1.65; color: var(--text-light); }
+.panel-about p:first-child { margin-top: 0; }
+
+@media (max-width: 480px) {
+    .panel-body { padding: 26px 16px 22px; }
+    .panel-icon { font-size: 1.8rem; }
+    .panel-title { font-size: 1.1rem; }
 }
