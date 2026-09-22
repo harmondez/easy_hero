@@ -34,11 +34,12 @@ assert('el héroe empieza con ATK 1 / HP 25', hero.atq === 1 && hero.hp === 25);
 assert('maxHp = HP inicial y nivel 1', hero.maxHp === 25 && hero.level === 1);
 assert('createRpgHero devuelve una copia (no muta la base)', (hero.atq = 99, RPG_HERO_BASE.atq === 0));
 hero.atq = 1;
-assert('el héroe solo tiene ATK, HP y guardia como atributos (sin DEF) más equipo, votos, mejoras y afinidades', (() => {
+assert('el héroe solo tiene ATK, HP y guardia como atributos (sin DEF) más equipo, inventario, votos, mejoras y afinidades', (() => {
     const h = createRpgHero();
     const keys = Object.keys(h).sort().join(',');
-    return keys === 'affinity,atq,color,equipment,guard,hp,icon,level,maxHp,name,skillMods,vows'
-        && h.guard === 0 && h.equipment.weapon.baseId === 'espada_sendero' && !h.equipment.secondary && !h.equipment.armor && !h.equipment.accessory
+    return keys === 'affinity,atq,color,equipment,guard,hp,icon,inventory,level,maxHp,name,skillMods,trophy,vows'
+        && h.guard === 0 && h.inventory.length === 0 && h.trophy === null
+        && h.equipment.weapon.baseId === 'espada_sendero' && !h.equipment.secondary && !h.equipment.armor && !h.equipment.accessory
         && Object.keys(h.vows).length === 0 && Object.keys(h.skillMods).length === 0
         && Object.values(h.affinity).every(v => v === 0);
 })());

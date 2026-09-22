@@ -1,11 +1,12 @@
-import * as UI from './ui.js?v=1.1.0';
-import * as Engine from './engine.js?v=1.1.0';
-import * as Events from './events.js?v=1.1.0';
-import * as Save from './save.js?v=1.1.0';
-import * as Items from './items.js?v=1.1.0';
-import * as Meta from './meta.js?v=1.1.0';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.1.0';
-import { GAME_VERSION } from './version.js?v=1.1.0';
+import * as UI from './ui.js?v=1.2.0';
+import * as Engine from './engine.js?v=1.2.0';
+import * as Events from './events.js?v=1.2.0';
+import * as Save from './save.js?v=1.2.0';
+import * as Items from './items.js?v=1.2.0';
+import * as Meta from './meta.js?v=1.2.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.2.0';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.2.0';
+import { GAME_VERSION } from './version.js?v=1.2.0';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
@@ -42,6 +43,8 @@ const gameState = {
         combatResult: null,   // panel de fin de combate que está a la vista (para retomarlo)
         loot: null,           // botín abierto: { source, floor, offers: [objetos], selected }
         pendingNodeId: null,
+        pendingBossMonster: null, // el jefe, mientras se decide el trofeo antes de ir al resumen
+        charSelection: null,  // { from: 'equipment'|'inventory', slot? , index? } en la pantalla de Personaje
         // Eventos
         event: null,          // { node, session, result, view } mientras hay un evento abierto
         eventCombat: null,    // spec del combate de evento en curso ({ onWin, onWinText, ... })
@@ -110,7 +113,7 @@ function _rpgProgressText() {
 
 function _rpgRefreshMap(animate) {
     const r = gameState.rpg;
-    UI.renderRpgHeroPanel(r.hero, _rpgProgressText());
+    UI.renderRpgHeroPanel(r.hero, _rpgProgressText(), meta.gold);
     UI.renderRpgMap(r.map, {
         currentId: r.currentId,
         visitedIds: r.visitedIds,
@@ -142,6 +145,7 @@ function _rpgStartRun(seed) {
     r.seed = seed == null ? newSeed() : seed;
     r.rng = createRng(r.seed);
     r.hero = Engine.createRpgHero();
+    r.hero.trophy = meta.trophyItem ? { ...meta.trophyItem } : null; // una copia: nunca se pierde, esté equipado o no
     r.map = Engine.generateRpgMap(r.rng);
     r.currentId = null;
     r.visitedIds = [];
@@ -227,13 +231,19 @@ function _rpgEnterNode(nodeId) {
     _rpgOpenLoot('chest', node.floor);
 }
 
-// --- 🎁 Botín: 1 de 3 objetos; equipar (se pierde el anterior) o descartar (cura) ---
+// --- 🎁 Botín: 1 de 3 objetos (o 1 solo, el trofeo del jefe); equipar, guardar en el inventario o descartar (cura) ---
 function _rpgOpenLoot(source, floor) {
     const r = gameState.rpg;
-    const offers = Items.rollLootOffers({ rng: r.rng, floor, source, hero: r.hero });
-    r.loot = { source, floor, selected: null, offers };
-    offers.forEach(item => Meta.recordItemSeen(meta, item));
-    persistMeta();
+    let offers;
+    if (source === 'boss') {
+        // Un único objeto legendario garantizado: el trofeo del jefe final, para siempre en meta.js
+        offers = [Items.createRpgItem({ rng: r.rng, floor, rarityId: 'legendaria' })];
+    } else {
+        offers = Items.rollLootOffers({ rng: r.rng, floor, source, hero: r.hero });
+        offers.forEach(item => Meta.recordItemSeen(meta, item));
+        persistMeta();
+    }
+    r.loot = { source, floor, selected: source === 'boss' ? 0 : null, offers };
     UI.toggleRpgView('rpgLootView');
     UI.renderRpgLoot(_rpgLootView());
     persist();
@@ -242,20 +252,28 @@ function _rpgOpenLoot(source, floor) {
 function _rpgLootView() {
     const r = gameState.rpg;
     const loot = r.loot;
+    const isBoss = loot.source === 'boss';
     const src = Items.LOOT_SOURCES[loot.source] || Items.LOOT_SOURCES.chest;
-    const offers = loot.offers.map(item => ({ item, delta: Items.itemDelta(r.hero, item), current: r.hero.equipment[item.slot] || null }));
+    const offers = loot.offers.map(item => ({
+        item,
+        delta: isBoss ? { atq: 0, maxHp: 0, guard: 0 } : Items.itemDelta(r.hero, item),
+        current: isBoss ? meta.trophyItem : (r.hero.equipment[item.slot] || null)
+    }));
     const picked = loot.selected != null ? offers[loot.selected] : null;
     return {
         icon: src.icon, title: src.title,
-        text: picked ? 'Compara y decide: equiparlo (pierdes lo que llevas en esa ranura) o descartarlo (te cura).' : 'Elige 1 de 3 objetos. Los otros dos se quedan atrás.',
-        offers, selected: loot.selected,
+        text: isBoss
+            ? (meta.trophyItem ? 'Ya tienes un trofeo. ¿Te quedas con el nuevo (sustituye al anterior para siempre) o conservas el que ya tenías?' : 'Tu primer trofeo: se queda contigo en todas las rutas futuras, para siempre.')
+            : (picked ? 'Compara y decide: equiparlo, guardarlo en el inventario o descartarlo (te cura).' : 'Elige 1 de 3 objetos. Los otros dos se quedan atrás.'),
+        offers, selected: loot.selected, isBoss,
+        canStore: !isBoss && Items.hasInventoryRoom(r.hero),
         discardHeal: picked ? Items.discardHealFor(r.hero, picked.item) : 0
     };
 }
 
 function _rpgLootSelect(index) {
     const r = gameState.rpg;
-    if (!r.loot || !r.loot.offers[index]) return;
+    if (!r.loot || r.loot.source === 'boss' || !r.loot.offers[index]) return;
     r.loot.selected = r.loot.selected === index ? null : index;
     UI.renderRpgLoot(_rpgLootView());
     persist();
@@ -263,29 +281,120 @@ function _rpgLootSelect(index) {
 
 function _rpgLootClose() {
     const r = gameState.rpg;
+    const wasBoss = r.loot && r.loot.source === 'boss';
     r.loot = null;
+    if (wasBoss) { _rpgEndRun('victory', r.pendingBossMonster); r.pendingBossMonster = null; return; }
     UI.toggleRpgView('rpgMapView');
     _rpgRefreshMap(false);
     persist();
 }
 
-function _rpgLootDecide(equip) {
+// action: 'equip' | 'store' | 'discard'
+function _rpgLootDecide(action) {
     const r = gameState.rpg;
     const loot = r.loot;
     if (!loot || loot.selected == null) return;
     const item = loot.offers[loot.selected];
-    if (equip) {
-        const old = Items.equipItem(r.hero, item);
+
+    if (loot.source === 'boss') {
+        if (action === 'equip') {
+            Meta.recordTrophy(meta, item, true); // sustitución explícita: es una elección consciente
+            persistMeta();
+            log(`🐉 ${r.hero.name} se queda ${item.icon} ${item.name} como trofeo para siempre.`, 'victory');
+        } else {
+            log(`🐉 ${r.hero.name} conserva su trofeo de antes.`, 'system');
+        }
+        _rpgLootClose();
+        return;
+    }
+
+    if (action === 'equip') {
+        const { old, stored } = Items.equipAndStash(r.hero, item);
         r.stats.equipped++;
         Meta.recordItemEquipped(meta, item);
         persistMeta();
-        log(`${item.rarityIcon} ${r.hero.name} equipa ${item.icon} ${item.name}${old ? ` (deja ${old.icon} ${old.name})` : ''}.`, 'victory');
+        const oldNote = old ? (stored ? ` (guarda ${old.icon} ${old.name} en el inventario)` : ` (deja ${old.icon} ${old.name}: no había hueco en el inventario, así que cura)`) : '';
+        log(`${item.rarityIcon} ${r.hero.name} equipa ${item.icon} ${item.name}${oldNote}.`, 'victory');
+    } else if (action === 'store') {
+        if (!Items.storeInInventory(r.hero, item)) { log('⚠️ El inventario está lleno.', 'system'); return; }
+        log(`🎒 ${r.hero.name} guarda ${item.icon} ${item.name} en el inventario.`, 'victory');
     } else {
         const healed = Items.discardItem(r.hero, item);
         r.stats.discarded++;
         log(`♻️ ${r.hero.name} descarta ${item.icon} ${item.name}${healed ? ` y recupera ${healed} HP` : ''}.`, 'victory');
     }
     _rpgLootClose();
+}
+
+// --- 🧍 Personaje: equipo, inventario de 10 ranuras, trofeo del jefe y oro ---
+function _rpgRefreshCharView() {
+    const r = gameState.rpg;
+    UI.renderCharacterView(r.hero, meta, r.charSelection);
+}
+
+function _rpgOpenCharView() {
+    const r = gameState.rpg;
+    if (!r.hero || r.combat || r.event || r.loot) return;
+    r.charSelection = null;
+    UI.toggleRpgView('rpgCharView');
+    _rpgRefreshCharView();
+}
+
+function _rpgCharSelect(from, extra) {
+    const r = gameState.rpg;
+    const next = from === 'equipment' ? { from, slot: extra } : from === 'inventory' ? { from, index: extra } : { from: 'trophy' };
+    const sel = r.charSelection;
+    const same = sel && sel.from === next.from && sel.slot === next.slot && sel.index === next.index;
+    r.charSelection = same ? null : next;
+    _rpgRefreshCharView();
+}
+
+// action: 'equip' | 'store' | 'discard', sobre lo que haya seleccionado en r.charSelection
+function _rpgCharAction(action) {
+    const r = gameState.rpg;
+    const sel = r.charSelection;
+    if (!sel) return;
+    const hero = r.hero;
+    let item = null;
+    if (sel.from === 'equipment') item = hero.equipment[sel.slot];
+    else if (sel.from === 'inventory') item = hero.inventory[sel.index];
+    else if (sel.from === 'trophy') item = hero.trophy;
+    if (!item) return;
+
+    if (action === 'equip' && sel.from === 'inventory') {
+        Items.equipFromInventory(hero, sel.index);
+        Meta.recordItemEquipped(meta, item);
+        persistMeta();
+        log(`${item.rarityIcon} ${hero.name} equipa ${item.icon} ${item.name}.`, 'victory');
+        r.charSelection = { from: 'equipment', slot: item.slot };
+    } else if (action === 'equip' && sel.from === 'trophy') {
+        const { old, stored } = Items.equipAndStash(hero, { ...item }); // una copia: el trofeo nunca se consume
+        Meta.recordItemEquipped(meta, item);
+        persistMeta();
+        const note = old ? (stored ? ` (guarda ${old.icon} ${old.name})` : ` (descarta ${old.icon} ${old.name}: sin hueco)`) : '';
+        log(`🐉 ${hero.name} empuña su trofeo: ${item.icon} ${item.name}${note}.`, 'victory');
+        r.charSelection = { from: 'equipment', slot: item.slot };
+    } else if (action === 'store' && sel.from === 'equipment') {
+        if (!Items.hasInventoryRoom(hero)) { log('⚠️ El inventario está lleno: no hay hueco.', 'system'); return; }
+        const removed = Items.unequipSlot(hero, sel.slot);
+        if (removed) { Items.storeInInventory(hero, removed); log(`🎒 ${hero.name} guarda ${removed.icon} ${removed.name} en el inventario.`, 'victory'); }
+        r.charSelection = null;
+    } else if (action === 'discard') {
+        let healed = 0;
+        if (sel.from === 'equipment') {
+            const removed = Items.unequipSlot(hero, sel.slot);
+            if (removed) healed = Items.discardItem(hero, removed);
+        } else if (sel.from === 'inventory') {
+            healed = Items.removeFromInventory(hero, sel.index);
+        } else return;
+        r.stats.discarded++;
+        log(`♻️ ${hero.name} descarta ${item.icon} ${item.name}${healed ? ` y recupera ${healed} HP` : ''}.`, 'victory');
+        r.charSelection = null;
+    } else {
+        return;
+    }
+    _rpgRefreshCharView();
+    persist();
 }
 
 // --- 🎲 Eventos (y hogueras, que usan la misma pantalla) ---
@@ -467,7 +576,8 @@ function _rpgBuildSummary(result, monster) {
             { icon: '🔥', value: s.campfires, label: 'hogueras' },
             { icon: '🧰', value: s.chests, label: 'cofres' },
             { icon: '🗡️', value: r.hero.atq, label: 'ATK' },
-            { icon: '❤️', value: r.hero.maxHp, label: 'HP máx' }
+            { icon: '❤️', value: r.hero.maxHp, label: 'HP máx' },
+            { icon: '🪙', value: meta.gold, label: 'oro acumulado' }
         ],
         build: UI.rpgHeroTags(r.hero).map(t => `${t.icon} ${t.text}`),
         gear: Items.ITEM_SLOT_ORDER.map(s => r.hero.equipment[s]).filter(Boolean).map(it => ({ icon: it.icon, name: it.name, rarity: it.rarityIcon, color: it.color })),
@@ -511,14 +621,17 @@ function _rpgCombatContinue() {
         r.stats.combatsWon++;
         Meta.recordMonsterDefeated(meta, m.name);
         Meta.recordCombatWin(meta);
+        const gold = RPG_BALANCE.gold[m.type] || RPG_BALANCE.gold.monster;
+        Meta.recordGold(meta, gold);
         persistMeta();
         _rpgAdvanceTo(r.pendingNodeId);
         log(m.type === 'boss'
-            ? `🐉 ${r.hero.name} derrota al ${m.name}. ¡Ruta completada!`
-            : `${m.icon} ${r.hero.name} vence a ${m.name} (piso ${m.floor + 1}).`, 'victory');
+            ? `🐉 ${r.hero.name} derrota al ${m.name}. ¡Ruta completada! (+${gold} 🪙)`
+            : `${m.icon} ${r.hero.name} vence a ${m.name} (piso ${m.floor + 1}). +${gold} 🪙`, 'victory');
         if (m.type === 'boss') {
             r.pendingNodeId = null;
-            _rpgEndRun('victory', m);
+            r.pendingBossMonster = m;
+            _rpgOpenLoot('boss', m.floor);
             return;
         }
     } else {
@@ -555,6 +668,14 @@ function initEvents() {
         if (!gameState.rpg.hero) return;
         _rpgStartRun();
     });
+    safeListener('btnRpgChar', 'click', () => _rpgOpenCharView());
+    safeListener('btnCharBack', 'click', () => { UI.toggleRpgView('rpgMapView'); _rpgRefreshMap(false); });
+    safeListener('charBody', 'click', (e) => {
+        const action = e.target.closest('[data-char-action]');
+        if (action) { _rpgCharAction(action.dataset.charAction); return; }
+        const pick = e.target.closest('[data-char-pick]');
+        if (pick) _rpgCharSelect(pick.dataset.charPick, pick.dataset.charSlot ?? (pick.dataset.charIndex != null ? Number(pick.dataset.charIndex) : undefined));
+    });
     safeListener('rpgEventView', 'click', (e) => {
         const opt = e.target.closest('[data-rpg-event-opt]');
         if (opt) { _rpgEventChoose(Number(opt.dataset.rpgEventOpt)); return; }
@@ -563,8 +684,9 @@ function initEvents() {
     safeListener('rpgLootView', 'click', (e) => {
         const pick = e.target.closest('[data-rpg-loot-pick]');
         if (pick) { _rpgLootSelect(Number(pick.dataset.rpgLootPick)); return; }
-        if (e.target.closest('#btnRpgLootEquip')) _rpgLootDecide(true);
-        else if (e.target.closest('#btnRpgLootDiscard')) _rpgLootDecide(false);
+        if (e.target.closest('#btnRpgLootEquip')) _rpgLootDecide('equip');
+        else if (e.target.closest('#btnRpgLootStore')) _rpgLootDecide('store');
+        else if (e.target.closest('#btnRpgLootDiscard')) _rpgLootDecide('discard');
     });
     safeListener('rpgCombatActions', 'click', (e) => {
         const btn = e.target.closest('[data-rpg-action]');

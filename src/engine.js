@@ -1,6 +1,6 @@
-import { RPG_BALANCE } from './data/balance.js?v=1.1.0';
-import { pickMonsterDef } from './data/monsters.js?v=1.1.0';
-import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.1.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.2.0';
+import { pickMonsterDef } from './data/monsters.js?v=1.2.0';
+import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.2.0';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)
@@ -22,7 +22,9 @@ export function createRpgHero() {
     const hero = {
         ...RPG_HERO_BASE, maxHp: RPG_HERO_BASE.hp, level: 1, guard: 0,
         vows: {}, skillMods: {}, affinity: { guerrero: 0, picaro: 0, elementalista: 0 },
-        equipment: { weapon: null, secondary: null, armor: null, accessory: null }
+        equipment: { weapon: null, secondary: null, armor: null, accessory: null },
+        inventory: [],   // hasta 10 objetos guardados sin equipar; se reinicia cada ruta
+        trophy: null     // el objeto legendario del jefe final, si ya lo ganaste; lo rellena main.js desde el progreso persistente
     };
     equipItem(hero, createStarterItem());
     return hero;

@@ -7,26 +7,28 @@ La idea en una frase: **casi todo se prueba sobre el motor puro, con miles de ca
 
 | Capa | Archivo | Qué prueba | Tests | Tiempo |
 |------|---------|-----------|:-----:|:------:|
-| **Motor** | `tests/rpg-sim.mjs` | Héroe, combate e **intenciones**, bestiario, semilla, 300 mapas (hogueras, sub-jefes evitables…) | 104 | **2,5 s** |
-| **Eventos** | `tests/events-sim.mjs` | Los 15 eventos, la hoguera, votos, IA, 1500 rutas con un héroe invencible | 118 | **12,1 s** |
-| **Equipo** | `tests/items-sim.mjs` | Fabricación (6000 objetos), equipar/descartar, botín «1 de 3», todas las reglas en combate, 1500 builds al azar | 122 | **0,2 s** |
+| **Motor** | `tests/rpg-sim.mjs` | Héroe, combate e **intenciones**, bestiario, semilla, 300 mapas (hogueras, sub-jefes evitables…) | 104 | **2,7 s** |
+| **Eventos** | `tests/events-sim.mjs` | Los 15 eventos, la hoguera, votos, IA, 1500 rutas con un héroe invencible | 118 | **19 s** |
+| **Equipo** | `tests/items-sim.mjs` | Fabricación (6000 objetos), equipar/descartar/inventario (10 ranuras), botín «1 de 3», todas las reglas en combate, 1500 builds al azar | 148 | **0,2 s** |
+| **Progreso** | `tests/meta-sim.mjs` | Bestiario, colección, logros, oro y el trofeo del jefe — guardar/cargar, casos límite | 38 | **0,1 s** |
 | **Guardado** | `tests/save-sim.mjs` | Guardar y retomar (combate y evento a medias, equipo y botín pendiente), versiones, datos dañados | 36 | **1,1 s** |
-| **Equilibrio** | `tests/balance-guard.mjs` | Que el juego siga siendo ganable, sin ser trivial (1500 partidas de 3 bots) | 12 | **22 s** |
+| **Equilibrio** | `tests/balance-guard.mjs` | Que el juego siga siendo ganable, sin ser trivial (1500 partidas de 3 bots) | 12 | **38 s** |
 | **Versiones** | `tests/version-check.mjs` | La versión coincide en todos los sitios; el script de publicación (en simulacro) | 27 | **0,1 s** |
-| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas, paneles (bestiario/colección/logros/opciones), importar/exportar | 123 | **~131 s** |
+| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas, personaje/inventario/oro/trofeo, paneles (bestiario/colección/logros/opciones), importar/exportar | 142 | **~140 s** |
 
-Una regla útil: **si algo se puede comprobar en el motor, no se comprueba en el navegador.** Por eso las seis capas de arriba
-suman 419 tests en unos 38 s y la de abajo, con 123, tarda varias veces más.
+Una regla útil: **si algo se puede comprobar en el motor, no se comprueba en el navegador.** Por eso las siete capas de arriba
+suman 483 tests en poco más de 1 minuto y la de abajo, con 142, tarda varias veces más.
 
 ```bash
-npm run test:engine     # 2,5 s   ← se ejecuta tras cada cambio
-npm run test:events     # 12,1 s  ← se ejecuta tras cada cambio
-npm run test:items      # 0,2 s   ← tras tocar objetos, rarezas o afijos
+npm run test:engine     # 2,7 s   ← se ejecuta tras cada cambio
+npm run test:events     # 19 s    ← se ejecuta tras cada cambio
+npm run test:items      # 0,2 s   ← tras tocar objetos, rarezas, afijos o el inventario
+npm run test:meta       # 0,1 s   ← tras tocar bestiario, colección, logros, oro o el trofeo
 npm run test:save       # 1,1 s
-npm run test:balance    # 22 s    ← tras tocar números de equilibrio
-npm run test:browser    # ~131 s  ← antes de subir, o al tocar la interfaz
+npm run test:balance    # 38 s    ← tras tocar números de equilibrio
+npm run test:browser    # ~140 s  ← antes de subir, o al tocar la interfaz
 npm run test:version    # 0,1 s   ← comprueba que la versión está sincronizada
-npm test                # los siete (542 comprobaciones)
+npm test                # las ocho (625 comprobaciones)
 npm run balance         # NO es un test: la tabla de equilibrio (ver docs/equilibrio.md)
 ```
 

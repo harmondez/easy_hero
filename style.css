@@ -185,8 +185,9 @@ body {
     font-size: 0.9rem;
     transition: background 0.2s, border-color 0.2s, transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.btn-secondary:hover { background: linear-gradient(160deg, var(--border-strong), var(--bg-card-elevated)); border-color: var(--primary-light); }
-.btn-secondary:active { transform: scale(0.96); }
+.btn-secondary:hover:not(:disabled) { background: linear-gradient(160deg, var(--border-strong), var(--bg-card-elevated)); border-color: var(--primary-light); }
+.btn-secondary:active:not(:disabled) { transform: scale(0.96); }
+.btn-secondary:disabled { filter: grayscale(1); opacity: 0.35; cursor: not-allowed; }
 
 /* --- Atributos básicos (ATK / HP) --- */
 .rpg-stat { font-family: 'Courier New', monospace; }
@@ -959,4 +960,118 @@ body {
     .panel-body { padding: 26px 16px 22px; }
     .panel-icon { font-size: 1.8rem; }
     .panel-title { font-size: 1.1rem; }
+}
+
+.rpg-stat.gold { color: var(--gold); }
+
+/* =============================================
+   🧍 Personaje — equipo, inventario (10 ranuras), trofeo del jefe y oro
+   ============================================= */
+.char-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 900px; margin: 0 auto 18px;
+}
+.char-title { margin: 0; font-family: var(--font-display); font-size: 1.3rem; }
+
+.char-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 300px) 1fr;
+    gap: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+    align-items: start;
+}
+
+/* --- Panel de detalle (izquierda) --- */
+.char-detail {
+    position: sticky; top: 12px;
+    padding: 20px 18px;
+    text-align: center;
+    background: linear-gradient(160deg, var(--bg-card-elevated), var(--bg-card));
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: var(--shadow-elevated);
+    min-height: 220px;
+}
+.char-detail-empty { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 180px; color: var(--text-dim); font-size: 0.85rem; line-height: 1.5; }
+.char-detail-rarity { font-size: 0.7rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+.char-detail-icon { font-size: 2.6rem; margin: 8px 0 2px; }
+.char-detail-name { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; }
+.char-detail-kind { font-size: 0.72rem; color: var(--text-muted); margin: 2px 0 10px; }
+.char-detail-lines { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.char-detail-lines i { font-style: normal; font-size: 0.8rem; color: var(--text-light); }
+.char-detail-desc { font-size: 0.78rem; color: var(--text-dim); font-style: italic; margin: 0 0 14px; }
+.char-detail-actions { display: flex; flex-direction: column; gap: 8px; }
+
+/* --- Muñeco de papel (centro) --- */
+.char-center { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.char-doll {
+    --accent: var(--gold);
+    position: relative;
+    width: min(100%, 360px);
+    aspect-ratio: 1;
+}
+.char-doll-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.char-doll-lines line { stroke: var(--border-strong); stroke-width: 1.5; stroke-dasharray: 4 5; }
+.char-doll-hero {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center;
+    width: 34%; aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--accent) 30%, transparent), var(--bg-card));
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 45%, transparent);
+    font-size: clamp(2.4rem, 8vw, 3.4rem);
+}
+.char-doll-slot {
+    --rarity: var(--border-strong);
+    position: absolute; transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    width: 22%; min-width: 56px;
+    padding: 8px 4px;
+    color: var(--text-light); font: inherit; cursor: pointer;
+    background: rgba(0, 0, 0, 0.35);
+    border: 2px solid var(--rarity);
+    border-radius: 12px;
+    box-shadow: 0 0 10px color-mix(in srgb, var(--rarity) 35%, transparent);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.char-doll-slot:hover { transform: translate(-50%, -50%) scale(1.06); }
+.char-doll-slot.is-selected { box-shadow: 0 0 0 3px var(--rarity), 0 0 18px color-mix(in srgb, var(--rarity) 60%, transparent); }
+.char-doll-slot.is-empty { opacity: 0.5; border-style: dashed; }
+.char-doll-slot-icon { font-size: 1.4rem; line-height: 1; }
+.char-doll-slot-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+
+.char-stats-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+
+/* --- Inventario y trofeo --- */
+.char-inventory { width: 100%; }
+.char-inventory-title { font-size: 0.72rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; text-align: center; }
+.char-inventory-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 420px; margin: 0 auto; }
+.char-inv-slot {
+    --rarity: var(--border-strong);
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0, 0, 0, 0.25);
+    border: 2px solid var(--rarity);
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--rarity) 30%, transparent);
+    transition: transform 0.12s;
+}
+.char-inv-slot:hover { transform: scale(1.07); }
+.char-inv-slot.is-selected { box-shadow: 0 0 0 2px var(--rarity), 0 0 16px color-mix(in srgb, var(--rarity) 60%, transparent); }
+.char-inv-slot.is-empty { border-style: dashed; opacity: 0.35; cursor: default; }
+.char-inv-icon { font-size: 1.3rem; }
+.char-trophy { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 68px; margin: 14px auto 0; }
+.char-trophy .char-inv-slot { width: 100%; box-shadow: 0 0 14px color-mix(in srgb, var(--gold) 55%, transparent); }
+.char-trophy-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); }
+
+.char-gold { font-size: 1rem; font-weight: 700; color: var(--gold); }
+.char-gold b { font-family: 'Courier New', monospace; font-size: 1.15rem; }
+
+@media (max-width: 700px) {
+    .char-layout { grid-template-columns: 1fr; }
+    .char-detail { position: static; }
+    .char-inventory-grid { max-width: 320px; }
 }

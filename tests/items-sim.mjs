@@ -3,8 +3,9 @@
 // Todo sobre el motor puro (sin navegador). El azar viene de una semilla, así que cada resultado se repite.
 // =============================================
 import {
-    createRpgItem, createStarterItem, equipItem, discardItem, discardHealFor, rollLootOffers, itemPower, itemDelta, describeItem, traitText,
-    ruleSum, ITEM_SLOT_ORDER, ITEM_BASES, RARITIES, LOOT_SOURCES, campfireBonus, equippedUniqueIds
+    createRpgItem, createStarterItem, equipItem, unequipSlot, discardItem, discardHealFor, rollLootOffers, itemPower, itemDelta, describeItem, traitText,
+    ruleSum, ITEM_SLOT_ORDER, ITEM_BASES, RARITIES, LOOT_SOURCES, campfireBonus, equippedUniqueIds,
+    INVENTORY_SIZE, hasInventoryRoom, storeInInventory, removeFromInventory, equipFromInventory, equipAndStash
 } from '../src/items.js';
 import { AFFIX_UNIQUES } from '../src/data/affixes.js';
 import {
@@ -450,6 +451,68 @@ console.log('\n💾 Guardar el equipo y el combate');
     const same = act(c, 'attack');
     assert('retomar el combate da el mismo resultado que seguir jugándolo', JSON.stringify(cont.events) === JSON.stringify(same.events));
     assert('un guardado sin equipo (formato anterior) se descarta', restoreRun({ ...snap, hero: { ...snap.hero, equipment: undefined } }) === null);
+}
+
+// =============================================
+console.log('\n🎒 Inventario (10 ranuras, se reinicia cada ruta)');
+{
+    const h = createRpgHero();
+    assert('el héroe empieza con el inventario vacío y hueco de sobra', h.inventory.length === 0 && hasInventoryRoom(h));
+
+    for (let i = 0; i < INVENTORY_SIZE; i++) assert(`guarda el objeto ${i + 1}/${INVENTORY_SIZE}`, storeInInventory(h, fake('accessory')));
+    assert('con las 10 ranuras llenas, ya no hay hueco', h.inventory.length === INVENTORY_SIZE && !hasInventoryRoom(h));
+    assert('intentar guardar un 11.º objeto no hace nada y avisa con `false`', storeInInventory(h, fake('accessory')) === false && h.inventory.length === INVENTORY_SIZE);
+
+    // Descartar desde el inventario: cura y libera hueco
+    const before = h.hp = 10;
+    const healed = removeFromInventory(h, 0);
+    assert('descartar del inventario cura (como cualquier descarte) y libera una ranura', healed > 0 && h.hp === before + healed && h.inventory.length === INVENTORY_SIZE - 1);
+    assert('descartar un índice que no existe no hace nada (0 curado)', removeFromInventory(h, 99) === 0);
+
+    // Equipar desde el inventario: el que llevabas puesto vuelve a ESA MISMA ranura (el recuento no cambia)
+    const h2 = createRpgHero();
+    const guardado = fake('weapon', { stats: { atq: 9 }, damaged: 'fuego' });
+    storeInInventory(h2, guardado);
+    const countBefore = h2.inventory.length;
+    const llevaba = h2.equipment.weapon;
+    const old = equipFromInventory(h2, 0);
+    assert('equipar desde el inventario pone el objeto en su ranura', h2.equipment.weapon === guardado && h2.atq === 9);
+    assert('lo que llevabas antes vuelve al inventario, en el mismo índice (el recuento no crece)', old === llevaba && h2.inventory[0] === llevaba && h2.inventory.length === countBefore);
+    assert('equipar un índice vacío no hace nada', equipFromInventory(h2, 5) === null);
+
+    // equipAndStash: equipar algo NUEVO (no del inventario); lo anterior va al inventario si hay hueco
+    const h3 = createRpgHero();
+    const nuevo = fake('weapon', { stats: { atq: 4 } });
+    const r1 = equipAndStash(h3, nuevo);
+    assert('equipar sin llevar nada en esa ranura no guarda nada (empezaba con espada, así que sí la guarda)', r1.old && r1.stored && h3.inventory.includes(r1.old));
+    assert('el objeto nuevo queda equipado', h3.equipment.weapon === nuevo);
+
+    // Sin hueco: equipar nunca se bloquea, pero lo que sale se descarta (cura) en vez de perderse sin más
+    const h4 = createRpgHero();
+    for (let i = 0; i < INVENTORY_SIZE; i++) storeInInventory(h4, fake('accessory'));
+    h4.hp = 5;
+    const hpBefore = h4.hp;
+    const r2 = equipAndStash(h4, fake('weapon', { stats: { atq: 7 } }));
+    assert('con el inventario lleno, equipar sigue funcionando (nunca se bloquea)', h4.equipment.weapon.stats.atq === 7);
+    assert('…pero lo que sale no cabe: se descarta y cura, no desaparece gratis', !r2.stored && h4.inventory.length === INVENTORY_SIZE && h4.hp > hpBefore);
+
+    // unequipSlot: cualquier ranura, incluida el arma, puede quedar vacía sin romper nada
+    const h5 = createRpgHero();
+    const arma = h5.equipment.weapon;
+    const quitada = unequipSlot(h5, 'weapon');
+    assert('quitar el arma la deja vacía y devuelve lo que había', quitada === arma && h5.equipment.weapon === null);
+    assert('sin arma, el ATK nunca baja de 1 (el motor lo protege)', h5.atq >= 1);
+    assert('quitar de una ranura ya vacía no hace nada (devuelve null)', unequipSlot(h5, 'weapon') === null);
+
+    // El inventario viaja en el guardado igual que el equipo
+    const h6 = createRpgHero();
+    storeInInventory(h6, fake('armor', { stats: { maxHp: 5 } }));
+    const snap = JSON.parse(JSON.stringify(snapshotRun({
+        seed: 1, rng: createRng(1), hero: h6, map: { nodes: [{ id: 'a', floor: 0, next: [] }], floors: 2 },
+        currentId: 'a', visitedIds: ['a'], usedEvents: [], skipNext: false, stats: {}, log: [], combat: null, event: null
+    })));
+    const back = restoreRun(snap);
+    assert('el inventario (y el trofeo) sobreviven a guardar y cargar', JSON.stringify(back.hero.inventory) === JSON.stringify(h6.inventory) && back.hero.trophy === h6.trophy);
 }
 
 // =============================================

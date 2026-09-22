@@ -1,6 +1,6 @@
-import * as Engine from './engine.js?v=1.1.0';
-import * as Items from './items.js?v=1.1.0';
-import * as Meta from './meta.js?v=1.1.0';
+import * as Engine from './engine.js?v=1.2.0';
+import * as Items from './items.js?v=1.2.0';
+import * as Meta from './meta.js?v=1.2.0';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -57,7 +57,7 @@ export function playHitAnimation(selector, isAlly) {
 // --- 🗡️ MODO RPG (Carta de Héroe + mapa de ruta) ---
 
 export function toggleRpgView(view) {
-    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgLootView', 'rpgCombatView', 'rpgEndView'].forEach(id => {
+    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgLootView', 'rpgCharView', 'rpgCombatView', 'rpgEndView'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = id === view ? 'block' : 'none';
     });
@@ -113,7 +113,7 @@ function _rpgGearHtml(hero) {
     }).join('');
 }
 
-export function renderRpgHeroPanel(hero, progressText) {
+export function renderRpgHeroPanel(hero, progressText, gold) {
     const el = document.getElementById('rpgHeroPanel');
     if (!el || !hero) return;
     const tagsHtml = rpgHeroTags(hero).map(t => `<span class="rpg-hero-tag">${t.icon} ${esc(t.text)}</span>`).join('');
@@ -127,6 +127,7 @@ export function renderRpgHeroPanel(hero, progressText) {
             <div class="rpg-hero-stats">
                 <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
                 ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
+                ${gold != null ? `<span class="rpg-stat gold">🪙 ${gold}</span>` : ''}
             </div>
             <div class="rpg-gear" id="rpgGear">${_rpgGearHtml(hero)}</div>
             ${tagsHtml ? `<div class="rpg-hero-tags">${tagsHtml}</div>` : ''}
@@ -435,14 +436,18 @@ export function renderRpgLoot(view) {
     let detail = '';
     if (picked) {
         const cur = picked.current;
+        const currentLine = cur
+            ? `${view.isBoss ? 'Tu trofeo actual' : 'Ahora llevas'}: <b style="color:${esc(cur.color)}">${cur.rarityIcon} ${cur.icon} ${esc(cur.name)}</b> <span>${esc(Items.describeItem(cur).join(' · '))}</span>`
+            : (view.isBoss ? 'Todavía no tienes ningún trofeo.' : `Tu ranura de ${esc(Items.ITEM_SLOTS[picked.item.slot].name.toLowerCase())} está <b>vacía</b>.`);
+        const buttons = view.isBoss
+            ? `<button type="button" id="btnRpgLootEquip" class="btn-forge">${cur ? 'QUEDARME CON EL NUEVO' : 'ACEPTAR EL TROFEO'} ${picked.item.icon}</button>
+               ${cur ? `<button type="button" id="btnRpgLootDiscard" class="btn-secondary">CONSERVAR EL ANTERIOR</button>` : ''}`
+            : `<button type="button" id="btnRpgLootEquip" class="btn-forge">EQUIPAR ${picked.item.icon}${cur ? ' (pierdes lo que llevas)' : ''}</button>
+               <button type="button" id="btnRpgLootStore" class="btn-secondary" ${view.canStore ? '' : 'disabled title="El inventario está lleno"'}>GUARDAR EN EL INVENTARIO 🎒</button>
+               <button type="button" id="btnRpgLootDiscard" class="btn-secondary">DESCARTAR · +${view.discardHeal} ❤️</button>`;
         detail = `<div class="rpg-loot-detail">
-            <div class="rpg-loot-current">${cur
-                ? `Ahora llevas: <b style="color:${esc(cur.color)}">${cur.rarityIcon} ${cur.icon} ${esc(cur.name)}</b> <span>${esc(Items.describeItem(cur).join(' · '))}</span>`
-                : `Tu ranura de ${esc(Items.ITEM_SLOTS[picked.item.slot].name.toLowerCase())} está <b>vacía</b>.`}</div>
-            <div class="rpg-loot-buttons">
-                <button type="button" id="btnRpgLootEquip" class="btn-forge">EQUIPAR ${picked.item.icon}${cur ? ' (pierdes lo que llevas)' : ''}</button>
-                <button type="button" id="btnRpgLootDiscard" class="btn-secondary">DESCARTAR · +${view.discardHeal} ❤️</button>
-            </div>
+            <div class="rpg-loot-current">${currentLine}</div>
+            <div class="rpg-loot-buttons">${buttons}</div>
         </div>`;
     }
     el.innerHTML = `
@@ -451,6 +456,110 @@ export function renderRpgLoot(view) {
         <p class="rpg-event-text">${esc(view.text)}</p>
         <div class="rpg-loot-offers">${cards}</div>
         ${detail}`;
+}
+
+// =============================================
+// 🧍 Personaje — equipo, inventario (10 ranuras) y trofeo del jefe, con oro abajo
+// =============================================
+const CHAR_SLOT_POS = {
+    weapon:    { x: 16, y: 28 },
+    secondary: { x: 84, y: 28 },
+    armor:     { x: 16, y: 72 },
+    accessory: { x: 84, y: 72 }
+};
+
+function _charSlotNode(hero, slot, selection) {
+    const def = Items.ITEM_SLOTS[slot];
+    const it = hero.equipment && hero.equipment[slot];
+    const pos = CHAR_SLOT_POS[slot];
+    const isSel = selection && selection.from === 'equipment' && selection.slot === slot;
+    const rarity = it ? it.color : 'var(--border-strong)';
+    return `<button type="button" class="char-doll-slot ${isSel ? 'is-selected' : ''} ${it ? '' : 'is-empty'}"
+        style="left:${pos.x}%; top:${pos.y}%; --rarity:${esc(rarity)}"
+        data-char-pick="equipment" data-char-slot="${slot}" title="${esc(def.name)}">
+        <span class="char-doll-slot-icon">${it ? it.icon : def.icon}</span>
+        <span class="char-doll-slot-label">${esc(def.name)}</span>
+    </button>`;
+}
+
+function _charDollHtml(hero, selection) {
+    const lines = Object.values(CHAR_SLOT_POS).map(p => `<line x1="50" y1="50" x2="${p.x}" y2="${p.y}" vector-effect="non-scaling-stroke"/>`).join('');
+    const slots = Object.keys(CHAR_SLOT_POS).map(slot => _charSlotNode(hero, slot, selection)).join('');
+    return `<div class="char-doll" style="--accent:${esc(hero.color)}">
+        <svg class="char-doll-lines" viewBox="0 0 100 100" preserveAspectRatio="none">${lines}</svg>
+        <div class="char-doll-hero"><span>${hero.icon}</span></div>
+        ${slots}
+    </div>`;
+}
+
+function _charInvTile(item, selected, locked) {
+    if (!item) return `<div class="char-inv-slot is-empty"></div>`;
+    return `<button type="button" class="char-inv-slot ${selected ? 'is-selected' : ''}" style="--rarity:${esc(item.color)}"
+        data-char-pick="${locked ? 'trophy' : 'inventory'}" ${locked ? '' : `data-char-index="${item.__i}"`} title="${esc(item.name)}">
+        <span class="char-inv-icon">${item.icon}</span>
+    </button>`;
+}
+
+function _charDetailHtml(hero, selection) {
+    if (!selection) return `<div class="char-detail-empty">👆 Toca una ranura, un objeto del inventario o tu trofeo para verlo aquí.</div>`;
+    let item = null;
+    if (selection.from === 'equipment') item = hero.equipment[selection.slot];
+    else if (selection.from === 'inventory') item = hero.inventory[selection.index];
+    else if (selection.from === 'trophy') item = hero.trophy;
+    if (!item) return `<div class="char-detail-empty">Ranura vacía. Equipa algo del inventario o encuentra un objeto nuevo.</div>`;
+
+    const lines = _rpgItemLinesHtml(item);
+    const actions = [];
+    if (selection.from === 'inventory') {
+        actions.push(`<button type="button" data-char-action="equip" class="btn-forge">EQUIPAR</button>`);
+        actions.push(`<button type="button" data-char-action="discard" class="btn-secondary">DESCARTAR (cura)</button>`);
+    } else if (selection.from === 'trophy') {
+        actions.push(`<button type="button" data-char-action="equip" class="btn-forge">EMPUÑAR EL TROFEO</button>`);
+    } else if (selection.from === 'equipment') {
+        actions.push(`<button type="button" data-char-action="store" class="btn-secondary">GUARDAR EN EL INVENTARIO</button>`);
+        actions.push(`<button type="button" data-char-action="discard" class="btn-secondary">DESCARTAR (cura)</button>`);
+    }
+    return `
+        <div class="char-detail-rarity" style="color:${esc(item.color)}">${item.rarityIcon || '🏆'} ${esc(item.rarityName || 'Legendaria')}</div>
+        <div class="char-detail-icon">${item.icon}</div>
+        <div class="char-detail-name">${esc(item.name)}</div>
+        <div class="char-detail-kind">${esc(_rpgItemKind(item))}</div>
+        <div class="char-detail-lines">${lines}</div>
+        ${item.desc ? `<p class="char-detail-desc">${esc(item.desc)}</p>` : ''}
+        <div class="char-detail-actions">${actions.join('')}</div>`;
+}
+
+/** view: { hero, meta, selection } */
+export function renderCharacterView(hero, meta, selection) {
+    const el = document.getElementById('charBody');
+    if (!el || !hero) return;
+    const inv = hero.inventory || [];
+    const invTiles = Array.from({ length: Items.INVENTORY_SIZE }, (_, i) => {
+        const it = inv[i] ? { ...inv[i], __i: i } : null;
+        const isSel = selection && selection.from === 'inventory' && selection.index === i;
+        return _charInvTile(it, isSel, false);
+    }).join('');
+    const trophySel = selection && selection.from === 'trophy';
+    const trophyTile = hero.trophy
+        ? `<div class="char-trophy">${_charInvTile({ ...hero.trophy }, trophySel, true)}<span class="char-trophy-label">Trofeo</span></div>`
+        : '';
+
+    el.innerHTML = `
+        <div class="char-detail" id="charDetail">${_charDetailHtml(hero, selection)}</div>
+        <div class="char-center">
+            ${_charDollHtml(hero, selection)}
+            <div class="char-stats-row">
+                <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
+                <span class="rpg-stat hp"><b>HP</b> ${hero.hp} / ${hero.maxHp}</span>
+                ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
+            </div>
+            <div class="char-inventory">
+                <div class="char-inventory-title">🎒 Inventario · ${inv.length} / ${Items.INVENTORY_SIZE}</div>
+                <div class="char-inventory-grid">${invTiles}</div>
+                ${trophyTile}
+            </div>
+            <div class="char-gold">🪙 <b>${(meta && meta.gold) || 0}</b> de oro</div>
+        </div>`;
 }
 
 // --- ▶️ Inicio: continuar partida guardada ---

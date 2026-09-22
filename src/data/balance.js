@@ -24,7 +24,10 @@ globalThis.__RPG_BALANCE__ = globalThis.__RPG_BALANCE__ || {
     subbossMinFloor: 4,
 
     // Hoguera
-    campfire: { healPct: 0.3 }
+    campfire: { healPct: 0.3 },
+
+    // Oro por victoria (de relleno: sin tienda todavía no afecta al equilibrio; solo se acumula)
+    gold: { monster: 2, subboss: 6, boss: 18 }
 };
 
 export const RPG_BALANCE = globalThis.__RPG_BALANCE__;

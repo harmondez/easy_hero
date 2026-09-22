@@ -115,6 +115,38 @@ confirmó que bestiario/colección/logros/importar-exportar son sistemas nuevos 
   (escritorio y móvil) antes de dar el trabajo por bueno.
 - README actualizado (Novedades, «Ya se puede jugar», tabla de entregas) y publicado junto con el código.
 
+## 2026-09-22 · Personaje, inventario, oro y trofeo del jefe (v1.2.0)
+Escalada de alcance dentro de la misma sesión de decorado: el usuario pidió, con una imagen de referencia (un
+equipo tipo ARPG con muñeco de personaje y ranuras conectadas), que el héroe tenga un **inventario** (10
+ranuras) y **oro** que se acumula al matar monstruos. Reabre a propósito la decisión cerrada «sin mochila» —
+señalado al usuario antes de construirlo, no en silencio.
+
+- **Decisiones tomadas con el usuario** (ronda de preguntas antes de tocar código): la pantalla de Personaje es
+  una **vista propia** (no un panel superpuesto como Bestiario/Colección), con botón junto a «NUEVA RUTA»; si
+  el inventario está lleno, **equipar siempre es posible** (lo que sale se descarta y cura en vez de bloquear),
+  solo se bloquea «guardar»; el inventario se reinicia cada ruta, salvo el **trofeo del jefe final**, que
+  permanece para siempre.
+- **Modelo del trofeo** (decisión propia, explicada al usuario): vive en `meta.trophyItem`, fuera de las 10
+  ranuras normales. Cada ruta nueva recibe una **copia** del trofeo en `hero.trophy`; equiparlo no lo consume
+  (siempre disponible, como una habilidad desbloqueada, no un objeto físico escaso). Si vuelves a vencer al
+  jefe con un trofeo ya guardado, eliges quedarte con el nuevo o conservar el antiguo (mismo componente de
+  botín que cofres/hogueras, con `source: 'boss'`).
+- **Cambio de flujo de botín:** equipar ya no hace desaparecer lo que llevabas puesto — pasa al inventario si
+  hay hueco (y solo se descarta, con cura, si no lo hay). Nueva opción «GUARDAR EN EL INVENTARIO» junto a
+  Equipar/Descartar.
+- **Oro de relleno** (sin tienda todavía, no afecta al equilibrio): monstruo 2, sub-jefe 6, jefe 18. Vive en
+  `meta.gold`, nunca baja de 0, sobrevive a la muerte.
+- **Bug encontrado y corregido al construirlo:** `saveMeta(null, …)` devolvía `true` aunque no hubiera
+  `storage` (nada se guardaba pero la función no lo decía). El mismo patrón que `save.js` ya evitaba con un
+  `if (!storage) return false` explícito; `meta.js` no lo tenía.
+- **Verificación:** `tests/meta-sim.mjs` nuevo (38 comprobaciones: guardado/carga, bestiario, colección, oro,
+  trofeo, los 15 logros con sus casos límite). 26 comprobaciones nuevas en `tests/items-sim.mjs` (inventario:
+  llenar las 10 ranuras, equipar desde el inventario, sin hueco no bloquea, ranuras vacías incluida el arma,
+  viaja en el guardado). 19 nuevas en `tests/browser.test.mjs` (pantalla de Personaje, guardar/equipar desde el
+  inventario, el trofeo persiste a través de una recarga y de una ruta nueva). **625 comprobaciones en total**,
+  todas en verde. Capturas revisadas a mano.
+- Publicado como **1.2.0** (entrega, no patch: mismo criterio que el decorado).
+
 ---
 
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)

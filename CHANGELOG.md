@@ -5,6 +5,19 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.2.0] - 2026-09-22
+
+### ✨ Novedades
+- 🧍 **Pantalla de Personaje**, propia y accesible desde el mapa: tu héroe con sus 4 ranuras de equipo conectadas visualmente, un inventario de **10 ranuras** y el oro acumulado.
+- 🎒 **Inventario**: los cofres, hogueras y botín de sub-jefe ya no obligan a decidir en el momento — ahora puedes **guardar** un objeto sin equiparlo (si hay hueco) y decidir más tarde. Al equipar algo, lo que llevabas puesto pasa al inventario en vez de perderse.
+- 🪙 **Oro**: los monstruos dejan monedas al ser vencidos (más los sub-jefes, mucho más el jefe final). Se acumula para siempre, incluso si mueres. Todavía no hay dónde gastarlo.
+- 🐉 **El trofeo del jefe**: al vencer al Dragón Ancestral te quedas con un objeto legendario que te acompaña en **todas las rutas futuras**, para siempre, sin ocupar una ranura del inventario normal. Si lo ganas más de una vez, eliges quedarte con el nuevo o conservar el que ya tenías.
+
+### 🛠️ Por dentro
+- `hero.inventory` (10 ranuras) y `hero.trophy` en `src/engine.js`/`src/items.js`; `meta.gold` y `meta.trophyItem` en `src/meta.js`, persistentes.
+- 26 comprobaciones nuevas en `tests/items-sim.mjs` (148 en total) y 19 nuevas en `tests/browser.test.mjs` (142 en total).
+- Bug corregido: `saveMeta(null, …)` devolvía `true` sin haber guardado nada.
+
 ## [1.1.0] - 2026-09-22
 
 ### ✨ Novedades

@@ -1,6 +1,6 @@
-import { MONSTER_ROSTER, SUBBOSS_ROSTER, BOSS_DEF } from './data/monsters.js?v=1.1.0';
-import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.1.0';
-import { DAMAGE_TYPES } from './items.js?v=1.1.0';
+import { MONSTER_ROSTER, SUBBOSS_ROSTER, BOSS_DEF } from './data/monsters.js?v=1.2.0';
+import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.2.0';
+import { DAMAGE_TYPES } from './items.js?v=1.2.0';
 
 // =============================================
 // 🐺 Progreso persistente — bestiario, colección de objetos y logros.
@@ -29,7 +29,9 @@ const emptyMeta = () => ({
     itemsSeen: {},              // baseId -> { name, icon, rarities: [id,...] }
     damageTypesEquipped: {},    // 'filo' | 'contundente' | ... -> true
     eventsSeenEver: {},
-    achievements: {}            // id -> timestamp (ms) del desbloqueo
+    achievements: {},           // id -> timestamp (ms) del desbloqueo
+    gold: 0,                    // nunca se pierde, ni al morir; todavía no se gasta en nada
+    trophyItem: null            // el objeto legendario del jefe final: una vez ganado, para siempre
 });
 
 export function loadMeta(storage) {
@@ -45,7 +47,8 @@ export function loadMeta(storage) {
 }
 
 export function saveMeta(storage, meta) {
-    try { if (storage) storage.setItem(META_KEY, JSON.stringify(meta)); return true; } catch { return false; }
+    if (!storage) return false;
+    try { storage.setItem(META_KEY, JSON.stringify(meta)); return true; } catch { return false; }
 }
 
 // --- Registrar lo que va ocurriendo (todo es idempotente: llamar dos veces no rompe nada) ---
@@ -55,6 +58,11 @@ export function recordRunEnd(meta, { result, floor }) {
     meta.bestFloor = Math.max(meta.bestFloor, floor | 0);
 }
 export function recordCombatWin(meta) { meta.combatsWonTotal++; }
+export function recordGold(meta, amount) { meta.gold = Math.max(0, meta.gold + (amount | 0)); }
+/** Ganar un trofeo nuevo del jefe: solo se guarda si no había uno, o si `replace` es explícito. */
+export function recordTrophy(meta, item, replace = false) {
+    if (!meta.trophyItem || replace) meta.trophyItem = item;
+}
 export function recordMonsterSeen(meta, name) { if (name) meta.monstersSeen[name] = true; }
 export function recordMonsterDefeated(meta, name) { if (name) meta.monstersDefeated[name] = true; }
 export function recordEventSeen(meta, eventId) { if (eventId) meta.eventsSeenEver[eventId] = true; }

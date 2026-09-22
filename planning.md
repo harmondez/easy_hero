@@ -12,8 +12,9 @@
 
 ## 📍 Estado actual
 
-**Publicado: entregas A y B1, más decorado/onboarding y 4 paneles nuevos (Bestiario, Colección, Logros,
-Opciones), hasta la versión 1.1.0.** Detalle en [historial.md](historial.md).
+**Publicado: entregas A y B1, decorado/onboarding, 4 paneles (Bestiario, Colección, Logros, Opciones),
+pantalla de Personaje, inventario de 10 ranuras, oro y el trofeo del jefe final — hasta la versión 1.2.0.**
+Detalle en [historial.md](historial.md).
 
 **Backlog abierto de B1 (no bloquea nada, se retoma cuando convenga):**
 - Capturas de pantalla (`SHOT_DIR=…`) de la pantalla de botín y el panel de 4 ranuras, para revisar el aspecto.
@@ -25,6 +26,13 @@ Opciones), hasta la versión 1.1.0.** Detalle en [historial.md](historial.md).
   heredan la paleta nueva por la cascada de variables CSS, sin una pasada propia todavía.
 - El catálogo de eventos «vistos X/15» no tiene panel propio (el dato ya se registra en `meta.eventsSeenEver`).
 - Los 15 logros son un primer borrador (el plan preveía ~20); fácil de ampliar en `src/meta.js`.
+
+**Backlog abierto del inventario/oro/trofeo (no bloquea nada):**
+- El oro no se gasta en nada todavía: no hay tienda. Es el candidato natural para el próximo secundario (ver S5).
+- La pantalla de Personaje no muestra los **afijos completos** de cada objeto tan detallados como podría (usa
+  `describeItem()`, que ya existe); revisar si conviene ampliarla cuando lleguen las mejoras de B2.
+- Sin viabilidad medida de si 10 ranuras de inventario son demasiadas o pocas para una ruta de 16 pisos; se verá
+  con el uso real.
 
 **Siguiente paso: entrega B2** — P6 (mejoras) y P7 (afinidad), ver abajo.
 
@@ -106,19 +114,18 @@ entrega C, cuando el resto ya está probado.
 
 ## P10 · 📖 Crónica y Legado (meta-progresión horizontal)
 
-> **Adelantado en parte** (sin publicar, sesión de decorado): ya existe `src/meta.js` con progreso persistente
-> independiente del guardado de la partida, y 3 paneles reales en la cabecera (📖 Bestiario, 🎒 Colección,
-> 🏆 Logros), con 10 comprobaciones en `tests/browser.test.mjs`. Detalle en [historial.md](historial.md). Lo de
-> abajo es lo que **falta** de P10 sobre esa base.
+> **Adelantado en parte** (publicado, 1.1.0-1.2.0): ya existe `src/meta.js` con progreso persistente independiente
+> del guardado de la partida — Bestiario, Colección, Logros, oro y el trofeo del jefe. Detalle en
+> [historial.md](historial.md). Lo de abajo es lo que **falta** de P10 sobre esa base.
 
 **Qué queda.** La derrota y la victoria deben dejar algo más que información:
 - **Debilidades descubiertas** en el bestiario: pendiente de P8 (Ruptura), que es quien las define.
 - **Catálogo de eventos «vistos 9/15»**: falta mostrarlo en algún panel (el conteo ya se registra en `meta.eventsSeenEver`, solo falta la vista).
-- **Ampliar los logros de 15 a ~20** y decidir si dan algo más que orgullo (siempre horizontal: nunca poder).
+- **Ampliar los logros de 15 a ~20**, y ahora que hay oro, decidir si conviene una **tienda** (fuera del alcance original de P10, pero es el paso natural una vez existe una moneda que acumular).
 - **Desbloqueo horizontal de verdad:** hoy los paneles solo *muestran* lo descubierto; no hay ninguna partida que
   empiece con menos contenido y lo vaya ampliando. Esa es la pieza central de P10 que sigue sin construir.
-- **El Legado:** al morir, tu equipo queda guardado; en una partida futura aparece el evento **«La tumba de un
-  antecesor»**, donde puedes recuperar uno de sus objetos. Con equipo ya hecho, esto es más potente que cuando se planeó.
+- **El Legado:** al morir, tu equipo (más allá del trofeo del jefe, que ya es permanente) queda guardado; en una
+  partida futura aparece el evento **«La tumba de un antecesor»**, donde puedes recuperar uno de sus objetos.
 
 **Hecho cuando.** Todo persiste en `localStorage` con versión (la base ya lo hace); los desbloqueos horizontales
 se prueban con partidas simuladas; el Legado tiene su propio evento.

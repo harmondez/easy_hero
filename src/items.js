@@ -1,6 +1,6 @@
-import { RARITIES, RARITY_BY_ID, RARITY_MIN, rollRarity, discardHeal } from './data/rarities.js?v=1.1.0';
-import { ITEM_BASES, ITEM_BASE_BY_ID, ITEM_SLOTS, DAMAGE_TYPES, BASIC_WEAPON_ID, basesBySlot } from './data/items.js?v=1.1.0';
-import { AFFIX_POOL, AFFIX_UNIQUES, affixText } from './data/affixes.js?v=1.1.0';
+import { RARITIES, RARITY_BY_ID, RARITY_MIN, rollRarity, discardHeal } from './data/rarities.js?v=1.2.0';
+import { ITEM_BASES, ITEM_BASE_BY_ID, ITEM_SLOTS, DAMAGE_TYPES, BASIC_WEAPON_ID, basesBySlot } from './data/items.js?v=1.2.0';
+import { AFFIX_POOL, AFFIX_UNIQUES, affixText } from './data/affixes.js?v=1.2.0';
 
 // =============================================
 // 🎒 RPG-pack — equipo (puro, sin DOM)
@@ -16,8 +16,10 @@ export const LOOT_OFFERS = 3;                      // «1 de 3»
 export const LOOT_SOURCES = {
     chest:    { id: 'chest',    title: 'Cofre',                  icon: '🧰', min: null },
     campfire: { id: 'campfire', title: 'Junto a la hoguera',     icon: '🔥', min: RARITY_MIN.hoguera },
-    subboss:  { id: 'subboss',  title: 'El botín del sub-jefe',  icon: '💀', min: RARITY_MIN.subboss }
+    subboss:  { id: 'subboss',  title: 'El botín del sub-jefe',  icon: '💀', min: RARITY_MIN.subboss },
+    boss:     { id: 'boss',     title: 'El trofeo del jefe',     icon: '🐉', min: 'legendaria' }
 };
+export const INVENTORY_SIZE = 10;   // ranuras del inventario; se reinicia cada ruta (el trofeo del jefe no cuenta aquí)
 
 // Reglas cuyo valor NO crece con el piso: multiplicadores, interruptores y rondas
 const NO_SCALE = new Set([
@@ -163,6 +165,16 @@ export function equipItem(hero, item) {
     return old;
 }
 
+/** Deja `slot` vacía y devuelve lo que había (o null). Es seguro dejar cualquier ranura vacía, incluida el arma. */
+export function unequipSlot(hero, slot) {
+    hero.equipment = hero.equipment || emptyEquipment();
+    const old = hero.equipment[slot] || null;
+    if (!old) return null;
+    _applyStats(hero, null, old.stats);
+    hero.equipment[slot] = null;
+    return old;
+}
+
 /** Vida que da descartar `item`: la de su rareza y lo que sumen los accesorios «reciclador». */
 export function discardHealFor(hero, item) {
     return (item ? item.discardHeal : 3) + ruleSum(hero, 'discard_heal');
@@ -173,6 +185,51 @@ export function discardItem(hero, item) {
     const before = hero.hp;
     hero.hp = Math.min(hero.maxHp, hero.hp + heal);
     return hero.hp - before;
+}
+
+// ---------- Inventario (10 ranuras, se reinicia cada ruta) ----------
+export function hasInventoryRoom(hero) {
+    return ((hero && hero.inventory) || []).length < INVENTORY_SIZE;
+}
+
+/** Guarda `item` en el inventario si hay hueco. Devuelve `true` si se guardó. */
+export function storeInInventory(hero, item) {
+    hero.inventory = hero.inventory || [];
+    if (hero.inventory.length >= INVENTORY_SIZE) return false;
+    hero.inventory.push(item);
+    return true;
+}
+
+/** Descarta (cura) el objeto del inventario en `index`. Devuelve lo curado (0 si el índice no existe). */
+export function removeFromInventory(hero, index) {
+    const item = hero.inventory && hero.inventory[index];
+    if (!item) return 0;
+    hero.inventory.splice(index, 1);
+    return discardItem(hero, item);
+}
+
+/**
+ * Equipa el objeto del inventario en `index`. El que llevabas puesto vuelve a ocupar ESA MISMA ranura del
+ * inventario (el recuento nunca crece: sale uno, entra otro), así que siempre hay sitio.
+ */
+export function equipFromInventory(hero, index) {
+    const item = hero.inventory && hero.inventory[index];
+    if (!item) return null;
+    const old = equipItem(hero, item);
+    if (old) hero.inventory[index] = old; else hero.inventory.splice(index, 1);
+    return old;
+}
+
+/**
+ * Equipa `item` (recién encontrado, no del inventario). El que llevabas puesto pasa al inventario si hay
+ * hueco; si no lo hay, se descarta (cura) para que equipar nunca quede bloqueado. Devuelve { old, stored }.
+ */
+export function equipAndStash(hero, item) {
+    const old = equipItem(hero, item);
+    if (!old) return { old: null, stored: false };
+    const stored = storeInInventory(hero, old);
+    if (!stored) discardItem(hero, old);
+    return { old, stored };
 }
 
 // Reglas activas: suman lo que dé cada objeto equipado

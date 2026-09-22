@@ -12,7 +12,7 @@
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.1.0-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.2.0-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -27,16 +27,16 @@
 
 ## 🆕 Novedades
 
-**Versión 1.1.0** · 22 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.2.0** · 22 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 | | Qué hay de nuevo |
 |:-:|------------------|
+| 🧍 | **Pantalla de Personaje**: tu héroe, su equipo y un **inventario de 10 ranuras** para guardar objetos sin equiparlos |
+| 🪙 | **Oro**: los monstruos dejan monedas al vencerlos; se acumula para siempre, incluso si mueres |
+| 🐉 | **El trofeo del jefe**: vence al Dragón Ancestral y te quedas con un objeto legendario para todas tus rutas futuras |
 | 🏰 | **Nueva ambientación**: fantasía oscura de mazmorra, piedra y forja en vez del azul genérico de antes |
-| 📖 | **Bestiario**: los 24 enemigos se revelan a medida que te los cruzas y vences |
-| 🎒 | **Colección**: las 122 bases de objeto se van descubriendo en cofres, hogueras y botín de sub-jefe |
-| 🏆 | **15 logros**, solo información y orgullo: nunca te hacen más fuerte |
+| 📖🎒🏆 | **Bestiario, colección y 15 logros**, accesibles desde el menú de la cabecera |
 | 💾 | **Importar / exportar tu progreso** como un texto, desde el panel de Opciones |
-| 🎒 | Equipo de 4 ranuras y 5 rarezas; los cofres y la hoguera ya dan objetos de verdad |
 | 👁️ | Ves lo que va a hacer el enemigo antes de elegir, y cada uno de los 15 monstruos ataca a su manera |
 
 ---
@@ -115,9 +115,9 @@ Tu estilo no se elige: **se revela** según lo que recoges y decides. Cada estil
 > [!TIP]
 > Mezclar estilos está permitido, y a veces es la mejor jugada.
 
-### 🎒 Tu equipo
+### 🎒 Tu equipo, tu inventario y tu oro
 
-Llevas **4 objetos**, sin mochila ni líos: cuando encuentras uno, decides al momento si te lo pones (pierdes lo que llevabas en esa ranura) o lo descartas (te cura).
+Llevas **4 objetos equipados**. Cuando encuentras uno, decides: te lo pones (lo que llevabas en esa ranura pasa al inventario), lo **guardas** para más tarde en tu inventario de **10 ranuras**, o lo descartas (te cura).
 
 | Ranura | Qué aporta |
 |--------|-----------|
@@ -128,6 +128,8 @@ Llevas **4 objetos**, sin mochila ni líos: cuando encuentras uno, decides al mo
 
 Los objetos tienen **5 rarezas**: ⚪ común · 🟢 poco común · 🔵 rara · 🟣 épica · 🟠 legendaria (esta última con un rasgo único).
 Cuanto más rara, más efectos trae, y cuanto más profundo lo encuentras, más fuerte es. Los encuentras en **cofres**, **hogueras** (mínimo 🟢) y **sub-jefes** (mínimo 🔵), siempre eligiendo 1 de 3.
+
+El inventario se reinicia en cada ruta nueva, como el equipo — con una excepción: si vences al **jefe final**, te quedas con un objeto legendario **para siempre**, en todas tus rutas futuras. Y cada monstruo que vences deja algo de **oro**, que tampoco se pierde nunca, aunque mueras.
 
 ---
 
@@ -169,18 +171,21 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.1.0, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane algo más de 1 de cada 5 partidas**
+> **Versión 1.2.0, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane algo más de 1 de cada 5 partidas**
 > (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
 
 ### ✅ Ya se puede jugar
 
 - 🗺️ Mapa de **16 pisos** que cambia en cada partida
 - ⚔️ Combate por turnos: atacar, defender, habilidad y huir
+- 🧍 **Pantalla de Personaje**: tu equipo, un **inventario de 10 ranuras** y tu oro, todo en un vistazo
 - 🎒 **Equipo de 4 ranuras y 5 rarezas**, con 122 objetos y 24 afijos (ver más abajo)
 - 👁️ **Ves lo que va a hacer cada enemigo** antes de elegir, y **15 monstruos** con su propia forma de atacar
 - 🔥 **Hogueras** para descansar o equiparte, con una siempre antes del jefe
 - 🎲 **15 eventos** con dos decisiones cada uno
 - 💀 Sub-jefes **opcionales** (siempre hay un camino sin ellos), cofres con botín y un jefe final
+- 🐉 **El trofeo del jefe**: vencer al Dragón Ancestral te da un legendario que te acompaña en todas tus rutas futuras
+- 🪙 **Oro**: los monstruos dejan monedas al vencerlos; se acumula para siempre (todavía sin tienda)
 - 🧠 Un enemigo especial, **El Lector**, que aprende de lo que haces
 - 🤞 Promesas que cambian tu forma de jugar (por ejemplo, renunciar a huir)
 - 📖🎒🏆 **Bestiario, colección y 15 logros**, accesibles desde el menú de la cabecera en cualquier momento
@@ -258,7 +263,7 @@ npx playwright install chromium    # solo la primera vez
 npm test                           # ejecuta todas las comprobaciones
 ```
 
-Son 542 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
+Son 625 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
 
 Para ver cómo está el equilibrio: `npm run balance` juega miles de partidas simuladas y cuenta cuántas llegan al jefe.
 

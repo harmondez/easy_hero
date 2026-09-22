@@ -409,6 +409,63 @@ console.log('\n🔥 Hoguera');
         && await page.evaluate(() => Object.values(window.gameState.rpg.hero.equipment).filter(Boolean).length >= 2));
 }
 
+console.log('\n🧍 Personaje: equipo, inventario y oro');
+{
+    // El botín de la hoguera anterior pudo tocar cualquier ranura al azar: se deja el equipo limpio y predecible
+    await page.evaluate(() => { window.gameState.rpg.hero.equipment = { weapon: window.Items.createStarterItem(), secondary: null, armor: null, accessory: null }; });
+    await page.click('#btnRpgChar');
+    await sleep(200);
+    assert('El botón Personaje abre una vista propia, no un panel superpuesto', await visible('#rpgCharView') && !(await visible('#rpgMapView')) && !(await visible('#panelOverlay')));
+    assert('Se ven las 4 ranuras del muñeco, el inventario y el oro acumulado',
+        (await page.$$('.char-doll-slot')).length === 4 && !!(await page.$('.char-inventory-grid')) && /🪙/.test(await page.$eval('#charBody', el => el.textContent)));
+    assert('Nada seleccionado todavía: el panel de detalle lo dice', /Toca una ranura/.test(await page.$eval('#charDetail', el => el.textContent)));
+
+    await page.click('.char-doll-slot[data-char-slot="weapon"]');
+    await sleep(150);
+    assert('Pulsar la ranura del arma (con la espada inicial) muestra su detalle y ofrece guardar/descartar',
+        /Espada del sendero/.test(await page.$eval('#charDetail', el => el.textContent))
+        && !!(await page.$('[data-char-action="store"]')) && !!(await page.$('[data-char-action="discard"]')));
+    await page.click('.char-doll-slot[data-char-slot="weapon"]');
+    await sleep(100);
+    assert('Pulsarla otra vez la deselecciona', /Toca una ranura/.test(await page.$eval('#charDetail', el => el.textContent)));
+    await page.screenshot({ path: shot('personaje'), fullPage: true });
+
+    await page.click('#btnCharBack');
+    await sleep(150);
+    assert('VOLVER AL MAPA deja el mapa tal cual estaba', await visible('#rpgMapView'));
+
+    // Cofre → GUARDAR EN EL INVENTARIO (en vez de equipar o descartar)
+    const chest = await walkTo('chest');
+    await chest.click();
+    await sleep(200);
+    const invBefore = (await page.evaluate(() => window.gameState.rpg.hero.inventory.length));
+    await page.click('[data-rpg-loot-pick="0"]');
+    await sleep(80);
+    assert('El botín ofrece EQUIPAR, GUARDAR y DESCARTAR', !!(await page.$('#btnRpgLootEquip')) && !!(await page.$('#btnRpgLootStore')) && !!(await page.$('#btnRpgLootDiscard')));
+    await page.click('#btnRpgLootStore');
+    await sleep(150);
+    assert('Guardar vuelve al mapa sin tocar el equipo, y el objeto pasa al inventario',
+        await visible('#rpgMapView') && (await page.evaluate(() => window.gameState.rpg.hero.inventory.length)) === invBefore + 1);
+
+    // Desde Personaje: equipar ese objeto guardado (lo que llevabas puesto vuelve al inventario)
+    await page.click('#btnRpgChar');
+    await sleep(200);
+    const invSlot = await page.$('.char-inv-slot:not(.is-empty)');
+    await invSlot.click();
+    await sleep(120);
+    assert('Elegir un objeto del inventario ofrece EQUIPAR (no guardar: ya está guardado)',
+        !!(await page.$('[data-char-action="equip"]')) && !(await page.$('[data-char-action="store"]')));
+    const before = await page.evaluate(() => ({ inv: window.gameState.rpg.hero.inventory.length, eq: JSON.stringify(window.gameState.rpg.hero.equipment) }));
+    await page.click('[data-char-action="equip"]');
+    await sleep(150);
+    const after = await page.evaluate(() => ({ inv: window.gameState.rpg.hero.inventory.length, eq: JSON.stringify(window.gameState.rpg.hero.equipment) }));
+    // Si la ranura estaba ocupada, lo anterior vuelve al inventario (mismo recuento); si estaba vacía, el inventario baja en 1
+    assert('Equipar desde el inventario cambia el equipo y el inventario nunca crece',
+        after.eq !== before.eq && after.inv <= before.inv);
+    await page.click('#btnCharBack');
+    await sleep(150);
+}
+
 // Abre un combate concreto (héroe con 500 de vida y 1 de ATK) para probar la interfaz sin depender del mapa
 async function showCombat(type, floor, heroHp = 500) {
     await page.evaluate(({ type, floor, heroHp }) => {
@@ -490,7 +547,7 @@ console.log('\n🏁 Fin de partida');
     assert('Aparece la pantalla de fin de partida (derrota)', await visible('#rpgEndView') && !(await visible('#rpgCombatView')) && endText.includes('Has caído') && endText.includes('💀'));
     assert('La derrota dice quién te ha vencido y en qué piso', endText.includes('Slime') && endText.includes('piso 1 de 15'));
     assert('La derrota incluye la línea de «casi» con el % de vida que le quedaba', /¡Casi!|aún conservaba/.test(endText) && /\d+ %/.test(endText));
-    assert('El resumen muestra 6 datos: combates, eventos, hogueras, cofres, ATK y HP máx', (await page.$$('#rpgEndBody .rpg-end-stat')).length === 6);
+    assert('El resumen muestra 7 datos: combates, eventos, hogueras, cofres, ATK, HP máx y oro', (await page.$$('#rpgEndBody .rpg-end-stat')).length === 7);
     assert('Se muestra la semilla con su código (XXXX-XXX) y se puede copiar',
         /^[0-9A-Z]{4}-[0-9A-Z]{3}$/.test(await page.$eval('#rpgEndSeed', el => el.textContent)) && !!(await page.$('#btnRpgCopySeed')));
     assert('Hay tres salidas: nueva ruta, repetir con la misma semilla e inicio',
@@ -680,7 +737,7 @@ const winText = ended ? await page.$eval('#rpgEndBody', el => el.textContent) : 
 assert('Recorriendo la ruta (peleando y resolviendo eventos y hogueras) se vence al jefe y aparece la pantalla de VICTORIA',
     ended && winText.includes('¡Ruta completada!') && winText.includes('🏆'));
 assert('Se cruzaron eventos y hogueras por el camino', eventsCrossed >= 1 && campfiresCrossed >= 1);
-assert('El resumen de victoria cuenta lo vivido (eventos incluidos)', (await page.$$('#rpgEndBody .rpg-end-stat')).length === 6 && /Eventos vividos/.test(winText));
+assert('El resumen de victoria cuenta lo vivido (eventos incluidos)', (await page.$$('#rpgEndBody .rpg-end-stat')).length === 7 && /Eventos vividos/.test(winText));
 assert('Una victoria no muestra la línea de «casi»', !(await page.$('#rpgEndBody .rpg-end-almost')));
 assert('Al ganar no queda nada guardado', await page.evaluate(() => localStorage.getItem('easy-hero-save') === null));
 await page.screenshot({ path: shot('fin-victoria'), fullPage: true });
@@ -692,6 +749,9 @@ const metaAfterWin = await page.evaluate(() => window.gameMeta);
 assert('El progreso persistente registró la partida (monstruos, objetos y logros)',
     metaAfterWin.runsWon >= 1 && Object.keys(metaAfterWin.monstersDefeated).length > 0
     && Object.keys(metaAfterWin.itemsSeen).length > 0 && Object.keys(metaAfterWin.achievements).length > 0);
+assert('Se acumuló oro peleando por toda la ruta', metaAfterWin.gold > 0);
+assert('Vencer al jefe deja un trofeo legendario para siempre', metaAfterWin.trophyItem && metaAfterWin.trophyItem.rarity === 'legendaria');
+assert('El resumen final muestra el oro acumulado', new RegExp(String(metaAfterWin.gold)).test(winText) && /oro/.test(winText));
 
 await page.click('[data-panel="bestiary"]');
 await sleep(150);
@@ -739,6 +799,28 @@ const metaAfterImport = await page.evaluate(() => window.gameMeta);
 assert('Tras recargar, el progreso importado se conserva', metaAfterImport.runsWon >= 1 && Object.keys(metaAfterImport.achievements).length > 0);
 // La importación recarga la página entera: ya estamos de vuelta en la Carta de Héroe, como si hubiéramos pulsado INICIO
 assert('Tras importar (y recargar), la vista vuelve a la Carta de Héroe', await page.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
+assert('El trofeo del jefe sigue guardado tras la recarga', !!metaAfterImport.trophyItem && metaAfterImport.trophyItem.rarity === 'legendaria');
+
+console.log('\n🏆 El trofeo pasa a la ruta siguiente');
+await page.click('#btnRpgStart');
+await sleep(600);
+const trophyInNewRun = await page.evaluate(() => window.gameState.rpg.hero.trophy);
+assert('Una ruta nueva empieza ya con el trofeo disponible (una copia, no el mismo objeto)', !!trophyInNewRun && trophyInNewRun.baseId === metaAfterImport.trophyItem.baseId);
+await page.click('#btnRpgChar');
+await sleep(200);
+assert('El trofeo se ve en la pantalla de Personaje, fuera del inventario normal', !!(await page.$('.char-trophy')));
+await page.click('.char-trophy .char-inv-slot');
+await sleep(120);
+assert('Elegir el trofeo ofrece EMPUÑARLO', !!(await page.$('[data-char-action="equip"]')));
+const eqBefore = await page.evaluate(() => JSON.stringify(window.gameState.rpg.hero.equipment));
+await page.click('[data-char-action="equip"]');
+await sleep(150);
+const eqAfter = await page.evaluate(() => JSON.stringify(window.gameState.rpg.hero.equipment));
+assert('Empuñar el trofeo lo equipa de verdad', eqAfter !== eqBefore);
+assert('El trofeo sigue disponible tras equiparlo (no se consume: es permanente)', !!(await page.$('.char-trophy')));
+await page.click('#btnCharBack');
+await sleep(150);
+
 assert('Sin errores de página durante toda la partida', pageErrors.length === 0);
 if (pageErrors.length) console.log('     ', pageErrors.slice(0, 3));
 
