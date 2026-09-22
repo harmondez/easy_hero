@@ -175,7 +175,7 @@ console.log('\n🔥 La hoguera (evento especial de los nodos 🔥)');
     r = play('hoguera', [0], { hero: heroWith({ hp: 3, maxHp: 4 }) });
     assert('descansar cura al menos 1 HP aunque el 30 % sea menos', r.hero.hp === 4);
     r = play('hoguera', [1]);
-    assert('afilar el arma da +1 ATK (provisional hasta que haya equipo)', r.hero.atq === 4 && r.hero.hp === 20 && r.changes.includes('+1 ATK'));
+    assert('«Equiparte» no cambia nada por sí solo: abre un botín de hoguera (1 de 3 objetos, mínimo poco común)', r.loot === 'campfire' && r.hero.atq === 3 && r.hero.hp === 20 && r.changes.length === 0);
     const scr = rpgEventScreen(startRpgEvent('hoguera', mulberry32(1)));
     assert('la hoguera tiene exactamente 2 decisiones, con la cura visible', scr.options.length === 2 && /30 %/.test(scr.options[0]));
     assert('la hoguera NO está en el catálogo aleatorio de los 15 eventos', !RPG_EVENTS.some(e => e.id === 'hoguera') && !!getRpgEvent('hoguera'));
@@ -360,9 +360,10 @@ console.log('\n🤞 Votos y mejoras en combate');
     assert('Voto de Acero: sigues pudiendo usar habilidades', rpgCombatAction(c3, 'skill', 'fire_strike').ok);
 
     const hero = heroWith(); applyRpgFx(hero, { skillMods: { fire_strike: { damage: 3, cooldown: -1 } } });
-    const c4 = createRpgCombat(hero, { ...createRpgMonster('monster', 8), pattern: [{ k: 'attack', m: 1 }] }); // HP 30, golpea siempre
+    const c4 = createRpgCombat(hero, { ...createRpgMonster('monster', 8), pattern: [{ k: 'attack', m: 1 }] }); // golpea siempre
+    const hp8 = c4.monster.hp;
     rpgCombatAction(c4, 'skill', 'fire_strike');
-    assert('Golpe de Fuego mejorado: 8 de daño', c4.monster.hp === 30 - 8);
+    assert('Golpe de Fuego mejorado: 8 de daño', c4.monster.hp === hp8 - 8);
     assert('Golpe de Fuego mejorado: enfriamiento de 2 rondas', c4.cooldowns.fire_strike === 2);
     rpgCombatAction(c4, 'attack'); rpgCombatAction(c4, 'attack');
     assert('Golpe de Fuego mejorado: vuelve a estar listo tras 2 rondas', rpgSkillReady(c4, 'fire_strike'));

@@ -1,5 +1,6 @@
-import * as Engine from './engine.js?v=1.0.1';
-import { RPG_EVENTS, RPG_SPECIAL_EVENTS, EVENT_MONSTERS } from './data/events.js?v=1.0.1';
+import * as Engine from './engine.js?v=1.0.2';
+import { campfireBonus } from './items.js?v=1.0.2';
+import { RPG_EVENTS, RPG_SPECIAL_EVENTS, EVENT_MONSTERS } from './data/events.js?v=1.0.2';
 
 // =============================================
 // 🎲 RPG-pack — motor de eventos (puro, sin DOM)
@@ -18,7 +19,8 @@ const signed = n => `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
 
 /**
  * Aplica los efectos de un evento sobre el héroe y devuelve las etiquetas de lo que cambió.
- * fx: { hp, maxHp, atq, heal: 'full', vows, skillMods, affinity }
+ * fx: { hp, maxHp, atq, heal: 'full', healPct, campfire, vows, skillMods, affinity }
+ * - `campfire: true` suma al `healPct` lo que den las armaduras y accesorios (Calidez).
  * - `maxHp` positivo también cura esa cantidad (como las recompensas del resto del juego).
  * - El daño nunca mata: el HP no baja de 1.
  */
@@ -33,7 +35,10 @@ export function applyRpgFx(hero, fx = {}) {
     }
     if (fx.atq) hero.atq = Math.max(1, hero.atq + fx.atq);
     if (fx.heal === 'full') hero.hp = hero.maxHp;
-    if (fx.healPct) hero.hp = Math.min(hero.maxHp, hero.hp + Math.max(1, Math.floor(hero.maxHp * fx.healPct)));
+    if (fx.healPct) {
+        const pct = fx.healPct + (fx.campfire ? campfireBonus(hero) : 0);
+        hero.hp = Math.min(hero.maxHp, hero.hp + Math.max(1, Math.floor(hero.maxHp * pct)));
+    }
     if (fx.hp) hero.hp = Math.min(hero.maxHp, Math.max(1, hero.hp + fx.hp));
 
     if (fx.vows) {
@@ -122,15 +127,17 @@ function resolveOutcome(outcome, ctx, acc) {
         resolveOutcome((ctx.hero[stat] || 0) >= min ? o.ifStat.then : o.ifStat.else, ctx, acc);
     }
     if (o.combat) acc.combat = o.combat;
+    if (o.loot) acc.loot = o.loot;
     if (o.skipFloor) acc.skipFloor = true;
     if (o.next) acc.next = o.next;
 }
 
 /**
  * Resuelve la decisión `index` (0 o 1) de la pantalla actual.
- * Devuelve { ok, lines, changes, next, combat, skipFloor }:
+ * Devuelve { ok, lines, changes, next, combat, skipFloor, loot }:
  *  - next: true si el evento continúa en otra pantalla (usa rpgEventScreen otra vez)
  *  - combat: { monster, hpFactor, onWin, onWinText } si el evento acaba en pelea
+ *  - loot: la fuente de botín que se abre al continuar (p. ej. 'campfire'): 1 de 3 objetos
  */
 export function resolveRpgEventChoice(session, index, hero, rng = Math.random) {
     const ev = session && getRpgEvent(session.eventId);
@@ -141,7 +148,7 @@ export function resolveRpgEventChoice(session, index, hero, rng = Math.random) {
     const option = options[index];
     if (!option) return { ok: false, error: 'Decisión no válida.' };
 
-    const acc = { lines: [], changes: [], combat: null, skipFloor: false, next: null };
+    const acc = { lines: [], changes: [], combat: null, skipFloor: false, next: null, loot: null };
     resolveOutcome(option.outcome, { hero, rng, state: session.state, floor: session.floor }, acc);
 
     if (acc.next) {
@@ -149,7 +156,7 @@ export function resolveRpgEventChoice(session, index, hero, rng = Math.random) {
         return { ok: true, lines: acc.lines, changes: acc.changes, next: true, combat: null, skipFloor: false };
     }
     session.done = true;
-    return { ok: true, lines: acc.lines, changes: acc.changes, next: false, combat: acc.combat, skipFloor: acc.skipFloor };
+    return { ok: true, lines: acc.lines, changes: acc.changes, next: false, combat: acc.combat, skipFloor: acc.skipFloor, loot: acc.loot };
 }
 
 // --- Monstruos de evento ---

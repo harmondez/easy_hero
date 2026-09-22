@@ -44,6 +44,50 @@
 
 ---
 
+## 🟢 Estado: la entrega B1 (equipo) está hecha (1.0.2)
+
+**Hecho y publicado:**
+
+| # | Principal | Estado | Cómo quedó |
+|:-:|-----------|:------:|-----------|
+| **P5** | 🛡️ Equipo: 4 ranuras y 5 rarezas | ✅ | 122 bases, 24 afijos, 6 tipos de daño. Fabricación, equipar/descartar y botín «1 de 3» en cofre, hoguera (≥ 🟢) y sub-jefe (≥ 🔵) |
+
+**Qué trae, por dónde vive:**
+
+| Qué | Dónde |
+|-----|-------|
+| Contenido del taller `item-world/` copiado a `src/data/` (5 rarezas, 122 bases, 24 afijos). Ajustes propios: el escudo, los multiplicadores y las rondas **no escalan con el piso**; valores **enteros**; un afijo nunca repite el rasgo de la base; **Frenesí** pasa a «+1 más por ataque seguido» | `src/data/rarities.js`, `items.js`, `affixes.js` |
+| Fabricación, equipar/descartar, ofertas «1 de 3» (cofre / hoguera ≥ 🟢 / sub-jefe ≥ 🔵), comparación | `src/items.js` |
+| **Todas las reglas funcionan en combate**: golpe furtivo, extra, gracia, frenesí, venganza, espinas, guardia de escudo, curas (inicio, defender, victoria), robavida, última defensa, determinación, huir sin daño, Lector, veneno y quemadura (nuevos **estados** del enemigo), Chispa inicial, Pira, bonus por tipo de daño | `src/engine.js` |
+| Vista previa de Atacar exacta (incluye 2 golpes y protección del enemigo) | `rpgAttackHits` / `rpgAttackPreview` |
+| Cofres solo dan objetos; hoguera: *Descansar* o *Equiparte*; sub-jefe deja botín; el guardado incluye equipo y botín pendiente (`SAVE_VERSION 2`, descarta partidas de la 1.0.1 con aviso) | `src/main.js`, `src/save.js`, `src/data/events.js` |
+| Pantalla de botín, 4 ranuras con borde de rareza en el panel del héroe, estados del enemigo en su carta, equipo en el resumen final | `src/ui.js`, `index.html`, `style.css` |
+| **La victoria ya no da +ATK/+HP** (el poder viene del equipo); **piso 1 = siempre cofre** (botín de bienvenida) | `src/data/balance.js`, `src/engine.js` |
+| Equilibrio final (1000 partidas/bot): **sensato 22,3 %** (objetivo ~20 %), experto 37,8 %, torpe 0,7 % | [docs/equilibrio.md](docs/equilibrio.md) |
+| **532 comprobaciones** (nuevas: 122 de `tests/items-sim.mjs`; el resto adaptadas: `rpg-sim`, `events-sim`, `save-sim`, `balance-guard`, `browser.test.mjs` — 113) | `tests/` |
+| Solicitud 1 y 2 de `item-world/solicitudes-itemizer-pm.md` respondidas y marcadas ✅ | `item-world/` |
+
+**Diferencias respecto al plan (decididas al implementar):**
+
+| Plan | Realidad |
+|------|----------|
+| El crecimiento por victoria se mantendría «hasta la entrega B» | Se **quitó ya en B1**: con crecimiento y equipo a la vez, el sensato ganaba el 85 % |
+| Piso 1 = monstruo normal, como cualquier otro | **Piso 1 = siempre cofre**: sin objeto temprano, el 15 % del sensato moría en el piso 5 |
+| Gancho `onSkill` (Solicitud 1 de `item-world`) | No existe como gancho literal: `skill_dmg`/`skill_cd` van directos a `skillMods`, y `skill_burn`/`pyre`/`first_turn_focus` se leen al usar la habilidad. Mismo efecto, sin el nombre |
+| Descartar cura 3 HP fijo | **3 + 1 por escalón de rareza**: descartar un épico cura más que descartar un común |
+| Reglas escalan con el piso igual que los números | Los **multiplicadores, interruptores y duraciones** (golpe furtivo, frenesí, veneno, Lector, robavida…) **no escalan**; solo lo que suma HP/ATK/daño |
+
+**Pendiente, no bloqueante (backlog, se retoma si hace falta):**
+- Capturas de pantalla (`SHOT_DIR=…`) de la pantalla de botín y el panel con 4 ranuras, para revisar el aspecto.
+- Script de viabilidad de las 6 armas y cada afijo (criterio «hecho cuando» de P5: ninguna base o afijo debería dominar). Sin datos todavía.
+- El nivel del héroe ahora solo cuenta combates ganados (decorativo hasta la afinidad, P7).
+- El tipo de daño del arma solo cambia el icono y el bonus de accesorios «+N con Filo/Fuego…»; las **debilidades** llegan con la Ruptura (entrega C).
+- El experto (37,8 %) ya casi no dobla al sensato (22,3 %): revisar cuando lleguen las mejoras de B2.
+
+**Después (B2):** P6 mejoras «elige 1 de 3» tras cada combate y P7 afinidad/clase. Al sumarlas subirá el poder: **recalibrar** monstruos con el banco. Objetivo final sensato ≈ 20 %.
+
+---
+
 ## 🟢 Estado: la entrega A está hecha (1.0.1)
 
 | # | Principal | Estado | Cómo quedó |

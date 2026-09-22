@@ -1,15 +1,18 @@
-import * as UI from './ui.js?v=1.0.1';
-import * as Engine from './engine.js?v=1.0.1';
-import * as Events from './events.js?v=1.0.1';
-import * as Save from './save.js?v=1.0.1';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.0.1';
-import { GAME_VERSION } from './version.js?v=1.0.1';
+import * as UI from './ui.js?v=1.0.2';
+import * as Engine from './engine.js?v=1.0.2';
+import * as Events from './events.js?v=1.0.2';
+import * as Save from './save.js?v=1.0.2';
+import * as Items from './items.js?v=1.0.2';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.0.2';
+import { GAME_VERSION } from './version.js?v=1.0.2';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
 window.Events = Events;
 window.UI = UI;
 window.Save = Save;
+window.Items = Items;
+window.openLoot = (source, floor) => _rpgOpenLoot(source, floor);   // para pruebas y depuración
 window.GAME_VERSION = GAME_VERSION;
 
 // El guardado vive en el navegador; si está bloqueado (modo privado, etc.) el juego sigue funcionando sin guardar
@@ -17,7 +20,7 @@ const storage = (() => {
     try { const s = window.localStorage; s.getItem('easy-hero-probe'); return s; } catch { return null; }
 })();
 
-const newStats = () => ({ combatsWon: 0, events: [], campfires: 0, chests: 0 });
+const newStats = () => ({ combatsWon: 0, events: [], campfires: 0, chests: 0, equipped: 0, discarded: 0 });
 
 const gameState = {
     rpg: {
@@ -30,6 +33,7 @@ const gameState = {
         combat: null,
         combatMenu: 'main',
         combatResult: null,   // panel de fin de combate que está a la vista (para retomarlo)
+        loot: null,           // botín abierto: { source, floor, offers: [objetos], selected }
         pendingNodeId: null,
         // Eventos
         event: null,          // { node, session, result, view } mientras hay un evento abierto
@@ -113,6 +117,7 @@ function _rpgResetRun() {
     const r = gameState.rpg;
     r.combat = null;
     r.combatResult = null;
+    r.loot = null;
     r.pendingNodeId = null;
     r.event = null;
     r.eventCombat = null;
@@ -167,6 +172,9 @@ function _rpgResume() {
         UI.addRpgCombatLog('▶️ Retomas el combate donde lo dejaste.', 'system');
         _rpgRefreshCombat();
         if (r.combat.over && r.combatResult) UI.showRpgCombatResult(r.combatResult);
+    } else if (r.loot) {
+        UI.toggleRpgView('rpgLootView');
+        UI.renderRpgLoot(_rpgLootView());
     } else if (r.event) {
         UI.toggleRpgView('rpgEventView');
         if (r.event.result && r.event.view) UI.renderRpgEventResult(r.event.view);
@@ -176,12 +184,6 @@ function _rpgResume() {
         _rpgRefreshMap(false);
     }
 }
-
-// Botín de cofre (provisional): demuestra que el héroe crece durante la ruta.
-const RPG_CHEST_REWARDS = [
-    { label: '+1 ATK', apply: h => { h.atq += 1; } },
-    { label: '+5 HP', apply: h => { h.maxHp += 5; h.hp += 5; } }
-];
 
 function _rpgAdvanceTo(nodeId) {
     const r = gameState.rpg;
@@ -203,14 +205,73 @@ function _rpgEnterNode(nodeId) {
     }
     if (node.type === 'event') { _rpgStartEvent(node); return; }
     if (node.type === 'campfire') { _rpgStartEvent(node, 'hoguera'); return; }
-    // Cofre
+    // Cofre: solo da objetos (1 de 3)
     _rpgAdvanceTo(nodeId);
-    const reward = RPG_CHEST_REWARDS[Math.floor(r.rng() * RPG_CHEST_REWARDS.length)];
-    reward.apply(r.hero);
     r.stats.chests++;
-    log(`🧰 ${r.hero.name} abre un cofre: ${reward.label}.`, 'victory');
+    log(`🧰 ${r.hero.name} abre un cofre (piso ${node.floor + 1}).`, 'victory');
+    const heal = Items.ruleSum(r.hero, 'treasure_heal');
+    if (heal) {
+        const healed = Math.min(r.hero.maxHp - r.hero.hp, heal);
+        r.hero.hp += healed;
+        if (healed) log(`🧰 El botín te reconforta: +${healed} HP.`, 'victory');
+    }
+    _rpgOpenLoot('chest', node.floor);
+}
+
+// --- 🎁 Botín: 1 de 3 objetos; equipar (se pierde el anterior) o descartar (cura) ---
+function _rpgOpenLoot(source, floor) {
+    const r = gameState.rpg;
+    r.loot = { source, floor, selected: null, offers: Items.rollLootOffers({ rng: r.rng, floor, source, hero: r.hero }) };
+    UI.toggleRpgView('rpgLootView');
+    UI.renderRpgLoot(_rpgLootView());
+    persist();
+}
+
+function _rpgLootView() {
+    const r = gameState.rpg;
+    const loot = r.loot;
+    const src = Items.LOOT_SOURCES[loot.source] || Items.LOOT_SOURCES.chest;
+    const offers = loot.offers.map(item => ({ item, delta: Items.itemDelta(r.hero, item), current: r.hero.equipment[item.slot] || null }));
+    const picked = loot.selected != null ? offers[loot.selected] : null;
+    return {
+        icon: src.icon, title: src.title,
+        text: picked ? 'Compara y decide: equiparlo (pierdes lo que llevas en esa ranura) o descartarlo (te cura).' : 'Elige 1 de 3 objetos. Los otros dos se quedan atrás.',
+        offers, selected: loot.selected,
+        discardHeal: picked ? Items.discardHealFor(r.hero, picked.item) : 0
+    };
+}
+
+function _rpgLootSelect(index) {
+    const r = gameState.rpg;
+    if (!r.loot || !r.loot.offers[index]) return;
+    r.loot.selected = r.loot.selected === index ? null : index;
+    UI.renderRpgLoot(_rpgLootView());
+    persist();
+}
+
+function _rpgLootClose() {
+    const r = gameState.rpg;
+    r.loot = null;
+    UI.toggleRpgView('rpgMapView');
     _rpgRefreshMap(false);
     persist();
+}
+
+function _rpgLootDecide(equip) {
+    const r = gameState.rpg;
+    const loot = r.loot;
+    if (!loot || loot.selected == null) return;
+    const item = loot.offers[loot.selected];
+    if (equip) {
+        const old = Items.equipItem(r.hero, item);
+        r.stats.equipped++;
+        log(`${item.rarityIcon} ${r.hero.name} equipa ${item.icon} ${item.name}${old ? ` (deja ${old.icon} ${old.name})` : ''}.`, 'victory');
+    } else {
+        const healed = Items.discardItem(r.hero, item);
+        r.stats.discarded++;
+        log(`♻️ ${r.hero.name} descarta ${item.icon} ${item.name}${healed ? ` y recupera ${healed} HP` : ''}.`, 'victory');
+    }
+    _rpgLootClose();
 }
 
 // --- 🎲 Eventos (y hogueras, que usan la misma pantalla) ---
@@ -285,6 +346,7 @@ function _rpgEventContinue() {
         r.skipNext = true;
         log('🌉 Te saltas un piso: el próximo paso puede ir dos pisos más allá.', 'victory');
     }
+    if (result.loot) { _rpgOpenLoot(result.loot, node.floor); return; }
     UI.toggleRpgView('rpgMapView');
     _rpgRefreshMap(false);
     persist();
@@ -308,6 +370,8 @@ function _rpgStartCombat(node, customMonster) {
     UI.addRpgCombatLog(customMonster
         ? `${monster.icon} ${monster.name} te corta el paso. ¡Elige tu acción!`
         : `${monster.icon} ${monster.name} bloquea el camino. ¡Elige tu acción!`, 'system');
+    r.combat.intro.forEach(ev => UI.addRpgCombatLog(ev.text, 'player'));
+    r.combat.intro = [];
     _rpgRefreshCombat();
     persist();
 }
@@ -388,6 +452,7 @@ function _rpgBuildSummary(result, monster) {
             { icon: '❤️', value: r.hero.maxHp, label: 'HP máx' }
         ],
         build: UI.rpgHeroTags(r.hero).map(t => `${t.icon} ${t.text}`),
+        gear: Items.ITEM_SLOT_ORDER.map(s => r.hero.equipment[s]).filter(Boolean).map(it => ({ icon: it.icon, name: it.name, rarity: it.rarityIcon, color: it.color })),
         events: eventLabels,
         seedCode: seedToCode(r.seed)
     };
@@ -434,6 +499,11 @@ function _rpgCombatContinue() {
         log(`🏃 ${r.hero.name} huye de ${m.name} y elige otro rumbo.`, 'system');
     }
     r.pendingNodeId = null;
+    if (result === 'victory' && m.type === 'subboss') {
+        log('💀 El sub-jefe deja un botín valioso.', 'victory');
+        _rpgOpenLoot('subboss', m.floor);
+        return;
+    }
     UI.toggleRpgView('rpgMapView');
     _rpgRefreshMap(false);
     persist();
@@ -462,6 +532,12 @@ function initEvents() {
         const opt = e.target.closest('[data-rpg-event-opt]');
         if (opt) { _rpgEventChoose(Number(opt.dataset.rpgEventOpt)); return; }
         if (e.target.closest('#btnRpgEventContinue')) _rpgEventContinue();
+    });
+    safeListener('rpgLootView', 'click', (e) => {
+        const pick = e.target.closest('[data-rpg-loot-pick]');
+        if (pick) { _rpgLootSelect(Number(pick.dataset.rpgLootPick)); return; }
+        if (e.target.closest('#btnRpgLootEquip')) _rpgLootDecide(true);
+        else if (e.target.closest('#btnRpgLootDiscard')) _rpgLootDecide(false);
     });
     safeListener('rpgCombatActions', 'click', (e) => {
         const btn = e.target.closest('[data-rpg-action]');

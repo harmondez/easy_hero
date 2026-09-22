@@ -1,6 +1,6 @@
 {
   "name": "rpg-pack",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Juego RPG de ruta (estilo Slay the Spire) extraído de Easy Hit. Solo atributos básicos: ATK / HP.",
   "type": "module",
   "private": true,
@@ -8,13 +8,14 @@
     "dev": "python -m http.server 8770 --bind 127.0.0.1",
     "test:engine": "node tests/rpg-sim.mjs",
     "test:events": "node tests/events-sim.mjs",
+    "test:items": "node tests/items-sim.mjs",
     "release": "node tools/version.mjs",
     "test:version": "node tests/version-check.mjs",
     "test:save": "node tests/save-sim.mjs",
     "test:balance": "node tests/balance-guard.mjs",
     "balance": "node tools/balance.mjs",
     "test:browser": "node tests/browser.test.mjs",
-    "test": "node tests/version-check.mjs && node tests/rpg-sim.mjs && node tests/events-sim.mjs && node tests/save-sim.mjs && node tests/balance-guard.mjs && node tests/browser.test.mjs"
+    "test": "node tests/version-check.mjs && node tests/rpg-sim.mjs && node tests/events-sim.mjs && node tests/items-sim.mjs && node tests/save-sim.mjs && node tests/balance-guard.mjs && node tests/browser.test.mjs"
   },
   "devDependencies": {
     "playwright": "^1.60.0"

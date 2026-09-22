@@ -12,7 +12,7 @@
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.1-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.2-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -27,18 +27,17 @@
 
 ## 🆕 Novedades
 
-**Versión 1.0.1** · 21 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.0.2** · 22 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 | | Qué hay de nuevo |
 |:-:|------------------|
-| 👁️ | **Ves lo que va a hacer el enemigo antes de elegir**, y cada uno de los 15 monstruos ataca a su manera |
-| 🔥 | **Hogueras** para descansar o afilar tu arma. Siempre hay una antes del jefe |
-| 💀 | **Los sub-jefes son opcionales**: siempre puedes elegir un camino sin ellos |
-| ⚖️ | **Ahora se puede ganar**: un jugador medio gana 1 de cada 5 partidas |
-| 💾 | **Guardado automático**: cierra la pestaña y continúa donde lo dejaste, incluso en mitad de un combate |
-| 🏁 | **Pantalla final** con tu resumen y cuánto te faltó para vencer («casi») |
+| 🎒 | **Equipo: 4 ranuras y 5 rarezas.** Arma, secundaria, armadura y accesorio, de ⚪ común a 🟠 legendaria |
+| 🧰 | **Los cofres ya dan objetos de verdad**: eliges 1 de 3, comparas y decides equipar o descartar |
+| 🔥 | La hoguera ahora ofrece **Descansar** o **Equiparte** (1 de 3 objetos) |
+| ☠️🔥 | **Veneno y quemadura**: nuevos estados que hacen daño ronda a ronda |
+| 👁️ | Ves lo que va a hacer el enemigo antes de elegir, y cada uno de los 15 monstruos ataca a su manera |
+| 💾 | El guardado ahora incluye tu equipo y el botín a medio elegir |
 | 🌱 | **Semilla**: cada ruta tiene un código y puedes repetirla, o escribir el tuyo |
-| 🏷️ | **Versiones**: el juego muestra su versión y hay un registro de cambios |
 
 ---
 
@@ -116,19 +115,19 @@ Tu estilo no se elige: **se revela** según lo que recoges y decides. Cada estil
 > [!TIP]
 > Mezclar estilos está permitido, y a veces es la mejor jugada.
 
-### 🎒 Tu equipo *(en camino)*
+### 🎒 Tu equipo
 
-Llevarás **4 objetos**, sin mochila ni líos: cuando encuentras uno, decides al momento si te lo pones o no.
+Llevas **4 objetos**, sin mochila ni líos: cuando encuentras uno, decides al momento si te lo pones (pierdes lo que llevabas en esa ranura) o lo descartas (te cura).
 
 | Ranura | Qué aporta |
 |--------|-----------|
-| ⚔️ **Arma principal** | Tu fuerza y **el tipo de daño de tus golpes** |
+| ⚔️ **Arma principal** | Tu fuerza y **el tipo de daño de tus golpes** (Filo, Contundente, Perforante, Veneno, Fuego o Rayo) |
 | 🛡️ **Escudo, arma o foco** | Defender mejor, un golpe extra o habilidades más potentes |
 | 🧥 **Armadura** | Más vida y un efecto especial |
 | 💍 **Accesorio** | Un efecto pasivo |
 
-Los objetos tienen **5 rarezas**: ⚪ común · 🟢 poco común · 🔵 rara · 🟣 épica · 🟠 legendaria.
-Cuanto más rara, más efectos trae, y cuanto más profundo lo encuentras, más fuerte es.
+Los objetos tienen **5 rarezas**: ⚪ común · 🟢 poco común · 🔵 rara · 🟣 épica · 🟠 legendaria (esta última con un rasgo único).
+Cuanto más rara, más efectos trae, y cuanto más profundo lo encuentras, más fuerte es. Los encuentras en **cofres**, **hogueras** (mínimo 🟢) y **sub-jefes** (mínimo 🔵), siempre eligiendo 1 de 3.
 
 ---
 
@@ -170,17 +169,18 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.0.1, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane 1 de cada 5 partidas**
+> **Versión 1.0.2, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane algo más de 1 de cada 5 partidas**
 > (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
 
 ### ✅ Ya se puede jugar
 
 - 🗺️ Mapa de **16 pisos** que cambia en cada partida
 - ⚔️ Combate por turnos: atacar, defender, habilidad y huir
+- 🎒 **Equipo de 4 ranuras y 5 rarezas**, con 122 objetos y 24 afijos (ver más abajo)
 - 👁️ **Ves lo que va a hacer cada enemigo** antes de elegir, y **15 monstruos** con su propia forma de atacar
-- 🔥 **Hogueras** para descansar o afilar tu arma, con una siempre antes del jefe
+- 🔥 **Hogueras** para descansar o equiparte, con una siempre antes del jefe
 - 🎲 **15 eventos** con dos decisiones cada uno
-- 💀 Sub-jefes **opcionales** (siempre hay un camino sin ellos), cofres y un jefe final
+- 💀 Sub-jefes **opcionales** (siempre hay un camino sin ellos), cofres con botín y un jefe final
 - 🧠 Un enemigo especial, **El Lector**, que aprende de lo que haces
 - 🤞 Promesas que cambian tu forma de jugar (por ejemplo, renunciar a huir)
 - 💾 **Guardado automático**: cierra la pestaña y continúa donde lo dejaste
@@ -201,7 +201,7 @@ Lo haremos en **cuatro entregas**. Empezamos por hacer el juego **ganable y clar
 | Entrega | Nombre | Qué trae |
 |:-------:|--------|----------|
 | **A** ✅ | 🎯 **Jugable** | **Hecha (1.0.1).** Ver qué va a hacer cada enemigo · Hogueras · Dificultad ajustada a **ganar 1 de cada 5** · Guardado de partida, semilla y pantalla final |
-| **B** | 🎒 **Tu build** | Equipo de 4 ranuras y 5 rarezas · Elegir 1 de 3 mejoras tras cada combate · **Despertar como clase** |
+| **B** 🚧 | 🎒 **Tu build** | **Equipo hecho (1.0.2):** 4 ranuras y 5 rarezas. Falta elegir 1 de 3 mejoras tras cada combate y **despertar como clase** |
 | **C** | 💥 **Táctico** | Debilidades y **Ruptura** (rompe al enemigo y actúa otra vez) · Combates con varios enemigos y orden de turnos |
 | **D** | 📖 **A largo plazo** | Bestiario, logros y el **Legado** de tu héroe caído · Niveles de riesgo para los que ya ganaron |
 
@@ -255,7 +255,7 @@ npx playwright install chromium    # solo la primera vez
 npm test                           # ejecuta todas las comprobaciones
 ```
 
-Son 408 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
+Son 532 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; la del navegador, un par de minutos.
 
 Para ver cómo está el equilibrio: `npm run balance` juega miles de partidas simuladas y cuenta cuántas llegan al jefe.
 
@@ -268,7 +268,7 @@ Para ver cómo está el equilibrio: `npm run balance` juega miles de partidas si
 
 ```bash
 npm run release              # ¿está todo sincronizado con la versión actual?
-npm run release -- patch     # 1.0.1 → 1.0.2  (también minor o major)
+npm run release -- patch     # 1.0.2 → 1.0.3  (también minor o major)
 ```
 
 Cambia la versión en todos los sitios a la vez y prepara el registro de cambios. Los pasos completos están en [docs/versiones.md](docs/versiones.md).

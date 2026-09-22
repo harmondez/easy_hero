@@ -732,3 +732,51 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .rpg-intent, .rpg-intent.is-heavy { animation: none; }
 }
+
+/* ---------- 🎒 Equipo: las 4 ranuras del héroe y el botín «1 de 3» ---------- */
+.rpg-gear { display: flex; gap: 6px; margin-top: 6px; }
+.rpg-gear-slot {
+    --rarity: var(--border-strong);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; font-size: 1rem; line-height: 1;
+    background: rgba(2, 6, 23, 0.6);
+    border: 2px solid var(--rarity);
+    border-radius: 8px;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--rarity) 35%, transparent);
+    cursor: help;
+}
+.rpg-gear-slot.is-empty { opacity: 0.35; border-style: dashed; box-shadow: none; }
+.rpg-stat.guard b { font-weight: 400; }
+
+.rpg-loot { max-width: 820px; }
+.rpg-loot-offers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0 6px; }
+.rpg-loot-card {
+    --rarity: var(--border-strong);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 14px 10px 12px;
+    color: var(--text-light); font: inherit; text-align: center; cursor: pointer;
+    background: linear-gradient(170deg, color-mix(in srgb, var(--rarity) 14%, var(--bg-card-elevated)), var(--bg-card));
+    border: 2px solid var(--rarity);
+    border-radius: 14px;
+    box-shadow: 0 0 14px color-mix(in srgb, var(--rarity) 25%, transparent);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.rpg-loot-card:hover { transform: translateY(-3px); box-shadow: 0 0 22px color-mix(in srgb, var(--rarity) 55%, transparent); }
+.rpg-loot-card.is-selected { transform: translateY(-3px); box-shadow: 0 0 0 3px var(--rarity), 0 0 26px color-mix(in srgb, var(--rarity) 60%, transparent); }
+.rpg-loot-rarity { font-size: 0.68rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--rarity); }
+.rpg-loot-icon { font-size: 2.2rem; line-height: 1.1; }
+.rpg-loot-name { font-weight: 800; font-size: 0.95rem; }
+.rpg-loot-kind { font-size: 0.68rem; color: var(--text-muted); }
+.rpg-loot-lines { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.rpg-loot-lines i { font-style: normal; font-size: 0.74rem; color: var(--text-light); }
+.rpg-loot-delta { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px; }
+.rpg-loot-detail { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-strong); }
+.rpg-loot-current { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; }
+.rpg-loot-current span { display: block; font-size: 0.74rem; margin-top: 2px; }
+.rpg-loot-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.rpg-end-gear { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
+@media (max-width: 640px) {
+    .rpg-loot-offers { grid-template-columns: 1fr; }
+    .rpg-loot-card { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    .rpg-loot-card .rpg-loot-lines, .rpg-loot-card .rpg-loot-delta { width: 100%; }
+}

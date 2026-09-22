@@ -7,24 +7,26 @@ La idea en una frase: **casi todo se prueba sobre el motor puro, con miles de ca
 
 | Capa | Archivo | Qué prueba | Tests | Tiempo |
 |------|---------|-----------|:-----:|:------:|
-| **Motor** | `tests/rpg-sim.mjs` | Héroe, combate e **intenciones**, bestiario, semilla, 300 mapas (hogueras, sub-jefes evitables…) | 104 | **1,8 s** |
-| **Eventos** | `tests/events-sim.mjs` | Los 15 eventos, la hoguera, votos, IA, 1500 rutas con un héroe invencible | 118 | **7,8 s** |
-| **Guardado** | `tests/save-sim.mjs` | Guardar y retomar (combate y evento a medias), versiones, datos dañados | 36 | **0,4 s** |
-| **Equilibrio** | `tests/balance-guard.mjs` | Que el juego siga siendo ganable, sin ser trivial (1500 partidas de 3 bots) | 12 | **9,9 s** |
-| **Versiones** | `tests/version-check.mjs` | La versión coincide en todos los sitios; el script de publicación (en simulacro) | 27 | **0,2 s** |
-| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas de página | 111 | **131 s** |
+| **Motor** | `tests/rpg-sim.mjs` | Héroe, combate e **intenciones**, bestiario, semilla, 300 mapas (hogueras, sub-jefes evitables…) | 104 | **2,5 s** |
+| **Eventos** | `tests/events-sim.mjs` | Los 15 eventos, la hoguera, votos, IA, 1500 rutas con un héroe invencible | 118 | **12,1 s** |
+| **Equipo** | `tests/items-sim.mjs` | Fabricación (6000 objetos), equipar/descartar, botín «1 de 3», todas las reglas en combate, 1500 builds al azar | 122 | **0,2 s** |
+| **Guardado** | `tests/save-sim.mjs` | Guardar y retomar (combate y evento a medias, equipo y botín pendiente), versiones, datos dañados | 36 | **1,1 s** |
+| **Equilibrio** | `tests/balance-guard.mjs` | Que el juego siga siendo ganable, sin ser trivial (1500 partidas de 3 bots) | 12 | **22 s** |
+| **Versiones** | `tests/version-check.mjs` | La versión coincide en todos los sitios; el script de publicación (en simulacro) | 27 | **0,1 s** |
+| **Navegador** | `tests/browser.test.mjs` | El juego real en Chromium: escritorio, móvil, recargas de página, botín de cofre/hoguera/sub-jefe | 113 | **~131 s** |
 
-Una regla útil: **si algo se puede comprobar en el motor, no se comprueba en el navegador.** Por eso las cuatro capas de arriba
-suman 297 tests en unos 20 s y la de abajo, con 111, tarda 8 veces más.
+Una regla útil: **si algo se puede comprobar en el motor, no se comprueba en el navegador.** Por eso las seis capas de arriba
+suman 419 tests en unos 38 s y la de abajo, con 113, tarda varias veces más.
 
 ```bash
-npm run test:engine     # 1,8 s   ← se ejecuta tras cada cambio
-npm run test:events     # 7,8 s   ← se ejecuta tras cada cambio
-npm run test:save       # 0,4 s
-npm run test:balance    # 9,9 s   ← tras tocar números de equilibrio
-npm run test:browser    # 131 s   ← antes de subir, o al tocar la interfaz
-npm run test:version    # 0,2 s   ← comprueba que la versión está sincronizada
-npm test                # los seis (408 comprobaciones)
+npm run test:engine     # 2,5 s   ← se ejecuta tras cada cambio
+npm run test:events     # 12,1 s  ← se ejecuta tras cada cambio
+npm run test:items      # 0,2 s   ← tras tocar objetos, rarezas o afijos
+npm run test:save       # 1,1 s
+npm run test:balance    # 22 s    ← tras tocar números de equilibrio
+npm run test:browser    # ~131 s  ← antes de subir, o al tocar la interfaz
+npm run test:version    # 0,1 s   ← comprueba que la versión está sincronizada
+npm test                # los siete (532 comprobaciones)
 npm run balance         # NO es un test: la tabla de equilibrio (ver docs/equilibrio.md)
 ```
 

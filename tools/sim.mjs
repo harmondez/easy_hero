@@ -11,6 +11,7 @@ import {
     RPG_COMBAT_TYPES, RPG_MAP_CONFIG
 } from '../src/engine.js';
 import * as Events from '../src/events.js';
+import { rollLootOffers, equipItem, discardItem, itemScore, ruleSum } from '../src/items.js';
 import { createRng } from '../src/rng.js';
 
 const STUB_RNG = () => 0.5;
@@ -18,8 +19,8 @@ const clone = o => JSON.parse(JSON.stringify(o));
 
 // ---------- Combate ----------
 function cloneCombat(c) {
-    const { hero, monster, turn, defending, cooldowns, lastAction, over, result } = c;
-    return { ...clone({ hero, monster, turn, defending, cooldowns, lastAction, over, result }), rng: STUB_RNG };
+    const { hero, monster, turn, defending, cooldowns, lastAction, over, result, state } = c;
+    return { ...clone({ hero, monster, turn, defending, cooldowns, lastAction, over, result, state }), intro: [], rng: STUB_RNG };
 }
 
 /** Cambia la acción si repetirla activaría la lectura del Lector. */
@@ -38,7 +39,7 @@ const POLICIES = {
         const incoming = it && it.k === 'attack' ? it.dmg : 0;
         let action = 'attack';
         if (incoming >= 0.28 * hero.hp || (incoming > 0 && incoming >= hero.hp - 1)) action = 'defend';
-        else if (rpgSkillReady(c, 'fire_strike') && rpgSkillInfo(hero, 'fire_strike').damage > rpgAttackPreview(c)) action = 'skill';
+        else if (rpgSkillReady(c, 'fire_strike') && rpgSkillInfo(hero, 'fire_strike', c).damage > rpgAttackPreview(c)) action = 'skill';
         return { action: avoidRepeat(c, action), skillId: 'fire_strike' };
     },
 
@@ -114,6 +115,24 @@ function sampleEventOption(session, index, hero, rng, samples = 24) {
     return total / samples;
 }
 
+// ---------- Botín: el bot elige 1 de 3 y decide si equiparlo o descartarlo ----------
+/** Devuelve { equipped, discarded } tras resolver una oferta de botín. */
+function resolveLoot(botName, hero, rng, source, floor) {
+    const offers = rollLootOffers({ rng, floor, source, hero });
+    if (botName === 'torpe') {           // el torpe se lleva uno al azar y siempre lo equipa
+        equipItem(hero, offers[Math.floor(rng() * offers.length)]);
+        return { equipped: 1, discarded: 0 };
+    }
+    let best = null;
+    for (const it of offers) {
+        const gain = itemScore(it) - itemScore(hero.equipment[it.slot]);
+        if (!best || gain > best.gain) best = { it, gain };
+    }
+    if (best.gain > 0) { equipItem(hero, best.it); return { equipped: 1, discarded: 0 }; }
+    discardItem(hero, best.it);
+    return { equipped: 0, discarded: 1 };
+}
+
 // ---------- Bots ----------
 const PRIORITY = { campfire: 0, event: 1, chest: 2, monster: 3, subboss: 4, boss: 5 };
 
@@ -187,7 +206,7 @@ export function playRun(botName, seed, { cfg = RPG_MAP_CONFIG, god = false } = {
     const map = generateRpgMap(rng, cfg);
     const byId = new Map(map.nodes.map(n => [n.id, n]));
     const used = [];
-    const res = { won: false, reachedBoss: false, deathFloor: null, killer: null, events: 0, campfires: 0, subbosses: 0, fights: 0, skips: 0, eventFights: 0, eventIds: [], hero };
+    const res = { won: false, reachedBoss: false, deathFloor: null, killer: null, events: 0, campfires: 0, subbosses: 0, fights: 0, skips: 0, eventFights: 0, eventIds: [], chests: 0, equipped: 0, discarded: 0, hero };
     let cur = null, skip = false;
 
     const die = (node, monster) => { res.deathFloor = node.floor; res.killer = monster.name; };
@@ -208,12 +227,17 @@ export function playRun(botName, seed, { cfg = RPG_MAP_CONFIG, god = false } = {
             const out = fightWith(bot.policy, hero, m, rng);
             if (out.result !== 'victory') { die(node, m); return res; }
             applyRpgReward(hero, rpgVictoryReward(node.type));
+            if (node.type === 'subboss') { const l = resolveLoot(bot.policy, hero, rng, 'subboss', node.floor); res.equipped += l.equipped; res.discarded += l.discarded; }
         } else if (node.type === 'chest') {
-            if (rng() < 0.5) hero.atq += 1; else { hero.maxHp += 5; hero.hp += 5; }
+            res.chests++;
+            hero.hp = Math.min(hero.maxHp, hero.hp + ruleSum(hero, 'treasure_heal'));
+            const l = resolveLoot(bot.policy, hero, rng, 'chest', node.floor);
+            res.equipped += l.equipped; res.discarded += l.discarded;
         } else if (node.type === 'campfire') {
             res.campfires++;
             const session = Events.startRpgEvent('hoguera', rng, node.floor);
-            Events.resolveRpgEventChoice(session, bot.campfire({ hero, rng }), hero, rng);
+            const out = Events.resolveRpgEventChoice(session, bot.campfire({ hero, rng }), hero, rng);
+            if (out.loot) { const l = resolveLoot(bot.policy, hero, rng, out.loot, node.floor); res.equipped += l.equipped; res.discarded += l.discarded; }
         } else if (node.type === 'event') {
             res.events++;
             const evId = Events.pickRpgEvent(used, node.floor, rng, cfg);

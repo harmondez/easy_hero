@@ -5,6 +5,26 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.0.2] - 2026-09-22
+
+### ✨ Novedades
+- 🎒 **Equipo: 4 ranuras y 5 rarezas.** Tu héroe lleva arma primaria (define el **tipo de daño**: Filo, Contundente, Perforante, Veneno, Fuego o Rayo), secundaria (escudo, daga o foco), armadura y accesorio. **122 objetos** de base, con **⚪ Común, 🟢 Poco común, 🔵 Rara, 🟣 Épica y 🟠 Legendaria** (cada una con más afijos y más poder, y las legendarias con un rasgo único).
+- 🧰 **Los cofres ya solo dan objetos**: eliges 1 de 3, lo comparas con lo que llevas puesto y decides **equiparlo** (pierdes el anterior) o **descartarlo** (te cura). El piso 1 siempre es un cofre: tu primera decisión de equipo.
+- 🔥 La hoguera ahora ofrece **Descansar** o **Equiparte** (1 de 3 objetos, mínimo 🟢). El botín de un **sub-jefe** es siempre 🔵 o mejor.
+- 🎯 **24 afijos** con efecto real en combate: golpe furtivo, golpe extra, golpe de gracia, frenesí, venganza, espinas, robo de vida, última defensa, determinación, huir sin daño, resistir al Lector, curas al empezar/defender/vencer un combate, mejoras al Golpe de Fuego (más daño, menos enfriamiento, quemadura)…
+- ☠️🔥 **Veneno y quemadura**: nuevos estados que se ven en la carta del enemigo y hacen daño ronda a ronda.
+- 🗡️ La vista previa de Atacar ahora es exacta, incluidos los golpes extra y lo que reduce un enemigo que se protege.
+
+### ⚖️ Equilibrio
+- El poder ya no viene de vencer combates (eso ya no da +ATK ni +HP): viene del **equipo** que encuentras.
+- Monstruos algo más duros (`atkPerFloor 0,4`, `hpPerFloor 3,6`) para compensar el poder del equipo: con 1000 partidas por bot, el jugador **sensato gana el 22 %** (objetivo ~20 %), el experto el 38 % y el torpe el 1 %.
+- Detalle y método actualizados en [docs/equilibrio.md](docs/equilibrio.md).
+
+### 🛠️ Por dentro
+- El contenido de objetos (rarezas, bases y afijos) vive en `src/data/`; la fabricación, equipar/descartar y el botín en `src/items.js`.
+- El guardado incluye el equipo del héroe y el botín pendiente (`SAVE_VERSION 2`): las partidas de la 1.0.1 se descartan con aviso.
+- **122 comprobaciones nuevas** sobre la fabricación, el equipo y las reglas en combate (`tests/items-sim.mjs`).
+
 ## [1.0.1] - 2026-09-21
 
 *Lo primero que se hizo tras la 1.0: que el juego se pueda ganar, se entienda lo que pasa y no se pierda la partida.*

@@ -1,4 +1,5 @@
-import * as Engine from './engine.js?v=1.0.1';
+import * as Engine from './engine.js?v=1.0.2';
+import * as Items from './items.js?v=1.0.2';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -55,7 +56,7 @@ export function playHitAnimation(selector, isAlly) {
 // --- 🗡️ MODO RPG (Carta de Héroe + mapa de ruta) ---
 
 export function toggleRpgView(view) {
-    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgCombatView', 'rpgEndView'].forEach(id => {
+    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgLootView', 'rpgCombatView', 'rpgEndView'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = id === view ? 'block' : 'none';
     });
@@ -100,6 +101,17 @@ export function rpgHeroTags(hero) {
     return tags;
 }
 
+// Las 4 ranuras del héroe: el borde tiene el color de la rareza; al pasar el ratón se lee el objeto
+function _rpgGearHtml(hero) {
+    return Items.ITEM_SLOT_ORDER.map(slot => {
+        const def = Items.ITEM_SLOTS[slot];
+        const it = hero.equipment && hero.equipment[slot];
+        if (!it) return `<span class="rpg-gear-slot is-empty" data-slot="${slot}" title="${esc(def.name)}: vacía">${def.icon}</span>`;
+        const tip = [`${it.rarityIcon} ${it.name}`, ...Items.describeItem(it)].join('\n');
+        return `<span class="rpg-gear-slot" data-slot="${slot}" data-rarity="${esc(it.rarity)}" style="--rarity:${esc(it.color)}" title="${esc(tip)}">${it.icon}</span>`;
+    }).join('');
+}
+
 export function renderRpgHeroPanel(hero, progressText) {
     const el = document.getElementById('rpgHeroPanel');
     if (!el || !hero) return;
@@ -113,7 +125,9 @@ export function renderRpgHeroPanel(hero, progressText) {
             <div class="rpg-hero-hp"><div class="rpg-hero-hp-fill" style="width:${hpPct}%"></div><span><b>HP</b> ${hero.hp} / ${hero.maxHp}</span></div>
             <div class="rpg-hero-stats">
                 <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
+                ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
             </div>
+            <div class="rpg-gear" id="rpgGear">${_rpgGearHtml(hero)}</div>
             ${tagsHtml ? `<div class="rpg-hero-tags">${tagsHtml}</div>` : ''}
         </div>
         <div class="rpg-hero-progress">${esc(progressText || '')}</div>`;
@@ -233,11 +247,22 @@ function _rpgActionButton(attrs, icon, label, hint, disabled) {
 
 const RPG_ACTION_NAMES = { attack: 'ATACAR', defend: 'DEFENDER', skill: 'HABILIDADES' };
 
-// Enemigo con IA: avisa de la acción que ha memorizado (repetirla = golpe doble)
+// Estado del enemigo: quemadura, veneno y, si lee tus movimientos, la acción que ha memorizado (repetirla = golpe doble)
 function _rpgMonsterStatus(combat) {
-    if (combat.monster.ai !== 'reader') return '';
-    const last = RPG_ACTION_NAMES[combat.lastAction];
-    return last ? `👁️ Recuerda ${last}: repítela y golpea doble` : '👁️ Lee tus movimientos';
+    const m = combat.monster;
+    const parts = [];
+    if (m.status && m.status.burn) parts.push(`🔥 Arde ${m.status.burn.dmg}×${m.status.burn.turns}`);
+    if (m.status && m.status.poison > 0) parts.push(`☠️ Veneno ${m.status.poison}`);
+    if (m.ai === 'reader') {
+        const last = RPG_ACTION_NAMES[combat.lastAction];
+        parts.push(last ? `👁️ Recuerda ${last}: repítela y golpea doble` : '👁️ Lee tus movimientos');
+    }
+    return parts.join(' · ');
+}
+
+function _rpgWeaponIcon(hero) {
+    const w = hero.equipment && hero.equipment.weapon;
+    return (w && Items.DAMAGE_TYPES[w.damaged] && Items.DAMAGE_TYPES[w.damaged].icon) || '🗡️';
 }
 
 /** Dibuja las dos cartas y el menú de acciones. opts.menu: 'main' | 'skills' */
@@ -260,7 +285,7 @@ export function renderRpgCombat(combat, opts = {}) {
 
     if (opts.menu === 'skills') {
         const skillButtons = Object.keys(Engine.RPG_SKILLS).map(id => {
-            const s = Engine.rpgSkillInfo(hero, id);
+            const s = Engine.rpgSkillInfo(hero, id, combat);
             const cd = combat.cooldowns[s.id];
             const hint = cd > 0 ? `${s.desc} · Enfriando (${cd})` : `${s.desc} · Listo`;
             return _rpgActionButton(`data-rpg-action="skill" data-rpg-skill="${esc(s.id)}"`, s.icon, s.name, hint, cd > 0);
@@ -269,7 +294,9 @@ export function renderRpgCombat(combat, opts = {}) {
         return;
     }
 
-    const dmg = Engine.rpgAttackPreview(combat);
+    const hits = Engine.rpgAttackHits(combat);
+    const dmg = hits.reduce((a, b) => a + b, 0);
+    const attackHint = hits.length > 1 ? `Ataco ${hits.length} veces: ${hits.join(' + ')} = ${dmg} de daño` : `Ataco una vez: ${dmg} de daño`;
     const guarded = monster.intent && monster.intent.k === 'guard';
     const incoming = Engine.rpgIncomingPreview(combat, false);
     const defendHint = incoming > 0
@@ -280,7 +307,7 @@ export function renderRpgCombat(combat, opts = {}) {
     const fleeHint = canFlee ? 'Salgo del combate (me golpean al huir)'
         : (hero.vows && hero.vows.noFlee ? 'Tu voto de acero lo impide' : 'No se puede huir de este combate');
     bar.innerHTML =
-        _rpgActionButton('data-rpg-action="attack"', '🗡️', 'ATACAR', `Ataco una vez: ${dmg} de daño${guarded ? ' (se protege)' : ''}`, false) +
+        _rpgActionButton('data-rpg-action="attack"', _rpgWeaponIcon(hero), 'ATACAR', `${attackHint}${guarded ? ' (se protege)' : ''}`, false) +
         _rpgActionButton('data-rpg-action="defend"', '🛡️', 'DEFENDER', defendHint, false) +
         _rpgActionButton('data-rpg-action="skills"', '✨', 'HABILIDADES', noSkills ? 'Tu voto de silencio lo impide' : 'Golpe de Fuego y más', noSkills) +
         _rpgActionButton('data-rpg-action="flee"', '🏃', 'HUIR', fleeHint, !canFlee);
@@ -371,6 +398,60 @@ export function renderRpgEventResult(view) {
         <button type="button" id="btnRpgEventContinue" class="btn-forge">${esc(view.button || 'CONTINUAR')}</button>`;
 }
 
+// --- 🎁 Botín: 1 de 3 objetos, comparar y equipar o descartar ---
+
+const _signedStat = (n, label) => (n ? `<span class="rpg-event-chip ${n > 0 ? 'is-good' : 'is-bad'}">${n > 0 ? '+' : '−'}${Math.abs(n)} ${label}</span>` : '');
+
+function _rpgItemLinesHtml(item) {
+    return Items.describeItem(item).map(l => `<i>${esc(l)}</i>`).join('');
+}
+
+function _rpgItemKind(item) {
+    const def = Items.ITEM_SLOTS[item.slot];
+    const dmg = item.damaged && Items.DAMAGE_TYPES[item.damaged];
+    return `${def.icon} ${def.name}${dmg ? ` · ${dmg.icon} ${dmg.name}` : ''}`;
+}
+
+/**
+ * view: { icon, title, text, offers: [{ item, delta, current }], selected, discardHeal }
+ */
+export function renderRpgLoot(view) {
+    const el = document.getElementById('rpgLootBody');
+    if (!el || !view) return;
+    const cards = view.offers.map((o, i) => {
+        const it = o.item;
+        const chips = _signedStat(o.delta.atq, 'ATK') + _signedStat(o.delta.maxHp, 'HP máx') + _signedStat(o.delta.guard, 'guardia');
+        return `<button type="button" class="rpg-loot-card ${view.selected === i ? 'is-selected' : ''}" data-rpg-loot-pick="${i}" data-rarity="${esc(it.rarity)}" style="--rarity:${esc(it.color)}">
+            <span class="rpg-loot-rarity">${it.rarityIcon} ${esc(it.rarityName)}</span>
+            <span class="rpg-loot-icon">${it.icon}</span>
+            <span class="rpg-loot-name">${esc(it.name)}</span>
+            <span class="rpg-loot-kind">${esc(_rpgItemKind(it))}</span>
+            <span class="rpg-loot-lines">${_rpgItemLinesHtml(it)}</span>
+            ${chips ? `<span class="rpg-loot-delta">${chips}</span>` : ''}
+        </button>`;
+    }).join('');
+    const picked = view.selected != null ? view.offers[view.selected] : null;
+    let detail = '';
+    if (picked) {
+        const cur = picked.current;
+        detail = `<div class="rpg-loot-detail">
+            <div class="rpg-loot-current">${cur
+                ? `Ahora llevas: <b style="color:${esc(cur.color)}">${cur.rarityIcon} ${cur.icon} ${esc(cur.name)}</b> <span>${esc(Items.describeItem(cur).join(' · '))}</span>`
+                : `Tu ranura de ${esc(Items.ITEM_SLOTS[picked.item.slot].name.toLowerCase())} está <b>vacía</b>.`}</div>
+            <div class="rpg-loot-buttons">
+                <button type="button" id="btnRpgLootEquip" class="btn-forge">EQUIPAR ${picked.item.icon}${cur ? ' (pierdes lo que llevas)' : ''}</button>
+                <button type="button" id="btnRpgLootDiscard" class="btn-secondary">DESCARTAR · +${view.discardHeal} ❤️</button>
+            </div>
+        </div>`;
+    }
+    el.innerHTML = `
+        <div class="rpg-event-icon">${view.icon}</div>
+        <div class="rpg-event-title">${esc(view.title)}</div>
+        <p class="rpg-event-text">${esc(view.text)}</p>
+        <div class="rpg-loot-offers">${cards}</div>
+        ${detail}`;
+}
+
 // --- ▶️ Inicio: continuar partida guardada ---
 
 /** save: { floorText, hpText, seedCode } o null si no hay partida guardada. */
@@ -396,6 +477,8 @@ export function renderRpgEnd(summary) {
         `<div class="rpg-end-stat"><span class="rpg-end-stat-icon">${x.icon}</span><span class="rpg-end-stat-value">${esc(String(x.value))}</span><span class="rpg-end-stat-label">${esc(x.label)}</span></div>`).join('');
     const events = (summary.events || []).length
         ? `<div class="rpg-end-events"><b>Eventos vividos:</b> ${summary.events.map(esc).join(' · ')}</div>` : '';
+    const gear = (summary.gear || []).length
+        ? `<div class="rpg-end-gear">${summary.gear.map(g => `<span class="rpg-hero-tag" style="border-color:${esc(g.color)}">${g.rarity} ${g.icon} ${esc(g.name)}</span>`).join('')}</div>` : '';
     const build = (summary.build || []).length
         ? `<div class="rpg-end-build">${summary.build.map(b => `<span class="rpg-hero-tag">${esc(b)}</span>`).join('')}</div>` : '';
     el.className = `rpg-end-card ${win ? 'is-victory' : 'is-defeat'}`;
@@ -406,6 +489,7 @@ export function renderRpgEnd(summary) {
         ${summary.almost ? `<p class="rpg-end-almost">${esc(summary.almost)}</p>` : ''}
         <div class="rpg-end-floor">${esc(summary.floorText)}</div>
         <div class="rpg-end-stats">${stats}</div>
+        ${gear}
         ${build}
         ${events}
         <div class="rpg-end-seed">Semilla <code id="rpgEndSeed">${esc(summary.seedCode)}</code>

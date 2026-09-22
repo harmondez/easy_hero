@@ -1,6 +1,6 @@
 # ⚖️ Equilibrio — cómo se mide y dónde está
 
-> Resultado de la **entrega A** (1.0.1). El objetivo de diseño es que **un jugador medio gane 1 de cada 5 partidas (20 %)**.
+> Resultado de la **entrega B1** (1.0.2: equipo). El objetivo de diseño es que **un jugador medio gane 1 de cada 5 partidas (20 %)**.
 > Todo lo que hay aquí sale de `npm run balance`: se puede repetir y comprobar.
 
 ## 1. Cómo se mide
@@ -28,56 +28,47 @@ Los números viven en un solo archivo, [`src/data/balance.js`](../src/data/balan
 
 | Bot | Llega al jefe | **Vence al jefe** | Objetivo |
 |-----|:------------:|:-----------------:|:--------:|
-| Torpe | 32 % | **12,5 %** | ~3 % *(algo generoso, ver observaciones)* |
-| **Sensato** | 54 % | **18,8 %** | **~20 % ✅** |
-| Experto | 77 % | **53,8 %** | ~50 % ✅ |
+| Torpe | 2,5 % | **0,7 %** | ~3 % |
+| **Sensato** | 33 % | **22,3 %** | **~20 % ✅** |
+| Experto | 52 % | **37,8 %** | ~50 % |
 
-*(1000 partidas por bot.)*
+*(1000 partidas por bot. Los bots eligen y equipan objetos como haría un jugador de su nivel: el torpe se lleva uno al azar y
+lo equipa siempre; sensato y experto comparan y solo se quedan lo que mejora su puntuación.)*
 
-### Antes y después
+### Antes y después (entrega A → B1: equipo)
 
-| | Antes de la entrega A | Ahora |
+| | Con la 1.0.1 (sin equipo) | Ahora (1.0.2) |
 |--|:---------------------:|:-----:|
-| Un combate normal cuesta | **20-30 %** de la vida | **6-17 %** (el más caro, el 17 %, en el piso 5) |
-| Un sub-jefe con el héroe **sano** | **Lo mata** desde el piso 5 | Cuesta 23-42 %: es un reto **vencible** |
-| Un jugador sensato llega al jefe | 0,2 % | **54 %** |
-| Un jugador sensato **vence** al jefe | 0 % | **19 %** |
+| De dónde sale la fuerza del héroe | +1 ATK / +4 HP por cada victoria | **Solo del equipo** que encuentras |
+| ATK de un monstruo por piso | +0,28 | **+0,4** (para compensar el equipo) |
+| HP de un monstruo por piso | +3 | **+3,6** |
+| Un jugador sensato vence al jefe | 18,8 % | **22,3 %** |
+| Un jugador torpe vence al jefe | 12,5 % *(demasiado generoso)* | **0,7 %** *(sin builds no hay margen de error)* |
 
 ## 3. Qué se cambió
 
-Primero se añadieron las **mecánicas** (que ya, por sí solas, bajan el coste de cada combate) y después se afinaron los **números**,
-palanca a palanca, con el banco:
-
-| Mecánica | Efecto |
-|----------|--------|
-| 👁️ **Intenciones visibles** | El jugador ve el golpe que viene y puede defenderse justo cuando hace falta |
-| 🔥 **Hogueras** | Curan el 30 % y siempre hay una antes del jefe (~9 por mapa, ≥ 2 en todo camino) |
-| 💀 **Sub-jefes opcionales** | Siempre hay una salida sin ellos; pasan de ~20 % a ~10 % de los nodos |
-| 👹 **15 monstruos distintos** | Cada uno con su patrón: carga, se protege, se cura… |
-
-| Número | Antes | Ahora |
-|--------|:-----:|:-----:|
-| ATK de un monstruo por piso | +0,5 | **+0,28** |
-| Sub-jefe: vida / ATK | ×2,5 / +2 | **×1,3 / +1** |
-| Jefe final: vida / ATK | ×3,5 / +5 | **×1,5 / +2** |
-| Peso de los sub-jefes en el mapa | 20 | **10** |
-| Peso de las hogueras | — | 12 |
+- **Cofres, hoguera y sub-jefes ya no dan números fijos**: ofrecen 1 de 3 objetos (chest sin mínimo, hoguera ≥ 🟢, sub-jefe ≥ 🔵).
+- **La victoria dejó de dar fuerza.** Con el crecimiento automático y equipo a la vez, el sensato ganaba el 85 %: demasiado. Se quitó
+  del todo (el plan preveía mantenerlo «hasta la entrega B», pero con equipo ya sobraba).
+- **El piso 1 es siempre un cofre**: sin un primer objeto, el 15 % del sensato moría en el piso 5 antes de encontrar nada.
+- **Monstruos más duros** (`atkPerFloor 0,4`, `hpPerFloor 3,6`) para que el equipo se note sin desequilibrar la curva.
 
 ## 4. Observaciones y cosas por decidir
 
-- **El bot torpe gana un 12,5 %.** Es más de lo previsto (~3 %): el juego perdona bastante a quien solo pulsa *Atacar*. Sigue habiendo
-  diferencia entre jugar mal (12,5 %), bien (19 %) y muy bien (54 %), pero la brecha entre torpe y sensato es corta. Se puede ampliar con
-  golpes fuertes más castigadores, aunque también bajaría el porcentaje del jugador medio.
-- **Un pico de dificultad en el piso 14.** El **Jabalí Colosal** (justo antes de la hoguera final) mata al 24 % de los jugadores
-  sensatos que caen. Es la última pelea antes de poder curarse. Se puede suavizar moviendo el monstruo o dando una hoguera antes.
-- **El jefe final es la causa del 36 % de las muertes del sensato.** Es lo esperado: es el reto final.
-- **La tasa depende de los bots.** Un jugador humano decide de otra forma. Cuando haya jugadores, las métricas locales (secundario
-  S15) darán datos reales para reajustar.
-- **Se recalibrará en cada entrega.** El equipo y las mejoras (entrega B) añaden mucho poder: el banco se ejecutará de nuevo.
+- **El torpe casi no gana (0,7 %).** Sin el colchón de +ATK/+HP por victoria, equivocarse de objeto (el torpe equipa el primero que
+  sale, sin comparar) sale caro. Es coherente con el objetivo («el suelo: alguien que no piensa»), pero conviene vigilarlo cuando
+  lleguen las mejoras pasivas (B2): si compensan de más, el suelo subirá solo.
+- **El experto (37,8 %) ya no dobla tan claramente al sensato (22,3 %).** Ambos usan la misma lógica de «qué objeto me conviene» en
+  el banco; la diferencia real está en cómo juegan el combate y el mapa. Con las mejoras de B2 debería volver a abrirse la brecha.
+- **Pico de dificultad en el piso 14** (el Jabalí Colosal, justo antes de la hoguera final): sigue pendiente de revisar.
+- **El jefe final** sigue siendo la causa más común de derrota del sensato.
+- **La tasa depende de cómo elige el bot su equipo**, no solo de cómo pelea. Con jugadores reales esto puede variar bastante:
+  cuando haya métricas (secundario S15) se reajustará con datos.
+- **Se recalibrará otra vez en B2** (mejoras «elige 1 de 3» y afinidad): al sumar otra fuente de poder, el banco se ejecutará de nuevo.
 
 ## 5. Cómo volver a ajustar
 
 1. Ejecuta `npm run balance` y mira dónde mueren los bots.
-2. Prueba **una sola** palanca con `--set` (por ejemplo, `--set monster.atkPerFloor=0.3`).
+2. Prueba **una sola** palanca con `--set` (por ejemplo, `--set monster.atkPerFloor=0.38`).
 3. Cuando una variante guste, cambia el número en `src/data/balance.js` y ejecuta `npm test`: el vigilante confirma que sigue dentro de las bandas.
 4. Anota aquí el antes y el después.

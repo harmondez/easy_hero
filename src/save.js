@@ -1,5 +1,5 @@
-import { createRng } from './rng.js?v=1.0.1';
-import { GAME_VERSION } from './version.js?v=1.0.1';
+import { createRng } from './rng.js?v=1.0.2';
+import { GAME_VERSION } from './version.js?v=1.0.2';
 
 // =============================================
 // 💾 Guardado de partida (puro: recibe el almacenamiento por parámetro, así se prueba sin navegador)
@@ -9,9 +9,15 @@ import { GAME_VERSION } from './version.js?v=1.0.1';
 // El guardado lleva una versión: si el formato cambia en el futuro, uno antiguo se descarta con aviso en lugar de romper el juego.
 // =============================================
 export const SAVE_KEY = 'easy-hero-save';
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;   // 2: el héroe lleva equipo y hay botín pendiente
 
 const clone = o => JSON.parse(JSON.stringify(o));
+
+// Del combate se guarda todo menos el héroe y el generador aleatorio (esos se restauran aparte)
+function _combatData(c) {
+    const { hero, rng, ...rest } = c;
+    return rest;
+}
 
 /** Convierte el estado de la partida en algo que se puede guardar como texto (o null si no hay partida). */
 export function snapshotRun(rpg) {
@@ -35,8 +41,9 @@ export function snapshotRun(rpg) {
         pendingNodeId: rpg.pendingNodeId,
         eventCombat: rpg.eventCombat,
         combatResult: rpg.combatResult,
+        loot: rpg.loot || null,
         // El héroe y el generador aleatorio se restauran aparte: el combate solo guarda lo suyo
-        combat: c ? { monster: c.monster, turn: c.turn, defending: c.defending, cooldowns: c.cooldowns, lastAction: c.lastAction, over: c.over, result: c.result } : null,
+        combat: c ? _combatData(c) : null,
         event: rpg.event ? { nodeId: rpg.event.node.id, session: rpg.event.session, result: rpg.event.result, view: rpg.event.view } : null
     });
 }
@@ -47,6 +54,7 @@ export function restoreRun(data) {
         if (!data || data.v !== SAVE_VERSION) return null;
         if (!data.hero || !data.map || !Array.isArray(data.map.nodes) || typeof data.seed !== 'number') return null;
         if (!Number.isFinite(data.hero.hp) || !Number.isFinite(data.hero.maxHp) || !Number.isFinite(data.hero.atq)) return null;
+        if (!data.hero.equipment) return null;
         const rng = createRng(data.seed);
         if (data.rngState != null) rng.state = data.rngState;
         const rpg = {
@@ -62,6 +70,7 @@ export function restoreRun(data) {
             pendingNodeId: data.pendingNodeId || null,
             eventCombat: data.eventCombat || null,
             combatResult: data.combatResult || null,
+            loot: data.loot || null,
             combat: null, event: null
         };
         if (data.combat) rpg.combat = { ...data.combat, hero: rpg.hero, rng };

@@ -75,7 +75,7 @@ assert('Hay nodos de evento 🎲 en el mapa y en la leyenda',
     (await page.$$eval('#rpgMap .rpg-node.type-event', els => els.length)) >= 6
     && (await page.$eval('#rpgLegend', el => el.textContent)).includes('Evento'));
 assert('Hay hogueras 🔥 en el mapa y en la leyenda',
-    (await page.$$eval('#rpgMap .rpg-node.type-campfire', els => els.length)) >= 8
+    (await page.$$eval('#rpgMap .rpg-node.type-campfire', els => els.length)) >= 5
     && (await page.$eval('#rpgLegend', el => el.textContent)).includes('Hoguera'));
 assert('Los sub-jefes son minoría en el mapa (menos del 15 % de los nodos)',
     (await page.$$eval('#rpgMap .rpg-node.type-subboss', els => els.length)) < 0.15 * (await page.$$eval('#rpgMap .rpg-node', els => els.length)));
@@ -136,8 +136,8 @@ assert('Ganar muestra el panel de victoria', (await page.$eval('#rpgCombatResult
 await page.click('#btnRpgCombatContinue');
 await sleep(300);
 assert('Tras ganar, el nodo pasa a ser tu posición', (await page.$$('#rpgMap .rpg-node.is-current')).length === 1);
-assert('El héroe se hizo más fuerte', await page.evaluate(() =>
-    window.gameState.rpg.hero.atq === 2 && window.gameState.rpg.hero.level === 2));
+assert('Ganar ya no da fuerza (viene del equipo); solo sube el nivel', await page.evaluate(() =>
+    window.gameState.rpg.hero.atq === 1 && window.gameState.rpg.hero.level === 2));
 
 // ---------------------------------------------
 console.log('\n🎲 Eventos en el navegador');
@@ -163,11 +163,21 @@ async function resolveEventFirstOptions() {
         if (await visible('#rpgCombatView')) await finishCombat();
     }
 }
+// Botín abierto: se lleva la primera oferta y la equipa
+async function takeLoot() {
+    for (let i = 0; i < 3 && await visible('#rpgLootView'); i++) {
+        await page.click('[data-rpg-loot-pick="0"]');
+        await sleep(40);
+        await page.click('#btnRpgLootEquip');
+        await sleep(100);
+    }
+}
 async function stepNode(node) {
     await node.click();
     await sleep(100);
     if (await visible('#rpgCombatView')) await finishCombat();
     else if (await visible('#rpgEventView')) await resolveEventFirstOptions();
+    await takeLoot();
 }
 // Nueva ruta con un héroe casi invencible; se camina hasta un evento y se fuerza cuál es
 async function openEvent(target) {
@@ -190,7 +200,7 @@ async function openEvent(target) {
 }
 const eventText = () => page.$eval('#rpgEventBody', el => el.textContent);
 const heroNow = () => page.evaluate(() => JSON.parse(JSON.stringify(window.gameState.rpg.hero)));
-const chips = () => page.$$eval('.rpg-event-chip', els => els.map(e => e.textContent));
+const chips = () => page.$$eval('#rpgEventBody .rpg-event-chip', els => els.map(e => e.textContent));
 
 // -- Evento genérico: situación + 2 decisiones + resultado
 await openEvent('pozo_deseos');
@@ -266,6 +276,7 @@ for (let step = 0; step < 12 && !sawLockedSkills; step++) {
     if (!avail.length) break;
     await avail[0].click();
     await sleep(150);
+    await takeLoot();
     if (await visible('#rpgCombatView')) {
         sawLockedSkills = await page.$eval('[data-rpg-action="skills"]', el => el.disabled);
         await finishCombat();
@@ -371,7 +382,7 @@ console.log('\n🔥 Hoguera');
     assert('Pisar una hoguera abre la vista de descanso con 2 decisiones', await visible('#rpgEventView')
         && (await eventText()).includes('Hoguera') && (await page.$$('#rpgEventBody [data-rpg-event-opt]')).length === 2);
     const opts = await page.$$eval('.rpg-event-option', els => els.map(e => e.textContent));
-    assert('Las opciones son Descansar (con la cura a la vista) y Afilar el arma', /Descansar.*30 %/.test(opts[0]) && /Afilar/.test(opts[1]));
+    assert('Las opciones son Descansar (con la cura a la vista) y Equiparte', /Descansar.*30 %/.test(opts[0]) && /Equiparte/.test(opts[1]));
     await page.screenshot({ path: shot('hoguera'), fullPage: true });
     await page.click('[data-rpg-event-opt="0"]');
     await sleep(150);
@@ -385,18 +396,26 @@ console.log('\n🔥 Hoguera');
     const camp2 = await walkTo('campfire');
     await camp2.click();
     await sleep(150);
-    const atqBeforeSharpen = (await heroNow()).atq;
     await page.click('[data-rpg-event-opt="1"]');
     await sleep(150);
-    assert('Afilar el arma da +1 ATK', (await chips()).join('|') === '+1 ATK' && (await heroNow()).atq === atqBeforeSharpen + 1);
+    assert('Equiparte no cambia nada por sí solo', (await chips()).length === 0);
     await page.click('#btnRpgEventContinue');
-    await sleep(150);
+    await sleep(200);
+    assert('…y abre el botín de la hoguera: 3 objetos, todos 🟢 o mejor',
+        await visible('#rpgLootView') && (await page.$$('.rpg-loot-card')).length === 3
+        && (await page.$$eval('.rpg-loot-card', els => els.every(e => e.dataset.rarity !== 'comun'))));
+    await takeLoot();
+    assert('Tras elegir vuelves al mapa con el objeto equipado', await visible('#rpgMapView')
+        && await page.evaluate(() => Object.values(window.gameState.rpg.hero.equipment).filter(Boolean).length >= 2));
 }
 
 // Abre un combate concreto (héroe con 500 de vida y 1 de ATK) para probar la interfaz sin depender del mapa
 async function showCombat(type, floor, heroHp = 500) {
     await page.evaluate(({ type, floor, heroHp }) => {
         const r = window.gameState.rpg;
+        // Equipo limpio: el botín recogido en pasos anteriores no debe alterar estas pruebas deterministas
+        r.hero.equipment = { weapon: window.Items.createStarterItem(), secondary: null, armor: null, accessory: null };
+        r.hero.guard = 0; r.hero.skillMods = {};
         r.hero.hp = heroHp; r.hero.maxHp = Math.max(heroHp, r.hero.maxHp); r.hero.atq = 1;
         r.combat = window.Engine.createRpgCombat(r.hero, window.Engine.createRpgMonster(type, floor), r.rng);
         r.pendingNodeId = r.map.nodes[0].id; r.combatMenu = 'main';

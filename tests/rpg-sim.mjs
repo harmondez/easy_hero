@@ -32,11 +32,13 @@ console.log('\n🗡️ Héroe y monstruos (escala propia del RPG)');
 const hero = createRpgHero();
 assert('el héroe empieza con ATK 1 / HP 25', hero.atq === 1 && hero.hp === 25);
 assert('maxHp = HP inicial y nivel 1', hero.maxHp === 25 && hero.level === 1);
-assert('createRpgHero devuelve una copia (no muta la base)', (hero.atq = 99, RPG_HERO_BASE.atq === 1));
-assert('el héroe solo tiene ATK y HP como atributos (sin DEF) más votos, mejoras y afinidades vacíos', (() => {
+assert('createRpgHero devuelve una copia (no muta la base)', (hero.atq = 99, RPG_HERO_BASE.atq === 0));
+hero.atq = 1;
+assert('el héroe solo tiene ATK, HP y guardia como atributos (sin DEF) más equipo, votos, mejoras y afinidades', (() => {
     const h = createRpgHero();
     const keys = Object.keys(h).sort().join(',');
-    return keys === 'affinity,atq,color,hp,icon,level,maxHp,name,skillMods,vows'
+    return keys === 'affinity,atq,color,equipment,guard,hp,icon,level,maxHp,name,skillMods,vows'
+        && h.guard === 0 && h.equipment.weapon.baseId === 'espada_sendero' && !h.equipment.secondary && !h.equipment.armor && !h.equipment.accessory
         && Object.keys(h.vows).length === 0 && Object.keys(h.skillMods).length === 0
         && Object.values(h.affinity).every(v => v === 0);
 })());
@@ -95,9 +97,10 @@ console.log('\n⚔️ Combate por turnos');
     assert('defender contra un golpe de 1 no lo anula (redondeo hacia arriba)', c.hero.hp === 24);
 
     // Habilidad: 5 de fuego + enfriamiento de 3 rondas
-    c = fresh('monster', 4); // HP 18
+    c = fresh('monster', 4);
+    const hp4 = c.monster.hp;
     r = rpgCombatAction(c, 'skill', 'fire_strike');
-    assert('Golpe de Fuego inflige 5 de daño', c.monster.hp === 18 - 5);
+    assert('Golpe de Fuego inflige 5 de daño', c.monster.hp === hp4 - 5);
     assert('el héroe no tiene DEF: el monstruo golpea con todo su ATK', (() => {
         const cc = freshPlain(4, 60);
         rpgCombatAction(cc, 'attack');
@@ -105,7 +108,7 @@ console.log('\n⚔️ Combate por turnos');
     })());
     assert('la habilidad queda enfriándose (3)', c.cooldowns.fire_strike === 3 && !rpgSkillReady(c, 'fire_strike'));
     r = rpgCombatAction(c, 'skill');
-    assert('no se puede usar mientras se enfría', r.ok === false && c.monster.hp === 13);
+    assert('no se puede usar mientras se enfría', r.ok === false && c.monster.hp === hp4 - 5);
     rpgCombatAction(c, 'attack'); // 3 -> 2
     rpgCombatAction(c, 'attack'); // 2 -> 1
     assert('sigue enfriándose 2 rondas después', c.cooldowns.fire_strike === 1 && !rpgSkillReady(c, 'fire_strike'));
@@ -135,10 +138,10 @@ console.log('\n⚔️ Combate por turnos');
     // Recompensas
     const h = createRpgHero();
     applyRpgReward(h, rpgVictoryReward('monster'));
-    assert('victoria sobre monstruo: +1 ATK, +4 HP máx (y curación) y nivel 2', h.atq === 2 && h.maxHp === 29 && h.hp === 29 && h.level === 2);
+    assert('victoria sobre monstruo: ya no da fuerza (solo sube el nivel: la fuerza viene del equipo)', h.atq === 1 && h.maxHp === 25 && h.hp === 25 && h.level === 2);
     const h2 = createRpgHero(); h2.hp = 10;
     applyRpgReward(h2, rpgVictoryReward('subboss'));
-    assert('victoria sobre sub-jefe: +2 ATK, +8 HP', h2.atq === 3 && h2.maxHp === 33 && h2.hp === 18);
+    assert('victoria sobre sub-jefe: tampoco da fuerza (su premio es un objeto)', h2.atq === 1 && h2.maxHp === 25 && h2.hp === 10);
 
     // Un héroe que va creciendo debería poder con los primeros monstruos
     const grow = createRpgHero();

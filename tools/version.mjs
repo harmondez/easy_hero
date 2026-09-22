@@ -93,10 +93,16 @@ export function planRelease(next, date) {
     if (!SEMVER.test(next)) throw new Error(`Versión no válida: ${next}`);
     if (cmp(next, current) <= 0) throw new Error(`La versión nueva (${next}) tiene que ser mayor que la actual (${current})`);
     const changes = [];
+    const buf = new Map(); // un archivo puede recibir varias `edit()`: se encadenan sobre el mismo texto en memoria
     const edit = (f, fn) => {
-        const { text, crlf } = read(f);
-        const after = fn(text);
-        if (after !== text) changes.push({ file: f, crlf, before: text, after });
+        let entry = buf.get(f);
+        if (!entry) {
+            const { text, crlf } = read(f);
+            entry = { file: f, crlf, before: text, after: text };
+            buf.set(f, entry);
+            changes.push(entry);
+        }
+        entry.after = fn(entry.after);
     };
     edit('package.json', t => t.replace(/("version":\s*")[^"]+(")/, `$1${next}$2`));
     edit('src/version.js', t => t.replace(/(GAME_VERSION = ')[^']+(')/, `$1${next}$2`).replace(/(RELEASE_DATE = ')[^']+(')/, `$1${date}$2`));
@@ -109,7 +115,7 @@ export function planRelease(next, date) {
         const pending = m[2].trim() || '_(sin notas: rellena qué ha cambiado en esta versión)_';
         return t.replace(m[0], `## [Sin publicar]\n\n## [${next}] - ${date}\n\n${pending}\n`);
     });
-    return { current, next, changes };
+    return { current, next, changes: changes.filter(c => c.after !== c.before) };
 }
 
 export function applyPlan(plan) { for (const c of plan.changes) write(c.file, c.after, c.crlf); }

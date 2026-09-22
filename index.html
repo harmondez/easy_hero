@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Easy Hit RPG (título provisional)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=1.0.1">
+    <link rel="stylesheet" href="style.css?v=1.0.2">
 </head>
 <body>
     <header class="game-header">
         <span class="game-title">EASY HIT <span class="game-title-accent">RPG</span></span>
-        <span class="game-version">v1.0.1 · en desarrollo</span>
+        <span class="game-version">v1.0.2 · en desarrollo</span>
     </header>
 
     <main class="main-content">
@@ -64,6 +64,11 @@
                 <div id="rpgEventBody" class="rpg-event-card"></div>
             </div>
 
+            <!-- Vista: botín (1 de 3 objetos) -->
+            <div id="rpgLootView" class="rpg-view" style="display:none;">
+                <div id="rpgLootBody" class="rpg-event-card rpg-loot"></div>
+            </div>
+
             <!-- Vista 3: combate (héroe a la izquierda, monstruo a la derecha) -->
             <div id="rpgCombatView" class="rpg-view" style="display:none;">
                 <div class="rpg-combat-title" id="rpgCombatTitle"></div>
@@ -83,6 +88,6 @@
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script type="module" src="src/main.js?v=1.0.1"></script>
+    <script type="module" src="src/main.js?v=1.0.2"></script>
 </body>
 </html>

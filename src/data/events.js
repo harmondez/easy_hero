@@ -19,8 +19,8 @@
 // El daño de un evento nunca mata: deja al héroe como mínimo en 1 HP.
 // =============================================
 
-import { RPG_BALANCE } from './balance.js?v=1.0.1';
-import { atk, CHARGE } from './monsters.js?v=1.0.1';
+import { RPG_BALANCE } from './balance.js?v=1.0.2';
+import { atk, CHARGE } from './monsters.js?v=1.0.2';
 
 // `pattern` = los movimientos que repite en ciclo (ver data/monsters.js); el jugador ve el siguiente antes de actuar.
 export const EVENT_MONSTERS = {
@@ -39,11 +39,11 @@ export const RPG_SPECIAL_EVENTS = [
         options: [
             { label: `Descansar (cura el ${Math.round(RPG_BALANCE.campfire.healPct * 100)} %)`, outcome: {
                 text: 'Te sientas junto al fuego y recuperas las fuerzas.',
-                fx: { healPct: RPG_BALANCE.campfire.healPct }
+                fx: { healPct: RPG_BALANCE.campfire.healPct, campfire: true }
             } },
-            { label: 'Afilar tu arma (+1 ATK)', outcome: {
-                text: 'Pasas la piedra por el filo hasta que brilla. Tu próximo golpe será más certero.',
-                fx: { atq: 1 }
+            { label: 'Equiparte (elige 1 de 3 objetos)', outcome: {
+                text: 'Junto al fuego revisas lo que otros viajeros dejaron atrás: algo te puede servir.',
+                loot: 'campfire'
             } }
         ]
     }
