@@ -1220,3 +1220,66 @@ body {
 .rpg-tier-card .rpg-end-achievements li { padding: 3px 0; line-height: 1.5; }
 .rpg-tier-card .rpg-end-achievements b { display: inline; margin: 0; }
 .rpg-tier-card .rpg-end-ach-title { margin-bottom: 6px; }
+
+/* --- ⚔️ Equipo siempre a la vista (mapa y botín) --- */
+.map-layout {
+    display: flex; align-items: flex-start; gap: 16px;
+    max-width: 1180px; margin: 0 auto;
+}
+.map-layout .rpg-map-wrap { flex: 1; min-width: 0; margin: 0; }
+
+.gear-panel {
+    flex: 0 0 240px;
+    padding: 14px;
+    background: linear-gradient(170deg, var(--bg-card-elevated), var(--bg-card));
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: var(--shadow-elevated);
+}
+.gear-panel-title {
+    margin-bottom: 10px; padding-bottom: 8px;
+    font-size: 0.72rem; font-weight: 800; letter-spacing: 2px;
+    color: var(--text-muted);
+    border-bottom: 1px dashed var(--border-color);
+}
+.gear-panel-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.gear-slot {
+    --rarity: var(--border-strong);
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 9px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--rarity);
+    border-radius: 8px;
+}
+.gear-slot.is-empty { opacity: 0.5; border-left-style: dashed; }
+.gear-slot.is-highlight { background: rgba(217, 102, 44, 0.16); border-color: var(--primary); }
+.gear-slot-icon { font-size: 1.25rem; line-height: 1; flex-shrink: 0; }
+.gear-slot-body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.gear-slot-label { font-size: 0.62rem; letter-spacing: 1px; color: var(--text-dim); }
+.gear-slot-name {
+    font-size: 0.84rem; font-weight: 700; color: var(--text-main);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gear-slot-stats {
+    font-size: 0.7rem; color: var(--text-muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gear-panel-foot {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 10px; padding-top: 9px;
+    border-top: 1px dashed var(--border-color);
+}
+
+/* --- 🎁 Botín: un objeto, con el equipo al lado para comparar --- */
+.rpg-loot-layout { display: flex; align-items: flex-start; justify-content: center; gap: 16px; text-align: left; }
+.rpg-loot-main { flex: 1; min-width: 0; max-width: 520px; }
+.gear-panel-loot { flex: 0 0 230px; }
+
+@media (max-width: 860px) {
+    /* En columna, sin esto el mapa se encoge a su ancho mínimo de contenido en vez de ocupar la pantalla */
+    .map-layout, .rpg-loot-layout { flex-direction: column; align-items: stretch; }
+    .gear-panel, .gear-panel-loot { flex: 1 1 auto; width: 100%; align-self: stretch; }
+    .map-layout .rpg-map-wrap { width: 100%; }
+    .gear-panel-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

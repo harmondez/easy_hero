@@ -1,4 +1,4 @@
-import { RARITIES, RARITY_BY_ID, RARITY_MIN, rollRarity, discardHeal } from './data/rarities.js?v=1.4.0';
+import { RARITIES, RARITY_BY_ID, RARITY_MIN, RARITY_BIAS, rollRarity, discardHeal } from './data/rarities.js?v=1.4.0';
 import { ITEM_BASES, ITEM_BASE_BY_ID, ITEM_SLOTS, DAMAGE_TYPES, BASIC_WEAPON_ID, basesBySlot } from './data/items.js?v=1.4.0';
 import { AFFIX_POOL, AFFIX_UNIQUES, affixText } from './data/affixes.js?v=1.4.0';
 
@@ -12,8 +12,11 @@ export { RARITIES, RARITY_BY_ID, ITEM_SLOTS, DAMAGE_TYPES, ITEM_BASES, ITEM_BASE
 
 export const ITEM_SLOT_ORDER = ['weapon', 'secondary', 'armor', 'accessory'];
 export const ITEM_FLOOR_SCALE = 0.08;             // +8 % de poder por piso
-export const LOOT_OFFERS = 3;                      // «1 de 3»
+// Desde la 1.4.1 el botín ya no se elige entre tres: cae UN objeto y decides qué hacer con él.
+// Elegir el mejor de tres hacía que el 87 % de los botines fueran verdes o mejores, aunque la tabla
+// de rarezas diga que la mitad son grises: se veía el máximo de tres tiradas, no la distribución.
 export const LOOT_SOURCES = {
+    combat:   { id: 'combat',   title: 'Entre los restos',       icon: '🩸', min: null },
     chest:    { id: 'chest',    title: 'Cofre',                  icon: '🧰', min: null },
     campfire: { id: 'campfire', title: 'Junto a la hoguera',     icon: '🔥', min: RARITY_MIN.hoguera },
     subboss:  { id: 'subboss',  title: 'El botín del sub-jefe',  icon: '💀', min: RARITY_MIN.subboss },
@@ -61,14 +64,14 @@ const STAT_OF = {
  *                          rules, stats, discardHeal, desc }. Es un objeto plano y se puede guardar tal cual.
  * opts: { rng, floor, slot, baseId, minRarity, rarityId, avoidUniques: [ids] }
  */
-export function createRpgItem({ rng = Math.random, floor = 0, slot = null, baseId = null, minRarity = null, rarityId = null, avoidUniques = [] } = {}) {
+export function createRpgItem({ rng = Math.random, floor = 0, slot = null, baseId = null, minRarity = null, rarityId = null, rarityBias = null, avoidUniques = [] } = {}) {
     let base = baseId ? ITEM_BASE_BY_ID[baseId] : null;
     if (!base) {
         const pool = slot ? basesBySlot(slot) : ITEM_BASES;
         base = pool[Math.floor(rng() * pool.length)];
     }
     if (!base) return null;
-    const rarity = rarityId ? RARITY_BY_ID[rarityId] : rollRarity(rng, { min: minRarity });
+    const rarity = rarityId ? RARITY_BY_ID[rarityId] : rollRarity(rng, { min: minRarity, bias: rarityBias });
     if (!rarity) return null;
     const fac = itemPower(rarity.id, floor);
 
@@ -263,20 +266,19 @@ export function campfireBonus(hero) {
 /**
  * Las 3 ofertas de una fuente («chest», «campfire», «subboss»): ranuras distintas, con preferencia por las vacías.
  */
-export function rollLootOffers({ rng, floor, source = 'chest', hero = null, count = LOOT_OFFERS }) {
-    const min = (LOOT_SOURCES[source] || LOOT_SOURCES.chest).min;
+export function rollLootDrop({ rng, floor, source = 'chest', hero = null }) {
+    const def = LOOT_SOURCES[source] || LOOT_SOURCES.chest;
     const avoidUniques = hero ? equippedUniqueIds(hero) : [];
     const eq = (hero && hero.equipment) || {};
-    const slots = [];
+    // Las ranuras vacías salen tres veces más: tu primer botín casi nunca es un duplicado de lo que llevas
     const left = ITEM_SLOT_ORDER.map(s => ({ s, w: eq[s] ? 1 : 3 }));
-    const want = Math.min(count, left.length);
-    while (slots.length < want) {
-        const total = left.reduce((t, x) => t + x.w, 0);
-        let roll = rng() * total, k = 0;
-        for (; k < left.length - 1; k++) { roll -= left[k].w; if (roll < 0) break; }
-        slots.push(left.splice(k, 1)[0].s);
-    }
-    return slots.map(slot => createRpgItem({ rng, floor, slot, minRarity: min, avoidUniques }));
+    const total = left.reduce((t, x) => t + x.w, 0);
+    let roll = rng() * total, k = 0;
+    for (; k < left.length - 1; k++) { roll -= left[k].w; if (roll < 0) break; }
+    return createRpgItem({
+        rng, floor, slot: left[k].s,
+        minRarity: def.min, rarityBias: RARITY_BIAS[source] || null, avoidUniques
+    });
 }
 
 // ---------- Textos y comparaciones ----------

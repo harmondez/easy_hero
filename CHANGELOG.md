@@ -5,6 +5,28 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+### ✨ Novedades
+- ⚔️ **El equipo ya no se oculta.** Una columna fija junto al mapa muestra siempre las 4 ranuras, con nombre,
+  rareza y lo que da cada objeto — sin abrir ningún botón. También aparece junto al botín, para comparar sin
+  cambiar de pantalla. Lo que sí se sigue ocultando tras un botón es el inventario.
+- 🎁 **El botín ya no se elige 1 de 3: cae un solo objeto.** Elegir el mejor de tres hacía que el 87 % de los
+  botines fueran verdes o mejores aunque la tabla diga que la mitad son grises — se veía el máximo de tres
+  tiradas, no la distribución real. Ahora lo que cae es lo que cae.
+- 🩸 **Los combates normales también sueltan botín**, de vez en cuando (1 de cada 4) y casi siempre gris: es el
+  goteo constante. Lo bueno se sigue ganando en cofres y, sobre todo, en sub-jefes.
+
+### ⚖️ Equilibrio
+- Recalibrado tras el cambio de botín (el equipo llega más débil sin el «mejor de tres»): `hpPerFloor` 2,9 → 2,0.
+  El sensato vuelve a vencer al primer jefe ~40 % de las veces.
+- **Corregido un fallo de la 1.4.0**: el botín se fabricaba con el piso *dentro del tramo* (0-15) en vez de la
+  profundidad real, así que en tramos hondos el equipo se quedaba congelado mientras los monstruos escalaban sin
+  freno. Ahora usa la profundidad absoluta.
+
+### 🛠️ Por dentro
+- `Items.rollLootDrop` sustituye a `rollLootOffers`; `RARITY_BIAS` en `data/rarities.js` sesga la rareza según el
+  origen del botín (combate, cofre, hoguera, sub-jefe). `RPG_BALANCE.loot.combatDropChance = 0.25`.
+- `gearPanelHtml()`/`renderGearPanel()` en `src/ui.js`, reutilizados en el mapa y en la pantalla de botín.
+
 ## [1.4.0] - 2026-09-29
 
 ### ✨ Novedades

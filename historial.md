@@ -282,6 +282,48 @@ medallas del bestiario). `SAVE_VERSION` sube a 4.
 propios por tramo, y ocho variantes más ya diseñadas pero no construidas (Acorazado, Menguante, de la Tormenta,
 de la Escarcha, del Eco, del Enjambre…).
 
+## 2026-09-30 · Equipo siempre visible y botín sin elegir 1 de 3
+
+**De dónde salió.** Tres pedidos del usuario: (1) el equipo no debe ocultarse tras un botón, siempre en pantalla;
+(2) al elegir botín, seguir viendo el equipo para comparar sin cambiar de vista; (3) los verdes salen demasiado
+fácil, más grises y menos objetos fuertes en combates normales. Y una nota aparte: quitar el «1 de 3» y que cada
+combate tenga su propia probabilidad de soltar algo.
+
+**El hallazgo que cambió el análisis.** Antes de tocar números, se comprobó la matemática real: con la tabla de
+rarezas (50/28/14/6/2 %) y «elige 1 de 3», la probabilidad de que **al menos una** de las tres sea verde o mejor
+es del 87 %. El punto 3 no era un problema de pesos — era el «mejor de tres» inflando lo que se veía. Conclusión:
+**quitar el «1 de 3» resuelve el punto 3 sin tocar ni un peso.**
+
+**Decisión (del usuario, contra la recomendación).** Se ofrecieron tres opciones: mixto (goteo en combates,
+elegir en cofres/sub-jefe), quitar el «1 de 3» en todas partes, o no tocarlo. El usuario eligió **quitarlo en
+todas partes**: cofre, hoguera, sub-jefe y jefe pasan a dar un único objeto, igual que los combates normales.
+Asumido a sabiendas de que el juego pierde su única decisión de comparar-y-elegir en el botín; el foco pasa a la
+decisión de equipar/guardar/descartar sobre lo que cae.
+
+**Cómo quedó:**
+- `Items.rollLootDrop` (sustituye a `rollLootOffers`): una gota por evento de botín, con `RARITY_BIAS` por origen
+  — combate muy sesgado a gris (peso ×2,2 al común, ×0,15 al legendario), sub-jefe sesgado a lo bueno, y cofre y
+  hoguera con el peso base de la tabla (ya no inflado por el «mejor de 3»).
+- Combates normales: 25 % de probabilidad de soltar algo (`RPG_BALANCE.loot.combatDropChance`), casi siempre gris.
+- **Equipo siempre visible**: `gearPanelHtml()`/`renderGearPanel()` en `src/ui.js`, una columna fija junto al
+  mapa y reutilizada en la pantalla de botín (con la ranura afectada resaltada). El botón «🧍 PERSONAJE» pasa a
+  «🎒 INVENTARIO», porque el equipo ya no vive detrás de él — solo el inventario y el trofeo.
+
+**Bug real encontrado de paso (no pedido, se corrigió porque se estaba tocando el mismo código)**: el botín se
+fabricaba con `node.floor` (0-15, el piso DENTRO del tramo) en vez de la profundidad absoluta. En el tramo 3 el
+piso 8 daba un objeto de poder ×1,64 mientras el monstruo de al lado escalaba a ×3,4: el equipo se quedaba
+congelado mientras la mazmorra se disparaba, y el descenso se volvía imposible por una razón que no era la
+prevista. Corregido con `Engine.rpgAbsoluteFloor(tier, floor)` en `_rpgLootDepth()`.
+
+**Recalibración.** El botín más débil (una gota en vez del mejor de tres) bajó el equipo típico, así que el
+sensato cayó al 25 % de victorias. Se movió `hpPerFloor` 2,9 → **2,0** (una sola palanca, medida con el banco)
+para volver al objetivo ~40 %.
+
+**Verificación**: 720 comprobaciones (los tests de `items-sim.mjs` que asumían 3 ofertas se reescribieron para
+una gota, con comprobaciones nuevas de sesgo por origen). Se encontró y corrigió de paso un fallo real de CSS: en
+móvil, `align-items: flex-start` en el contenedor de la columna de equipo + mapa hacía que el mapa se encogiera a
+su ancho mínimo de contenido en vez de ocupar la pantalla, provocando que los nodos se solaparan.
+
 ---
 
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)

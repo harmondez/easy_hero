@@ -163,11 +163,9 @@ async function resolveEventFirstOptions() {
         if (await visible('#rpgCombatView')) await finishCombat();
     }
 }
-// Botín abierto: se lleva la primera oferta y la equipa
+// Botín abierto (un solo objeto desde la 1.4.1): lo equipa
 async function takeLoot() {
-    for (let i = 0; i < 3 && await visible('#rpgLootView'); i++) {
-        await page.click('[data-rpg-loot-pick="0"]');
-        await sleep(40);
+    if (await visible('#rpgLootView')) {
         await page.click('#btnRpgLootEquip');
         await sleep(100);
     }
@@ -407,9 +405,9 @@ console.log('\n🔥 Hoguera');
     assert('Equiparte no cambia nada por sí solo', (await chips()).length === 0);
     await page.click('#btnRpgEventContinue');
     await sleep(200);
-    assert('…y abre el botín de la hoguera: 3 objetos, todos 🟢 o mejor',
-        await visible('#rpgLootView') && (await page.$$('.rpg-loot-card')).length === 3
-        && (await page.$$eval('.rpg-loot-card', els => els.every(e => e.dataset.rarity !== 'comun'))));
+    assert('…y abre el botín de la hoguera: un objeto, 🟢 o mejor',
+        await visible('#rpgLootView') && (await page.$$('.rpg-loot-card')).length === 1
+        && (await page.$eval('.rpg-loot-card', el => el.dataset.rarity !== 'comun')));
     await takeLoot();
     assert('Tras elegir vuelves al mapa con el objeto equipado', await visible('#rpgMapView')
         && await page.evaluate(() => Object.values(window.gameState.rpg.hero.equipment).filter(Boolean).length >= 2));
@@ -445,8 +443,6 @@ console.log('\n🧍 Personaje: equipo, inventario y oro');
     await chest.click();
     await sleep(200);
     const invBefore = (await page.evaluate(() => window.gameState.rpg.hero.inventory.length));
-    await page.click('[data-rpg-loot-pick="0"]');
-    await sleep(80);
     assert('El botín ofrece EQUIPAR, GUARDAR y DESCARTAR', !!(await page.$('#btnRpgLootEquip')) && !!(await page.$('#btnRpgLootStore')) && !!(await page.$('#btnRpgLootDiscard')));
     await page.click('#btnRpgLootStore');
     await sleep(150);

@@ -105,16 +105,6 @@ export function rpgHeroTags(hero) {
     return tags;
 }
 
-// Las 4 ranuras del héroe: el borde tiene el color de la rareza; al pasar el ratón se lee el objeto
-function _rpgGearHtml(hero) {
-    return Items.ITEM_SLOT_ORDER.map(slot => {
-        const def = Items.ITEM_SLOTS[slot];
-        const it = hero.equipment && hero.equipment[slot];
-        if (!it) return `<span class="rpg-gear-slot is-empty" data-slot="${slot}" title="${esc(def.name)}: vacía">${def.icon}</span>`;
-        const tip = [`${it.rarityIcon} ${it.name}`, ...Items.describeItem(it)].join('\n');
-        return `<span class="rpg-gear-slot" data-slot="${slot}" data-rarity="${esc(it.rarity)}" style="--rarity:${esc(it.color)}" title="${esc(tip)}">${it.icon}</span>`;
-    }).join('');
-}
 
 export function renderRpgHeroPanel(hero, progressText, gold) {
     const el = document.getElementById('rpgHeroPanel');
@@ -132,7 +122,6 @@ export function renderRpgHeroPanel(hero, progressText, gold) {
                 ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
                 ${gold != null ? `<span class="rpg-stat gold">🪙 ${gold}</span>` : ''}
             </div>
-            <div class="rpg-gear" id="rpgGear">${_rpgGearHtml(hero)}</div>
             ${tagsHtml ? `<div class="rpg-hero-tags">${tagsHtml}</div>` : ''}
         </div>
         <div class="rpg-hero-progress">${esc(progressText || '')}</div>`;
@@ -470,7 +459,7 @@ export function renderRpgEventResult(view) {
         <button type="button" id="btnRpgEventContinue" class="btn-forge">${esc(view.button || 'CONTINUAR')}</button>`;
 }
 
-// --- 🎁 Botín: 1 de 3 objetos, comparar y equipar o descartar ---
+// --- 🎁 Botín: cae un objeto, se compara con el equipo (siempre visible) y se decide ---
 
 const _signedStat = (n, label) => (n ? `<span class="rpg-event-chip ${n > 0 ? 'is-good' : 'is-bad'}">${n > 0 ? '+' : '−'}${Math.abs(n)} ${label}</span>` : '');
 
@@ -487,20 +476,65 @@ function _rpgItemKind(item) {
 /**
  * view: { icon, title, text, offers: [{ item, delta, current }], selected, discardHeal }
  */
+/**
+ * El equipo del héroe, siempre a la vista: las 4 ranuras con lo que llevas puesto.
+ * Se usa en el mapa (columna fija) y en la pantalla de botín (para comparar sin abrir nada).
+ */
+export function gearPanelHtml(hero, opts = {}) {
+    if (!hero) return '';
+    const slots = Items.ITEM_SLOT_ORDER.map(slot => {
+        const def = Items.ITEM_SLOTS[slot];
+        const it = hero.equipment && hero.equipment[slot];
+        const highlight = opts.highlightSlot === slot ? ' is-highlight' : '';
+        if (!it) {
+            return `<li class="gear-slot is-empty${highlight}">
+                <span class="gear-slot-icon">${def.icon}</span>
+                <span class="gear-slot-body">
+                    <span class="gear-slot-label">${esc(def.name)}</span>
+                    <span class="gear-slot-name">Vacía</span>
+                </span></li>`;
+        }
+        const lines = Items.describeItem(it);
+        return `<li class="gear-slot${highlight}" style="--rarity:${esc(it.color)}" title="${esc([`${it.rarityIcon} ${it.name}`, ...lines].join('\n'))}">
+            <span class="gear-slot-icon">${it.icon}</span>
+            <span class="gear-slot-body">
+                <span class="gear-slot-label">${esc(def.name)}</span>
+                <span class="gear-slot-name">${esc(it.name)}</span>
+                <span class="gear-slot-stats">${esc(lines.slice(0, 2).join(' · '))}</span>
+            </span></li>`;
+    }).join('');
+    const gold = opts.gold != null ? `<span class="rpg-stat gold">🪙 ${opts.gold}</span>` : '';
+    return `
+        <div class="gear-panel-title">⚔️ Tu equipo</div>
+        <ul class="gear-panel-list">${slots}</ul>
+        <div class="gear-panel-foot">
+            <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
+            <span class="rpg-stat hp"><b>HP</b> ${hero.hp}/${hero.maxHp}</span>
+            ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
+            ${gold}
+        </div>`;
+}
+
+/** Pinta el panel de equipo fijo del mapa. */
+export function renderGearPanel(hero, gold) {
+    const el = document.getElementById('rpgGearPanel');
+    if (el) el.innerHTML = gearPanelHtml(hero, { gold });
+}
+
 export function renderRpgLoot(view) {
     const el = document.getElementById('rpgLootBody');
     if (!el || !view) return;
     const cards = view.offers.map((o, i) => {
         const it = o.item;
         const chips = _signedStat(o.delta.atq, 'ATK') + _signedStat(o.delta.maxHp, 'HP máx') + _signedStat(o.delta.guard, 'guardia');
-        return `<button type="button" class="rpg-loot-card ${view.selected === i ? 'is-selected' : ''}" data-rpg-loot-pick="${i}" data-rarity="${esc(it.rarity)}" style="--rarity:${esc(it.color)}">
+        return `<div class="rpg-loot-card is-selected" data-rarity="${esc(it.rarity)}" style="--rarity:${esc(it.color)}">
             <span class="rpg-loot-rarity">${it.rarityIcon} ${esc(it.rarityName)}</span>
             <span class="rpg-loot-icon">${it.icon}</span>
             <span class="rpg-loot-name">${esc(it.name)}</span>
             <span class="rpg-loot-kind">${esc(_rpgItemKind(it))}</span>
             <span class="rpg-loot-lines">${_rpgItemLinesHtml(it)}</span>
             ${chips ? `<span class="rpg-loot-delta">${chips}</span>` : ''}
-        </button>`;
+        </div>`;
     }).join('');
     const picked = view.selected != null ? view.offers[view.selected] : null;
     let detail = '';
@@ -520,12 +554,21 @@ export function renderRpgLoot(view) {
             <div class="rpg-loot-buttons">${buttons}</div>
         </div>`;
     }
+    // El equipo, a la vista también aquí: comparar no debería obligar a abrir otra pantalla
+    const gear = view.hero
+        ? `<aside class="gear-panel gear-panel-loot">${gearPanelHtml(view.hero, { highlightSlot: picked ? picked.item.slot : null })}</aside>`
+        : '';
     el.innerHTML = `
         <div class="rpg-event-icon">${view.icon}</div>
         <div class="rpg-event-title">${esc(view.title)}</div>
         <p class="rpg-event-text">${esc(view.text)}</p>
-        <div class="rpg-loot-offers">${cards}</div>
-        ${detail}`;
+        <div class="rpg-loot-layout">
+            ${gear}
+            <div class="rpg-loot-main">
+                <div class="rpg-loot-offers">${cards}</div>
+                ${detail}
+            </div>
+        </div>`;
 }
 
 // =============================================

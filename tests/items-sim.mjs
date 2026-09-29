@@ -3,7 +3,7 @@
 // Todo sobre el motor puro (sin navegador). El azar viene de una semilla, así que cada resultado se repite.
 // =============================================
 import {
-    createRpgItem, createStarterItem, equipItem, unequipSlot, discardItem, discardHealFor, rollLootOffers, itemPower, itemDelta, describeItem, traitText,
+    createRpgItem, createStarterItem, equipItem, unequipSlot, discardItem, discardHealFor, rollLootDrop, itemPower, itemDelta, describeItem, traitText,
     ruleSum, ITEM_SLOT_ORDER, ITEM_BASES, RARITIES, LOOT_SOURCES, campfireBonus, equippedUniqueIds,
     INVENTORY_SIZE, hasInventoryRoom, storeInInventory, removeFromInventory, equipFromInventory, equipAndStash
 } from '../src/items.js';
@@ -164,26 +164,34 @@ console.log('\n🧥 Equipar y descartar');
 }
 
 // =============================================
-console.log('\n🎁 Botín: 1 de 3');
+console.log('\n🎁 Botín: una gota (sin elegir 1 de 3)');
 {
     const hero = createRpgHero();
-    const offers = rollLootOffers({ rng: createRng(11), floor: 4, source: 'chest', hero });
-    assert('siempre hay 3 ofertas, de ranuras distintas', offers.length === 3 && new Set(offers.map(o => o.slot)).size === 3);
-    assert('la misma semilla ofrece lo mismo', JSON.stringify(offers) === JSON.stringify(rollLootOffers({ rng: createRng(11), floor: 4, source: 'chest', hero })));
+    const drop = rollLootDrop({ rng: createRng(11), floor: 4, source: 'chest', hero });
+    assert('el cofre da un único objeto', !!drop && !!drop.slot);
+    assert('la misma semilla da el mismo objeto', JSON.stringify(drop) === JSON.stringify(rollLootDrop({ rng: createRng(11), floor: 4, source: 'chest', hero })));
     let subOk = true, fireOk = true, emptyBias = 0, total = 0;
     for (let s = 1; s <= 400; s++) {
-        if (!rollLootOffers({ rng: createRng(s), floor: 6, source: 'subboss', hero }).every(o => RARITIES.findIndex(r => r.id === o.rarity) >= 2)) subOk = false;
-        if (!rollLootOffers({ rng: createRng(s), floor: 6, source: 'campfire', hero }).every(o => RARITIES.findIndex(r => r.id === o.rarity) >= 1)) fireOk = false;
-        const o = rollLootOffers({ rng: createRng(s), floor: 3, source: 'chest', hero });
-        total++; if (o.some(x => x.slot === 'weapon')) emptyBias++;
+        if (RARITIES.findIndex(r => r.id === rollLootDrop({ rng: createRng(s), floor: 6, source: 'subboss', hero }).rarity) < 2) subOk = false;
+        if (RARITIES.findIndex(r => r.id === rollLootDrop({ rng: createRng(s), floor: 6, source: 'campfire', hero }).rarity) < 1) fireOk = false;
+        total++; if (rollLootDrop({ rng: createRng(s), floor: 3, source: 'chest', hero }).slot === 'weapon') emptyBias++;
     }
     assert('el botín del sub-jefe es siempre 🔵 o mejor', subOk);
     assert('el de la hoguera es siempre 🟢 o mejor', fireOk);
-    assert('con 3 ranuras vacías, la ranura del arma (ya llena) aparece bastante menos (< 45 % de los cofres)', emptyBias / total < 0.45);
+    assert('con 3 ranuras vacías, la ranura del arma (ya llena) pesa menos (~10 % de los cofres)', emptyBias / total < 0.2);
     const geared = heroWith(fake('secondary'), fake('armor'), fake('accessory'));
     let weaponSeen = 0;
-    for (let s = 1; s <= 300; s++) if (rollLootOffers({ rng: createRng(s), floor: 3, hero: geared }).some(o => o.slot === 'weapon')) weaponSeen++;
-    assert('con todas las ranuras llenas, todas pesan igual: el arma sale en ~3 de cada 4 cofres', weaponSeen / 300 > 0.6 && weaponSeen / 300 < 0.9);
+    for (let s = 1; s <= 400; s++) if (rollLootDrop({ rng: createRng(s), floor: 3, source: 'chest', hero: geared }).slot === 'weapon') weaponSeen++;
+    assert('con todas las ranuras llenas, todas pesan igual: el arma sale ~1 de cada 4 veces', weaponSeen / 400 > 0.15 && weaponSeen / 400 < 0.35);
+
+    let comunSeen = 0, legendSeen = 0;
+    for (let s = 1; s <= 2000; s++) {
+        const r = rollLootDrop({ rng: createRng(s), floor: 3, source: 'combat', hero }).rarity;
+        if (r === 'comun') comunSeen++;
+        if (r === 'legendaria') legendSeen++;
+    }
+    assert('el goteo de combate es casi todo gris (>65 %) y lo fuerte es raro (<3 %)',
+        comunSeen / 2000 > 0.65 && legendSeen / 2000 < 0.03);
 
     // Legendarias: un único ya equipado no se repite
     const uniq = AFFIX_UNIQUES[0].id;
@@ -440,7 +448,7 @@ console.log('\n💾 Guardar el equipo y el combate');
     const c = createRpgCombat(hero, { ...dummy(), pattern: [{ k: 'attack', m: 1 }] }, rng);
     act(c, 'attack'); act(c, 'defend');
     const rpg = { seed: 21, rng, hero, map: { nodes: [{ id: 'a', floor: 0, next: [] }], floors: 2 }, currentId: 'a', visitedIds: ['a'], usedEvents: [], skipNext: false, stats: {}, log: [], combat: c,
-        loot: { source: 'chest', floor: 2, selected: 1, offers: rollLootOffers({ rng, floor: 2, source: 'chest', hero }) }, event: null };
+        loot: { source: 'chest', floor: 2, selected: 0, offers: [rollLootDrop({ rng, floor: 2, source: 'chest', hero })] }, event: null };
     const snap = JSON.parse(JSON.stringify(snapshotRun(rpg)));
     const back = restoreRun(snap);
     assert('el equipo del héroe vuelve igual tras guardar y cargar', JSON.stringify(back.hero.equipment) === JSON.stringify(hero.equipment) && back.hero.guard === hero.guard);

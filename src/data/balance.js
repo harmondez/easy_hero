@@ -8,10 +8,10 @@
 globalThis.__RPG_BALANCE__ = globalThis.__RPG_BALANCE__ || {
     // Estadísticas de un monstruo normal en el piso f (empezando en 0)
     monster: {
-        // Recalibrados en la 1.4.0: con el descenso sin fin, vencer al primer jefe dejó de ser la meta
-        // del juego y pasó a ser la PUERTA al bucle de verdad, así que tiene que cruzarla mucha más gente.
+        // Recalibrados en la 1.4.0 (descenso sin fin) y de nuevo en la 1.4.1 (el botín ya no se
+        // elige 1 de 3, así que el equipo llega más débil y hpPerFloor bajó para compensarlo).
         atkBase: 1, atkPerFloor: 0.34,   // ATK = atkBase + ⌊f × atkPerFloor⌋
-        hpBase: 6, hpPerFloor: 2.9,      // HP  = hpBase + hpPerFloor × f
+        hpBase: 6, hpPerFloor: 2.0,      // HP  = hpBase + hpPerFloor × f
         easyFloors: 3,                  // los primeros pisos son un «grupo fácil»
         easyFactor: 1                   // multiplicador de sus estadísticas
     },
@@ -35,6 +35,10 @@ globalThis.__RPG_BALANCE__ = globalThis.__RPG_BALANCE__ || {
     // `tierMul` es ACUMULATIVO por tramo (tramo 0 → ×1, tramo 1 → ×1,5, tramo 2 → ×2,25…). En el tramo 0
     // vale exactamente 1, así que el juego de siempre se comporta igual que antes de que esto existiera.
     depth: { tierMul: 1.5, goldMul: 1.6 },
+
+    // Botín: probabilidad de que un combate normal suelte un objeto (los sub-jefes y jefes siempre sueltan).
+    // Casi todo lo que cae así es gris: lo bueno se gana en cofres y sub-jefes (ver RARITY_BIAS).
+    loot: { combatDropChance: 0.25 },
 
     // Expedición: lo que rinde la mazmorra mientras no juegas. Rinde bastante menos que jugar
     // (una ruta da mucho más por hora), así que nunca sustituye a jugar: solo premia volver.

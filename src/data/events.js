@@ -41,7 +41,7 @@ export const RPG_SPECIAL_EVENTS = [
                 text: 'Te sientas junto al fuego y recuperas las fuerzas.',
                 fx: { healPct: RPG_BALANCE.campfire.healPct, campfire: true }
             } },
-            { label: 'Equiparte (elige 1 de 3 objetos)', outcome: {
+            { label: 'Equiparte (un objeto al azar)', outcome: {
                 text: 'Junto al fuego revisas lo que otros viajeros dejaron atrás: algo te puede servir.',
                 loot: 'campfire'
             } }

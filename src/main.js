@@ -125,6 +125,7 @@ function _rpgProgressText() {
 function _rpgRefreshMap(animate) {
     const r = gameState.rpg;
     UI.renderRpgHeroPanel(r.hero, _rpgProgressText(), meta.gold);
+    UI.renderGearPanel(r.hero, meta.gold);   // el equipo va siempre a la vista, no tras un botón
     UI.renderRpgMap(r.map, {
         currentId: r.currentId,
         visitedIds: r.visitedIds,
@@ -290,7 +291,7 @@ function _rpgEnterNode(nodeId) {
     }
     if (node.type === 'event') { _rpgStartEvent(node); return; }
     if (node.type === 'campfire') { _rpgStartEvent(node, 'hoguera'); return; }
-    // Cofre: solo da objetos (1 de 3)
+    // Cofre: siempre da un objeto
     _rpgAdvanceTo(nodeId);
     r.stats.chests++;
     log(`🧰 ${r.hero.name} abre un cofre (piso ${node.floor + 1}).`, 'victory');
@@ -303,19 +304,26 @@ function _rpgEnterNode(nodeId) {
     _rpgOpenLoot('chest', node.floor);
 }
 
-// --- 🎁 Botín: 1 de 3 objetos (o 1 solo, el trofeo del jefe); equipar, guardar en el inventario o descartar (cura) ---
+// --- 🎁 Botín: cae UN objeto y decides qué hacer con él (equipar, guardar o descartar, que cura) ---
+
+/** La profundidad real a la que se fabrica el botín: en el tramo 3, el piso 8 es el piso 56. */
+function _rpgLootDepth(floor) {
+    const r = gameState.rpg;
+    return Engine.rpgAbsoluteFloor((r.map && r.map.tier) || 0, floor);
+}
+
 function _rpgOpenLoot(source, floor) {
     const r = gameState.rpg;
-    let offers;
-    if (source === 'boss') {
-        // Un único objeto legendario garantizado: el trofeo del jefe final, para siempre en meta.js
-        offers = [Items.createRpgItem({ rng: r.rng, floor, rarityId: 'legendaria' })];
-    } else {
-        offers = Items.rollLootOffers({ rng: r.rng, floor, source, hero: r.hero });
-        offers.forEach(item => Meta.recordItemSeen(meta, item));
+    const depth = _rpgLootDepth(floor);
+    const item = source === 'boss'
+        // Un único objeto legendario garantizado: el trofeo del jefe, para siempre en meta.js
+        ? Items.createRpgItem({ rng: r.rng, floor: depth, rarityId: 'legendaria' })
+        : Items.rollLootDrop({ rng: r.rng, floor: depth, source, hero: r.hero });
+    if (source !== 'boss') {
+        Meta.recordItemSeen(meta, item);
         persistMeta();
     }
-    r.loot = { source, floor, selected: source === 'boss' ? 0 : null, offers };
+    r.loot = { source, floor, offers: [item], selected: 0 };
     UI.toggleRpgView('rpgLootView');
     UI.renderRpgLoot(_rpgLootView());
     persist();
@@ -326,29 +334,22 @@ function _rpgLootView() {
     const loot = r.loot;
     const isBoss = loot.source === 'boss';
     const src = Items.LOOT_SOURCES[loot.source] || Items.LOOT_SOURCES.chest;
-    const offers = loot.offers.map(item => ({
+    const item = loot.offers[0];
+    const offer = {
         item,
         delta: isBoss ? { atq: 0, maxHp: 0, guard: 0 } : Items.itemDelta(r.hero, item),
         current: isBoss ? meta.trophyItem : (r.hero.equipment[item.slot] || null)
-    }));
-    const picked = loot.selected != null ? offers[loot.selected] : null;
+    };
     return {
         icon: src.icon, title: src.title,
         text: isBoss
             ? (meta.trophyItem ? 'Ya tienes un trofeo. ¿Te quedas con el nuevo (sustituye al anterior para siempre) o conservas el que ya tenías?' : 'Tu primer trofeo: se queda contigo en todas las rutas futuras, para siempre.')
-            : (picked ? 'Compara y decide: equiparlo, guardarlo en el inventario o descartarlo (te cura).' : 'Elige 1 de 3 objetos. Los otros dos se quedan atrás.'),
-        offers, selected: loot.selected, isBoss,
+            : 'Compáralo con lo que llevas y decide: equiparlo, guardarlo en el inventario o descartarlo (te cura).',
+        offers: [offer], selected: 0, isBoss,
+        hero: r.hero,
         canStore: !isBoss && Items.hasInventoryRoom(r.hero),
-        discardHeal: picked ? Items.discardHealFor(r.hero, picked.item) : 0
+        discardHeal: Items.discardHealFor(r.hero, item)
     };
-}
-
-function _rpgLootSelect(index) {
-    const r = gameState.rpg;
-    if (!r.loot || r.loot.source === 'boss' || !r.loot.offers[index]) return;
-    r.loot.selected = r.loot.selected === index ? null : index;
-    UI.renderRpgLoot(_rpgLootView());
-    persist();
 }
 
 function _rpgLootClose() {
@@ -739,6 +740,7 @@ function _rpgCombatContinue() {
     if (!c || !c.over) return;
     const m = c.monster;
     const result = c.result;
+    const eventFight = r.eventCombat;   // los combates de evento tienen su propia recompensa: no sueltan botín
     r.combat = null;
     r.eventCombat = null;
     r.combatResult = null;
@@ -779,10 +781,17 @@ function _rpgCombatContinue() {
         r.stats.fled++;
         log(`🏃 ${r.hero.name} huye de ${m.name} y elige otro rumbo.`, 'system');
     }
+    const wasEventFight = !!eventFight;
     r.pendingNodeId = null;
     if (result === 'victory' && m.type === 'subboss') {
         log('💀 El sub-jefe deja un botín valioso.', 'victory');
         _rpgOpenLoot('subboss', m.floor);
+        return;
+    }
+    // Goteo: un combate normal suelta algo de vez en cuando (casi siempre gris). Los de evento no.
+    if (result === 'victory' && m.type === 'monster' && !wasEventFight && r.rng() < RPG_BALANCE.loot.combatDropChance) {
+        log(`🩸 ${m.name} deja algo entre los restos.`, 'victory');
+        _rpgOpenLoot('combat', m.floor);
         return;
     }
     UI.toggleRpgView('rpgMapView');
@@ -825,8 +834,6 @@ function initEvents() {
         if (e.target.closest('#btnRpgEventContinue')) _rpgEventContinue();
     });
     safeListener('rpgLootView', 'click', (e) => {
-        const pick = e.target.closest('[data-rpg-loot-pick]');
-        if (pick) { _rpgLootSelect(Number(pick.dataset.rpgLootPick)); return; }
         if (e.target.closest('#btnRpgLootEquip')) _rpgLootDecide('equip');
         else if (e.target.closest('#btnRpgLootStore')) _rpgLootDecide('store');
         else if (e.target.closest('#btnRpgLootDiscard')) _rpgLootDecide('discard');

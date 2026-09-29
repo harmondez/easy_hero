@@ -23,16 +23,28 @@ export const RARITY_MIN = { hoguera: 'poco_comun', subboss: 'rara' };
 /** Probabilidad de cada rareza, en tanto por uno (suma 1). */
 export const RARITY_WEIGHTS = RARITIES.map(r => r.weight);
 
+// Sesgo por origen del botín: multiplica el peso de cada rareza (mismo orden que RARITIES).
+// El goteo de los combates normales es casi todo gris a propósito: es lo que cae a todas horas.
+// Lo bueno se gana en los cofres y, sobre todo, en los sub-jefes.
+export const RARITY_BIAS = {
+    combat:   [2.2, 1, 0.5, 0.3, 0.15],
+    chest:    [1, 1, 1, 1, 1],
+    campfire: [1, 1, 1, 1, 1],
+    subboss:  [1, 1, 1.2, 1.4, 1.6],
+    boss:     [1, 1, 1, 1, 1]
+};
+
 /**
  * Sorteo de una rareza con el generador del juego (`rng() → [0,1)`).
- * Un objeto solo puede pedir una rareza de partida o un mínimo (p. ej. la hoguera nunca da comunes).
+ * `min` fija un suelo (la hoguera nunca da comunes) y `bias` multiplica los pesos según de dónde venga.
  */
-export function rollRarity(rng = Math.random, { min = null } = {}) {
+export function rollRarity(rng = Math.random, { min = null, bias = null } = {}) {
     const start = min ? RARITIES.findIndex(r => r.id === min) : 0;
     const pool = RARITIES.slice(start);
-    const total = pool.reduce((s, r) => s + r.weight, 0);
+    const weightOf = r => r.weight * (bias ? (bias[RARITIES.indexOf(r)] ?? 1) : 1);
+    const total = pool.reduce((s, r) => s + weightOf(r), 0);
     let roll = rng() * total;
-    for (const r of pool) { roll -= r.weight; if (roll <= 0) return r; }
+    for (const r of pool) { roll -= weightOf(r); if (roll <= 0) return r; }
     return pool[pool.length - 1];
 }
 

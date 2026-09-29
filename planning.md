@@ -12,16 +12,18 @@
 
 ## 📍 Estado actual
 
-**Publicado: entregas A y B1, decorado/onboarding, 4 paneles (Bestiario, Colección, Logros, Opciones),
-pantalla de Personaje, inventario, oro, trofeo del jefe, estadísticas primarias con nivel permanente, y el mapa
-al revés con niebla de guerra — hasta la versión 1.3.1.** Detalle en [historial.md](historial.md).
+**Publicado hasta la 1.4.0:** entregas A y B1, decorado/onboarding, 4 paneles, pantalla de Personaje/inventario,
+oro y trofeo del jefe, estadísticas primarias con nivel permanente, el mapa con niebla de guerra, y **el
+descenso sin fin** (tramos encadenados, La Forja, expedición, 90 monstruos y 22 variantes). Detalle en
+[historial.md](historial.md).
 
-**🚧 Sin publicar, listo para revisar (la 1.4.0, «El descenso»):** el juego **ya no tiene final**. Vencer al jefe
-abre otro tramo de 16 pisos (×1,5 acumulativo en dureza, ×1,6 en oro) al que se baja con la vida completa; la
-ruta acaba al morir y la marca es la profundidad. **La Forja** da por fin destino al oro con 8 mejoras
-permanentes, la **expedición** rinde mientras no juegas, hay **90 monstruos en 6 elencos** con 6 jefes y **22
-variantes** combinables («Orco Colérico de la Plaga»). Equilibrio recalibrado: el primer jefe pasa de meta a
-puerta del bucle, y el sensato sin mejoras lo vence el 39 % (antes 22 %). 717 comprobaciones en verde.
+**🚧 Sin publicar, listo para revisar:** el equipo ya no se oculta tras un botón — una columna fija lo muestra
+siempre, junto al mapa y junto al botín (para comparar sin cambiar de pantalla). El botín deja de elegirse «1 de
+3»: cae un único objeto, con la rareza sesgada según de dónde venga (los combates normales sueltan algo 1 de
+cada 4 veces, casi siempre gris; lo bueno se gana en cofres y sub-jefes). De paso, corregido un fallo real: el
+botín se fabricaba con el piso dentro del tramo en vez de la profundidad absoluta, así que en tramos hondos el
+equipo se quedaba congelado. Equilibrio recalibrado (`hpPerFloor` 2,9 → 2,0) para el nuevo botín, más débil sin
+el «mejor de tres». 720 comprobaciones en verde.
 Detalle y decisiones en [historial.md](historial.md).
 
 **Backlog abierto de B1 (no bloquea nada, se retoma cuando convenga):**

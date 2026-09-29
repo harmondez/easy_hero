@@ -137,7 +137,7 @@ function resolveOutcome(outcome, ctx, acc) {
  * Devuelve { ok, lines, changes, next, combat, skipFloor, loot }:
  *  - next: true si el evento continúa en otra pantalla (usa rpgEventScreen otra vez)
  *  - combat: { monster, hpFactor, onWin, onWinText } si el evento acaba en pelea
- *  - loot: la fuente de botín que se abre al continuar (p. ej. 'campfire'): 1 de 3 objetos
+ *  - loot: la fuente de botín que se abre al continuar (p. ej. 'campfire'): un objeto
  */
 export function resolveRpgEventChoice(session, index, hero, rng = Math.random) {
     const ev = session && getRpgEvent(session.eventId);

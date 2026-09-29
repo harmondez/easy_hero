@@ -11,8 +11,9 @@ import {
     RPG_COMBAT_TYPES, RPG_MAP_CONFIG
 } from '../src/engine.js';
 import * as Events from '../src/events.js';
-import { rollLootOffers, equipItem, discardItem, itemScore, ruleSum } from '../src/items.js';
+import { rollLootDrop, equipItem, discardItem, itemScore, ruleSum } from '../src/items.js';
 import { createRng } from '../src/rng.js';
+import { RPG_BALANCE } from '../src/data/balance.js';
 
 const STUB_RNG = () => 0.5;
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -115,21 +116,14 @@ function sampleEventOption(session, index, hero, rng, samples = 24) {
     return total / samples;
 }
 
-// ---------- Botín: el bot elige 1 de 3 y decide si equiparlo o descartarlo ----------
-/** Devuelve { equipped, discarded } tras resolver una oferta de botín. */
+// ---------- Botín: cae UN objeto; el bot decide si lo equipa o lo descarta ----------
+/** Devuelve { equipped, discarded } tras resolver una gota de botín. */
 function resolveLoot(botName, hero, rng, source, floor) {
-    const offers = rollLootOffers({ rng, floor, source, hero });
-    if (botName === 'torpe') {           // el torpe se lleva uno al azar y siempre lo equipa
-        equipItem(hero, offers[Math.floor(rng() * offers.length)]);
-        return { equipped: 1, discarded: 0 };
-    }
-    let best = null;
-    for (const it of offers) {
-        const gain = itemScore(it) - itemScore(hero.equipment[it.slot]);
-        if (!best || gain > best.gain) best = { it, gain };
-    }
-    if (best.gain > 0) { equipItem(hero, best.it); return { equipped: 1, discarded: 0 }; }
-    discardItem(hero, best.it);
+    const it = rollLootDrop({ rng, floor, source, hero });
+    if (botName === 'torpe') { equipItem(hero, it); return { equipped: 1, discarded: 0 }; }  // el torpe siempre equipa
+    const gain = itemScore(it) - itemScore(hero.equipment[it.slot]);
+    if (gain > 0) { equipItem(hero, it); return { equipped: 1, discarded: 0 }; }
+    discardItem(hero, it);
     return { equipped: 0, discarded: 1 };
 }
 
@@ -228,6 +222,9 @@ export function playRun(botName, seed, { cfg = RPG_MAP_CONFIG, god = false } = {
             if (out.result !== 'victory') { die(node, m); return res; }
             applyRpgReward(hero, rpgVictoryReward(node.type));
             if (node.type === 'subboss') { const l = resolveLoot(bot.policy, hero, rng, 'subboss', node.floor); res.equipped += l.equipped; res.discarded += l.discarded; }
+            else if (node.type === 'monster' && rng() < RPG_BALANCE.loot.combatDropChance) {
+                const l = resolveLoot(bot.policy, hero, rng, 'combat', node.floor); res.equipped += l.equipped; res.discarded += l.discarded;
+            }
         } else if (node.type === 'chest') {
             res.chests++;
             hero.hp = Math.min(hero.maxHp, hero.hp + ruleSum(hero, 'treasure_heal'));

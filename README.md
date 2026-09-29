@@ -39,7 +39,7 @@
 | 🌫️ | **Niebla de guerra**: el mapa se recorre hacia abajo desde el piso 0 y lo que queda a más de 3 pisos por delante se cubre hasta que te acercas |
 | 🧬 | **Estadísticas primarias**: Fuerza, Destreza, Inteligencia y Vitalidad, con crítico, esquiva y resistencia de verdad |
 | 📈 | **Nivel de personaje, permanente**: gana experiencia, sube de nivel y reparte tú mismo los puntos — te acompaña en todas tus rutas futuras |
-| 🧍 | **Pantalla de Personaje**: tu héroe, su equipo y un **inventario de 10 ranuras** para guardar objetos sin equiparlos |
+| ⚔️ | **El equipo siempre a la vista**, junto al mapa: nunca hace falta abrir nada para ver qué llevas puesto |
 | 🪙 | **Oro**: los monstruos dejan monedas al vencerlos; se acumula para siempre, incluso si mueres |
 | 🐉 | **El trofeo del jefe**: vence al Dragón Ancestral y te quedas con un objeto legendario para todas tus rutas futuras |
 | 🏰 | **Nueva ambientación**: fantasía oscura de mazmorra, piedra y forja en vez del azul genérico de antes |
@@ -152,7 +152,7 @@ Llevas **4 objetos equipados**. Cuando encuentras uno, decides: te lo pones (lo 
 | 💍 **Accesorio** | Un efecto pasivo |
 
 Los objetos tienen **5 rarezas**: ⚪ común · 🟢 poco común · 🔵 rara · 🟣 épica · 🟠 legendaria (esta última con un rasgo único).
-Cuanto más rara, más efectos trae, y cuanto más profundo lo encuentras, más fuerte es. Los encuentras en **cofres**, **hogueras** (mínimo 🟢) y **sub-jefes** (mínimo 🔵), siempre eligiendo 1 de 3.
+Cuanto más rara, más efectos trae, y cuanto más profundo lo encuentras, más fuerte es. Cada cofre, hoguera (mínimo 🟢) o sub-jefe (mínimo 🔵) te da **un objeto**, con tu equipo siempre a la vista para compararlo. Los combates normales también sueltan algo de vez en cuando, casi siempre común.
 
 El inventario se reinicia en cada ruta nueva, como el equipo — con una excepción: cada **jefe** que venzas te deja un objeto legendario **para siempre** (y si ya tenías uno, eliges con cuál te quedas). El **oro** tampoco se pierde nunca, aunque mueras: es lo que gastas en **La Forja**.
 
@@ -207,7 +207,7 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 - 🗺️ Mapa que cambia en cada tramo, con **niebla de guerra**
 - ⚔️ Combate por turnos: atacar, defender, habilidad y huir
 - 🧬 **Estadísticas primarias y nivel permanente**: Fuerza, Destreza, Inteligencia y Vitalidad; sube de nivel y reparte tú mismo los puntos
-- 🧍 **Pantalla de Personaje**: tu equipo, un **inventario de 10 ranuras** y tu oro, todo en un vistazo
+- ⚔️ **Tu equipo, siempre visible** junto al mapa, y un **inventario de 10 ranuras** (o más, con La Forja) tras un botón aparte
 - 🎒 **Equipo de 4 ranuras y 5 rarezas**, con 122 objetos y 24 afijos (ver más abajo)
 - 👁️ **Ves lo que va a hacer cada enemigo** antes de elegir, y **90 monstruos** con su propia forma de atacar
 - 🔥 **Hogueras** para descansar o equiparte, con una siempre antes del jefe
