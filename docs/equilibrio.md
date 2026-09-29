@@ -1,6 +1,48 @@
 # ⚖️ Equilibrio — cómo se mide y dónde está
 
-> Resultado de la **entrega B1** (1.0.2: equipo). El objetivo de diseño es que **un jugador medio gane 1 de cada 5 partidas (20 %)**.
+> **⚠️ Objetivo nuevo desde la 1.4.0.** Con el **descenso sin fin**, vencer al primer jefe dejó de ser el final
+> del juego y pasó a ser **la puerta del bucle**: si solo lo cruzara 1 de cada 5 jugadores, casi nadie llegaría a
+> ver lo que sostiene la partida. El objetivo pasa del **20 % al 40 %**, medido siempre **sin mejoras compradas**
+> en La Forja. La dificultad de verdad ya no vive en el primer jefe, sino en **hasta dónde aguantas bajando**.
+>
+> Lo de abajo describe el método (que no cambia) y el histórico. Resultado vigente en la sección 2.
+
+## 0. Resultado vigente (1.4.0)
+
+| Bot | Llega al primer jefe | **Lo vence** | Objetivo |
+|-----|:------------------:|:------------:|:--------:|
+| Torpe | 4 % | **3 %** | bajo |
+| **Sensato** | 51 % | **39 %** | **~40 % ✅** |
+| Experto | 65 % | **53 %** | alto |
+
+*(1000 partidas por bot, con un héroe **sin ninguna mejora de La Forja**. Un jugador veterano, con mejoras
+compradas, cruza el primer tramo con mucha más holgura: para él el reto empieza al bajar.)*
+
+**Palancas movidas** (de una en una, como manda la casa): `monster.hpPerFloor` 3,6 → **2,9** y
+`monster.atkPerFloor` 0,4 → **0,34**. Nada más se tocó.
+
+### La curva del descenso
+
+Cada tramo multiplica las estadísticas por **1,5 acumulativo** (y el oro por 1,6). Eso crea el muro que el
+jugador empuja comprando mejoras:
+
+| Tramo | Monstruo del piso 8 | Jefe del tramo |
+|:-----:|:-------------------:|:--------------:|
+| 0 | ATK 3 · HP 29 | ATK 8 · HP 75 |
+| 1 | ATK 5 · HP 44 | ATK 12 · HP 113 |
+| 2 | ATK 7 · HP 65 | ATK 18 · HP 169 |
+| 3 | ATK 10 · HP 98 | ATK 27 · HP 253 |
+| 5 | ATK 23 · HP 220 | ATK 61 · HP 570 |
+
+> **Limitación conocida**: el banco **no simula el descenso**. Los bots juegan el tramo 0 y no compran nada, así
+> que esta tabla está calculada, no medida. Saber en qué tramo muere un jugador con X mejoras exige extender
+> `tools/sim.mjs`; está anotado en [planning.md](../planning.md).
+
+---
+
+## Histórico: entrega B1 (1.0.2)
+
+> Resultado de la **entrega B1** (1.0.2: equipo), cuando el objetivo era que **un jugador medio ganara 1 de cada 5 partidas (20 %)**.
 > Todo lo que hay aquí sale de `npm run balance`: se puede repetir y comprobar.
 
 ## 1. Cómo se mide

@@ -1203,3 +1203,20 @@ body {
 
 .btn-forge-shop { margin-top: 8px; }
 .btn-forge-gold { font-family: ui-monospace, SFMono-Regular, monospace; color: var(--gold); }
+
+/* Medallas de variante dentro de la ficha del bestiario */
+.panel-tile-variants {
+    display: inline-block; margin-left: 6px; padding: 0 6px;
+    font-size: 0.72rem; font-weight: 800;
+    color: var(--gold);
+    background: rgba(240, 176, 60, 0.12);
+    border: 1px solid rgba(240, 176, 60, 0.4);
+    border-radius: 20px;
+    cursor: help;
+}
+
+/* Los logros dentro de la pantalla de tramo: sin viñetas y alineados a la izquierda */
+.rpg-tier-card .rpg-end-achievements { list-style: none; padding: 0; margin: 0 auto 18px; max-width: 42ch; text-align: left; }
+.rpg-tier-card .rpg-end-achievements li { padding: 3px 0; line-height: 1.5; }
+.rpg-tier-card .rpg-end-achievements b { display: inline; margin: 0; }
+.rpg-tier-card .rpg-end-ach-title { margin-bottom: 6px; }

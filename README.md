@@ -4,7 +4,7 @@
 
 ### Elige tu ruta. Toma decisiones. Descubre quién eres.
 
-*Un juego de aventuras por turnos que se juega en el navegador, en 25-40 minutos.*
+*Un juego de aventuras por turnos que se juega en el navegador. La mazmorra no tiene fondo: ¿hasta dónde llegas?*
 
 <br>
 
@@ -12,7 +12,7 @@
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.3.1-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.4.0-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -31,6 +31,11 @@
 
 | | Qué hay de nuevo |
 |:-:|------------------|
+| 🕳️ | **El descenso no tiene fin**: vencer al jefe ya no acaba la partida. El suelo se abre y bajas a otro tramo, más duro y más rico. Tu marca es la **profundidad** |
+| ⚒️ | **La Forja**: por fin hay dónde gastar el oro. 8 mejoras **permanentes** que no se pierden al morir |
+| 🧬 | **Variantes de monstruo**: «Orco Colérico de la Plaga». 22 formas raras que cambian cómo pelea, y una que te **oculta su intención** |
+| 👾 | **90 monstruos y 6 jefes**: cada tramo del descenso estrena criaturas que no has visto |
+| ⛏️ | **Expedición**: la mazmorra rinde oro mientras no juegas, hasta 8 horas |
 | 🌫️ | **Niebla de guerra**: el mapa se recorre hacia abajo desde el piso 0 y lo que queda a más de 3 pisos por delante se cubre hasta que te acercas |
 | 🧬 | **Estadísticas primarias**: Fuerza, Destreza, Inteligencia y Vitalidad, con crítico, esquiva y resistencia de verdad |
 | 📈 | **Nivel de personaje, permanente**: gana experiencia, sube de nivel y reparte tú mismo los puntos — te acompaña en todas tus rutas futuras |
@@ -53,7 +58,7 @@ pícaro o elementalista.
 
 | ⏱️ Una partida | 🗺️ El mapa | ⚔️ El combate | 🌱 Tu héroe |
 |:---:|:---:|:---:|:---:|
-| **25-40 minutos** | Nuevo en cada partida | Por turnos, con menú | Cambia según tus elecciones |
+| Dura hasta que caes | Nuevo en cada tramo | Por turnos, con menú | Más fuerte en cada partida |
 
 ---
 
@@ -63,11 +68,13 @@ pícaro o elementalista.
   <img src="docs/img/mapa.jpg" alt="El mapa de la ruta: 16 pisos con caminos que se ramifican" width="620">
 </p>
 
-1. **🗺️ Elige tu camino.** Cada punto del mapa es un combate, un cofre, un evento, una hoguera o un sub-jefe. Avanzas hacia abajo, hasta el **jefe final**; lo que queda lejos se ve cubierto por niebla de guerra hasta que te acercas.
+1. **🗺️ Elige tu camino.** Cada punto del mapa es un combate, un cofre, un evento, una hoguera o un sub-jefe. Avanzas hacia abajo hasta el **jefe del tramo**; lo que queda lejos se ve cubierto por niebla de guerra hasta que te acercas.
 2. **⚔️ Combate por turnos.** Ves lo que va a hacer el enemigo **antes** de elegir, y decides: atacar, defenderte, usar una habilidad o huir.
 3. **🔥 Recupera fuerzas.** En las hogueras puedes descansar o afilar tu arma. **Siempre hay una antes del jefe.**
 4. **🎲 Decide en los eventos.** Te encuentras con una situación y **dos decisiones**. Ninguna sale gratis.
-5. **💾 Retómalo cuando quieras.** El juego se guarda solo: cierras la pestaña y sigues justo donde lo dejaste.
+5. **🕳️ Y sigues bajando.** Vencer al jefe **no acaba la partida**: el suelo se abre, recuperas toda la vida y entras en un tramo nuevo, con criaturas que no conoces y que pegan un 50 % más. Termina cuando caes.
+6. **⚒️ Vuelves más fuerte.** El oro no se pierde nunca: gástalo en **La Forja** en mejoras permanentes y baja un poco más hondo la próxima vez.
+7. **💾 Retómalo cuando quieras.** El juego se guarda solo: cierras la pestaña y sigues justo donde lo dejaste.
 
 ### El combate
 
@@ -95,7 +102,7 @@ Sobre cada enemigo aparece **su próximo movimiento**, y ese movimiento es exact
 | 💚 **Se cura** | Recupera vida |
 | 💤 **Descansa** | No hace nada |
 
-Cada uno de los **15 monstruos** tiene su forma de atacar: el Goblin carga y golpea fuerte, el Esqueleto se protege, el Murciélago se cura…
+Cada uno de los **90 monstruos** tiene su forma de atacar: el Goblin carga y golpea fuerte, el Esqueleto se protege, el Murciélago se cura… Y en profundidad aparecen **variantes** («Orco Colérico de la Plaga») que cambian las reglas del combate.
 
 ---
 
@@ -147,7 +154,7 @@ Llevas **4 objetos equipados**. Cuando encuentras uno, decides: te lo pones (lo 
 Los objetos tienen **5 rarezas**: ⚪ común · 🟢 poco común · 🔵 rara · 🟣 épica · 🟠 legendaria (esta última con un rasgo único).
 Cuanto más rara, más efectos trae, y cuanto más profundo lo encuentras, más fuerte es. Los encuentras en **cofres**, **hogueras** (mínimo 🟢) y **sub-jefes** (mínimo 🔵), siempre eligiendo 1 de 3.
 
-El inventario se reinicia en cada ruta nueva, como el equipo — con una excepción: si vences al **jefe final**, te quedas con un objeto legendario **para siempre**, en todas tus rutas futuras. Y cada monstruo que vences deja algo de **oro**, que tampoco se pierde nunca, aunque mueras.
+El inventario se reinicia en cada ruta nueva, como el equipo — con una excepción: cada **jefe** que venzas te deja un objeto legendario **para siempre** (y si ya tenías uno, eliges con cuál te quedas). El **oro** tampoco se pierde nunca, aunque mueras: es lo que gastas en **La Forja**.
 
 ---
 
@@ -189,25 +196,29 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.3.1, sigue en desarrollo.** El equilibrio ya está ajustado para que un jugador medio **gane algo más de 1 de cada 5 partidas**
+> **Versión 1.4.0, sigue en desarrollo.** El equilibrio está ajustado para que un jugador medio **venza al primer jefe unas 2 de cada 5 partidas**, porque ese jefe ya no es el final: es la puerta al descenso sin fondo
 > (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
 
 ### ✅ Ya se puede jugar
 
-- 🗺️ Mapa de **16 pisos** que cambia en cada partida
+- 🕳️ **Descenso sin fin**: tramos de 16 pisos encadenados, cada uno más duro y más rico que el anterior
+- ⚒️ **La Forja**: 8 mejoras permanentes que se compran con el oro y no se pierden al morir
+- ⛏️ **Expedición**: la mazmorra rinde oro mientras no juegas (hasta 8 horas)
+- 🗺️ Mapa que cambia en cada tramo, con **niebla de guerra**
 - ⚔️ Combate por turnos: atacar, defender, habilidad y huir
 - 🧬 **Estadísticas primarias y nivel permanente**: Fuerza, Destreza, Inteligencia y Vitalidad; sube de nivel y reparte tú mismo los puntos
 - 🧍 **Pantalla de Personaje**: tu equipo, un **inventario de 10 ranuras** y tu oro, todo en un vistazo
 - 🎒 **Equipo de 4 ranuras y 5 rarezas**, con 122 objetos y 24 afijos (ver más abajo)
-- 👁️ **Ves lo que va a hacer cada enemigo** antes de elegir, y **15 monstruos** con su propia forma de atacar
+- 👁️ **Ves lo que va a hacer cada enemigo** antes de elegir, y **90 monstruos** con su propia forma de atacar
 - 🔥 **Hogueras** para descansar o equiparte, con una siempre antes del jefe
 - 🎲 **15 eventos** con dos decisiones cada uno
 - 💀 Sub-jefes **opcionales** (siempre hay un camino sin ellos), cofres con botín y un jefe final
-- 🐉 **El trofeo del jefe**: vencer al Dragón Ancestral te da un legendario que te acompaña en todas tus rutas futuras
-- 🪙 **Oro**: los monstruos dejan monedas al vencerlos; se acumula para siempre (todavía sin tienda)
+- 🐉 **El trofeo del jefe**: cada jefe que venzas te deja un legendario que te acompaña en todas tus rutas futuras
+- 🪙 **Oro**: los monstruos dejan monedas al vencerlos; se acumula para siempre y se gasta en La Forja
+- 🧬 **22 variantes de monstruo** que se combinan sobre cualquier nombre: «Orco Colérico de la Plaga»
 - 🧠 Un enemigo especial, **El Lector**, que aprende de lo que haces
 - 🤞 Promesas que cambian tu forma de jugar (por ejemplo, renunciar a huir)
-- 📖🎒🏆 **Bestiario, colección y 15 logros**, accesibles desde el menú de la cabecera en cualquier momento
+- 📖🎒🏆 **Bestiario (104 criaturas), colección y 22 logros**, accesibles desde el menú de la cabecera
 - ⚙️ **Importar y exportar tu progreso** como un texto, desde Opciones
 - 💾 **Guardado automático**: cierra la pestaña y continúa donde lo dejaste
 - 🏁 **Pantalla final** con tu resumen, tus logros y la línea de «casi»: cuánto te faltó

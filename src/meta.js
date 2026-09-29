@@ -1,9 +1,9 @@
-import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.3.1';
-import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.3.1';
-import { DAMAGE_TYPES } from './items.js?v=1.3.1';
-import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.3.1';
-import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax } from './data/upgrades.js?v=1.3.1';
-import { RPG_BALANCE } from './data/balance.js?v=1.3.1';
+import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.4.0';
+import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.4.0';
+import { DAMAGE_TYPES } from './items.js?v=1.4.0';
+import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.4.0';
+import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax } from './data/upgrades.js?v=1.4.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.4.0';
 export { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext };
 export { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax };
 

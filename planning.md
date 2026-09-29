@@ -13,15 +13,16 @@
 ## 📍 Estado actual
 
 **Publicado: entregas A y B1, decorado/onboarding, 4 paneles (Bestiario, Colección, Logros, Opciones),
-pantalla de Personaje, inventario de 10 ranuras, oro y el trofeo del jefe final — hasta la versión 1.2.0.**
-Detalle en [historial.md](historial.md).
+pantalla de Personaje, inventario, oro, trofeo del jefe, estadísticas primarias con nivel permanente, y el mapa
+al revés con niebla de guerra — hasta la versión 1.3.1.** Detalle en [historial.md](historial.md).
 
-**🚧 Sin publicar, listo para revisar:** estadísticas primarias (STR/DEX/INT/VIT) y nivel de personaje
-**permanente** con experiencia y reparto de puntos. Reabre a propósito «meta-progresión solo horizontal»
-(decisión explícita del usuario). Con las primarias en su base, el juego se comporta igual que antes — no hace
-falta recalibrar nada del equilibrio ya publicado. Además, el mapa se dibuja al revés (piso 0 arriba, jefe abajo)
-y con niebla de guerra progresiva (`RPG_FOG_AHEAD = 3`); el icono de monstruo pasa de 👹 a 👾. 671 comprobaciones
-en verde. Detalle en [historial.md](historial.md).
+**🚧 Sin publicar, listo para revisar (la 1.4.0, «El descenso»):** el juego **ya no tiene final**. Vencer al jefe
+abre otro tramo de 16 pisos (×1,5 acumulativo en dureza, ×1,6 en oro) al que se baja con la vida completa; la
+ruta acaba al morir y la marca es la profundidad. **La Forja** da por fin destino al oro con 8 mejoras
+permanentes, la **expedición** rinde mientras no juegas, hay **90 monstruos en 6 elencos** con 6 jefes y **22
+variantes** combinables («Orco Colérico de la Plaga»). Equilibrio recalibrado: el primer jefe pasa de meta a
+puerta del bucle, y el sensato sin mejoras lo vence el 39 % (antes 22 %). 717 comprobaciones en verde.
+Detalle y decisiones en [historial.md](historial.md).
 
 **Backlog abierto de B1 (no bloquea nada, se retoma cuando convenga):**
 - Capturas de pantalla (`SHOT_DIR=…`) de la pantalla de botín y el panel de 4 ranuras, para revisar el aspecto.
@@ -35,11 +36,23 @@ en verde. Detalle en [historial.md](historial.md).
 - Los 15 logros son un primer borrador (el plan preveía ~20); fácil de ampliar en `src/meta.js`.
 
 **Backlog abierto del inventario/oro/trofeo (no bloquea nada):**
-- El oro no se gasta en nada todavía: no hay tienda. Es el candidato natural para el próximo secundario (ver S5).
 - La pantalla de Personaje no muestra los **afijos completos** de cada objeto tan detallados como podría (usa
   `describeItem()`, que ya existe); revisar si conviene ampliarla cuando lleguen las mejoras de B2.
 - Sin viabilidad medida de si 10 ranuras de inventario son demasiadas o pocas para una ruta de 16 pisos; se verá
   con el uso real.
+
+**Backlog abierto del descenso y La Forja (la 1.4.0, no bloquea nada):**
+- **Segunda moneda** para la capa profunda (tipo «esquirlas del jefe», solo de jefes): con una sola moneda, las
+  mejoras caras y las baratas compiten por el mismo bolsillo. Pensarlo antes de añadir más mejoras.
+- **Prestigio sobre La Forja**: reiniciar lo comprado a cambio de un multiplicador permanente. Es lo que sostiene
+  cientos de horas en el género, pero no significa nada hasta que el bucle base esté rodado.
+- **Sub-jefes y eventos propios por tramo**: hoy los 3 sub-jefes y los 15 eventos se reciclan en cada tramo.
+- **Ocho variantes ya diseñadas y sin construir**: Acorazado, Menguante, de la Tormenta, de la Escarcha, del Eco,
+  del Enjambre (y las que pidan mecánicas nuevas, como aturdir).
+- **El banco de equilibrio no simula el descenso**: los bots juegan el tramo 0 y no compran mejoras, así que la
+  curva de profundidad (¿en qué tramo muere un jugador con X mejoras?) está calculada a mano, no medida.
+- **Ya no existe la decisión de «plantarse»**: como se baja con la vida completa, nunca hay razón para parar. Si
+  el descenso se hace monótono, ahí está la palanca.
 
 **Backlog abierto de las primarias/nivel (aplazado a propósito, fuera de la fase 1):**
 - **Velocidad de ataque** y **daño contra 8 tipos de criatura** (bestia/humanoide/no muerto/dragón/máquina/
@@ -155,6 +168,9 @@ se prueban con partidas simuladas; el Legado tiene su propio evento.
 
 ## P11 · 🎚️ Niveles de Riesgo
 
+> **Parcialmente cubierto desde la 1.4.0**: el **descenso sin fin** ya da dificultad creciente e infinita (cada
+> tramo ×1,5). Lo que sigue pendiente es que la dificultad extra cambie las **reglas**, no solo los números.
+
 **Qué.** Tras la primera victoria, **niveles acumulativos** (estilo Ascensión): 1. élites +60 %, 2. empiezas con −10 % de vida,
 3. curas menos en las hogueras, 4. **objetos con una rareza menos**, 5. eventos con peores resultados, 6. **sin hogueras**, 7+. jefe con
 una fase extra.
@@ -173,7 +189,7 @@ una fase extra.
 | **S2** | 🐺 **Bestiario ampliado**: de 15 a ~24 monstruos con patrones propios | Encuentros más variados | 🟡 |
 | **S3** | 🎲 **10 eventos más** (hasta 25), con **cadenas** y algunos que **dan objetos** | Densidad de decisiones y memoria de la partida | 🟡 |
 | **S4** | 🐉 **Jefe final aleatorio entre 3**, con fases | Identidad del final y rejugabilidad | 🟡 |
-| **S5** | 🛒 **Tienda** con oro (vender y comprar objetos, quitar una mejora) | Una economía sencilla | 🟡 |
+| **S5** | 🛒 **Tienda de objetos** con oro (comprar y vender equipo, quitar una mejora) — *el sumidero de oro ya existe desde la 1.4.0 con **La Forja**; lo que falta es comerciar con objetos* | Una economía sencilla | 🟡 |
 | **S6** | 🧪 **Consumibles** (2 ranuras) | Recurso táctico de emergencia | 🟡 |
 | **S7** | 🩸 **Estados**: aturdir *(quemar y envenenar ya están, desde B1)* | Completa Ruptura/P8 | 🟢 |
 | **S9** | 📅 **Ruta del día** (misma semilla para todos) + mejor marca local | Rutina de vuelta sin servidor | 🟢 |

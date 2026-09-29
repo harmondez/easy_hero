@@ -81,5 +81,6 @@ export function upgradeCost(def, level = 0) {
 export function upgradeAmountText(def, level) {
     if (!def || !level) return '';
     if (def.percent) return `+${Math.round(def.perLevel * level * 100)} %${def.unit ? ` ${def.unit}` : ''}`;
-    return def.unit ? `+${def.perLevel * level} ${def.unit}` : 'Comprada';
+    // Las de compra única no llevan unidad: el propio botón ya dice «COMPRADA», no hace falta repetirlo
+    return def.unit ? `+${def.perLevel * level} ${def.unit}` : '';
 }

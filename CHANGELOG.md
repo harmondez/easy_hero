@@ -5,6 +5,46 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.4.0] - 2026-09-29
+
+### ✨ Novedades
+- 🕳️ **El descenso no tiene fin.** Vencer al Dragón ya no acaba la partida: el suelo se abre y bajas a un tramo
+  nuevo de 16 pisos, **con la vida al completo** y todo tu equipo. Cada tramo pega y aguanta un 50 % más que el
+  anterior (acumulativo) y da un 60 % más de oro. La ruta termina cuando caes, y tu marca es **la profundidad**.
+- ⚒️ **La Forja**: por fin hay dónde gastar el oro. **8 mejoras permanentes** que no se pierden nunca: cuatro se
+  compran una y otra vez, cada vez más caras (ataque, vida, oro y experiencia), y cuatro son hitos de una sola
+  compra (empezar con arma, ver más lejos en el mapa, 15 ranuras de inventario y primer cofre de rareza alta).
+  Se entra desde el inicio y desde la pantalla de fin de ruta, que es donde se cierra el bucle.
+- ⛏️ **Expedición**: la mazmorra rinde oro mientras no juegas, hasta un tope de 8 horas, y rinde más cuanto más
+  hondo hayas llegado. Al volver te espera el botín.
+- 👾 **90 monstruos en 6 elencos y 6 jefes distintos.** El primer tramo es la mazmorra de siempre; cada tramo
+  nuevo estrena 15 criaturas que no habías visto y su propio guardián.
+- 🧬 **Variantes de monstruo**: un adjetivo y/o un linaje sobre el nombre base — *«Orco Colérico de la Plaga»*.
+  **22 variantes** con efecto real: púas que te hieren al golpear, resistencias que te obligan a cambiar de arma,
+  esquiva, furia al verse herido, robo de vida, veneno y quemadura sobre ti, un golpe póstumo al caer y
+  **«de la Niebla»**, que te oculta la intención del enemigo. Aparecen más a menudo cuanto más bajas, y nunca en
+  los primeros pisos.
+- 🏅 **7 logros nuevos** (22 en total) y los del bestiario reescalados a 25 / 50 / 104, ahora que hay tanto que ver.
+  Las variantes se coleccionan como **medallas** dentro de la ficha de cada monstruo, sin inflar el panel.
+
+### ⚖️ Equilibrio
+- Vencer al primer jefe pasa de ser el final del juego a ser **la puerta del bucle**, así que ahora la cruza mucha
+  más gente: un jugador sensato **sin ninguna mejora comprada** lo vence el **39 %** de las veces (antes el 22 %),
+  el experto el 53 % y el que solo ataca el 3 %. Palancas movidas: `hpPerFloor` 3,6 → 2,9 y `atkPerFloor` 0,4 → 0,34.
+- La dificultad de verdad ya no está en el primer jefe, sino en **hasta dónde aguantas bajando**.
+
+### ⚠️ Decisión de diseño
+- Esto **entierra definitivamente** la regla «meta-progresión solo horizontal, nunca poder fijo» del principio del
+  proyecto, que ya se había reabierto en la 1.3.0. Ahora la progresión permanente es el motor del juego. Decisión
+  explícita del usuario. Detalle en [historial.md](historial.md).
+
+### 🛠️ Por dentro
+- `src/data/variants.js` y `src/data/upgrades.js` nuevos; `rpgMonsterStats(tipo, piso, tramo)` y `meta.upgrades`.
+- Las variantes se sortean con un **hash del nodo y la semilla**, sin consumir azar del motor: la misma semilla
+  sigue dando el mismo mapa y los mismos eventos que antes.
+- `SAVE_VERSION` sube a 4 (la partida lleva el tramo): las partidas a medias de la 1.3.1 se descartan con aviso.
+- 717 comprobaciones en verde, 46 de ellas nuevas.
+
 ## [1.3.1] - 2026-09-22
 
 ### ✨ Novedades

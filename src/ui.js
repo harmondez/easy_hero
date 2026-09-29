@@ -1,8 +1,9 @@
-import * as Engine from './engine.js?v=1.3.1';
-import * as Items from './items.js?v=1.3.1';
-import * as Meta from './meta.js?v=1.3.1';
-import * as Stats from './stats.js?v=1.3.1';
-import { upgradeAmountText } from './data/upgrades.js?v=1.3.1';
+import * as Engine from './engine.js?v=1.4.0';
+import * as Items from './items.js?v=1.4.0';
+import * as Meta from './meta.js?v=1.4.0';
+import * as Stats from './stats.js?v=1.4.0';
+import { upgradeAmountText } from './data/upgrades.js?v=1.4.0';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.4.0';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -242,7 +243,8 @@ export function renderShop(meta) {
         const cost = Meta.nextUpgradeCost(meta, def.id);
         const maxed = !Number.isFinite(cost);
         const affordable = !maxed && meta.gold >= cost;
-        const have = level ? `<span class="shop-have">Ahora: ${esc(upgradeAmountText(def, level))}</span>` : '';
+        const amount = upgradeAmountText(def, level);
+        const have = amount ? `<span class="shop-have">Ahora: ${esc(amount)}</span>` : '';
         return `
         <article class="shop-card ${maxed ? 'is-maxed' : affordable ? 'is-affordable' : 'is-locked'}">
             <div class="shop-icon">${def.icon}</div>
@@ -746,15 +748,37 @@ export function renderBestiaryPanel(meta) {
     const el = document.getElementById('panelBody');
     if (!el) return;
     const seen = meta.monstersSeen || {}, defeated = meta.monstersDefeated || {};
+    const variantsSeen = meta.variantsSeen || {};
+    // Las variantes no son fichas propias: son medallas dentro de la ficha del monstruo base
+    const variantNames = name => {
+        const v = variantsSeen[name];
+        if (!v) return [];
+        return [
+            ...Object.keys(v.adj || {}).map(id => ADJECTIVES_BY_ID[id] && ADJECTIVES_BY_ID[id].name),
+            ...Object.keys(v.lin || {}).map(id => LINEAGES_BY_ID[id] && LINEAGES_BY_ID[id].name)
+        ].filter(Boolean);
+    };
     const tiles = Meta.BESTIARY.map(m => {
         const isSeen = !!seen[m.name], isDefeated = !!defeated[m.name];
         if (!isSeen) return `<div class="panel-tile is-locked"><span class="panel-tile-icon">❔</span><span class="panel-tile-name">???</span></div>`;
+        const vars = variantNames(m.name);
+        const medals = vars.length
+            ? `<span class="panel-tile-variants" title="${esc(vars.map(n => `${m.name} ${n}`).join('\n'))}">🧬 ${vars.length}</span>`
+            : '';
         return `<div class="panel-tile" style="--rarity:${isDefeated ? 'var(--success)' : 'var(--border-strong)'}">
             <span class="panel-tile-icon">${m.icon}</span><span class="panel-tile-name">${esc(m.name)}</span>
-            <span class="panel-tile-sub">${isDefeated ? 'Vencido' : 'Visto con vida'}</span></div>`;
+            <span class="panel-tile-sub">${isDefeated ? 'Vencido' : 'Visto con vida'}${medals}</span></div>`;
     }).join('');
     const doneCount = Object.keys(seen).length;
-    el.innerHTML = _panelHeader('📖', 'Bestiario', 'Se revela cada enemigo que te cruzas; se marca en verde el que has vencido.')
+    const distinctVariants = new Set();
+    for (const [, v] of Object.entries(variantsSeen)) {
+        Object.keys(v.adj || {}).forEach(id => distinctVariants.add(`a:${id}`));
+        Object.keys(v.lin || {}).forEach(id => distinctVariants.add(`l:${id}`));
+    }
+    const totalVariants = MONSTER_ADJECTIVES.length + MONSTER_LINEAGES.length;
+    el.innerHTML = _panelHeader('📖', 'Bestiario',
+        'Se revela cada enemigo que te cruzas y se marca en verde el que has vencido. '
+        + `Las variantes (🧬) son formas raras del mismo monstruo: llevas ${distinctVariants.size} de ${totalVariants}.`)
         + _progressBar(doneCount, Meta.BESTIARY.length, 'descubiertos')
         + `<div class="panel-grid">${tiles}</div>`;
 }

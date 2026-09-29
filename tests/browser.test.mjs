@@ -846,6 +846,24 @@ await page.click('[data-panel="bestiary"]');
 await sleep(150);
 assert('El bestiario muestra progreso real y cubre las 104 criaturas del descenso',
     (await page.$$('.panel-tile:not(.is-locked)')).length > 0 && (await page.$$('.panel-tile')).length === 104);
+{
+    // Las variantes son medallas dentro de la ficha del monstruo, no fichas nuevas
+    await page.evaluate(() => {
+        window.gameMeta.monstersSeen['Orco'] = true;
+        window.gameMeta.variantsSeen = { Orco: { adj: { colerico: true, petreo: true }, lin: { plaga: true } } };
+        window.UI.closePanel();
+    });
+    await page.click('[data-panel="bestiary"]');
+    await sleep(150);
+    assert('Una variante vista se muestra como medalla, sin añadir una ficha nueva',
+        (await page.$$('.panel-tile')).length === 104 && (await page.$$('.panel-tile-variants')).length === 1);
+    assert('La medalla cuenta las variantes de ese monstruo y las nombra al pasar el ratón', await page.evaluate(() => {
+        const el = document.querySelector('.panel-tile-variants');
+        return el.textContent.includes('3') && /Col[ée]rico/.test(el.title) && /Plaga/.test(el.title);
+    }));
+    assert('El encabezado lleva la cuenta de variantes distintas sobre el total',
+        /3 de 22/.test(await page.$eval('.panel-sub', el => el.textContent)));
+}
 await page.screenshot({ path: shot('panel-bestiario'), fullPage: true });
 await page.click('#btnPanelClose');
 await sleep(100);

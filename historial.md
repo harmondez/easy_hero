@@ -218,6 +218,70 @@ resolvieron la arquitectura antes de tocar código.
   datos y pantalla de inicio; el CHANGELOG y el documento histórico del prototipo v0 se dejan tal cual, son
   registro de lo ya publicado).
 
+## 2026-09-29 · El descenso sin fin, La Forja y las variantes (la 1.4.0)
+
+**De dónde salió.** El usuario pidió opinión sobre el juego como *juego*, no sobre el código, con una meta
+explícita: que sea **adictivo** y, a ser posible, **sin final**, al estilo de los incrementales. Del análisis
+salió el diagnóstico: de los tres motores de enganche del género, Easy Hero solo tenía encendido el de
+**maestría** (aprender a leer al enemigo); le faltaban el de **acumulación** (Cookie Clicker) y el de
+**curiosidad narrativa** (Hades). Y, sobre todo, que el juego **ya era estructuralmente un incremental sin
+saberlo**: la ruta es un ciclo de prestigio (mueres, pierdes el equipo, conservas oro y nivel) al que solo le
+faltaba una pieza — que la moneda permanente sirviera para algo.
+
+Se descartó a propósito volverlo un idle de verdad (combate automático): eso mataría la intención visible, que
+es el único rasgo que distingue al juego. La regla que salió de ahí: **la ruta es el juego de habilidad; la capa
+de encima es el juego incremental**.
+
+**Decisiones (16 preguntas en 4 tandas, todas del usuario):**
+1. **El «sin fin» es un descenso, no un menú.** Vencer al jefe no termina la partida: se genera otro tramo de 16
+   pisos y se sigue con el mismo héroe. La ruta acaba al morir, y la marca es la profundidad.
+2. **Vida completa al bajar de tramo** (el usuario eligió esto en contra de la recomendación de curar solo una
+   parte). Consecuencia asumida: la atrición deja de ser el límite y el muro pasa a ser puramente estadístico —
+   más fácil de calibrar, pero ya no existe la decisión de «plantarse».
+3. **Escalado ×1,5 acumulativo por tramo** y oro ×1,6, para que bajar compense el riesgo.
+4. **La Forja entre rutas**, con mejoras mixtas: cuatro de nivel infinito con coste geométrico (el ritmo
+   «ráfaga barata / ahorro largo» que sostiene el género) y cuatro de compra única (hitos memorables).
+5. **Expedición automática con tope de 8 h**: el gancho de «vuelve mañana» que no existía.
+6. **Cada jefe deja trofeo** y eliges quedarte con el mejor, reutilizando el flujo de la 1.2.0.
+7. **Variantes de monstruo en dos tablas que se combinan** (idea del usuario): adjetivo + linaje sobre 90 nombres
+   base. Frecuencia creciente con la profundidad, recompensa proporcional al peligro, y **medallas dentro de la
+   ficha del bestiario** en vez de fichas nuevas (si no, el panel pasaría a miles de casillas).
+
+> ⚠️ **Enmienda a una regla del proyecto.** Esto **entierra** la «meta-progresión solo horizontal, nunca poder
+> fijo» fijada el 2026-09-21, que ya se había reabierto en la 1.3.0. Ahora el poder permanente es el motor del
+> juego, no una excepción. Decisión explícita y consciente del usuario.
+
+**Cómo se construyó sin romper nada** (el patrón que ya funcionó en la 1.3.0):
+- `rpgMonsterStats(tipo, piso, tramo)` aplica el multiplicador **solo si `tramo > 0`**, así que en el tramo 0
+  devuelve los mismos números de siempre y las 483 comprobaciones del motor pasaron sin tocar ni una.
+- **El tramo 0 conserva el elenco original** (Slime, Goblin, Orco…) en el mismo orden: los tests que fijan qué
+  monstruo sale en cada piso siguen valiendo, y el jugador veterano no pierde su mazmorra.
+- Las **variantes se sortean con un hash de `(semilla, nodo, tramo)`**, nunca con `rng()` del motor. Consumir
+  azar habría cambiado todos los mapas existentes y roto cientos de comprobaciones exactas.
+- **Los pisos del «grupo fácil» nunca llevan variante**: un «Slime Certero de la Niebla» en el piso 1 sería una
+  pésima bienvenida, y además hacía flaquear una prueba de daño exacto.
+
+**Dos decisiones de combate que protegen la promesa del juego:**
+- **La furia y la curación de las variantes se deciden al ELEGIR la intención, no al ejecutarla.** Si no, un
+  monstruo enfurecido pegaría más de lo que anunciaba y se rompería «lo que ves es exactamente lo que hará».
+- **Ni las púas ni el golpe póstumo matan** (dejan en 1 de vida): ganar y morir a la vez, o morir por tu propio
+  ataque, se siente injusto.
+
+**Equilibrio.** Con el descenso, vencer al primer jefe deja de ser la meta y pasa a ser la puerta del bucle, así
+que el objetivo subió del 20 % al 40 %. Palancas movidas de una en una con el banco: `hpPerFloor` 3,6 → 2,9 y
+`atkPerFloor` 0,4 → 0,34. Resultado (1000 partidas/bot, **sin mejoras compradas**): sensato **39 %**, experto
+53 %, torpe 3 %. La dificultad real ya no está en el primer jefe sino en cuánto aguantas bajando: un jefe del
+tramo 3 pega 27 por golpe.
+
+**Verificación.** 717 comprobaciones en verde. 24 nuevas en `tests/meta-sim.mjs` (compras, coste geométrico, tope
+de las únicas, expedición con reloj falso, profundidad, medallas) y 19 en `tests/browser.test.mjs` (ruta completa
+hasta el jefe, pantalla de tramo, descenso real al tramo 2 con elenco nuevo, La Forja de punta a punta y las
+medallas del bestiario). `SAVE_VERSION` sube a 4.
+
+**Backlog que deja abierto**: una segunda moneda para la capa profunda, prestigio sobre La Forja, sub-jefes
+propios por tramo, y ocho variantes más ya diseñadas pero no construidas (Acorazado, Menguante, de la Tormenta,
+de la Escarcha, del Eco, del Enjambre…).
+
 ---
 
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)
