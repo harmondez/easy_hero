@@ -188,14 +188,20 @@ export function discardItem(hero, item) {
 }
 
 // ---------- Inventario (10 ranuras, se reinicia cada ruta) ----------
+/** Cuántas ranuras tiene este héroe: 10, o más si compró «Zurrón ancho» en La Forja. */
+export function inventorySize(hero) {
+    const extra = hero && hero.invSlots ? hero.invSlots : 0;
+    return INVENTORY_SIZE + Math.max(0, extra | 0);
+}
+
 export function hasInventoryRoom(hero) {
-    return ((hero && hero.inventory) || []).length < INVENTORY_SIZE;
+    return ((hero && hero.inventory) || []).length < inventorySize(hero);
 }
 
 /** Guarda `item` en el inventario si hay hueco. Devuelve `true` si se guardó. */
 export function storeInInventory(hero, item) {
     hero.inventory = hero.inventory || [];
-    if (hero.inventory.length >= INVENTORY_SIZE) return false;
+    if (hero.inventory.length >= inventorySize(hero)) return false;
     hero.inventory.push(item);
     return true;
 }

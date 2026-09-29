@@ -5,8 +5,11 @@
 import {
     loadMeta, saveMeta, META_VERSION, BESTIARY, ACHIEVEMENTS,
     recordRunStart, recordRunEnd, recordCombatWin, recordMonsterSeen, recordMonsterDefeated,
-    recordEventSeen, recordItemSeen, recordItemEquipped, recordGold, recordTrophy, checkAchievements
+    recordEventSeen, recordItemSeen, recordItemEquipped, recordGold, recordTrophy, checkAchievements,
+    upgradeLevel, nextUpgradeCost, canBuyUpgrade, buyUpgrade, upgradeEffect,
+    claimExpedition, recordDepth, recordVariantSeen, UPGRADES
 } from '../src/meta.js';
+import { ALL_MONSTER_DEFS } from '../src/data/monsters.js';
 import { createRpgItem } from '../src/items.js';
 import { createRng } from '../src/rng.js';
 
@@ -49,8 +52,13 @@ console.log('\n💾 Guardar y cargar');
 // =============================================
 console.log('\n🐺 Bestiario y 🎒 colección');
 {
-    assert('el bestiario tiene 24 entradas (15 monstruos + 3 sub-jefes + jefe + 5 de evento)', BESTIARY.length === 24);
-    assert('todas las entradas del bestiario tienen nombre e icono únicos', new Set(BESTIARY.map(m => m.name)).size === 24 && BESTIARY.every(m => m.icon));
+    assert('el bestiario cubre los 6 elencos del descenso, los sub-jefes, los jefes y los de evento (104)', BESTIARY.length === 104);
+    assert('ninguna entrada del bestiario repite nombre, y todas tienen icono',
+        new Set(BESTIARY.map(m => m.name)).size === BESTIARY.length && BESTIARY.every(m => m.icon));
+    // Los monstruos normales son los que se ven uno junto a otro en el panel: ahí un icono repetido canta
+    assert('ningún monstruo normal repite icono con otro', new Set(ALL_MONSTER_DEFS.map(m => m.icon)).size === ALL_MONSTER_DEFS.length);
+    assert('cada tramo del descenso estrena 15 criaturas y el tramo 0 es la mazmorra de siempre',
+        ALL_MONSTER_DEFS.length === 90 && ALL_MONSTER_DEFS[0].name === 'Slime');
 
     const meta = loadMeta(fakeStorage());
     recordMonsterSeen(meta, 'Slime');
@@ -102,8 +110,8 @@ console.log('\n🏆 Trofeo del jefe: se gana una vez, dura para siempre');
 // =============================================
 console.log('\n🏅 Logros (15): información, nunca poder');
 {
-    assert('hay 15 logros, todos con id, icono, nombre y descripción únicos', ACHIEVEMENTS.length === 15
-        && new Set(ACHIEVEMENTS.map(a => a.id)).size === 15 && ACHIEVEMENTS.every(a => a.icon && a.name && a.desc));
+    assert('hay 22 logros, todos con id, icono, nombre y descripción únicos', ACHIEVEMENTS.length === 22
+        && new Set(ACHIEVEMENTS.map(a => a.id)).size === 22 && ACHIEVEMENTS.every(a => a.icon && a.name && a.desc));
     assert('ningún logro toca stats de combate: solo se leen, nunca se otorga ATK/HP/oro por conseguirlos',
         ACHIEVEMENTS.every(a => typeof a.check === 'function'));
 
@@ -147,6 +155,78 @@ console.log('\n🏅 Logros (15): información, nunca poder');
     assert('el piso más lejano se queda en memoria aunque bajen los siguientes', metaBest.bestFloor === 20);
     const idsFloor = checkAchievements(metaBest, null, { floors: 16 }).map(a => a.id);
     assert('llegar lejos desbloquea «A medio camino» (piso 10) sin haber ganado', idsFloor.includes('floor10'));
+}
+
+// =============================================
+console.log('\n⚒️ La Forja: mejoras permanentes compradas con oro');
+{
+    const meta = loadMeta(fakeStorage());
+    assert('sin oro no se puede comprar nada', !canBuyUpgrade(meta, 'filo') && buyUpgrade(meta, 'filo').ok === false);
+    assert('una mejora que no existe no rompe nada', !canBuyUpgrade(meta, 'inventada') && upgradeEffect(meta, 'inventada') === 0);
+
+    recordGold(meta, 100);
+    const first = buyUpgrade(meta, 'filo');
+    assert('la primera compra cuesta 40 y descuenta del oro', first.ok && first.cost === 40 && meta.gold === 60);
+    assert('la mejora sube a nivel 1 y su efecto es +1 ATK', upgradeLevel(meta, 'filo') === 1 && upgradeEffect(meta, 'filo') === 1);
+
+    assert('el coste crece con cada nivel (progresión geométrica, no lineal)', nextUpgradeCost(meta, 'filo') === 64);
+    assert('con 60 monedas no llega para el segundo nivel, que cuesta 64', !canBuyUpgrade(meta, 'filo') && !buyUpgrade(meta, 'filo').ok);
+    recordGold(meta, 10);
+    buyUpgrade(meta, 'filo');
+    assert('al segundo nivel el efecto se acumula (+2 ATK)', upgradeLevel(meta, 'filo') === 2 && upgradeEffect(meta, 'filo') === 2);
+    assert('el tercer nivel cuesta todavía más (40 → 64 → 102)', nextUpgradeCost(meta, 'filo') === 102);
+
+    const once = loadMeta(fakeStorage());
+    recordGold(once, 10000);
+    assert('una mejora de compra única se compra una vez', buyUpgrade(once, 'zurron').ok === true);
+    assert('…y ya no se puede volver a comprar, ni aunque sobre oro',
+        nextUpgradeCost(once, 'zurron') === Infinity && !canBuyUpgrade(once, 'zurron') && buyUpgrade(once, 'zurron').ok === false);
+    assert('las de porcentaje devuelven fracción, no entero', (() => {
+        buyUpgrade(once, 'buen_ojo');
+        return Math.abs(upgradeEffect(once, 'buen_ojo') - 0.1) < 1e-9;
+    })());
+    assert('el oro nunca queda negativo por comprar', once.gold >= 0);
+    assert('todas las mejoras del catálogo tienen id, icono, nombre, descripción y coste',
+        UPGRADES.length >= 8 && new Set(UPGRADES.map(u => u.id)).size === UPGRADES.length
+        && UPGRADES.every(u => u.icon && u.name && u.desc && u.cost > 0 && u.effect));
+
+    const saved = fakeStorage();
+    const persist = loadMeta(saved);
+    recordGold(persist, 500);
+    buyUpgrade(persist, 'linterna');
+    saveMeta(saved, persist);
+    assert('las mejoras compradas sobreviven a recargar (son permanentes)', upgradeLevel(loadMeta(saved), 'linterna') === 1);
+}
+
+// =============================================
+console.log('\n🕳️ Descenso: profundidad, variantes vistas y expedición');
+{
+    const meta = loadMeta(fakeStorage());
+    recordDepth(meta, { depth: 20, tier: 1 });
+    recordDepth(meta, { depth: 12, tier: 0 });
+    assert('el récord de profundidad no baja al hacer una ruta peor', meta.bestDepth === 20 && meta.bestTier === 1);
+
+    recordVariantSeen(meta, 'Orco', { adj: 'colerico', lin: 'plaga' });
+    recordVariantSeen(meta, 'Orco', { adj: 'petreo', lin: null });
+    assert('las variantes se anotan como medallas dentro de la ficha del monstruo base',
+        Object.keys(meta.variantsSeen['Orco'].adj).length === 2 && Object.keys(meta.variantsSeen['Orco'].lin).length === 1);
+    recordVariantSeen(meta, null, { adj: 'colerico' });
+    recordVariantSeen(meta, 'Orco', null);
+    assert('anotar una variante sin nombre o sin variante no rompe nada', Object.keys(meta.variantsSeen).length === 1);
+
+    const exp = loadMeta(fakeStorage());
+    const t0 = 1_000_000_000_000;
+    assert('la primera vez la expedición no da nada: solo arranca el reloj', claimExpedition(exp, t0).gold === 0 && exp.lastSeen === t0);
+    const twoHours = claimExpedition(exp, t0 + 2 * 3600_000);
+    assert('dos horas fuera rinden dos horas de oro', twoHours.gold === 30 && exp.gold === 30);
+    const long = claimExpedition(exp, t0 + 2 * 3600_000 + 40 * 3600_000);
+    assert('estar fuera 40 horas solo paga el tope de 8', long.gold === 120 && long.capped === true);
+    assert('volver al instante no da oro por la cara', claimExpedition(exp, exp.lastSeen).gold === 0);
+
+    const deep = loadMeta(fakeStorage());
+    recordDepth(deep, { depth: 60, tier: 3 });
+    deep.lastSeen = t0;
+    assert('cuanto más hondo has llegado, más rinde la expedición', claimExpedition(deep, t0 + 3600_000).gold === 60);
 }
 
 console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📊 RESULTS: ${passed} passed, ${failed} failed\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);

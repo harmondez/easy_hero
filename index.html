@@ -47,6 +47,7 @@
                     <p id="rpgStartNotice" class="rpg-start-note is-notice" style="display:none;"></p>
                     <button type="button" id="btnRpgContinue" class="btn-forge is-continue" style="display:none;"></button>
                     <button type="button" id="btnRpgStart" class="btn-forge">🗡️ Entrar en la mazmorra</button>
+                    <button type="button" id="btnRpgShop" class="btn-secondary btn-forge-shop">⚒️ La Forja<span id="rpgShopGold" class="btn-forge-gold"></span></button>
                     <label class="rpg-seed-field">Semilla <span>(opcional: la misma semilla da la misma ruta)</span>
                         <input type="text" id="rpgSeedInput" maxlength="24" autocomplete="off" placeholder="K3F9-2QA">
                     </label>
@@ -96,6 +97,20 @@
                     <button type="button" id="btnCharBack" class="btn-secondary">← VOLVER AL MAPA</button>
                 </div>
                 <div id="charBody" class="char-layout"></div>
+            </div>
+
+            <!-- Vista: tramo superado (el jefe ha caído, la mazmorra sigue hacia abajo) -->
+            <div id="rpgTierView" class="rpg-view" style="display:none;">
+                <div id="rpgTierBody" class="rpg-end-card rpg-tier-card"></div>
+            </div>
+
+            <!-- Vista: La Forja (mejoras permanentes que se compran con oro) -->
+            <div id="rpgShopView" class="rpg-view" style="display:none;">
+                <div class="char-topbar">
+                    <h2 class="char-title">⚒️ La Forja</h2>
+                    <button type="button" id="btnShopBack" class="btn-secondary">← VOLVER</button>
+                </div>
+                <div id="shopBody" class="shop-layout"></div>
             </div>
 
             <!-- Vista 3: combate (héroe a la izquierda, monstruo a la derecha) -->

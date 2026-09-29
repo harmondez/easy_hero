@@ -1,5 +1,6 @@
 import { RPG_BALANCE } from './data/balance.js?v=1.3.1';
 import { pickMonsterDef } from './data/monsters.js?v=1.3.1';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.3.1';
 import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.3.1';
 import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.3.1';
 
@@ -64,7 +65,9 @@ export function refreshPrimaryStats(hero) {
 
 // Monstruos: escalan piso a piso. Los primeros son el «grupo fácil».
 // (sub-jefe y jefe final multiplican la base del piso donde aparecen). Los números viven en data/balance.js
-export function rpgMonsterStats(type, floor) {
+// `tier` es el tramo del descenso sin fin: multiplica todo de forma acumulativa. En el tramo 0 el
+// multiplicador es exactamente 1 y ni siquiera se aplica, así que los números de siempre no se mueven.
+export function rpgMonsterStats(type, floor, tier = 0) {
     const f = Math.max(0, floor | 0);
     const B = RPG_BALANCE;
     let atq = B.monster.atkBase + Math.floor(f * B.monster.atkPerFloor);
@@ -73,9 +76,20 @@ export function rpgMonsterStats(type, floor) {
         atq = Math.max(1, Math.round(atq * B.monster.easyFactor));
         hp = Math.max(1, Math.round(hp * B.monster.easyFactor));
     }
-    if (type === 'subboss') return { atq: atq + B.subboss.atkBonus, hp: Math.round(hp * B.subboss.hpMul) };
-    if (type === 'boss') return { atq: atq + B.boss.atkBonus, hp: Math.round(hp * B.boss.hpMul) };
+    if (type === 'subboss') { atq += B.subboss.atkBonus; hp = Math.round(hp * B.subboss.hpMul); }
+    else if (type === 'boss') { atq += B.boss.atkBonus; hp = Math.round(hp * B.boss.hpMul); }
+    const t = Math.max(0, tier | 0);
+    if (t > 0) {
+        const mul = Math.pow(B.depth.tierMul, t);
+        atq = Math.max(1, Math.round(atq * mul));
+        hp = Math.max(1, Math.round(hp * mul));
+    }
     return { atq, hp };
+}
+
+/** Profundidad absoluta (el número que ve el jugador): el tramo 2, piso 3, es el piso 35. */
+export function rpgAbsoluteFloor(tier, floor, cfg = RPG_MAP_CONFIG) {
+    return Math.max(0, tier | 0) * cfg.floors + Math.max(0, floor | 0);
 }
 
 export const RPG_NODE_TYPES = {
@@ -253,13 +267,14 @@ function _generateRpgMapOnce(rng, cfg) {
 }
 
 // La búsqueda local casi siempre cumple los mínimos; en el raro caso de que se atasque se genera otro mapa.
-export function generateRpgMap(rng = Math.random, cfg = RPG_MAP_CONFIG) {
+export function generateRpgMap(rng = Math.random, cfg = RPG_MAP_CONFIG, tier = 0) {
     let map;
     for (let tries = 0; tries < 40; tries++) {
         map = _generateRpgMapOnce(rng, cfg);
         if (!map.routeShortfall) break;
     }
     delete map.routeShortfall;
+    map.tier = Math.max(0, tier | 0);   // el tramo del descenso: decide elenco, dureza y oro
     return map;
 }
 
@@ -318,22 +333,114 @@ export function rpgSkillInfo(hero, skillId, combat = null) {
     return info;
 }
 
-export function createRpgMonster(type, floor) {
+export function createRpgMonster(type, floor, tier = 0, variantIds = null) {
     const f = Math.max(0, floor | 0);
-    const stats = rpgMonsterStats(type, f);
-    const def = pickMonsterDef(type, f);
+    const t = Math.max(0, tier | 0);
+    const stats = rpgMonsterStats(type, f, t);
+    const def = pickMonsterDef(type, f, t);
     const color = type === 'boss' ? '#f97316' : type === 'subboss' ? '#a78bfa' : '#ef4444';
-    return {
-        type, floor: f, name: def.name, icon: def.icon, color,
+    const monster = {
+        type, floor: f, tier: t,
+        name: def.name,
+        baseName: def.name,   // la clave del bestiario: «Ogro Colérico» se anota como «Ogro»
+        icon: def.icon, color,
         atq: stats.atq, hp: stats.hp, maxHp: stats.hp,
         pattern: def.pattern
     };
+    return variantIds ? applyMonsterVariants(monster, variantIds) : monster;
+}
+
+/**
+ * Aplica un adjetivo y/o un linaje a un monstruo ya creado: multiplica sus estadísticas y su
+ * recompensa, transforma su patrón y le deja las reglas de combate en `monster.rules`.
+ * Las resistencias SUMAN cuando las dan las dos tablas; el resto de reglas, la última gana.
+ */
+export function applyMonsterVariants(monster, ids) {
+    const adj = ids && ids.adj ? ADJECTIVES_BY_ID[ids.adj] : null;
+    const lin = ids && ids.lin ? LINEAGES_BY_ID[ids.lin] : null;
+    if (!adj && !lin) return monster;
+
+    let atkMul = 1, hpMul = 1, goldMul = 1, xpMul = 1;
+    const rules = {};
+    let pattern = monster.pattern;
+    for (const v of [adj, lin]) {
+        if (!v) continue;
+        atkMul *= v.atkMul || 1;
+        hpMul *= v.hpMul || 1;
+        goldMul *= v.goldMul || 1;
+        xpMul *= v.xpMul || 1;
+        if (v.pattern) pattern = v.pattern(pattern);
+        for (const [k, val] of Object.entries(v.rules || {})) {
+            rules[k] = (k === 'physResist' || k === 'elemResist') ? (rules[k] || 0) + val : val;
+        }
+    }
+    monster.atq = Math.max(1, Math.round(monster.atq * atkMul));
+    monster.maxHp = Math.max(1, Math.round(monster.maxHp * hpMul));
+    monster.hp = monster.maxHp;
+    monster.pattern = pattern;
+    monster.rules = rules;
+    monster.goldMul = goldMul;
+    monster.xpMul = xpMul;
+    monster.variants = { adj: adj ? adj.id : null, lin: lin ? lin.id : null };
+    monster.name = [monster.baseName, adj && adj.name, lin && lin.name].filter(Boolean).join(' ');
+    return monster;
+}
+
+// Hash estable de un texto a [0, 1). NO usa el generador de la partida a propósito: si consumiera
+// azar del motor, cambiaría todos los mapas ya existentes y rompería las comprobaciones exactas.
+function _hash01(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return ((h >>> 0) % 1000003) / 1000003;
+}
+
+/**
+ * Qué variantes le tocan al monstruo de un nodo. Es determinista (misma semilla y mismo nodo →
+ * mismo monstruo, siempre) y la probabilidad crece con el tramo: bajar no es solo más difícil,
+ * es más raro. Devuelve {} cuando el monstruo sale limpio, que es lo más habitual arriba.
+ */
+export function pickMonsterVariants(seed, nodeId, tier = 0, floor = null) {
+    const t = Math.max(0, tier | 0);
+    // Los primeros pisos de la mazmorra de siempre son la puerta de entrada al juego: ahí nunca hay
+    // variantes. Toparte con un «Slime Certero de la Niebla» en el piso 1 sería una pésima bienvenida.
+    if (t === 0 && floor !== null && floor < RPG_BALANCE.monster.easyFloors) return {};
+    const V = RPG_BALANCE.variants;
+    const chance = c => Math.min(c.max, c.base + c.perTier * t);
+    const out = {};
+    const adjPool = adjectivesFor(t);
+    if (adjPool.length && _hash01(`${seed}|${nodeId}|adj`) < chance(V.adjChance)) {
+        out.adj = adjPool[Math.floor(_hash01(`${seed}|${nodeId}|adj#`) * adjPool.length)].id;
+    }
+    const linPool = lineagesFor(t);
+    if (linPool.length && _hash01(`${seed}|${nodeId}|lin`) < chance(V.lineageChance)) {
+        out.lin = linPool[Math.floor(_hash01(`${seed}|${nodeId}|lin#`) * linPool.length)].id;
+    }
+    return out;
 }
 
 // --- Intenciones: lo que hará el monstruo en su turno ---
 const DEFAULT_PATTERN = [{ k: 'attack', m: 1 }];
 
+// Cuánto multiplica AHORA MISMO el daño del monstruo por sus variantes (furia al verse herido,
+// sed de sangre). Se calcula al ELEGIR la intención, nunca al ejecutarla: así el número que ves
+// sobre el enemigo sigue siendo exactamente el que te va a hacer.
+function _rpgMonsterRage(monster) {
+    const r = monster.rules;
+    if (!r) return 1;
+    let mul = 1;
+    const pct = monster.hp / Math.max(1, monster.maxHp);
+    if (r.rageBelow && pct <= r.rageBelow) mul *= r.rageAtkMul || 1.5;
+    if (r.bloodlust) mul *= 1 + r.bloodlust * (1 - pct);
+    return mul;
+}
+
 function _rpgPickIntent(monster, rng) {
+    // «Cauto»: al verse perdido, su siguiente movimiento es curarse (una sola vez, y se ve venir)
+    const r = monster.rules;
+    if (r && r.healBelow && !monster.healUsed && monster.hp <= monster.maxHp * r.healBelow) {
+        monster.healUsed = true;
+        return { k: 'heal', p: r.healPct || 0.25 };
+    }
     let move;
     if (monster.weights && monster.weights.length) {
         const total = monster.weights.reduce((s, [, w]) => s + w, 0);
@@ -347,7 +454,7 @@ function _rpgPickIntent(monster, rng) {
     }
     if (move.k === 'attack') {
         const m = move.m == null ? 1 : move.m;
-        return { k: 'attack', m, dmg: Math.max(1, Math.round(monster.atq * m)) };
+        return { k: 'attack', m, dmg: Math.max(1, Math.round(monster.atq * m * _rpgMonsterRage(monster))) };
     }
     if (move.k === 'heal') return { k: 'heal', p: move.p == null ? 0.1 : move.p };
     return { k: move.k };
@@ -371,6 +478,7 @@ export function createRpgCombat(hero, monster, rng = Math.random) {
         cooldowns: Object.fromEntries(Object.keys(RPG_SKILLS).map(id => [id, 0])),
         lastAction: null, // para enemigos con IA que leen tus movimientos
         state: _newCombatState(),
+        heroStatus: { burn: null, poison: 0 }, // lo que te hacen las variantes «de la Plaga» y «de las Brasas»
         intro: [],        // lo que ocurre al empezar (el equipo puede curarte): la interfaz lo cuenta en el diario
         over: false,
         result: null // 'victory' | 'defeat' | 'fled'
@@ -387,6 +495,10 @@ export function createRpgCombat(hero, monster, rng = Math.random) {
 export function rpgIntentView(monster) {
     const it = monster && monster.intent;
     if (!it) return null;
+    // «de la Niebla»: apaga a propósito la mecánica estrella del juego. No sabes lo que viene.
+    if (monster.rules && monster.rules.hideIntent) {
+        return { icon: '🌫️', label: '¿?', value: null, kind: 'hidden', hint: 'La niebla te impide ver lo que va a hacer' };
+    }
     if (it.k === 'attack') {
         const heavy = it.m >= 1.8;
         return { icon: heavy ? '💥' : '⚔️', label: heavy ? 'Golpe fuerte' : 'Ataca', value: it.dmg, kind: heavy ? 'heavy' : 'attack',
@@ -413,6 +525,21 @@ function _rpgHit(attacker) {
 // Si el monstruo se protege esta ronda, el daño del héroe se reduce a la mitad (redondeando hacia arriba)
 function _rpgGuarded(combat, dmg) {
     return combat.monster.intent && combat.monster.intent.k === 'guard' ? Math.max(1, Math.ceil(dmg / 2)) : dmg;
+}
+
+// Resistencias de las variantes («Coriáceo» al daño físico, «Etéreo» al elemental). Los monstruos
+// sin variante no tienen `rules`, así que esto devuelve el daño intacto y nada de lo de antes cambia.
+function _rpgMonsterResist(combat, dmg, elemental) {
+    const r = combat.monster.rules;
+    if (!r) return dmg;
+    const pct = elemental ? (r.elemResist || 0) : (r.physResist || 0);
+    return pct > 0 ? Math.max(1, Math.round(dmg * (1 - pct))) : dmg;
+}
+
+// El tipo de daño del héroe lo marca su arma principal (sin arma elemental, es físico)
+function _rpgHeroHitsElemental(hero) {
+    const w = hero.equipment && hero.equipment.weapon;
+    return !!(w && isElementalDamage(w.damaged));
 }
 
 // Defender: el golpe se reduce a la mitad (hacia arriba) y luego el escudo quita `guard` más
@@ -451,9 +578,10 @@ function _rpgAttackHits(combat, commit) {
     const st = commit ? combat.state : { ...combat.state };
     const strikes = 1 + (combat.turn === 1 ? ruleSum(combat.hero, 'extra_strike') : 0);
     const hits = [];
+    const elemental = _rpgHeroHitsElemental(combat.hero);
     let hp = combat.monster.hp;
     for (let i = 0; i < strikes && hp > 0; i++) {
-        const dmg = _rpgGuarded(combat, _rpgStrikeDamage(combat, st, hp));
+        const dmg = _rpgGuarded(combat, _rpgMonsterResist(combat, _rpgStrikeDamage(combat, st, hp), elemental));
         hits.push(dmg);
         hp -= dmg;
         st.attacks++; st.revenge = 0; st.frenzy++;
@@ -476,7 +604,8 @@ export function rpgAttackPreview(combat) {
 export function rpgIncomingPreview(combat, defending = false) {
     const it = combat.monster.intent;
     if (!it || it.k !== 'attack') return 0;
-    let dmg = defending ? _rpgDefended(combat.hero, it.dmg) : it.dmg;
+    const pierce = combat.monster.rules && combat.monster.rules.pierceGuard;  // «Certero»: defenderse no reduce nada
+    let dmg = (defending && !pierce) ? _rpgDefended(combat.hero, it.dmg) : it.dmg;
     if (combat.hero.physResist > 0) dmg = Math.max(0, Math.round(dmg * (1 - combat.hero.physResist)));
     return dmg;
 }
@@ -503,6 +632,54 @@ function _rpgOnHit(combat, dmg, events) {
     if (steal) {
         const healed = _healHero(hero, Math.max(1, Math.round(dmg * steal)));
         if (healed) events.push({ actor: 'hero', target: 'hero', kind: 'heal', amount: healed, text: `🩸 ${hero.name} roba ${healed} de vida.` });
+    }
+}
+
+// Efectos de las variantes cuando el MONSTRUO acierta: robo de vida y estados sobre el héroe.
+function _rpgMonsterOnHit(combat, dmg, events) {
+    const { hero, monster } = combat;
+    const r = monster.rules;
+    if (!r) return;
+    if (r.lifesteal) {
+        const healed = Math.min(monster.maxHp - monster.hp, Math.max(1, Math.round(dmg * r.lifesteal)));
+        if (healed > 0) {
+            monster.hp += healed;
+            events.push({ actor: 'monster', target: 'monster', kind: 'heal', amount: healed,
+                text: `🩸 ${monster.name} se alimenta y recupera ${healed} de vida.` });
+        }
+    }
+    if (r.poisonOnHit) {
+        combat.heroStatus.poison += r.poisonOnHit;
+        events.push({ actor: 'monster', target: 'hero', kind: 'status', amount: 0,
+            text: `☠️ ${hero.name} queda envenenado (${combat.heroStatus.poison} por ronda).` });
+    }
+    if (r.burnOnHit) {
+        const cur = combat.heroStatus.burn;
+        combat.heroStatus.burn = {
+            dmg: Math.max(r.burnOnHit.dmg, cur ? cur.dmg : 0),
+            turns: Math.max(r.burnOnHit.turns, cur ? cur.turns : 0)
+        };
+        events.push({ actor: 'monster', target: 'hero', kind: 'status', amount: 0,
+            text: `🔥 ${hero.name} arde (${combat.heroStatus.burn.dmg} por ronda, ${combat.heroStatus.burn.turns} rondas).` });
+    }
+}
+
+// Veneno y quemadura SOBRE EL HÉROE (variantes «de la Plaga» y «de las Brasas»), al cerrar la ronda
+function _rpgTickHeroStatuses(combat, events) {
+    const { hero } = combat;
+    const s = combat.heroStatus;
+    if (!s) return;
+    if (s.burn) {
+        const dmg = Math.min(hero.hp, s.burn.dmg);
+        hero.hp -= dmg;
+        s.burn.turns--;
+        if (s.burn.turns <= 0) s.burn = null;
+        if (dmg > 0) events.push({ actor: 'monster', target: 'hero', kind: 'burn', amount: dmg, text: `🔥 ${hero.name} sufre ${dmg} de quemadura.` });
+    }
+    if (s.poison > 0 && hero.hp > 0) {
+        const dmg = Math.min(hero.hp, s.poison);
+        hero.hp -= dmg;
+        events.push({ actor: 'monster', target: 'hero', kind: 'poison', amount: dmg, text: `☠️ ${hero.name} sufre ${dmg} de veneno.` });
     }
 }
 
@@ -537,6 +714,16 @@ function _rpgVictory(combat, events) {
     combat.over = true;
     combat.result = 'victory';
     events.push({ actor: 'monster', target: 'monster', kind: 'defeat', amount: 0, text: `✨ ${monster.name} ha sido derrotado.` });
+    // «de los Huesos»: al caer te asesta un último golpe. Nunca mata (ganar y morir a la vez sería absurdo).
+    const dying = monster.rules && monster.rules.deathBlow;
+    if (dying) {
+        const dmg = Math.min(hero.hp - 1, Math.max(1, Math.round(monster.atq * dying)));
+        if (dmg > 0) {
+            hero.hp -= dmg;
+            events.push({ actor: 'monster', target: 'hero', kind: 'attack', amount: dmg,
+                text: `🦴 Al caer, ${monster.name} te asesta un último golpe: ${dmg} de daño.` });
+        }
+    }
     const healed = _healHero(hero, ruleSum(hero, 'victory_heal'));
     if (healed) events.push({ actor: 'hero', target: 'hero', kind: 'heal', amount: healed, text: `🌿 ${hero.name} recupera ${healed} de vida al vencer.` });
     return { ok: true, events, over: true, result: 'victory' };
@@ -580,12 +767,26 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
 
     if (action === 'attack') {
         const icon = _rpgWeaponIcon(hero);
+        const mRules = monster.rules || {};
         const hits = _rpgAttackHits(combat, true).map(dmg => _rpgRollCrit(combat, dmg));
         hits.forEach(({ dmg, crit }) => {
+            // «Escurridizo»: sin variante la probabilidad es 0 y el dado no llega a tirarse
+            if (mRules.dodge > 0 && combat.rng() < mRules.dodge) {
+                events.push({ actor: 'monster', target: 'monster', kind: 'dodge', amount: 0,
+                    text: `💨 ${monster.name} esquiva el golpe de ${hero.name}.` });
+                return;
+            }
             monster.hp = Math.max(0, monster.hp - dmg);
             events.push({ actor: 'hero', target: 'monster', kind: crit ? 'crit' : 'attack', amount: dmg,
                 text: `${icon} ${hero.name} ataca a ${monster.name}: ${dmg} de daño${crit ? ' 💥 ¡CRÍTICO!' : ''}${guardNote}.` });
             _rpgOnHit(combat, dmg, events);
+            // «Espinoso»: te hiere al golpearle. Nunca te mata: morir por tu propio ataque sería injusto.
+            if (mRules.thorns && hero.hp > 1) {
+                const back = Math.min(hero.hp - 1, mRules.thorns);
+                hero.hp -= back;
+                events.push({ actor: 'monster', target: 'hero', kind: 'thorns', amount: back,
+                    text: `🌵 Las púas de ${monster.name} te hieren: ${back} de daño.` });
+            }
         });
         _rpgStatusSummary(monster, events, poisonBefore, burnBefore);
     } else if (action === 'skill') {
@@ -596,7 +797,7 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
             return { ok: false, error: `${skill.name} se está enfriando (${combat.cooldowns[skillId]}).`, events: [], over: false, result: null };
         }
         const info = rpgSkillInfo(hero, skillId, combat);
-        const { dmg, crit } = _rpgRollCrit(combat, _rpgGuarded(combat, info.damage));
+        const { dmg, crit } = _rpgRollCrit(combat, _rpgGuarded(combat, _rpgMonsterResist(combat, info.damage, true)));
         monster.hp = Math.max(0, monster.hp - dmg);
         combat.cooldowns[skillId] = info.cooldown;
         usedSkill = skillId;
@@ -651,16 +852,19 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
         }
         // Esquiva (DEX): si esquivas, el golpe no llega y no hay nada más que mitigar
         const dodged = hero.dodgeChance > 0 && combat.rng() < hero.dodgeChance;
-        const halved = combat.defending;
+        const mRules = monster.rules || {};
+        const halved = combat.defending && !mRules.pierceGuard;   // «Certero»: defenderse no sirve
         if (dodged) dmg = 0;
         else {
             if (halved) dmg = _rpgDefended(hero, dmg);
             if (hero.physResist > 0) dmg = Math.max(0, Math.round(dmg * (1 - hero.physResist))); // resistencia física (VIT)
         }
         dmg = _rpgHeroTakesHit(combat, dmg, events);
+        const pierced = combat.defending && mRules.pierceGuard;
         events.push({ actor: 'monster', target: 'hero', kind: 'attack', amount: dmg,
             text: dodged ? `💨 ${hero.name} esquiva el golpe de ${monster.name}.`
-                : `${monster.icon} ${monster.name} golpea a ${hero.name}: ${dmg} de daño${halved ? ' (reducido al defender)' : ''}.` });
+                : `${monster.icon} ${monster.name} golpea a ${hero.name}: ${dmg} de daño${halved ? ' (reducido al defender)' : ''}${pierced ? ' (¡atraviesa tu defensa!)' : ''}.` });
+        if (!dodged && dmg > 0) _rpgMonsterOnHit(combat, dmg, events);
         // Espinas: mientras defiendes, quien te golpea recibe daño
         const thorns = (!dodged && halved) ? ruleSum(hero, 'thorns') : 0;
         if (thorns && hero.hp > 0) {
@@ -680,6 +884,7 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
         events.push({ actor: 'monster', target: 'monster', kind: 'rest', amount: 0, text: `💤 ${monster.name} descansa.` });
     }
     combat.defending = false;
+    _rpgTickHeroStatuses(combat, events);
 
     if (hero.hp <= 0) {
         combat.over = true;

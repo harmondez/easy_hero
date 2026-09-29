@@ -778,16 +778,58 @@ for (let step = 0; step < 45 && !ended; step++) {
     if (/type-event/.test(cls)) eventsCrossed++;
     if (/type-campfire/.test(cls)) campfiresCrossed++;
     await stepNode(pick);
-    ended = await visible('#rpgEndView');
+    ended = await visible('#rpgTierView');
 }
-const winText = ended ? await page.$eval('#rpgEndBody', el => el.textContent) : '';
-assert('Recorriendo la ruta (peleando y resolviendo eventos y hogueras) se vence al jefe y aparece la pantalla de VICTORIA',
-    ended && winText.includes('¡Ruta completada!') && winText.includes('🏆'));
+const winText = ended ? await page.$eval('#rpgTierBody', el => el.textContent) : '';
+assert('Recorriendo la ruta se vence al jefe y la mazmorra NO acaba: se abre el tramo siguiente',
+    ended && /La mazmorra sigue/.test(winText) && /La Cripta/.test(winText));
 assert('Se cruzaron eventos y hogueras por el camino', eventsCrossed >= 1 && campfiresCrossed >= 1);
-assert('El resumen de victoria cuenta lo vivido (eventos incluidos)', (await page.$$('#rpgEndBody .rpg-end-stat')).length === 7 && /Eventos vividos/.test(winText));
-assert('Una victoria no muestra la línea de «casi»', !(await page.$('#rpgEndBody .rpg-end-almost')));
-assert('Al ganar no queda nada guardado', await page.evaluate(() => localStorage.getItem('easy-hero-save') === null));
-await page.screenshot({ path: shot('fin-victoria'), fullPage: true });
+assert('La pantalla de tramo muestra profundidad récord, oro y el piso al que bajarías',
+    (await page.$$('#rpgTierBody .rpg-tier-stat')).length === 3 && /Profundidad récord/.test(winText));
+assert('Vencer al primer jefe sigue contando como ganar una ruta', await page.evaluate(() => window.gameMeta.runsWon >= 1));
+await page.screenshot({ path: shot('tramo-superado'), fullPage: true });
+
+// --- El descenso: bajar al tramo 2 ---
+const beforeDescend = await page.evaluate(() => {
+    const r = window.gameState.rpg;
+    return { tier: r.tier, mapTier: r.map.tier, names: r.map.nodes.length };
+});
+await page.click('#btnRpgDescend');
+await sleep(400);
+const afterDescend = await page.evaluate(() => {
+    const r = window.gameState.rpg;
+    return {
+        tier: r.tier, mapTier: r.map.tier, view: !!document.getElementById('rpgMapView').offsetParent,
+        hp: r.hero.hp, maxHp: r.hero.maxHp, visited: r.visitedIds.length,
+        monsterName: window.Engine.createRpgMonster('monster', 5, r.map.tier).name,
+        monsterHp: window.Engine.createRpgMonster('monster', 5, r.map.tier).hp,
+        baseHp: window.Engine.createRpgMonster('monster', 5, 0).hp
+    };
+});
+assert('SEGUIR BAJANDO te lleva al tramo 2 con un mapa nuevo', afterDescend.tier === 1 && afterDescend.mapTier === 1
+    && beforeDescend.tier === 0 && afterDescend.visited === 0 && afterDescend.view);
+assert('Al bajar de tramo recuperas toda la vida', afterDescend.hp === afterDescend.maxHp);
+assert('El tramo nuevo estrena monstruos que no salen arriba', afterDescend.monsterName === 'Osario Andante');
+assert('Y pegan y aguantan bastante más que los del tramo anterior', afterDescend.monsterHp > afterDescend.baseHp * 1.4);
+
+// Para las comprobaciones siguientes hace falta la pantalla de fin: se fuerza una derrota
+await page.evaluate(() => {
+    const r = window.gameState.rpg;
+    const node = r.map.nodes.find(n => n.type === 'monster' && r.map.startIds.includes(n.id)) || r.map.nodes[0];
+    r.hero.hp = 1; r.hero.atq = 1;
+    const m = window.Engine.createRpgMonster('monster', 15, r.map.tier);
+    r.combat = window.Engine.createRpgCombat(r.hero, m, r.rng);
+    r.pendingNodeId = node.id;
+    window.UI.toggleRpgView('rpgCombatView');
+    window.UI.renderRpgCombat(r.combat, { menu: 'main' });
+});
+await sleep(150);
+await finishCombat();
+assert('Al caer en profundidad aparece la pantalla de fin de ruta', await visible('#rpgEndView'));
+const endDeep = await page.$eval('#rpgEndBody', el => el.textContent);
+assert('La pantalla de fin ofrece gastar el oro en La Forja', /LA FORJA/.test(endDeep));
+assert('Al terminar no queda nada guardado', await page.evaluate(() => localStorage.getItem('easy-hero-save') === null));
+await page.screenshot({ path: shot('fin-profundidad'), fullPage: true });
 
 console.log('\n📖🎒🏆⚙️ Progreso persistente (bestiario, colección, logros) y opciones');
 assert('Ganar el jefe desbloquea logros y el resumen los muestra',
@@ -798,12 +840,12 @@ assert('El progreso persistente registró la partida (monstruos, objetos y logro
     && Object.keys(metaAfterWin.itemsSeen).length > 0 && Object.keys(metaAfterWin.achievements).length > 0);
 assert('Se acumuló oro peleando por toda la ruta', metaAfterWin.gold > 0);
 assert('Vencer al jefe deja un trofeo legendario para siempre', metaAfterWin.trophyItem && metaAfterWin.trophyItem.rarity === 'legendaria');
-assert('El resumen final muestra el oro acumulado', new RegExp(String(metaAfterWin.gold)).test(winText) && /oro/.test(winText));
+assert('El resumen final muestra el oro acumulado', new RegExp(String(metaAfterWin.gold)).test(endDeep) && /[Oo]ro/.test(endDeep));
 
 await page.click('[data-panel="bestiary"]');
 await sleep(150);
-assert('El bestiario muestra progreso real: algún monstruo revelado y ninguna casilla vacía',
-    (await page.$$('.panel-tile:not(.is-locked)')).length > 0 && (await page.$$('.panel-tile')).length === 24);
+assert('El bestiario muestra progreso real y cubre las 104 criaturas del descenso',
+    (await page.$$('.panel-tile:not(.is-locked)')).length > 0 && (await page.$$('.panel-tile')).length === 104);
 await page.screenshot({ path: shot('panel-bestiario'), fullPage: true });
 await page.click('#btnPanelClose');
 await sleep(100);
@@ -818,7 +860,7 @@ await sleep(100);
 await page.click('[data-panel="achievements"]');
 await sleep(150);
 assert('Los logros conseguidos aparecen marcados', (await page.$$('.panel-row.is-done')).length > 0
-    && (await page.$$('.panel-row')).length === 15);
+    && (await page.$$('.panel-row')).length === 22);
 await page.screenshot({ path: shot('panel-logros'), fullPage: true });
 await page.click('#btnPanelClose');
 await sleep(100);
@@ -867,6 +909,78 @@ assert('Empuñar el trofeo lo equipa de verdad', eqAfter !== eqBefore);
 assert('El trofeo sigue disponible tras equiparlo (no se consume: es permanente)', !!(await page.$('.char-trophy')));
 await page.click('#btnCharBack');
 await sleep(150);
+
+// ---------------------------------------------
+console.log('\n⚒️ La Forja: gastar el oro en mejoras permanentes');
+{
+    await page.evaluate(() => {
+        window.gameMeta.gold = 399;   // llega para casi todo menos para la mejora más cara (400)
+        window.gameMeta.upgrades = {};
+        localStorage.setItem('easy-hero-meta', JSON.stringify(window.gameMeta));
+    });
+    await page.reload({ waitUntil: 'load' });
+    await sleep(500);
+    assert('El inicio ofrece La Forja con el oro que llevas', /399/.test(await page.$eval('#btnRpgShop', el => el.textContent)));
+
+    await page.click('#btnRpgShop');
+    await sleep(200);
+    assert('La Forja es una vista propia, no un panel superpuesto',
+        await visible('#rpgShopView') && !(await visible('#panelOverlay')));
+    assert('Se ofrecen las 8 mejoras del catálogo', (await page.$$('#shopBody .shop-card')).length === 8);
+    assert('Con 399 de oro, lo barato se puede comprar y la mejora de 400 no',
+        (await page.$$('#shopBody .shop-card.is-affordable')).length === 7 && (await page.$$('#shopBody .shop-buy:disabled')).length === 1);
+
+    await page.click('[data-shop-buy="constitucion"]');
+    await sleep(200);
+    const afterBuy = await page.evaluate(() => ({ gold: window.gameMeta.gold, level: window.gameMeta.upgrades.constitucion }));
+    assert('Comprar descuenta el oro y sube la mejora de nivel', afterBuy.gold === 369 && afterBuy.level === 1);
+    const shopText = await page.$eval('#shopBody', el => el.textContent);
+    assert('La tarjeta enseña el nivel y lo que aporta ahora', /nivel 1/.test(shopText) && /\+4 HP/.test(shopText));
+    assert('El precio sube para la siguiente compra (30 → 45)', /45/.test(shopText));
+
+    await page.click('[data-shop-buy="constitucion"]');
+    await sleep(150);
+    assert('Se puede volver a comprar la misma mejora: sube a nivel 2',
+        await page.evaluate(() => window.gameMeta.upgrades.constitucion === 2));
+
+    await page.click('[data-shop-buy="zurron"]');
+    await sleep(150);
+    assert('Una mejora de compra única queda marcada como comprada y no se repite',
+        (await page.$$('#shopBody .shop-card.is-maxed')).length === 1
+        && /COMPRADA/.test(await page.$eval('#shopBody', el => el.textContent)));
+
+    await page.click('#btnShopBack');
+    await sleep(200);
+    assert('Volver de La Forja te deja en el inicio', await visible('#rpgStartView'));
+    assert('La carta del héroe ya refleja lo comprado (+8 de vida máxima)',
+        /33/.test(await page.$eval('#rpgHeroCard', el => el.textContent)));
+
+    await page.reload({ waitUntil: 'load' });
+    await sleep(400);
+    assert('Lo comprado sobrevive a recargar la página: es permanente',
+        await page.evaluate(() => window.gameMeta.upgrades.constitucion === 2 && window.gameMeta.upgrades.zurron === 1));
+
+    await page.click('#btnRpgStart');
+    await sleep(400);
+    const heroNow = await page.evaluate(() => {
+        const h = window.gameState.rpg.hero;
+        return { maxHp: h.maxHp, hp: h.hp, slots: window.Items.inventorySize(h) };
+    });
+    assert('Una ruta nueva empieza ya con la vida comprada (25 + 8 = 33)', heroNow.maxHp === 33 && heroNow.hp === 33);
+    assert('El zurrón ancho da 15 ranuras de inventario en vez de 10', heroNow.slots === 15);
+
+    // La expedición: el reloj se mueve hacia atrás para simular horas fuera
+    await page.evaluate(() => {
+        window.gameMeta.lastSeen = Date.now() - 3 * 3600 * 1000;
+        window.gameMeta.gold = 0;
+        window.gameMeta.bestTier = 0;   // el ritmo sube con la profundidad: se fija para que el número sea exacto
+        localStorage.setItem('easy-hero-meta', JSON.stringify(window.gameMeta));
+    });
+    await page.reload({ waitUntil: 'load' });
+    await sleep(500);
+    assert('Tras 3 horas fuera, la expedición deja oro al volver', await page.evaluate(() => window.gameMeta.gold === 45));
+    assert('…y se avisa en la pantalla de inicio', /expedición/i.test(await page.$eval('#rpgStartNotice', el => el.textContent)));
+}
 
 assert('Sin errores de página durante toda la partida', pageErrors.length === 0);
 if (pageErrors.length) console.log('     ', pageErrors.slice(0, 3));

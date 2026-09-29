@@ -2,7 +2,9 @@
 // ⚖️ RPG-pack — vigilante del equilibrio
 // El equilibrio se afina con `npm run balance`. Este test NO fija los números: solo salta si un cambio deja el juego
 // injugable, demasiado fácil o sin diferencia entre jugar bien y mal. Las bandas son anchas a propósito.
-// Objetivo de diseño: un jugador medio gana ~20 % de las partidas.
+// Objetivo de diseño (desde la 1.4.0): un jugador medio SIN mejoras compradas vence al primer jefe
+// ~40 % de las veces. Ya no es el final del juego, sino la puerta al descenso sin fin: si solo la
+// cruzara 1 de cada 5, casi nadie llegaría a ver el bucle que sostiene la partida.
 // =============================================
 import { createRpgHero, createRpgMonster } from '../src/engine.js';
 import { createRpgItem, equipItem } from '../src/items.js';
@@ -23,7 +25,7 @@ const experto = runBatch('experto', N, 20000);
 const pct = (a) => Math.round(100 * a / N);
 console.log(`     ℹ️ llegan al jefe / lo vencen → torpe ${pct(torpe.reached)}/${pct(torpe.won)} %, sensato ${pct(sensato.reached)}/${pct(sensato.won)} %, experto ${pct(experto.reached)}/${pct(experto.won)} %`);
 
-assert('el jugador sensato gana entre el 10 % y el 30 % (objetivo: ~20 %)', pct(sensato.won) >= 10 && pct(sensato.won) <= 30);
+assert('el jugador sensato gana entre el 28 % y el 52 % (objetivo: ~40 %)', pct(sensato.won) >= 28 && pct(sensato.won) <= 52);
 assert('el jugador experto gana entre el 25 % y el 75 %', pct(experto.won) >= 25 && pct(experto.won) <= 75);
 assert('el jugador torpe (solo ataca) no gana más del 25 %', pct(torpe.won) <= 25);
 assert('jugar mejor se nota: torpe < sensato < experto (con margen)', pct(torpe.won) + 2 < pct(sensato.won) && pct(sensato.won) + 10 < pct(experto.won));

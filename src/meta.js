@@ -1,8 +1,11 @@
-import { MONSTER_ROSTER, SUBBOSS_ROSTER, BOSS_DEF } from './data/monsters.js?v=1.3.1';
+import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.3.1';
 import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.3.1';
 import { DAMAGE_TYPES } from './items.js?v=1.3.1';
 import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.3.1';
+import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax } from './data/upgrades.js?v=1.3.1';
+import { RPG_BALANCE } from './data/balance.js?v=1.3.1';
 export { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext };
+export { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax };
 
 // =============================================
 // 🐺 Progreso persistente — bestiario, colección de objetos y logros.
@@ -13,11 +16,14 @@ export { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext };
 export const META_KEY = 'easy-hero-meta';
 export const META_VERSION = 1;
 
-// --- Bestiario: todo lo que puede aparecer en un combate, con una clave estable (el nombre) ---
+// --- Bestiario: todo lo que puede aparecer en un combate, con una clave estable (el nombre base).
+// «Ogro Colérico de la Plaga» se anota como «Ogro»: las variantes son medallas dentro de su ficha
+// (meta.variantsSeen), no entradas nuevas, o el panel tendría miles de casillas. ---
 export const BESTIARY = [
-    ...MONSTER_ROSTER.map(m => ({ ...m, kind: 'monster' })),
+    ...ALL_MONSTER_DEFS.map(m => ({ ...m, kind: 'monster' })),
     ...SUBBOSS_ROSTER.map(m => ({ ...m, kind: 'subboss' })),
     { ...BOSS_DEF, kind: 'boss' },
+    ...DEEP_BOSSES.map(m => ({ ...m, kind: 'boss' })),
     ...Object.values(EVENT_MONSTERS).map(m => ({ name: m.name, icon: m.icon, kind: 'event', tag: m.tag }))
 ];
 export const BESTIARY_BY_NAME = Object.fromEntries(BESTIARY.map(m => [m.name, m]));
@@ -32,8 +38,13 @@ const emptyMeta = () => ({
     damageTypesEquipped: {},    // 'filo' | 'contundente' | ... -> true
     eventsSeenEver: {},
     achievements: {},           // id -> timestamp (ms) del desbloqueo
-    gold: 0,                    // nunca se pierde, ni al morir; todavía no se gasta en nada
+    gold: 0,                    // nunca se pierde, ni al morir: es lo que se gasta en La Forja
     trophyItem: null,           // el objeto legendario del jefe final: una vez ganado, para siempre
+    upgrades: {},               // id de La Forja -> nivel comprado (permanente)
+    bestDepth: 0,               // profundidad absoluta máxima alcanzada (el récord del descenso)
+    bestTier: 0,                // tramo más hondo al que se ha llegado
+    variantsSeen: {},           // nombre base -> { adj: {id: true}, lin: {id: true} }: medallas del bestiario
+    lastSeen: null,             // marca de tiempo de la última vez que se jugó (para la expedición)
     // --- Nivel de personaje: PERMANENTE, sobrevive a la muerte y a todas las rutas (decisión explícita del
     // usuario: reabre a propósito la meta-progresión «solo horizontal» — ver historial.md) ---
     charLevel: 1, xp: 0, statPoints: 0,
@@ -65,6 +76,68 @@ export function recordRunEnd(meta, { result, floor }) {
 }
 export function recordCombatWin(meta) { meta.combatsWonTotal++; }
 export function recordGold(meta, amount) { meta.gold = Math.max(0, meta.gold + (amount | 0)); }
+
+/** Guarda el récord del descenso: profundidad absoluta y en qué tramo se logró. */
+export function recordDepth(meta, { depth, tier }) {
+    meta.bestDepth = Math.max(meta.bestDepth || 0, depth | 0);
+    meta.bestTier = Math.max(meta.bestTier || 0, tier | 0);
+}
+
+/** Anota que has visto a un monstruo con esa variante (las medallas de su ficha del bestiario). */
+export function recordVariantSeen(meta, baseName, variants) {
+    if (!baseName || !variants) return;
+    const cur = meta.variantsSeen[baseName] || { adj: {}, lin: {} };
+    if (variants.adj) cur.adj[variants.adj] = true;
+    if (variants.lin) cur.lin[variants.lin] = true;
+    meta.variantsSeen[baseName] = cur;
+}
+
+// --- ⚒️ La Forja: mejoras permanentes que se compran con el oro acumulado ---
+
+export const upgradeLevel = (meta, id) => (meta.upgrades && meta.upgrades[id]) || 0;
+
+/** Lo que cuesta la SIGUIENTE compra de esa mejora (Infinity si ya está al máximo). */
+export function nextUpgradeCost(meta, id) {
+    const def = UPGRADES_BY_ID[id];
+    return def ? upgradeCost(def, upgradeLevel(meta, id)) : Infinity;
+}
+
+export function canBuyUpgrade(meta, id) {
+    const cost = nextUpgradeCost(meta, id);
+    return Number.isFinite(cost) && meta.gold >= cost;
+}
+
+/** Compra una mejora. Devuelve { ok, cost, level }; `ok: false` si no llega el oro o está al máximo. */
+export function buyUpgrade(meta, id) {
+    const cost = nextUpgradeCost(meta, id);
+    if (!canBuyUpgrade(meta, id)) return { ok: false, cost, level: upgradeLevel(meta, id) };
+    meta.gold -= cost;
+    meta.upgrades[id] = upgradeLevel(meta, id) + 1;
+    return { ok: true, cost, level: meta.upgrades[id] };
+}
+
+/** Lo que aporta ahora mismo una mejora (nivel × lo de cada nivel). 0 si no se ha comprado. */
+export function upgradeEffect(meta, id) {
+    const def = UPGRADES_BY_ID[id];
+    return def ? upgradeLevel(meta, id) * def.perLevel : 0;
+}
+
+/**
+ * Cobra lo que ha rendido la expedición mientras no jugabas, al abrir el juego.
+ * Devuelve { gold, hours, capped }. La primera vez no da nada: solo pone el reloj en marcha.
+ */
+export function claimExpedition(meta, now = Date.now()) {
+    const E = RPG_BALANCE.expedition;
+    const since = meta.lastSeen;
+    meta.lastSeen = now;
+    if (!since || now <= since) return { gold: 0, hours: 0, capped: false };
+    const rawHours = (now - since) / 3600000;
+    const hours = Math.min(E.maxHours, rawHours);
+    const rate = E.goldPerHour * (1 + (meta.bestTier || 0));   // cuanto más hondo has llegado, más rinde
+    const gold = Math.floor(hours * rate);
+    if (gold > 0) recordGold(meta, gold);
+    return { gold, hours, capped: rawHours > E.maxHours };
+}
 
 /**
  * Suma XP y sube de nivel las veces que hagan falta (permanente: no se reinicia nunca).
@@ -135,10 +208,34 @@ export const ACHIEVEMENTS = [
         check: (m) => m.bestFloor >= 10 },
     { id: 'floor_boss', icon: '🚪', name: 'A las puertas', desc: 'Llega hasta el jefe final.',
         check: (m, ctx, cfg) => m.bestFloor >= (cfg.floors - 1) },
-    { id: 'bestiary_half', icon: '📖', name: 'Estudioso', desc: `Descubre la mitad del bestiario (${Math.ceil(BESTIARY.length / 2)} de ${BESTIARY.length}).`,
-        check: (m) => Object.keys(m.monstersSeen).length >= Math.ceil(BESTIARY.length / 2) },
-    { id: 'bestiary_full', icon: '🐺', name: 'Naturalista', desc: `Descubre los ${BESTIARY.length} del bestiario.`,
+    // El bestiario pasó de 24 a más de cien fichas con el descenso: los hitos van escalonados para que
+    // haya siempre una meta cerca y otra lejísimos, en vez de una sola imposible.
+    { id: 'bestiary_25', icon: '📖', name: 'Estudioso', desc: 'Descubre 25 criaturas distintas.',
+        check: (m) => Object.keys(m.monstersSeen).length >= 25 },
+    { id: 'bestiary_50', icon: '🐺', name: 'Naturalista', desc: 'Descubre 50 criaturas distintas.',
+        check: (m) => Object.keys(m.monstersSeen).length >= 50 },
+    { id: 'bestiary_full', icon: '🏅', name: 'Archivero', desc: `Descubre las ${BESTIARY.length} criaturas del bestiario.`,
         check: (m) => Object.keys(m.monstersSeen).length >= BESTIARY.length },
+    { id: 'variants_10', icon: '🧬', name: 'Coleccionista de rarezas', desc: 'Encuentra 10 variantes distintas de monstruo.',
+        check: (m) => {
+            const ids = new Set();
+            for (const v of Object.values(m.variantsSeen || {})) {
+                Object.keys(v.adj || {}).forEach(id => ids.add(`a:${id}`));
+                Object.keys(v.lin || {}).forEach(id => ids.add(`l:${id}`));
+            }
+            return ids.size >= 10;
+        } },
+    // --- El descenso sin fin ---
+    { id: 'depth_tier1', icon: '🕳️', name: 'Más abajo', desc: 'Vence al Dragón y sigue bajando al segundo tramo.',
+        check: (m) => (m.bestTier || 0) >= 1 },
+    { id: 'depth_tier3', icon: '🌑', name: 'Sin fondo', desc: 'Llega al cuarto tramo de la mazmorra.',
+        check: (m) => (m.bestTier || 0) >= 3 },
+    { id: 'depth_50', icon: '⛏️', name: 'Cincuenta pisos', desc: 'Alcanza la profundidad 50.',
+        check: (m) => (m.bestDepth || 0) >= 50 },
+    { id: 'forge_first', icon: '⚒️', name: 'La primera chispa', desc: 'Compra tu primera mejora en La Forja.',
+        check: (m) => Object.keys(m.upgrades || {}).length >= 1 },
+    { id: 'forge_rich', icon: '💰', name: 'Fondo de guerra', desc: 'Acumula 1000 monedas de oro.',
+        check: (m) => (m.gold || 0) >= 1000 },
     { id: 'events_full', icon: '🎲', name: 'Sin secretos', desc: `Vive los ${RPG_EVENTS.length} eventos del catálogo.`,
         check: (m) => Object.keys(m.eventsSeenEver).length >= RPG_EVENTS.length }
 ];

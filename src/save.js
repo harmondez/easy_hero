@@ -9,7 +9,7 @@ import { GAME_VERSION } from './version.js?v=1.3.1';
 // El guardado lleva una versión: si el formato cambia en el futuro, uno antiguo se descarta con aviso en lugar de romper el juego.
 // =============================================
 export const SAVE_KEY = 'easy-hero-save';
-export const SAVE_VERSION = 3;   // 3: el héroe lleva primarias (STR/DEX/INT/VIT) y crítico/esquiva/resistencia
+export const SAVE_VERSION = 4;   // 4: la partida lleva el tramo del descenso sin fin (y el mapa, su dureza)
 
 const clone = o => JSON.parse(JSON.stringify(o));
 
@@ -29,6 +29,7 @@ export function snapshotRun(rpg) {
         savedAt: Date.now(),
         seed: rpg.seed,
         rngState: rpg.rng ? rpg.rng.state : null,
+        tier: rpg.tier || 0,
         hero: rpg.hero,
         map: rpg.map,
         currentId: rpg.currentId,
@@ -59,6 +60,7 @@ export function restoreRun(data) {
         if (data.rngState != null) rng.state = data.rngState;
         const rpg = {
             seed: data.seed, rng,
+            tier: data.tier || 0,
             hero: data.hero, map: data.map,
             currentId: data.currentId || null,
             visitedIds: data.visitedIds || [],
@@ -124,7 +126,8 @@ export function peekRun(storage) {
         const d = JSON.parse(raw);
         if (!d || d.v !== SAVE_VERSION || !d.hero || !d.map || !Array.isArray(d.map.nodes)) return { outdated: true };
         const node = d.map.nodes.find(n => n.id === d.currentId);
-        return { floor: node ? node.floor + 1 : 0, floors: d.map.floors - 1, hp: d.hero.hp, maxHp: d.hero.maxHp, seed: d.seed };
+        return { floor: node ? node.floor + 1 : 0, floors: d.map.floors - 1, tier: d.tier || 0,
+            hp: d.hero.hp, maxHp: d.hero.maxHp, seed: d.seed };
     } catch {
         return { outdated: true };
     }

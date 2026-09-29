@@ -1125,3 +1125,81 @@ body {
 }
 .char-primary-plus:hover { background: var(--primary-light); }
 @media (prefers-reduced-motion: reduce) { .char-level-points { animation: none; } }
+
+/* --- 🕳️ Tramo superado: la mazmorra sigue hacia abajo --- */
+.rpg-tier-card { text-align: center; }
+.rpg-tier-kicker {
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 1px;
+    color: var(--text-muted);
+}
+.rpg-tier-title {
+    margin: 6px 0 10px;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 800; letter-spacing: 1px;
+    color: var(--gold);
+    text-shadow: 0 0 24px var(--gold-glow);
+}
+.rpg-tier-text {
+    max-width: 52ch; margin: 0 auto 18px;
+    color: var(--text-light); line-height: 1.6;
+}
+.rpg-tier-stats {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+    margin-bottom: 18px;
+}
+.rpg-tier-stat {
+    display: flex; flex-direction: column; gap: 2px;
+    min-width: 128px; padding: 10px 14px;
+    background: linear-gradient(160deg, var(--bg-card-elevated), var(--bg-card));
+    border: 1px solid var(--border-color); border-radius: 10px;
+}
+.rpg-tier-stat span { font-size: 0.68rem; letter-spacing: 1px; color: var(--text-dim); }
+.rpg-tier-stat b { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 1.15rem; color: var(--text-main); }
+
+/* --- ⚒️ La Forja: mejoras permanentes --- */
+.shop-layout { max-width: 860px; margin: 0 auto; }
+.shop-purse {
+    text-align: center; margin-bottom: 6px;
+    font-size: 1.05rem; color: var(--text-light);
+}
+.shop-purse b { font-family: ui-monospace, SFMono-Regular, monospace; color: var(--gold); }
+.shop-note {
+    max-width: 62ch; margin: 0 auto 18px; text-align: center;
+    font-size: 0.86rem; line-height: 1.55; color: var(--text-muted);
+}
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.shop-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    background: linear-gradient(160deg, var(--bg-card-elevated), var(--bg-card));
+    border: 1px solid var(--border-color); border-left: 3px solid var(--border-strong);
+    border-radius: 10px;
+}
+.shop-card.is-affordable { border-left-color: var(--primary); }
+.shop-card.is-maxed { border-left-color: var(--gold); opacity: 0.8; }
+.shop-card.is-locked { opacity: 0.72; }
+.shop-icon { font-size: 1.7rem; line-height: 1; }
+.shop-info { flex: 1; min-width: 0; }
+.shop-name { font-weight: 700; color: var(--text-main); }
+.shop-level {
+    margin-left: 4px; padding: 1px 7px;
+    font-size: 0.66rem; font-weight: 800; letter-spacing: 0.5px;
+    color: #1a140e; background: var(--gold); border-radius: 20px;
+}
+.shop-desc { margin-top: 2px; font-size: 0.83rem; line-height: 1.45; color: var(--text-muted); }
+.shop-have { display: inline-block; margin-top: 4px; font-size: 0.78rem; font-weight: 700; color: var(--primary-light); }
+.shop-buy {
+    flex-shrink: 0; min-width: 84px; padding: 9px 12px;
+    font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.9rem; font-weight: 700;
+    color: var(--text-main);
+    background: rgba(217, 102, 44, 0.16);
+    border: 1px solid var(--primary); border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+.shop-buy:hover:not(:disabled) { background: rgba(217, 102, 44, 0.32); }
+.shop-buy:active:not(:disabled) { transform: scale(0.96); }
+.shop-buy:disabled { cursor: default; color: var(--text-dim); background: transparent; border-color: var(--border-color); }
+
+.btn-forge-shop { margin-top: 8px; }
+.btn-forge-gold { font-family: ui-monospace, SFMono-Regular, monospace; color: var(--gold); }

@@ -5,6 +5,7 @@ import * as Save from './save.js?v=1.3.1';
 import * as Items from './items.js?v=1.3.1';
 import * as Meta from './meta.js?v=1.3.1';
 import { RPG_BALANCE } from './data/balance.js?v=1.3.1';
+import { tierName } from './data/monsters.js?v=1.3.1';
 import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.3.1';
 import { GAME_VERSION } from './version.js?v=1.3.1';
 
@@ -84,10 +85,20 @@ function refreshContinueButton() {
         return;
     }
     UI.renderRpgContinue(peek ? {
-        floorText: peek.floor ? `Piso ${peek.floor} / ${peek.floors}` : 'Al inicio de la ruta',
+        floorText: peek.floor
+            ? `${tierName(peek.tier || 0)} · Piso ${peek.floor} / ${peek.floors}`
+            : `${tierName(peek.tier || 0)} · al inicio del tramo`,
         hpText: `HP ${peek.hp} / ${peek.maxHp}`,
         seedCode: seedToCode(peek.seed)
     } : null);
+}
+
+/** Aviso bajo la carta del héroe en la pantalla de inicio (lo borra `refreshContinueButton`). */
+function startNotice(text) {
+    const el = document.getElementById('rpgStartNotice');
+    if (!el) return;
+    el.textContent = text;
+    el.style.display = '';
 }
 
 // El diario de la ruta se guarda para poder retomarlo
@@ -133,10 +144,30 @@ function _rpgResetRun() {
     r.eventCombat = null;
     r.usedEvents = [];
     r.skipNext = false;
+    r.tier = 0;
     r.stats = newStats();
     r.log = [];
     r.ended = false;
     UI.hideRpgCombatResult();
+}
+
+/**
+ * Lo que has comprado en La Forja, aplicado al héroe recién creado. Es permanente entre rutas.
+ * El arma de «Herencia» se sortea con un generador APARTE (derivado de la semilla) para no mover
+ * el azar de la ruta: con la misma semilla, el mapa y los eventos siguen siendo los mismos.
+ */
+function _rpgApplyForgeUpgrades(hero, seed) {
+    const atk = Meta.upgradeEffect(meta, 'filo');
+    if (atk) hero.atq += atk;
+    const hp = Meta.upgradeEffect(meta, 'constitucion');
+    if (hp) { hero.maxHp += hp; hero.hp = hero.maxHp; }
+    const slots = Meta.upgradeEffect(meta, 'zurron');
+    if (slots) hero.invSlots = slots;
+    if (Meta.upgradeLevel(meta, 'herencia')) {
+        const sideRng = createRng((seed ^ 0x9e3779b9) >>> 0);
+        const weapon = Items.createRpgItem({ rng: sideRng, floor: 0, slot: 'weapon', rarityId: 'poco_comun' });
+        if (weapon) { Items.equipItem(hero, weapon); Meta.recordItemEquipped(meta, weapon); }
+    }
 }
 
 function _rpgStartRun(seed) {
@@ -144,11 +175,13 @@ function _rpgStartRun(seed) {
     _rpgResetRun();
     r.seed = seed == null ? newSeed() : seed;
     r.rng = createRng(r.seed);
+    r.tier = 0;
     r.hero = Engine.createRpgHero();
     r.hero.trophy = meta.trophyItem ? { ...meta.trophyItem } : null; // una copia: nunca se pierde, esté equipado o no
     for (const k of Meta.PRIMARY_KEYS) r.hero.primary[k] += meta.primary[k] || 0; // puntos de nivel YA invertidos, permanentes
+    _rpgApplyForgeUpgrades(r.hero, r.seed);
     Engine.refreshPrimaryStats(r.hero);
-    r.map = Engine.generateRpgMap(r.rng);
+    r.map = Engine.generateRpgMap(r.rng, Engine.RPG_MAP_CONFIG, 0);
     r.currentId = null;
     r.visitedIds = [];
     UI.toggleRpgView('rpgMapView');
@@ -161,6 +194,42 @@ function _rpgStartRun(seed) {
     persist();
 }
 
+// --- ⚒️ La Forja ---
+
+/** El héroe con el que empezarías AHORA (con lo comprado y los puntos de nivel): la carta del inicio. */
+function _rpgPreviewHero() {
+    const hero = Engine.createRpgHero();
+    for (const k of Meta.PRIMARY_KEYS) hero.primary[k] += meta.primary[k] || 0;
+    _rpgApplyForgeUpgrades(hero, 0);
+    Engine.refreshPrimaryStats(hero);
+    return hero;
+}
+
+function _rpgOpenShop(from) {
+    gameState.rpg.shopFrom = from || 'start';
+    UI.renderShop(meta);
+    UI.toggleRpgView('rpgShopView');
+}
+
+function _rpgCloseShop() {
+    if (gameState.rpg.shopFrom === 'end') { UI.toggleRpgView('rpgEndView'); return; }
+    UI.toggleRpgView('rpgStartView');
+    UI.renderRpgHeroCard(_rpgPreviewHero());
+    _refreshShopButton();
+}
+
+function _rpgBuyUpgrade(id) {
+    if (!Meta.buyUpgrade(meta, id).ok) return;
+    Meta.checkAchievements(meta, null, { floors: Engine.RPG_MAP_CONFIG.floors });
+    persistMeta();
+    UI.renderShop(meta);
+}
+
+function _refreshShopButton() {
+    const el = document.getElementById('rpgShopGold');
+    if (el) el.textContent = ` · 🪙 ${meta.gold}`;
+}
+
 function _rpgBackToStart() {
     const r = gameState.rpg;
     _rpgResetRun();
@@ -168,7 +237,8 @@ function _rpgBackToStart() {
     r.currentId = null; r.visitedIds = [];
     Save.clearRun(storage);
     UI.toggleRpgView('rpgStartView');
-    UI.renderRpgHeroCard(Engine.createRpgHero());
+    UI.renderRpgHeroCard(_rpgPreviewHero());
+    _refreshShopButton();
     refreshContinueButton();
 }
 
@@ -285,7 +355,8 @@ function _rpgLootClose() {
     const r = gameState.rpg;
     const wasBoss = r.loot && r.loot.source === 'boss';
     r.loot = null;
-    if (wasBoss) { _rpgEndRun('victory', r.pendingBossMonster); r.pendingBossMonster = null; return; }
+    // Vencer al jefe ya no acaba la partida: abre el tramo siguiente del descenso
+    if (wasBoss) { r.pendingBossMonster = null; _rpgShowTierGate(); return; }
     UI.toggleRpgView('rpgMapView');
     _rpgRefreshMap(false);
     persist();
@@ -501,11 +572,15 @@ function _rpgRefreshCombat() {
 
 function _rpgStartCombat(node, customMonster) {
     const r = gameState.rpg;
-    const monster = customMonster || Engine.createRpgMonster(node.type, node.floor);
+    const tier = (r.map && r.map.tier) || 0;
+    // Las variantes salen de un hash del nodo y la semilla, no del azar de la partida
+    const variants = customMonster ? null : Engine.pickMonsterVariants(r.seed, node.id, tier, node.floor);
+    const monster = customMonster || Engine.createRpgMonster(node.type, node.floor, tier, variants);
     r.combat = Engine.createRpgCombat(r.hero, monster, r.rng);
     r.combatMenu = 'main';
     r.pendingNodeId = node.id;
-    Meta.recordMonsterSeen(meta, monster.name);
+    Meta.recordMonsterSeen(meta, monster.baseName || monster.name);
+    if (monster.variants) Meta.recordVariantSeen(meta, monster.baseName, monster.variants);
     persistMeta();
     UI.toggleRpgView('rpgCombatView');
     UI.hideRpgCombatResult();
@@ -602,6 +677,48 @@ function _rpgBuildSummary(result, monster) {
     };
 }
 
+/** Tras vencer al jefe: pantalla de tramo superado, con lo ganado y la puerta al siguiente. */
+function _rpgShowTierGate() {
+    const r = gameState.rpg;
+    const next = (r.tier || 0) + 1;
+    Meta.recordDepth(meta, { depth: Engine.rpgAbsoluteFloor(r.tier || 0, r.map.floors - 1), tier: r.tier || 0 });
+    // Vencer al PRIMER jefe sigue contando como ganar una ruta (es lo que era «ganar» antes del descenso);
+    // los jefes de los tramos siguientes ya no suman otra victoria, solo profundidad.
+    Meta.recordRunEnd(meta, { result: (r.tier || 0) === 0 ? 'victory' : 'tier', floor: r.map.floors - 1 });
+    const unlocked = Meta.checkAchievements(meta, { result: 'victory', hero: r.hero, stats: r.stats }, { floors: r.map.floors });
+    persistMeta();
+    UI.renderRpgTierGate({
+        clearedName: tierName(r.tier || 0),
+        nextName: tierName(next),
+        nextTier: next,
+        nextDepth: Engine.rpgAbsoluteFloor(next, 0) + 1,
+        bestDepth: meta.bestDepth,
+        gold: meta.gold,
+        hero: r.hero,
+        newAchievements: unlocked
+    });
+    UI.toggleRpgView('rpgTierView');
+    persist();
+}
+
+/** Baja un tramo: mapa nuevo, más duro y más rico, con la vida al completo y el equipo intacto. */
+function _rpgDescend() {
+    const r = gameState.rpg;
+    r.tier = (r.tier || 0) + 1;
+    r.map = Engine.generateRpgMap(r.rng, Engine.RPG_MAP_CONFIG, r.tier);
+    r.currentId = null;
+    r.visitedIds = [];
+    r.usedEvents = [];        // el tramo nuevo vuelve a ofrecer todo el catálogo de eventos
+    r.skipNext = false;
+    r.hero.hp = r.hero.maxHp; // vida completa al entrar en un tramo nuevo
+    Meta.recordDepth(meta, { depth: Engine.rpgAbsoluteFloor(r.tier, 0), tier: r.tier });
+    persistMeta();
+    UI.toggleRpgView('rpgMapView');
+    log(`🕳️ ${r.hero.name} desciende a ${tierName(r.tier)}. Vida restaurada: ${r.hero.hp}/${r.hero.maxHp}.`, 'victory');
+    _rpgRefreshMap(true);
+    persist();
+}
+
 function _rpgEndRun(result, monster) {
     const r = gameState.rpg;
     const floorReached = result === 'victory' ? r.map.floors - 1 : monster.floor;
@@ -635,16 +752,21 @@ function _rpgCombatContinue() {
 
     if (result === 'victory') {
         r.stats.combatsWon++;
-        Meta.recordMonsterDefeated(meta, m.name);
+        Meta.recordMonsterDefeated(meta, m.baseName || m.name);
         Meta.recordCombatWin(meta);
-        const gold = RPG_BALANCE.gold[m.type] || RPG_BALANCE.gold.monster;
+        // La recompensa se multiplica por tres cosas: la profundidad, la variante del monstruo y La Forja
+        const depthMul = Math.pow(RPG_BALANCE.depth.goldMul, m.tier || 0);
+        const gold = Math.max(1, Math.round((RPG_BALANCE.gold[m.type] || RPG_BALANCE.gold.monster)
+            * depthMul * (m.goldMul || 1) * (1 + Meta.upgradeEffect(meta, 'buen_ojo'))));
         Meta.recordGold(meta, gold);
-        const xp = Meta.XP_REWARD[m.type] || Meta.XP_REWARD.monster;
+        const xp = Math.max(1, Math.round((Meta.XP_REWARD[m.type] || Meta.XP_REWARD.monster)
+            * depthMul * (m.xpMul || 1) * (1 + Meta.upgradeEffect(meta, 'estudio'))));
         const lvl = Meta.recordXp(meta, xp);
+        Meta.recordDepth(meta, { depth: Engine.rpgAbsoluteFloor(m.tier || 0, m.floor), tier: m.tier || 0 });
         persistMeta();
         _rpgAdvanceTo(r.pendingNodeId);
         log(m.type === 'boss'
-            ? `🐉 ${r.hero.name} derrota al ${m.name}. ¡Ruta completada! (+${gold} 🪙 · +${xp} XP)`
+            ? `🐉 ${r.hero.name} derrota al ${m.name}. ¡Tramo superado! (+${gold} 🪙 · +${xp} XP)`
             : `${m.icon} ${r.hero.name} vence a ${m.name} (piso ${m.floor + 1}). +${gold} 🪙 · +${xp} XP`, 'victory');
         if (lvl.levelsGained > 0) log(`✨ ¡Subes a nivel de personaje ${lvl.newLevel}! Tienes ${lvl.statPoints} puntos por repartir (pantalla de Personaje).`, 'victory');
         if (m.type === 'boss') {
@@ -725,6 +847,7 @@ function initEvents() {
         if (e.target.closest('#btnRpgCombatContinue')) _rpgCombatContinue();
     });
     safeListener('rpgEndView', 'click', (e) => {
+        if (e.target.closest('#btnRpgEndForge')) { _rpgOpenShop('end'); return; }
         if (e.target.closest('#btnRpgEndNew')) { _rpgStartRun(); return; }
         if (e.target.closest('#btnRpgEndRepeat')) { _rpgStartRun(gameState.rpg.seed); return; }
         if (e.target.closest('#btnRpgEndHome')) { _rpgBackToStart(); return; }
@@ -736,6 +859,17 @@ function initEvents() {
         }
     });
     safeListener('btnRpgAbandon', 'click', () => _rpgBackToStart());
+
+    // --- 🕳️ Descenso y ⚒️ La Forja ---
+    safeListener('rpgTierView', 'click', (e) => {
+        if (e.target.closest('#btnRpgDescend')) _rpgDescend();
+    });
+    safeListener('btnRpgShop', 'click', () => _rpgOpenShop('start'));
+    safeListener('btnShopBack', 'click', () => _rpgCloseShop());
+    safeListener('shopBody', 'click', (e) => {
+        const btn = e.target.closest('[data-shop-buy]');
+        if (btn && !btn.disabled) _rpgBuyUpgrade(btn.dataset.shopBuy);
+    });
 
     // --- 📖🎒🏆⚙️ Cabecera: bestiario, colección, logros y opciones ---
     safeListener('gameNav', 'click', (e) => {
@@ -790,6 +924,17 @@ function _importProgress(text) {
 initEvents();
 const versionLabel = document.querySelector('.game-version');
 if (versionLabel) versionLabel.textContent = `v${GAME_VERSION} · en desarrollo`;
+
+// La expedición: lo que ha rendido la mazmorra desde la última vez que jugaste
+const expedition = Meta.claimExpedition(meta);
+Meta.checkAchievements(meta, null, { floors: Engine.RPG_MAP_CONFIG.floors });
+Meta.saveMeta(storage, meta);
+
 UI.toggleRpgView('rpgStartView');
-UI.renderRpgHeroCard(Engine.createRpgHero());
+UI.renderRpgHeroCard(_rpgPreviewHero());
+_refreshShopButton();
 refreshContinueButton();
+if (expedition.gold > 0) {
+    startNotice(`⛏️ Tu expedición ha traído ${expedition.gold} 🪙 mientras no estabas`
+        + `${expedition.capped ? ' (el tope son 8 horas)' : ''}. Gástalo en La Forja.`);
+}

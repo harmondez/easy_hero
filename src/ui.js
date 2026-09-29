@@ -2,6 +2,7 @@ import * as Engine from './engine.js?v=1.3.1';
 import * as Items from './items.js?v=1.3.1';
 import * as Meta from './meta.js?v=1.3.1';
 import * as Stats from './stats.js?v=1.3.1';
+import { upgradeAmountText } from './data/upgrades.js?v=1.3.1';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -58,7 +59,7 @@ export function playHitAnimation(selector, isAlly) {
 // --- 🗡️ MODO RPG (Carta de Héroe + mapa de ruta) ---
 
 export function toggleRpgView(view) {
-    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgLootView', 'rpgCharView', 'rpgCombatView', 'rpgEndView'].forEach(id => {
+    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgLootView', 'rpgCharView', 'rpgShopView', 'rpgTierView', 'rpgCombatView', 'rpgEndView'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = id === view ? 'block' : 'none';
     });
@@ -209,6 +210,57 @@ export function renderRpgMap(map, state = {}) {
         <div class="rpg-boss-tag${bossFogged ? ' is-fog' : ''}" style="left:${bp.x}%;top:${bp.y}%">${bossFogged ? '???' : 'JEFE FINAL'}</div>`;
 
     if (state.animate) setTimeout(() => el.classList.remove('animate'), 1200);
+}
+
+/** Tramo superado: el jefe ha caído y la mazmorra sigue hacia abajo. */
+export function renderRpgTierGate(info) {
+    const el = document.getElementById('rpgTierBody');
+    if (!el || !info) return;
+    const achievements = (info.newAchievements || []).map(a =>
+        `<li><span class="rpg-end-ach-icon">${a.icon}</span> <b>${esc(a.name)}</b> · ${esc(a.desc)}</li>`).join('');
+    el.innerHTML = `
+        <div class="rpg-tier-kicker">Has vencido al guardián de ${esc(info.clearedName)}</div>
+        <h2 class="rpg-tier-title">La mazmorra sigue</h2>
+        <p class="rpg-tier-text">El suelo se abre bajo la sala del jefe. Más abajo espera <b>${esc(info.nextName)}</b>,
+        con criaturas que no has visto nunca y que pegan mucho más fuerte. Bajas con la <b>vida al completo</b>
+        y todo tu equipo.</p>
+        <div class="rpg-tier-stats">
+            <div class="rpg-tier-stat"><span>Profundidad récord</span><b>${info.bestDepth}</b></div>
+            <div class="rpg-tier-stat"><span>Oro acumulado</span><b>🪙 ${info.gold}</b></div>
+            <div class="rpg-tier-stat"><span>Siguiente piso</span><b>${info.nextDepth}</b></div>
+        </div>
+        ${achievements ? `<div class="rpg-end-ach-title">🏆 Logros desbloqueados</div><ul class="rpg-end-achievements">${achievements}</ul>` : ''}
+        <button type="button" id="btnRpgDescend" class="btn-forge">🕳️ SEGUIR BAJANDO</button>`;
+}
+
+/** La Forja: mejoras permanentes que se compran con el oro que nunca se pierde. */
+export function renderShop(meta) {
+    const el = document.getElementById('shopBody');
+    if (!el || !meta) return;
+    const cards = Meta.UPGRADES.map(def => {
+        const level = Meta.upgradeLevel(meta, def.id);
+        const cost = Meta.nextUpgradeCost(meta, def.id);
+        const maxed = !Number.isFinite(cost);
+        const affordable = !maxed && meta.gold >= cost;
+        const have = level ? `<span class="shop-have">Ahora: ${esc(upgradeAmountText(def, level))}</span>` : '';
+        return `
+        <article class="shop-card ${maxed ? 'is-maxed' : affordable ? 'is-affordable' : 'is-locked'}">
+            <div class="shop-icon">${def.icon}</div>
+            <div class="shop-info">
+                <div class="shop-name">${esc(def.name)} ${level ? `<span class="shop-level">nivel ${level}</span>` : ''}</div>
+                <div class="shop-desc">${esc(def.desc)}</div>
+                ${have}
+            </div>
+            <button type="button" class="shop-buy" data-shop-buy="${esc(def.id)}" ${maxed || !affordable ? 'disabled' : ''}>
+                ${maxed ? 'COMPRADA' : `🪙 ${cost}`}
+            </button>
+        </article>`;
+    }).join('');
+    el.innerHTML = `
+        <div class="shop-purse">Tu oro: <b>🪙 ${meta.gold}</b></div>
+        <p class="shop-note">Lo que compras aquí es <b>para siempre</b>: no se pierde al morir ni al empezar otra ruta.
+        Las mejoras con nivel se pueden comprar una y otra vez, cada vez más caras.</p>
+        <div class="shop-grid">${cards}</div>`;
 }
 
 export function addRpgLog(msg, type = 'system') {
@@ -661,7 +713,8 @@ export function renderRpgEnd(summary) {
         <div class="rpg-end-seed">Semilla <code id="rpgEndSeed">${esc(summary.seedCode)}</code>
             <button type="button" id="btnRpgCopySeed" class="btn-secondary">Copiar</button></div>
         <div class="rpg-end-actions">
-            <button type="button" id="btnRpgEndNew" class="btn-forge">🗡️ NUEVA RUTA</button>
+            <button type="button" id="btnRpgEndForge" class="btn-forge">⚒️ GASTAR EL ORO EN LA FORJA</button>
+            <button type="button" id="btnRpgEndNew" class="btn-secondary">🗡️ NUEVA RUTA</button>
             <button type="button" id="btnRpgEndRepeat" class="btn-secondary">🔁 REPETIR CON LA MISMA SEMILLA</button>
             <button type="button" id="btnRpgEndHome" class="btn-secondary">← INICIO</button>
         </div>`;
