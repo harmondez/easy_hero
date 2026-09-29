@@ -324,6 +324,42 @@ una gota, con comprobaciones nuevas de sesgo por origen). Se encontró y corrigi
 móvil, `align-items: flex-start` en el contenedor de la columna de equipo + mapa hacía que el mapa se encogiera a
 su ancho mínimo de contenido en vez de ocupar la pantalla, provocando que los nodos se solaparan.
 
+## 2026-09-30 · Harness de pruebas de propiedades (fuzzing) — 2 bugs reales encontrados
+
+Encargo aparte, en paralelo a lo de arriba: diseñar un harness de pruebas «de todo tipo», ejecutarlo en
+escalera (barato → caro) y anotar los hallazgos en un markdown, gastando el mínimo de tokens posible (tarea
+para ejecutar de forma autónoma).
+
+**Qué se construyó**: `tools/harness/`, 6 fases independientes (`node tools/harness/run-all.mjs` las corre
+todas, o cada `0N-*.mjs` suelta) que complementan `npm test` con pruebas de propiedades — miles de
+combinaciones aleatorias contra invariantes generales, no valores exactos:
+1. Integridad estática de los 6 archivos de datos de la 1.4.x (sin azar).
+2. Fuzzing del motor puro: mapas, monstruos y combate.
+3. Fuzzing de objetos y botín.
+4. **Descensos multi-tramo completos** (hasta 12 tramos o la muerte) con los 3 bots — la única prueba del
+   proyecto que baja de verdad varios tramos seguidos con variantes activas.
+5. Fuzzing de guardar/restaurar sobre partidas a medias.
+6. Casos límite de La Forja, expedición, XP y logros.
+
+**2 bugs reales encontrados y corregidos** (detalle completo, con la traza exacta de cada uno, en
+[docs/harness-hallazgos.md](docs/harness-hallazgos.md)):
+1. **`tools/sim.mjs`** — el bot `experto` del simulador reventaba (`cloneCombat` no copiaba
+   `combat.heroStatus`) al mirar dos rondas por delante contra cualquier monstruo con la variante «de la
+   Plaga» o «de las Brasas». El motor del juego real nunca falla (no clona combates); el bug vivía en la
+   herramienta de simulación, y explica por qué el banco de equilibrio nunca ha podido probar variantes: si
+   alguien lo intentara, reventaría en silencio. Corregido añadiendo `heroStatus` al clon.
+2. **`src/meta.js`** — tres logros (`no_gear_win`, `flawless`, `full_gear`) comprobaban `!!ctx` pero no sus
+   subcampos (`ctx.stats`, `ctx.hero`), y lanzaban con un contexto incompleto. No alcanzable desde el juego
+   real hoy (los 4 sitios que llaman a `checkAchievements` siempre pasan `hero`+`stats` completos o `null`),
+   pero es código frágil. Corregido con el mismo estilo defensivo que ya usa el resto del archivo.
+
+**103.054 comprobaciones, 0 bugs** tras las dos correcciones; el resto de la suite (721 comprobaciones)
+sigue en verde sin cambios de comportamiento para el jugador.
+
+**Límite explícito que deja anotado**: el banco de equilibrio oficial (`tools/balance.mjs`,
+`tests/balance-guard.mjs`) sigue sin simular variantes ni tramos > 0 — es la misma limitación ya apuntada en
+`planning.md` antes de este harness; extenderlo es trabajo aparte, no tocado aquí.
+
 ---
 
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)

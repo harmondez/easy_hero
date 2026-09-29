@@ -20,8 +20,8 @@ const clone = o => JSON.parse(JSON.stringify(o));
 
 // ---------- Combate ----------
 function cloneCombat(c) {
-    const { hero, monster, turn, defending, cooldowns, lastAction, over, result, state } = c;
-    return { ...clone({ hero, monster, turn, defending, cooldowns, lastAction, over, result, state }), intro: [], rng: STUB_RNG };
+    const { hero, monster, turn, defending, cooldowns, lastAction, over, result, state, heroStatus } = c;
+    return { ...clone({ hero, monster, turn, defending, cooldowns, lastAction, over, result, state, heroStatus }), intro: [], rng: STUB_RNG };
 }
 
 /** Cambia la acción si repetirla activaría la lectura del Lector. */
