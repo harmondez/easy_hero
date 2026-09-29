@@ -17,7 +17,7 @@
 //   pattern(p)         devuelve el patrón de movimientos transformado
 //   rules              banderas que lee el motor durante el combate (ver engine.js)
 // =============================================
-import { atk, heal, CHARGE, GUARD, REST } from './monsters.js?v=1.4.0';
+import { atk, heal, CHARGE, GUARD, REST } from './monsters.js?v=1.4.1';
 
 // Quita de un patrón los movimientos que no son ataques (para los que «no se paran»)
 const onlyAttacks = p => {

@@ -12,7 +12,7 @@
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.4.0-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.4.1-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -27,10 +27,12 @@
 
 ## 🆕 Novedades
 
-**Versión 1.3.1** · 22 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.4.1** · 30 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 | | Qué hay de nuevo |
 |:-:|------------------|
+| ⚔️ | **El equipo siempre a la vista**, junto al mapa y junto al botín: nunca hace falta abrir nada para ver qué llevas puesto ni para compararlo |
+| 🎁 | **El botín ya no se elige 1 de 3**: cae un solo objeto. Los combates normales también sueltan algo de vez en cuando, casi siempre común; lo bueno se gana en cofres y sub-jefes |
 | 🕳️ | **El descenso no tiene fin**: vencer al jefe ya no acaba la partida. El suelo se abre y bajas a otro tramo, más duro y más rico. Tu marca es la **profundidad** |
 | ⚒️ | **La Forja**: por fin hay dónde gastar el oro. 8 mejoras **permanentes** que no se pierden al morir |
 | 🧬 | **Variantes de monstruo**: «Orco Colérico de la Plaga». 22 formas raras que cambian cómo pelea, y una que te **oculta su intención** |
@@ -39,7 +41,6 @@
 | 🌫️ | **Niebla de guerra**: el mapa se recorre hacia abajo desde el piso 0 y lo que queda a más de 3 pisos por delante se cubre hasta que te acercas |
 | 🧬 | **Estadísticas primarias**: Fuerza, Destreza, Inteligencia y Vitalidad, con crítico, esquiva y resistencia de verdad |
 | 📈 | **Nivel de personaje, permanente**: gana experiencia, sube de nivel y reparte tú mismo los puntos — te acompaña en todas tus rutas futuras |
-| ⚔️ | **El equipo siempre a la vista**, junto al mapa: nunca hace falta abrir nada para ver qué llevas puesto |
 | 🪙 | **Oro**: los monstruos dejan monedas al vencerlos; se acumula para siempre, incluso si mueres |
 | 🐉 | **El trofeo del jefe**: vence al Dragón Ancestral y te quedas con un objeto legendario para todas tus rutas futuras |
 | 🏰 | **Nueva ambientación**: fantasía oscura de mazmorra, piedra y forja en vez del azul genérico de antes |
@@ -196,7 +197,7 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.4.0, sigue en desarrollo.** El equilibrio está ajustado para que un jugador medio **venza al primer jefe unas 2 de cada 5 partidas**, porque ese jefe ya no es el final: es la puerta al descenso sin fondo
+> **Versión 1.4.1, sigue en desarrollo.** El equilibrio está ajustado para que un jugador medio **venza al primer jefe unas 2 de cada 5 partidas**, porque ese jefe ya no es el final: es la puerta al descenso sin fondo
 > (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
 
 ### ✅ Ya se puede jugar

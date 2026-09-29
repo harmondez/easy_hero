@@ -5,6 +5,8 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.4.1] - 2026-09-29
+
 ### ✨ Novedades
 - ⚔️ **El equipo ya no se oculta.** Una columna fija junto al mapa muestra siempre las 4 ranuras, con nombre,
   rareza y lo que da cada objeto — sin abrir ningún botón. También aparece junto al botín, para comparar sin
@@ -26,6 +28,10 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 - `Items.rollLootDrop` sustituye a `rollLootOffers`; `RARITY_BIAS` en `data/rarities.js` sesga la rareza según el
   origen del botín (combate, cofre, hoguera, sub-jefe). `RPG_BALANCE.loot.combatDropChance = 0.25`.
 - `gearPanelHtml()`/`renderGearPanel()` en `src/ui.js`, reutilizados en el mapa y en la pantalla de botín.
+- **Nuevo harness de fuzzing** (`tools/harness/`, `node tools/harness/run-all.mjs`): 103.000 comprobaciones
+  de propiedades que complementan `npm test`. Encontró y corrigió 2 bugs reales (uno en el simulador del
+  banco de equilibrio, otro de robustez en los logros); detalle en
+  [docs/harness-hallazgos.md](docs/harness-hallazgos.md).
 
 ## [1.4.0] - 2026-09-29
 
