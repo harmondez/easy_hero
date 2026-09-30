@@ -17,7 +17,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.5.0-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.5.1-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -32,7 +32,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 ## 🆕 Novedades
 
-**Versión 1.5.0** · 30 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.5.1** · 30 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **La gran actualización visual.** Easy Hero deja atrás las cartas y los emojis en combate: ahora peleas **de lado,
@@ -40,6 +40,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 | | Qué hay de nuevo |
 |:-:|------------------|
+| 🗺️ | **Nuevo en la 1.5.1 — Zafias como un mapa antiguo:** caminos a trazos de tinta y paradas rojas que laten, numeradas **1-1, 1-2, 1-3…**. Tu héroe anda de parada en parada; un enemigo sin vencer corta el paso y, vencido, su parada queda con ✓ |
 | 🧭 | **Modo aventura: Zafias.** Un mapa pintado que recorres escena a escena con tu héroe de siempre: una aldea con sus vecinos, un bosque lleno de goblins y un campamento con su jefe |
 | 📜 | **Tu primera misión.** Maela, la posadera, te encarga limpiar el bosque. El objetivo siempre a la vista y una recompensa al volver |
 | ⚔️ | **Combate de lado**, como en los clásicos del navegador: tu héroe a la izquierda, el enemigo a la derecha. Cada golpe es una **embestida** y el daño salta encima del golpeado |
@@ -95,8 +96,9 @@ pícaro o elementalista.
 ## 🧭 Modo aventura: Zafias
 
 Por encima de la mazmorra hay un mundo. **Zafias** es una aldea a las puertas de un bosque que los goblins han
-tomado, y la recorres **escena a escena** sobre un mapa pintado: pulsa a un vecino, a un enemigo o un camino, y tu
-héroe irá andando hasta allí.
+tomado, y la recorres **escena a escena** sobre un mapa pintado, como en los mapas antiguos: los caminos van
+**a trazos** entre paradas numeradas **1-1, 1-2, 1-3…**. Pulsa una parada y tu héroe irá andando por el camino
+hasta allí… salvo que un enemigo le corte el paso.
 
 <p align="center">
   <img src="docs/img/aventura.jpg" alt="La aldea de Zafias: Maela, la posadera, te cuenta que tres goblins vigilan los cruces del bosque" width="680">

@@ -1,4 +1,4 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.5.0';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.5.1';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo

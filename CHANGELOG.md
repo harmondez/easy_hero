@@ -5,11 +5,19 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.5.1] - 2026-09-30
+
 ### ✨ Novedades
 - 🗺️ **Zafias como un mapa antiguo**: los caminos se dibujan a trazos de tinta y las paradas son puntos rojos que
   laten, numerados 1-1, 1-2, 1-3… Tu héroe anda por el camino de parada en parada. Un enemigo sin vencer corta el
   paso, y al vencerlo su parada queda marcada con ✓.
+- 🚪 Las salidas a otra escena son puntos dorados que no laten, para distinguirlas de las paradas.
 
+### 🔧 Cambios
+- Si huyes de un enemigo del camino, sigues delante de él: no se puede cruzar sin vencerle.
+- Las zonas del Modo Aventura se describen ahora como paradas, cruces y caminos entre ellos (el paso previo a un
+  editor de zonas).
+- Capturas nuevas de la aventura en el README.
 
 ## [1.5.0] - 2026-09-30
 

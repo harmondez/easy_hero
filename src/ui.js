@@ -1,10 +1,10 @@
-import * as Engine from './engine.js?v=1.5.0';
-import * as Items from './items.js?v=1.5.0';
-import * as Meta from './meta.js?v=1.5.0';
-import * as Stats from './stats.js?v=1.5.0';
-import { upgradeAmountText } from './data/upgrades.js?v=1.5.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.5.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.5.0';
+import * as Engine from './engine.js?v=1.5.1';
+import * as Items from './items.js?v=1.5.1';
+import * as Meta from './meta.js?v=1.5.1';
+import * as Stats from './stats.js?v=1.5.1';
+import { upgradeAmountText } from './data/upgrades.js?v=1.5.1';
+import { RPG_BALANCE } from './data/balance.js?v=1.5.1';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.5.1';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)

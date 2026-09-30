@@ -12,7 +12,7 @@
 
 ## 📍 Estado actual
 
-**Publicado hasta la 1.5.0:** entregas A y B1, decorado/onboarding, 4 paneles, Personaje/inventario, oro y
+**Publicado hasta la 1.5.1:** entregas A y B1, decorado/onboarding, 4 paneles, Personaje/inventario, oro y
 trofeo del jefe, primarias con nivel permanente, niebla de guerra, **el descenso sin fin** (tramos, La Forja,
 expedición, 90 monstruos, 22 variantes), el equipo siempre visible, el botín de una sola gota, el harness de
 fuzzing, el mapa en el centro como mazmorra visual y **la 1.5.0: combate de lado estilo DragonFable y el Modo
@@ -80,8 +80,7 @@ perdieron y hay citas de otros juegos.
 - **Aventura:** editor `?editor=zafias` para colocar puntos con el ratón; caminos como grafo en vez de recodos;
   motor puro separado (`src/adventure.js`) si la lógica crece.
 - **Móvil:** en el bosque a 390 px el héroe queda pegado al borde al llegar.
-- **Caminos a trazos (hecho, sin publicar):** capturas del README (aventura/bosque) aún con los marcadores de antes;
-  los emojis de las etiquetas de parada se ven pequeños; el sprite del enemigo tapa un poco su punto.
+- **Caminos a trazos (publicado en la 1.5.1):** los emojis de las etiquetas de parada se ven pequeños; el sprite del enemigo tapa un poco su punto.
 - **Aventura (de C3):** al morir o abandonar el descenso bajado desde la cueva vuelves al inicio, no a la aldea;
   los marcadores de la aldea se ven pequeños entre tanto detalle del mapa.
 - **Aventura (de C2):** el cofre pintado del campamento aún no hace nada; el objetivo de la misión va en la
