@@ -2,7 +2,9 @@
 // 🧭 Zafias — la primera zona del Modo Aventura
 // Coordenadas en píxeles de img/zones/zafias.webp (1434×1097), vista cenital.
 // Cada escena es un recuadro del mapa que la cámara encuadra; los puntos son lo que se puede pulsar.
-//   `via`      recodos del camino que el héroe sigue para llegar al punto
+//   `startAt`  parada donde apareces al entrar en la escena · `forks` cruces de camino (sin parada)
+//   `links`    caminos a trazos entre paradas/cruces: [desde, hasta, recodos opcionales]
+//   `arriveAt` (en las salidas) la parada de la escena de destino donde apareces
 //   `enemy`    contra qué se pelea (tipo y piso fijan su fuerza: la dificultad es fija por zona)
 //   `once`     el enemigo no vuelve nunca (jefes de misión); los demás reaparecen al dormir en la posada
 //   `requires` marcas de la historia que hacen falta para que el punto aparezca (todas)
@@ -18,58 +20,78 @@ export const ZAFIAS = {
     image: 'img/zones/zafias.webp',
     width: 1434,
     height: 1097,
+    number: 1,                 // mundo 1: sus paradas se numeran 1-1, 1-2…
     startScene: 'aldea',
     scenes: {
         aldea: {
             name: 'La aldea de Zafias',
             box: { x: 10, y: 290, w: 400, h: 520 },   // hasta la cueva del sur
-            start: { x: 300, y: 530 },
+            startAt: 'plaza',
+            forks: { plaza: { x: 300, y: 530 }, 'cruce-norte': { x: 312, y: 470 } },
             points: [
-                // Lugares: la posada (dormir cura y hace volver a los enemigos), la tienda y la cueva al descenso
-                { id: 'posada', kind: 'inn', name: 'Posada: dormir', x: 150, y: 400 },
-                { id: 'tienda', kind: 'shop', name: 'Tienda y forja', x: 236, y: 525 },
-                { id: 'cueva', kind: 'cave', name: 'Cueva del sur: bajar al descenso', x: 255, y: 790, via: [{ x: 300, y: 600 }, { x: 270, y: 700 }] },
                 { id: 'posadera', kind: 'npc', name: 'Maela, la posadera', x: 190, y: 420, talk: [
                     { when: ['misionCumplida'], dialogue: 'posadera-despues' },
                     { when: ['defeated:grask'], dialogue: 'posadera-fin', set: 'misionCumplida', reward: { gold: 60, potions: 1 } },
                     { when: ['misionAceptada'], dialogue: 'posadera-espera' },
                     { dialogue: 'posadera-mision', set: 'misionAceptada' }
                 ] },
+                // Lugares: la posada (dormir cura y hace volver a los enemigos), la tienda y la cueva al descenso
+                { id: 'posada', kind: 'inn', name: 'Posada: dormir', x: 150, y: 400 },
+                { id: 'tienda', kind: 'shop', name: 'Tienda y forja', x: 236, y: 525 },
                 { id: 'herrero', kind: 'npc', name: 'Bram, el herrero', x: 268, y: 556, dialogue: 'herrero' },
+                { id: 'cueva', kind: 'cave', name: 'Cueva del sur: bajar al descenso', x: 255, y: 790 },
                 // El camino de la aldea sube hasta la valla y de ahí sale el sendero del bosque hacia el este
-                { id: 'al-bosque', kind: 'exit', name: 'Camino del bosque', x: 328, y: 386, via: [{ x: 312, y: 470 }], to: 'bosque', arrive: { x: 445, y: 388 } }
+                { id: 'al-bosque', kind: 'exit', name: 'Al bosque', x: 328, y: 386, to: 'bosque', arriveAt: 'a-la-aldea' }
+            ],
+            links: [
+                ['plaza', 'tienda'],
+                ['tienda', 'herrero'],
+                ['plaza', 'cruce-norte'],
+                ['cruce-norte', 'posadera', [{ x: 250, y: 455 }]],
+                ['posadera', 'posada'],
+                ['cruce-norte', 'al-bosque'],
+                ['plaza', 'cueva', [{ x: 300, y: 600 }, { x: 270, y: 700 }]]
             ]
         },
         bosque: {
             name: 'El bosque de los cruces',
             box: { x: 420, y: 300, w: 480, h: 440 },
-            start: { x: 445, y: 388 },
+            startAt: 'a-la-aldea',
+            forks: { 'cruce-valla': { x: 610, y: 388 } },
             points: [
-                { id: 'a-la-aldea', kind: 'exit', name: 'Volver a la aldea', x: 425, y: 388, to: 'aldea', arrive: { x: 312, y: 440 } },
-                // Por el sendero de la valla y bajando al cruce, no a través de los árboles
+                { id: 'a-la-aldea', kind: 'exit', name: 'A la aldea', x: 425, y: 388, to: 'aldea', arriveAt: 'al-bosque' },
                 { id: 'goblin-1', kind: 'enemy', name: 'Goblin vigía', x: 540, y: 390,
                     enemy: { type: 'monster', floor: 0 }, dialogue: 'goblin-vigia' },
-                { id: 'goblin-2', kind: 'enemy', name: 'Goblin del camino', x: 640, y: 505, via: [{ x: 610, y: 388 }, { x: 640, y: 450 }],
-                    enemy: { type: 'monster', floor: 1 } },
-                { id: 'goblin-3', kind: 'enemy', name: 'Goblin ladrón', x: 720, y: 560, via: [{ x: 610, y: 388 }, { x: 640, y: 450 }, { x: 680, y: 530 }],
-                    enemy: { type: 'monster', floor: 2 } },
+                { id: 'goblin-2', kind: 'enemy', name: 'Goblin del camino', x: 640, y: 505, enemy: { type: 'monster', floor: 1 } },
+                { id: 'goblin-3', kind: 'enemy', name: 'Goblin ladrón', x: 720, y: 560, enemy: { type: 'monster', floor: 2 } },
                 // Limpio el bosque (y aceptada la misión), el sendero del este lleva al campamento goblin
-                { id: 'al-campamento', kind: 'exit', name: 'Sendero del campamento', x: 895, y: 540,
-                    via: [{ x: 610, y: 388 }, { x: 640, y: 450 }, { x: 700, y: 485 }, { x: 820, y: 522 }],
-                    requires: ['misionAceptada', ...GOBLINS_DEL_BOSQUE], to: 'campamento', arrive: { x: 965, y: 565 } }
+                { id: 'al-campamento', kind: 'exit', name: 'Al campamento', x: 895, y: 540,
+                    requires: ['misionAceptada', ...GOBLINS_DEL_BOSQUE], to: 'campamento', arriveAt: 'al-bosque-desde-campamento' }
+            ],
+            // Por el sendero de la valla y bajando al cruce, no a través de los árboles
+            links: [
+                ['a-la-aldea', 'goblin-1'],
+                ['goblin-1', 'cruce-valla'],
+                ['cruce-valla', 'goblin-2', [{ x: 640, y: 450 }]],
+                ['goblin-2', 'goblin-3', [{ x: 680, y: 530 }]],
+                ['goblin-2', 'al-campamento', [{ x: 700, y: 485 }, { x: 820, y: 522 }]]
             ]
         },
         campamento: {
             name: 'El campamento goblin',
             box: { x: 900, y: 440, w: 400, h: 320 },
-            start: { x: 965, y: 565 },
+            startAt: 'al-bosque-desde-campamento',
             points: [
-                { id: 'al-bosque-desde-campamento', kind: 'exit', name: 'Volver al bosque', x: 935, y: 548, to: 'bosque', arrive: { x: 870, y: 535 } },
+                { id: 'al-bosque-desde-campamento', kind: 'exit', name: 'Al bosque', x: 935, y: 548, to: 'bosque', arriveAt: 'al-campamento' },
                 // Sobre los marcadores rojos pintados en el mapa
                 { id: 'guardia', kind: 'enemy', name: 'Goblin de guardia', x: 1060, y: 568,
                     enemy: { type: 'monster', floor: 3 }, dialogue: 'guardia' },
                 { id: 'grask', kind: 'enemy', name: 'Grask, jefe goblin', x: 1185, y: 628, once: true,
                     requires: ['defeated:guardia'], enemy: { type: 'subboss', floor: 3 }, dialogue: 'grask' }
+            ],
+            links: [
+                ['al-bosque-desde-campamento', 'guardia', [{ x: 1000, y: 560 }]],
+                ['guardia', 'grask', [{ x: 1120, y: 600 }]]
             ]
         }
     }

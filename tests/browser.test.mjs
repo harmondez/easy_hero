@@ -1128,10 +1128,13 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     assert('El botón «Modo aventura» abre la vista de Zafias', await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none'));
     assert('Empieza en la aldea, con su cartel', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea'
         && /aldea/i.test(await adv.$eval('.adv-plaque', el => el.textContent)));
-    assert('La aldea tiene 2 NPC y una salida', (await adv.$$('.adv-marker.is-npc')).length === 2 && (await adv.$$('.adv-marker.is-exit')).length === 1);
+    assert('La aldea tiene 2 NPC y una salida', (await adv.$$('.adv-stop.is-npc')).length === 2 && (await adv.$$('.adv-stop.is-exit')).length === 1);
     assert('El mapa se ve con zoom (la cámara escala el mundo)', await adv.$eval('.adv-world', el => /scale\((1\.[5-9]|2\.)/.test(el.style.transform)));
+    assert('Los caminos se dibujan a trazos, como en un mapa antiguo', await adv.$eval('.adv-paths .adv-path-ink', el =>
+        getComputedStyle(el).strokeDasharray !== 'none' && el.getAttribute('d').length > 10));
+    assert('Las paradas llevan su número de mundo (1-1, 1-2…)', /1-\d/.test(await adv.$eval('.adv-stop[data-point="posadera"] .adv-stop-label', el => el.textContent)));
 
-    await adv.click('.adv-marker[data-point="posadera"]');
+    await adv.click('.adv-stop[data-point="posadera"]');
     await sleep(250);
     assert('Pulsar un NPC: el héroe camina hasta él y se abre el diálogo', !(await adv.$eval('.adv-dialogue', el => el.hidden))
         && /Maela/.test(await adv.$eval('.adv-dialogue-who', el => el.textContent)));
@@ -1145,12 +1148,12 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
         pages.length >= 2 && pages[0] === 'Siguiente' && pages[pages.length - 1] === 'Cerrar' && await adv.$eval('.adv-dialogue', el => el.hidden));
     assert('Maela te da la primera misión y el objetivo queda a la vista', /goblins del bosque: 0\/3/.test(await adv.$eval('.adv-hud', el => el.textContent)));
 
-    await adv.click('.adv-marker[data-point="al-bosque"]', { force: true });
+    await adv.click('.adv-stop[data-point="al-bosque"]', { force: true });
     await sleep(250);
     assert('La salida lleva a la escena del bosque', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'bosque');
     assert('Los 3 goblins del bosque se ven en la escena antes de pelear (mirando a la izquierda)',
         (await adv.$$eval('.adv-world .adv-enemy', els => els.filter(e => /goblin_left/.test(e.src)).length)) === 3);
-    await adv.click('.adv-marker[data-point="goblin-1"]', { force: true });
+    await adv.click('.adv-stop[data-point="goblin-1"]', { force: true });
     await sleep(250);
     assert('Pulsar al goblin: el héroe va hasta él y el goblin le grita', /Goblin/.test(await adv.$eval('.adv-dialogue-who', el => el.textContent)));
     await adv.click('.adv-dialogue-next');
@@ -1162,31 +1165,33 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     assert('Vencerle da oro y XP', /🪙/.test(await adv.$eval('#rpgCombatResult', el => el.textContent)));
     await adv.click('#btnRpgCombatContinue');
     await sleep(250);
-    assert('Tras la victoria vuelves al bosque y ese goblin ya no está',
-        (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'bosque' && !(await adv.$('.adv-marker[data-point="goblin-1"]')));
+    assert('Tras la victoria vuelves al bosque: ese goblin ya no está y su parada queda superada (✓)',
+        (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'bosque'
+        && !!(await adv.$('.adv-stop.is-cleared[data-point="goblin-1"]'))
+        && (await adv.$$('.adv-world .adv-enemy')).length === 2);
     const saved = await adv.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
     assert('La aventura se guarda: escena, vida y enemigos vencidos', saved.scene === 'bosque' && saved.gone['goblin-1'] === true && saved.hp > 0);
     assert('La barra de la aventura muestra vida, oro y pociones', /❤️ \d+\/\d+ · 🪙 \d+ · 🧪 \d+/.test(await adv.$eval('.adv-hud', el => el.textContent)));
     assert('La misión cuenta el goblin vencido (1/3) y el camino al campamento sigue cerrado',
-        /1\/3/.test(await adv.$eval('.adv-hud', el => el.textContent)) && !(await adv.$('.adv-marker[data-point="al-campamento"]')));
+        /1\/3/.test(await adv.$eval('.adv-hud', el => el.textContent)) && !(await adv.$('.adv-stop[data-point="al-campamento"]')));
     // La aldea funciona: posada, tienda y cueva
     const talkAll = async () => { for (let i = 0; i < 8 && !(await adv.$eval('.adv-dialogue', el => el.hidden)); i++) { await adv.click('.adv-dialogue-next'); await sleep(50); } };
-    await adv.click('.adv-marker[data-point="a-la-aldea"]', { force: true });
+    await adv.click('.adv-stop[data-point="a-la-aldea"]', { force: true });
     await sleep(200);
-    await adv.click('.adv-marker[data-point="posada"]', { force: true });
+    await adv.click('.adv-stop[data-point="posada"]', { force: true });
     await sleep(200);
     await talkAll();
     const slept = await adv.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
     assert('Dormir en la posada cura del todo y hace volver a los goblins', slept.hp === null && Object.keys(slept.gone).length === 0
         && slept.flags['defeated:goblin-1'] === true);
-    await adv.click('.adv-marker[data-point="tienda"]', { force: true });
+    await adv.click('.adv-stop[data-point="tienda"]', { force: true });
     await sleep(250);
     assert('La tienda de la aldea abre La Forja (con las pociones)', await adv.$eval('#rpgShopView', el => getComputedStyle(el).display !== 'none')
         && !!(await adv.$('[data-shop-buy="potion"]')));
     await adv.click('#btnShopBack');
     await sleep(250);
     assert('Al salir de la tienda vuelves a la aldea', await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none'));
-    await adv.click('.adv-marker[data-point="cueva"]', { force: true });
+    await adv.click('.adv-stop[data-point="cueva"]', { force: true });
     await sleep(400);
     assert('La cueva del sur baja al descenso de siempre', await adv.$eval('#rpgMapView', el => getComputedStyle(el).display !== 'none'));
     await adv.click('#btnRpgAbandon');

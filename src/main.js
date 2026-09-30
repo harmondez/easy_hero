@@ -782,12 +782,12 @@ function _advHero() {
 
 const _advHas = flags => (flags || []).every(f => adv.state.flags[f]);
 
-// Un punto se ve si la historia lo permite y, si es un enemigo, no está vencido (o es de los que no vuelven)
-function _advIsShown(p) {
-    if (!_advHas(p.requires)) return false;
-    if (p.kind !== 'enemy') return true;
-    return !adv.state.gone[p.id] && !(p.once && adv.state.flags[`defeated:${p.id}`]);
-}
+// Una parada se ve si la historia lo permite
+const _advIsShown = p => _advHas(p.requires);
+
+// Un enemigo está vencido (su parada queda con ✓ y se puede cruzar) hasta que duermes en la posada;
+// los de misión (`once`), para siempre
+const _advIsCleared = p => p.kind === 'enemy' && (!!adv.state.gone[p.id] || !!(p.once && adv.state.flags[`defeated:${p.id}`]));
 
 // Lo que dice un NPC: la primera entrada de su `talk` cuyas marcas se cumplen. Al terminar, marca y recompensa.
 function _advTalk(p) {
@@ -869,7 +869,8 @@ function _advOpen() {
         onTalk: p => _advTalk(p),
         onPlace: p => _advPlace(p),
         onScene: id => { adv.state.scene = id; _advSave(); },
-        isShown: p => _advIsShown(p)
+        isShown: p => _advIsShown(p),
+        isCleared: p => _advIsCleared(p)
     }, adv.state.scene);
     _advRefreshHud();
 }

@@ -5,6 +5,12 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+### ✨ Novedades
+- 🗺️ **Zafias como un mapa antiguo**: los caminos se dibujan a trazos de tinta y las paradas son puntos rojos que
+  laten, numerados 1-1, 1-2, 1-3… Tu héroe anda por el camino de parada en parada. Un enemigo sin vencer corta el
+  paso, y al vencerlo su parada queda marcada con ✓.
+
+
 ## [1.5.0] - 2026-09-30
 
 ### ✨ Novedades

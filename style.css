@@ -1503,56 +1503,81 @@ body {
 .adv-hero.is-walking { animation: advStep 0.32s ease-in-out infinite; }
 @keyframes advStep { 50% { translate: 0 -1.6px; } }
 
+/* Caminos a trazos, como en los mapas antiguos: un halo de pergamino debajo y la tinta encima */
+.adv-paths { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.adv-path-halo { fill: none; stroke: rgba(250, 236, 205, 0.7); stroke-width: 4.6; stroke-linecap: round; stroke-linejoin: round; }
+.adv-path-ink { fill: none; stroke: #5a1d0c; stroke-width: 2.2; stroke-dasharray: 7 6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Paradas: puntos rojos que laten, con su número de mundo (1-1, 1-2…) debajo */
 .adv-markers { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
-.adv-marker {
+.adv-stop {
+    --stop: #c8321e;
     position: absolute; left: 0; top: 0;
-    margin: -22px 0 0 -22px;
-    width: 44px; height: 44px;
-    display: grid; place-items: center;
+    width: 36px; height: 36px;
+    margin: -18px 0 0 -18px;
     padding: 0;
     background: none; border: 0; cursor: pointer;
     pointer-events: auto;
-    --marker: var(--gold);
 }
-.adv-marker.is-enemy { --marker: var(--danger); }
-.adv-marker.is-exit { --marker: var(--text-light); }
-/* Anillo en el suelo + icono flotando encima */
-.adv-marker::before {
-    content: '';
-    position: absolute;
-    left: 8px; right: 8px; top: 26px; height: 12px;
+.adv-stop.is-exit { --stop: #9a7432; }
+.adv-stop.is-cleared { --stop: #6d6258; }
+.adv-stop-dot {
+    position: absolute; left: 50%; top: 50%;
+    width: 18px; height: 18px;
+    transform: translate(-50%, -50%);
     border-radius: 50%;
-    border: 2px solid var(--marker);
-    box-shadow: 0 0 10px var(--marker);
-    opacity: 0.85;
-}
-.adv-marker-icon {
-    position: relative;
-    top: -8px;
-    font-size: 1.25rem;
-    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.8));
+    background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--stop) 55%, #fff), var(--stop) 60%, color-mix(in srgb, var(--stop) 55%, #000));
+    border: 2px solid #f6e6c4;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
     transition: transform 0.15s ease;
+    animation: advStopBlink 1.6s ease-in-out infinite;
 }
-.adv-marker:hover .adv-marker-icon, .adv-marker:focus-visible .adv-marker-icon { transform: translateY(-3px) scale(1.12); }
-/* El enemigo ya se ve dibujado: basta con su anillo a los pies */
-.adv-marker.is-enemy .adv-marker-icon { visibility: hidden; }
-.adv-marker:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
-.adv-marker-name {
-    position: absolute;
-    top: 44px; left: 50%;
+/* El latido: un anillo que se abre desde el punto */
+.adv-stop-dot::after {
+    content: '';
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--stop);
+    animation: advStopPulse 1.6s ease-out infinite;
+}
+.adv-stop.is-exit .adv-stop-dot, .adv-stop.is-cleared .adv-stop-dot { animation: none; }
+.adv-stop.is-exit .adv-stop-dot::after, .adv-stop.is-cleared .adv-stop-dot::after { display: none; }
+@keyframes advStopPulse { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(1.7); opacity: 0; } }
+@keyframes advStopBlink { 50% { filter: brightness(1.35); } }
+.adv-stop:hover .adv-stop-dot, .adv-stop:focus-visible .adv-stop-dot { transform: translate(-50%, -50%) scale(1.2); }
+.adv-stop:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 50%; }
+.adv-stop-label {
+    position: absolute; left: 50%; top: 100%;
     transform: translateX(-50%);
+    white-space: nowrap;
+    padding: 1px 7px;
+    font: 700 0.74rem var(--font-body);
+    color: var(--parchment-ink);
+    background: var(--parchment);
+    border: 1px solid var(--parchment-edge);
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.adv-stop.is-cleared .adv-stop-label { opacity: 0.75; }
+.adv-stop-name {
+    position: absolute; left: 50%; bottom: 100%;
+    transform: translateX(-50%);
+    margin-bottom: 2px;
     padding: 2px 8px;
     white-space: nowrap;
     font-size: 0.78rem; font-weight: 600;
     color: var(--text-main);
-    background: rgba(21, 16, 12, 0.85);
+    background: rgba(21, 16, 12, 0.88);
     border: 1px solid var(--border-strong);
     border-radius: 4px;
     opacity: 0;
     transition: opacity 0.15s ease;
+    pointer-events: none;
 }
-.adv-marker:hover .adv-marker-name, .adv-marker:focus-visible .adv-marker-name { opacity: 1; }
-@media (hover: none) { .adv-marker-name { opacity: 0.9; } }
+.adv-stop:hover .adv-stop-name, .adv-stop:focus-visible .adv-stop-name { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+    .adv-stop-dot, .adv-stop-dot::after { animation: none; }
+}
 
 /* Cartel de escena: una placa grabada que aparece al llegar */
 .adv-plaque {
