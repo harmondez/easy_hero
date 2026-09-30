@@ -1142,7 +1142,8 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
         await sleep(60);
     }
     assert('El diálogo es solo historia: «Siguiente» hasta la última línea, que dice «Cerrar»',
-        pages.length === 3 && pages[0] === 'Siguiente' && pages[2] === 'Cerrar' && await adv.$eval('.adv-dialogue', el => el.hidden));
+        pages.length >= 2 && pages[0] === 'Siguiente' && pages[pages.length - 1] === 'Cerrar' && await adv.$eval('.adv-dialogue', el => el.hidden));
+    assert('Maela te da la primera misión y el objetivo queda a la vista', /goblins del bosque: 0\/3/.test(await adv.$eval('.adv-hud', el => el.textContent)));
 
     await adv.click('.adv-marker[data-point="al-bosque"]', { force: true });
     await sleep(250);
@@ -1166,6 +1167,8 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     const saved = await adv.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
     assert('La aventura se guarda: escena, vida y enemigos vencidos', saved.scene === 'bosque' && saved.gone['goblin-1'] === true && saved.hp > 0);
     assert('La barra de la aventura muestra vida, oro y pociones', /❤️ \d+\/\d+ · 🪙 \d+ · 🧪 \d+/.test(await adv.$eval('.adv-hud', el => el.textContent)));
+    assert('La misión cuenta el goblin vencido (1/3) y el camino al campamento sigue cerrado',
+        /1\/3/.test(await adv.$eval('.adv-hud', el => el.textContent)) && !(await adv.$('.adv-marker[data-point="al-campamento"]')));
     await adv.click('.adv-back');
     await sleep(150);
     assert('«Volver al inicio» sale de la aventura', await adv.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));

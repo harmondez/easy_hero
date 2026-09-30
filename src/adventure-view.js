@@ -17,8 +17,8 @@ const zone = ZAFIAS;
 const st = {
     scene: null, hero: { x: 0, y: 0, facing: 1 }, path: null, onArrive: null,
     cam: { x: 0, y: 0, z: 2 }, dialogue: null, raf: 0, last: 0, fps: null,
-    // Quien controla la aventura (main.js): salir, pelear, guardar la escena y saber qué enemigos ya cayeron
-    hooks: { onExit: null, onEnemy: null, onScene: null, isGone: () => false }
+    // Quien controla la aventura (main.js): salir, pelear, hablar, guardar la escena y qué puntos se ven
+    hooks: { onExit: null, onEnemy: null, onTalk: null, onScene: null, isShown: () => true }
 };
 let els = null;
 
@@ -126,7 +126,7 @@ const ENEMY_SPRITE = { src: 'img/sprites/goblin_left.png', ratio: 175 / 217, h: 
 
 function renderActors() {
     els.world.querySelectorAll('.adv-enemy').forEach(el => el.remove());
-    st.scene.points.filter(p => p.kind === 'enemy' && !st.hooks.isGone(p.id)).forEach(p => {
+    st.scene.points.filter(p => p.kind === 'enemy' && st.hooks.isShown(p)).forEach(p => {
         const img = document.createElement('img');
         img.className = 'adv-enemy';
         img.src = ENEMY_SPRITE.src;
@@ -140,7 +140,7 @@ function renderActors() {
 }
 
 function renderMarkers() {
-    els.markers.innerHTML = st.scene.points.filter(p => !(p.kind === 'enemy' && st.hooks.isGone(p.id))).map(p => `
+    els.markers.innerHTML = st.scene.points.filter(p => st.hooks.isShown(p)).map(p => `
         <button type="button" class="adv-marker is-${p.kind}" data-point="${esc(p.id)}" data-x="${p.x}" data-y="${p.y}" aria-label="${esc(p.name)}">
             <span class="adv-marker-icon" aria-hidden="true">${MARKER_ICONS[p.kind] || '❔'}</span>
             <span class="adv-marker-name">${esc(p.name)}</span>
@@ -216,6 +216,12 @@ function onPointClick(id) {
             walkTo(p.arrive.x, p.arrive.y);   // sigue andando mientras la cámara viaja a la escena nueva
         } else {
             st.hero.facing = p.x < st.hero.x ? -1 : 1;   // mira hacia quien le habla
+            if (p.kind === 'npc' && st.hooks.onTalk) {
+                // Lo que dice depende de la historia: lo decide quien controla la aventura
+                const t = st.hooks.onTalk(p);
+                if (t) openDialogue(t.dialogue, t.onDone);
+                return;
+            }
             const fight = p.kind === 'enemy' && st.hooks.onEnemy ? () => st.hooks.onEnemy(p) : null;
             if (p.dialogue) openDialogue(p.dialogue, fight);
             else if (fight) fight();
@@ -260,7 +266,7 @@ function bind() {
 }
 
 /**
- * Abre el Modo Aventura. hooks: { onExit, onEnemy(point), onScene(id), isGone(pointId) }.
+ * Abre el Modo Aventura. hooks: { onExit, onEnemy(point), onTalk(point) → { dialogue, onDone }, onScene(id), isShown(point) }.
  * scene: la escena guardada (si no hay, la de inicio de la zona). Si ya estaba abierta, sigue donde estaba.
  */
 export function open(hooks = {}, scene = null) {
@@ -285,6 +291,13 @@ export function open(hooks = {}, scene = null) {
         applyTransforms();
         if (!st.raf) { st.last = 0; st.raf = requestAnimationFrame(tick); }
     });
+}
+
+/** Vuelve a pintar enemigos y marcadores (la historia ha cambiado qué se ve). */
+export function refresh() {
+    if (!els || !st.scene) return;
+    renderActors();
+    renderMarkers();
 }
 
 /** Te lleva a una escena (p. ej. despertar en la posada tras caer). */

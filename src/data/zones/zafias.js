@@ -1,9 +1,17 @@
 // =============================================
-// 🧭 Zafias — la primera zona del Modo Aventura (prueba de concepto)
+// 🧭 Zafias — la primera zona del Modo Aventura
 // Coordenadas en píxeles de img/zones/zafias.webp (1434×1097), vista cenital.
 // Cada escena es un recuadro del mapa que la cámara encuadra; los puntos son lo que se puede pulsar.
-// `via`: recodos del camino que el héroe sigue para llegar al punto (en la prueba, solo los que hacen falta).
+//   `via`      recodos del camino que el héroe sigue para llegar al punto
+//   `enemy`    contra qué se pelea (tipo y piso fijan su fuerza: la dificultad es fija por zona)
+//   `once`     el enemigo no vuelve nunca (jefes de misión); los demás reaparecen al dormir en la posada
+//   `requires` marcas de la historia que hacen falta para que el punto aparezca (todas)
+//   `talk`     lo que dice un NPC según la historia: gana la primera entrada cuyas marcas `when` se cumplen
+//              (`set` pone una marca al terminar de hablar; `reward` da oro y pociones una sola vez)
+// Marcas: `defeated:<id>` al vencer a ese enemigo (permanente) y las que pongan los diálogos.
 // =============================================
+const GOBLINS_DEL_BOSQUE = ['defeated:goblin-1', 'defeated:goblin-2', 'defeated:goblin-3'];
+
 export const ZAFIAS = {
     id: 'zafias',
     name: 'Zafias',
@@ -17,7 +25,12 @@ export const ZAFIAS = {
             box: { x: 10, y: 290, w: 400, h: 430 },
             start: { x: 300, y: 530 },
             points: [
-                { id: 'posadera', kind: 'npc', name: 'Maela, la posadera', x: 190, y: 420, dialogue: 'posadera' },
+                { id: 'posadera', kind: 'npc', name: 'Maela, la posadera', x: 190, y: 420, talk: [
+                    { when: ['misionCumplida'], dialogue: 'posadera-despues' },
+                    { when: ['defeated:grask'], dialogue: 'posadera-fin', set: 'misionCumplida', reward: { gold: 60, potions: 1 } },
+                    { when: ['misionAceptada'], dialogue: 'posadera-espera' },
+                    { dialogue: 'posadera-mision', set: 'misionAceptada' }
+                ] },
                 { id: 'herrero', kind: 'npc', name: 'Bram, el herrero', x: 268, y: 556, dialogue: 'herrero' },
                 // El camino de la aldea sube hasta la valla y de ahí sale el sendero del bosque hacia el este
                 { id: 'al-bosque', kind: 'exit', name: 'Camino del bosque', x: 328, y: 386, via: [{ x: 312, y: 470 }], to: 'bosque', arrive: { x: 445, y: 388 } }
@@ -29,14 +42,30 @@ export const ZAFIAS = {
             start: { x: 445, y: 388 },
             points: [
                 { id: 'a-la-aldea', kind: 'exit', name: 'Volver a la aldea', x: 425, y: 388, to: 'aldea', arrive: { x: 312, y: 440 } },
-                // Por el sendero de la valla y bajando al cruce, no a través de los árboles.
-                // `enemy`: contra qué se pelea (tipo y piso fijan su fuerza: la dificultad es fija por zona)
+                // Por el sendero de la valla y bajando al cruce, no a través de los árboles
                 { id: 'goblin-1', kind: 'enemy', name: 'Goblin vigía', x: 540, y: 390,
                     enemy: { type: 'monster', floor: 0 }, dialogue: 'goblin-vigia' },
                 { id: 'goblin-2', kind: 'enemy', name: 'Goblin del camino', x: 640, y: 505, via: [{ x: 610, y: 388 }, { x: 640, y: 450 }],
                     enemy: { type: 'monster', floor: 1 } },
                 { id: 'goblin-3', kind: 'enemy', name: 'Goblin ladrón', x: 720, y: 560, via: [{ x: 610, y: 388 }, { x: 640, y: 450 }, { x: 680, y: 530 }],
-                    enemy: { type: 'monster', floor: 2 } }
+                    enemy: { type: 'monster', floor: 2 } },
+                // Limpio el bosque (y aceptada la misión), el sendero del este lleva al campamento goblin
+                { id: 'al-campamento', kind: 'exit', name: 'Sendero del campamento', x: 895, y: 540,
+                    via: [{ x: 610, y: 388 }, { x: 640, y: 450 }, { x: 700, y: 485 }, { x: 820, y: 522 }],
+                    requires: ['misionAceptada', ...GOBLINS_DEL_BOSQUE], to: 'campamento', arrive: { x: 965, y: 565 } }
+            ]
+        },
+        campamento: {
+            name: 'El campamento goblin',
+            box: { x: 900, y: 440, w: 400, h: 320 },
+            start: { x: 965, y: 565 },
+            points: [
+                { id: 'al-bosque-desde-campamento', kind: 'exit', name: 'Volver al bosque', x: 935, y: 548, to: 'bosque', arrive: { x: 870, y: 535 } },
+                // Sobre los marcadores rojos pintados en el mapa
+                { id: 'guardia', kind: 'enemy', name: 'Goblin de guardia', x: 1060, y: 568,
+                    enemy: { type: 'monster', floor: 3 }, dialogue: 'guardia' },
+                { id: 'grask', kind: 'enemy', name: 'Grask, jefe goblin', x: 1185, y: 628, once: true,
+                    requires: ['defeated:guardia'], enemy: { type: 'subboss', floor: 3 }, dialogue: 'grask' }
             ]
         }
     }
@@ -44,10 +73,22 @@ export const ZAFIAS = {
 
 // Diálogos: solo historia, «Siguiente» hasta el final. Borrador para corregir.
 export const ZAFIAS_DIALOGUES = {
-    posadera: [
+    'posadera-mision': [
         { who: 'Maela, la posadera', text: 'Otro que llega por el camino del norte… Tienes cara de no haber dormido en días.' },
         { who: 'Maela, la posadera', text: 'Desde que los goblins bajaron al bosque, nadie cruza hasta el castillo. Ni los mercaderes.' },
-        { who: 'Maela, la posadera', text: 'Si vas a meterte ahí, vuelve vivo. Aquí siempre habrá una cama para ti.' }
+        { who: 'Maela, la posadera', text: 'Tres de ellos vigilan los cruces. Si los echas, el sendero del este te llevará hasta su campamento.' },
+        { who: 'Maela, la posadera', text: 'Su jefe se hace llamar Grask. Acaba con él y esta posada te deberá algo más que una cama.' }
+    ],
+    'posadera-espera': [
+        { who: 'Maela, la posadera', text: '¿Todavía aquí? Los goblins siguen en el bosque, y Grask en su campamento.' },
+        { who: 'Maela, la posadera', text: 'Si vuelves herido, bebe algo. Y si caes… ya te recogeremos.' }
+    ],
+    'posadera-fin': [
+        { who: 'Maela, la posadera', text: '¿Grask? ¿De verdad? ¡Los mercaderes volverán a pasar!' },
+        { who: 'Maela, la posadera', text: 'Toma, es lo que pude juntar con los vecinos. Y una poción de las buenas, por si acaso.' }
+    ],
+    'posadera-despues': [
+        { who: 'Maela, la posadera', text: 'El bosque respira otra vez. Pero dicen que de las cuevas del sur salen cosas peores…' }
     ],
     herrero: [
         { who: 'Bram, el herrero', text: '¿Esa espada? Ha visto días mejores. Y peores, a juzgar por las mellas.' },
@@ -55,5 +96,12 @@ export const ZAFIAS_DIALOGUES = {
     ],
     'goblin-vigia': [
         { who: 'Goblin vigía', text: '¡Grrr! Este camino es nuestro. ¡Paga o sangra!' }
+    ],
+    guardia: [
+        { who: 'Goblin de guardia', text: '¡Nadie entra en el campamento sin permiso de Grask!' }
+    ],
+    grask: [
+        { who: 'Grask, jefe goblin', text: '¿Así que tú eres quien anda cazando a mis chicos?' },
+        { who: 'Grask, jefe goblin', text: 'Este bosque es de Grask. ¡Y tu cabeza también lo será!' }
     ]
 };

@@ -28,7 +28,7 @@ y se pulen en rondas posteriores. Prioridad web de escritorio; en móvil basta c
 1. ✅ **C1 · Combates de verdad en la aventura** (hecho) — los enemigos del bosque abren la pantalla de combate de lado
    con el héroe de siempre. Victoria: el enemigo desaparece y da oro/XP. Derrota: despiertas en la posada con
    la vida llena y algo menos de oro. La aventura se guarda (escena, enemigos vencidos, zonas abiertas).
-2. **C2 · La primera misión, al estilo DragonFable** 🟡 — Maela (la posadera) te pide limpiar el bosque de
+2. ✅ **C2 · La primera misión, al estilo DragonFable** (hecho) — Maela (la posadera) te pide limpiar el bosque de
    goblins → 3-5 combates en el bosque → el jefe goblin en el **campamento** (escena nueva) → recompensa →
    vuelta a la aldea y diálogo de cierre. Las zonas se abren por historia. Borrador de textos para corregir.
 3. **C3 · La aldea funciona** 🟡 — **posada** (dormir: cura y repuebla el bosque), **tienda** (pociones; La
@@ -79,6 +79,8 @@ perdieron y hay citas de otros juegos.
 - **Aventura:** editor `?editor=zafias` para colocar puntos con el ratón; caminos como grafo en vez de recodos;
   motor puro separado (`src/adventure.js`) si la lógica crece.
 - **Móvil:** en el bosque a 390 px el héroe queda pegado al borde al llegar.
+- **Aventura (de C2):** el cofre pintado del campamento aún no hace nada; el objetivo de la misión va en la
+  barra de arriba como texto (merecería su propio cartel); Maela no tiene retrato.
 - **Aventura (de C1):** colocar mejor los 3 goblins (el vigía queda entre árboles); prueba de navegador de la
   derrota en la aventura; el equipo del descenso no viaja a la aventura (hoy vas con la espada básica y tu
   nivel/primarias/Forja).

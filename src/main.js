@@ -764,9 +764,10 @@ const adv = { state: null, hero: null, combat: null, point: null };
 function _advLoad() {
     try {
         const d = JSON.parse((storage && storage.getItem(ADV_KEY)) || 'null');
-        if (d && d.v === 1) return { gone: {}, ...d };
+        if (d && d.v === 1) return { gone: {}, flags: {}, ...d };
     } catch { /* guardado dañado: se empieza de cero */ }
-    return { v: 1, scene: ZAFIAS.startScene, hp: null, gone: {} };
+    // gone: vencidos que vuelven al dormir · flags: marcas de la historia (permanentes)
+    return { v: 1, scene: ZAFIAS.startScene, hp: null, gone: {}, flags: {} };
 }
 function _advSave() {
     try { if (storage) storage.setItem(ADV_KEY, JSON.stringify(adv.state)); } catch { /* sin almacenamiento */ }
@@ -778,9 +779,52 @@ function _advHero() {
     return hero;
 }
 
+const _advHas = flags => (flags || []).every(f => adv.state.flags[f]);
+
+// Un punto se ve si la historia lo permite y, si es un enemigo, no está vencido (o es de los que no vuelven)
+function _advIsShown(p) {
+    if (!_advHas(p.requires)) return false;
+    if (p.kind !== 'enemy') return true;
+    return !adv.state.gone[p.id] && !(p.once && adv.state.flags[`defeated:${p.id}`]);
+}
+
+// Lo que dice un NPC: la primera entrada de su `talk` cuyas marcas se cumplen. Al terminar, marca y recompensa.
+function _advTalk(p) {
+    if (!p.talk) return p.dialogue ? { dialogue: p.dialogue } : null;
+    const entry = p.talk.find(t => _advHas(t.when));
+    if (!entry) return null;
+    return {
+        dialogue: entry.dialogue,
+        onDone: () => {
+            if (entry.set && !adv.state.flags[entry.set]) {
+                adv.state.flags[entry.set] = true;
+                if (entry.reward) {
+                    if (entry.reward.gold) Meta.recordGold(meta, entry.reward.gold);
+                    if (entry.reward.potions) meta.potions = Math.min(RPG_BALANCE.potion.max, Meta.potionCount(meta) + entry.reward.potions);
+                    persistMeta();
+                }
+                _advSave();
+                Adventure.refresh();
+                _advRefreshHud();
+            }
+        }
+    };
+}
+
+// El objetivo de la misión, a la vista (estilo DragonFable: siempre sabes qué toca)
+function _advQuestText() {
+    const f = adv.state.flags;
+    if (f.misionCumplida) return '📜 Misión cumplida';
+    if (f['defeated:grask']) return '📜 Vuelve con Maela a la aldea';
+    if (!f.misionAceptada) return '📜 Habla con Maela, la posadera';
+    const goblins = ['goblin-1', 'goblin-2', 'goblin-3'].filter(id => f[`defeated:${id}`]).length;
+    if (goblins < 3) return `📜 Echa a los goblins del bosque: ${goblins}/3`;
+    return '📜 Entra en el campamento goblin y acaba con Grask';
+}
+
 function _advRefreshHud() {
     const h = adv.hero;
-    Adventure.setHud(`❤️ ${h.hp}/${h.maxHp} · 🪙 ${meta.gold} · 🧪 ${Meta.potionCount(meta)}`);
+    Adventure.setHud(`❤️ ${h.hp}/${h.maxHp} · 🪙 ${meta.gold} · 🧪 ${Meta.potionCount(meta)}   ${_advQuestText()}`);
 }
 
 function _advOpen() {
@@ -790,8 +834,9 @@ function _advOpen() {
     Adventure.open({
         onExit: () => { UI.toggleRpgView('rpgStartView'); UI.renderRpgHeroCard(_rpgPreviewHero()); _refreshShopButton(); },
         onEnemy: p => _advStartCombat(p),
+        onTalk: p => _advTalk(p),
         onScene: id => { adv.state.scene = id; _advSave(); },
-        isGone: id => !!adv.state.gone[id]
+        isShown: p => _advIsShown(p)
     }, adv.state.scene);
     _advRefreshHud();
 }
@@ -840,6 +885,7 @@ function _advFinishCombat() {
         Meta.recordCombatWin(meta);
         persistMeta();
         adv.state.gone[adv.point.id] = true;   // no vuelve hasta que duermas en la posada
+        adv.state.flags[`defeated:${adv.point.id}`] = true;   // pero la historia recuerda que lo venciste
         _advSave();
         UI.showRpgCombatResult({ result: 'victory', title: '¡Victoria!', button: 'SEGUIR EXPLORANDO',
             detail: `+${gold} 🪙 · +${xp} XP${lvl.levelsGained > 0 ? ` · ¡Subes a nivel ${lvl.newLevel}!` : ''}` });
