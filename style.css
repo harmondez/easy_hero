@@ -1492,6 +1492,7 @@ body {
     user-select: none;
     will-change: transform;
 }
+.adv-hud { margin-left: auto; font: 700 0.9rem ui-monospace, 'Courier New', monospace; color: var(--text-main); }
 .adv-enemy {
     position: absolute; left: 0; top: 0;
     filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.55));

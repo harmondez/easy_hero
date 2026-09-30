@@ -25,7 +25,7 @@ fuzzing y el mapa en el centro como mazmorra visual. Detalle en [historial.md](h
 y se pulen en rondas posteriores. Prioridad web de escritorio; en móvil basta con que funcione.
 
 ### 🔥 Camino crítico (en este orden)
-1. **C1 · Combates de verdad en la aventura** 🟡 — los enemigos del bosque abren la pantalla de combate de lado
+1. ✅ **C1 · Combates de verdad en la aventura** (hecho) — los enemigos del bosque abren la pantalla de combate de lado
    con el héroe de siempre. Victoria: el enemigo desaparece y da oro/XP. Derrota: despiertas en la posada con
    la vida llena y algo menos de oro. La aventura se guarda (escena, enemigos vencidos, zonas abiertas).
 2. **C2 · La primera misión, al estilo DragonFable** 🟡 — Maela (la posadera) te pide limpiar el bosque de
@@ -79,6 +79,9 @@ perdieron y hay citas de otros juegos.
 - **Aventura:** editor `?editor=zafias` para colocar puntos con el ratón; caminos como grafo en vez de recodos;
   motor puro separado (`src/adventure.js`) si la lógica crece.
 - **Móvil:** en el bosque a 390 px el héroe queda pegado al borde al llegar.
+- **Aventura (de C1):** colocar mejor los 3 goblins (el vigía queda entre árboles); prueba de navegador de la
+  derrota en la aventura; el equipo del descenso no viaja a la aventura (hoy vas con la espada básica y tu
+  nivel/primarias/Forja).
 - **Arte:** herramienta de preparación de sprites (recorte, línea de pies, escala de píxel, paleta única de ~32
   colores); nota en créditos sobre el arte hecho con IA; fondos de cueva y mazmorra.
 - **Combate:** debilidades elementales ×0,5/×1,5 con los 6 tipos de daño; entrada del combate como momento.

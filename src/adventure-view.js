@@ -1,7 +1,7 @@
 import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.4.2';
 
 // =============================================
-// 🧭 Modo Aventura — visor de escenas (prueba de concepto)
+// 🧭 Modo Aventura — visor de escenas
 // El mapa es un «mundo» que se desplaza y escala con transform; el héroe camina por él y la cámara le sigue
 // dentro del recuadro de la escena. Los marcadores van en una capa de pantalla, a tamaño fijo con cualquier zoom.
 // =============================================
@@ -16,7 +16,9 @@ const MARKER_ICONS = { npc: '💬', enemy: '⚔️', exit: '🚪' };
 const zone = ZAFIAS;
 const st = {
     scene: null, hero: { x: 0, y: 0, facing: 1 }, path: null, onArrive: null,
-    cam: { x: 0, y: 0, z: 2 }, dialogue: null, raf: 0, last: 0, fps: null, onExit: null
+    cam: { x: 0, y: 0, z: 2 }, dialogue: null, raf: 0, last: 0, fps: null,
+    // Quien controla la aventura (main.js): salir, pelear, guardar la escena y saber qué enemigos ya cayeron
+    hooks: { onExit: null, onEnemy: null, onScene: null, isGone: () => false }
 };
 let els = null;
 
@@ -124,7 +126,7 @@ const ENEMY_SPRITE = { src: 'img/sprites/goblin_left.png', ratio: 175 / 217, h: 
 
 function renderActors() {
     els.world.querySelectorAll('.adv-enemy').forEach(el => el.remove());
-    st.scene.points.filter(p => p.kind === 'enemy').forEach(p => {
+    st.scene.points.filter(p => p.kind === 'enemy' && !st.hooks.isGone(p.id)).forEach(p => {
         const img = document.createElement('img');
         img.className = 'adv-enemy';
         img.src = ENEMY_SPRITE.src;
@@ -138,7 +140,7 @@ function renderActors() {
 }
 
 function renderMarkers() {
-    els.markers.innerHTML = st.scene.points.map(p => `
+    els.markers.innerHTML = st.scene.points.filter(p => !(p.kind === 'enemy' && st.hooks.isGone(p.id))).map(p => `
         <button type="button" class="adv-marker is-${p.kind}" data-point="${esc(p.id)}" data-x="${p.x}" data-y="${p.y}" aria-label="${esc(p.name)}">
             <span class="adv-marker-icon" aria-hidden="true">${MARKER_ICONS[p.kind] || '❔'}</span>
             <span class="adv-marker-name">${esc(p.name)}</span>
@@ -154,18 +156,20 @@ function showPlaque() {
 
 function enterScene(id, at) {
     st.scene = zone.scenes[id];
+    st.sceneId = id;
     els.viewport.dataset.scene = id;
     if (at) { st.hero.x = at.x; st.hero.y = at.y; }
+    if (st.hooks.onScene) st.hooks.onScene(id);
     renderActors();
     renderMarkers();
     showPlaque();
 }
 
 // --- Diálogo: «Siguiente» hasta el final, y listo ---
-function openDialogue(key) {
+function openDialogue(key, onDone = null) {
     const lines = ZAFIAS_DIALOGUES[key];
-    if (!lines || !lines.length) return;
-    st.dialogue = { lines, i: 0 };
+    if (!lines || !lines.length) { if (onDone) onDone(); return; }
+    st.dialogue = { lines, i: 0, onDone };
     renderDialogue();
     els.dialogue.hidden = false;
     els.dialogueNext.focus({ preventScroll: true });
@@ -181,7 +185,12 @@ function renderDialogue() {
 function advanceDialogue() {
     if (!st.dialogue) return;
     st.dialogue.i++;
-    if (st.dialogue.i >= st.dialogue.lines.length) { closeDialogue(); return; }
+    if (st.dialogue.i >= st.dialogue.lines.length) {
+        const done = st.dialogue.onDone;
+        closeDialogue();
+        if (done) done();   // p. ej. el grito de guerra de un enemigo, y después el combate
+        return;
+    }
     renderDialogue();
 }
 
@@ -207,7 +216,9 @@ function onPointClick(id) {
             walkTo(p.arrive.x, p.arrive.y);   // sigue andando mientras la cámara viaja a la escena nueva
         } else {
             st.hero.facing = p.x < st.hero.x ? -1 : 1;   // mira hacia quien le habla
-            if (p.dialogue) openDialogue(p.dialogue);
+            const fight = p.kind === 'enemy' && st.hooks.onEnemy ? () => st.hooks.onEnemy(p) : null;
+            if (p.dialogue) openDialogue(p.dialogue, fight);
+            else if (fight) fight();
         }
     }, via);
 }
@@ -239,7 +250,7 @@ function bind() {
     });
     // Pulsar en cualquier parte del pergamino (o su botón, que burbujea hasta aquí) pasa a la siguiente línea
     els.dialogue.addEventListener('click', advanceDialogue);
-    root.querySelector('.adv-back').addEventListener('click', () => { close(); if (st.onExit) st.onExit(); });
+    root.querySelector('.adv-back').addEventListener('click', () => { close(); if (st.hooks.onExit) st.hooks.onExit(); });
     document.addEventListener('keydown', e => {
         if (!st.raf || !st.dialogue) return;
         if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); advanceDialogue(); }
@@ -248,13 +259,22 @@ function bind() {
     return true;
 }
 
-/** Abre el Modo Aventura. onExit: vuelve al inicio. */
-export function open(onExit) {
+/**
+ * Abre el Modo Aventura. hooks: { onExit, onEnemy(point), onScene(id), isGone(pointId) }.
+ * scene: la escena guardada (si no hay, la de inicio de la zona). Si ya estaba abierta, sigue donde estaba.
+ */
+export function open(hooks = {}, scene = null) {
     if (!els && !bind()) return;
-    st.onExit = onExit;
+    st.hooks = { ...st.hooks, ...hooks };
     closeDialogue();
-    if (!st.scene) enterScene(zone.startScene, zone.scenes[zone.startScene].start);
-    else showPlaque();
+    if (!st.scene) {
+        const id = zone.scenes[scene] ? scene : zone.startScene;
+        enterScene(id, zone.scenes[id].start);
+    } else {
+        renderActors();
+        renderMarkers();
+        showPlaque();
+    }
     const debug = /[?&]debug\b/.test(location.search);
     els.fps.hidden = !debug;
     st.fps = debug ? { frames: 0, since: performance.now() } : null;
@@ -265,6 +285,18 @@ export function open(onExit) {
         applyTransforms();
         if (!st.raf) { st.last = 0; st.raf = requestAnimationFrame(tick); }
     });
+}
+
+/** Te lleva a una escena (p. ej. despertar en la posada tras caer). */
+export function goTo(sceneId) {
+    if (!els || !zone.scenes[sceneId]) return;
+    enterScene(sceneId, zone.scenes[sceneId].start);
+}
+
+/** Lo que dice la barra de la aventura (vida, oro, pociones). */
+export function setHud(text) {
+    const el = document.querySelector('#rpgAdventureView .adv-hud');
+    if (el) el.textContent = text;
 }
 
 export function close() {

@@ -29,8 +29,14 @@ export const ZAFIAS = {
             start: { x: 445, y: 388 },
             points: [
                 { id: 'a-la-aldea', kind: 'exit', name: 'Volver a la aldea', x: 425, y: 388, to: 'aldea', arrive: { x: 312, y: 440 } },
-                // Por el sendero de la valla y bajando al cruce, no a través de los árboles
-                { id: 'goblin-1', kind: 'enemy', name: 'Goblin del camino', x: 640, y: 505, via: [{ x: 610, y: 388 }, { x: 640, y: 450 }], dialogue: 'goblin-poc' }
+                // Por el sendero de la valla y bajando al cruce, no a través de los árboles.
+                // `enemy`: contra qué se pelea (tipo y piso fijan su fuerza: la dificultad es fija por zona)
+                { id: 'goblin-1', kind: 'enemy', name: 'Goblin vigía', x: 540, y: 390,
+                    enemy: { type: 'monster', floor: 0 }, dialogue: 'goblin-vigia' },
+                { id: 'goblin-2', kind: 'enemy', name: 'Goblin del camino', x: 640, y: 505, via: [{ x: 610, y: 388 }, { x: 640, y: 450 }],
+                    enemy: { type: 'monster', floor: 1 } },
+                { id: 'goblin-3', kind: 'enemy', name: 'Goblin ladrón', x: 720, y: 560, via: [{ x: 610, y: 388 }, { x: 640, y: 450 }, { x: 680, y: 530 }],
+                    enemy: { type: 'monster', floor: 2 } }
             ]
         }
     }
@@ -47,8 +53,7 @@ export const ZAFIAS_DIALOGUES = {
         { who: 'Bram, el herrero', text: '¿Esa espada? Ha visto días mejores. Y peores, a juzgar por las mellas.' },
         { who: 'Bram, el herrero', text: 'Tráeme hierro de las cuevas y te forjo algo que merezca la pena.' }
     ],
-    'goblin-poc': [
-        { who: 'Goblin del camino', text: '¡Grrr! Este camino es nuestro. ¡Paga o sangra!' },
-        { who: 'Prueba de concepto', text: 'Aquí empezará el combate de lado, con la misma pantalla que ya usa el descenso.' }
+    'goblin-vigia': [
+        { who: 'Goblin vigía', text: '¡Grrr! Este camino es nuestro. ¡Paga o sangra!' }
     ]
 };

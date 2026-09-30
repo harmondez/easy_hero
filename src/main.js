@@ -5,6 +5,7 @@ import * as Save from './save.js?v=1.4.2';
 import * as Items from './items.js?v=1.4.2';
 import * as Meta from './meta.js?v=1.4.2';
 import * as Adventure from './adventure-view.js?v=1.4.2';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.4.2';
 import { RPG_BALANCE } from './data/balance.js?v=1.4.2';
 import { tierName } from './data/monsters.js?v=1.4.2';
 import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.4.2';
@@ -740,6 +741,133 @@ function _rpgEndRun(result, monster) {
     UI.renderRpgEnd(summary);
 }
 
+/** Oro y XP de una victoria (descenso y aventura). Se multiplican por la profundidad, la variante y La Forja. */
+function _rpgGrantVictory(m) {
+    const depthMul = Math.pow(RPG_BALANCE.depth.goldMul, m.tier || 0);
+    const gold = Math.max(1, Math.round((RPG_BALANCE.gold[m.type] || RPG_BALANCE.gold.monster)
+        * depthMul * (m.goldMul || 1) * (1 + Meta.upgradeEffect(meta, 'buen_ojo'))));
+    Meta.recordGold(meta, gold);
+    const xp = Math.max(1, Math.round((Meta.XP_REWARD[m.type] || Meta.XP_REWARD.monster)
+        * depthMul * (m.xpMul || 1) * (1 + Meta.upgradeEffect(meta, 'estudio'))));
+    const lvl = Meta.recordXp(meta, xp);
+    return { gold, xp, lvl };
+}
+
+// =============================================
+// 🧭 Modo Aventura: Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
+// Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
+// =============================================
+const ADV_KEY = 'easy-hero-adventure';
+const ADV_DEFEAT_GOLD_LOSS = 0.1;   // caer en la aventura cuesta el 10 % del oro que llevas
+const adv = { state: null, hero: null, combat: null, point: null };
+
+function _advLoad() {
+    try {
+        const d = JSON.parse((storage && storage.getItem(ADV_KEY)) || 'null');
+        if (d && d.v === 1) return { gone: {}, ...d };
+    } catch { /* guardado dañado: se empieza de cero */ }
+    return { v: 1, scene: ZAFIAS.startScene, hp: null, gone: {} };
+}
+function _advSave() {
+    try { if (storage) storage.setItem(ADV_KEY, JSON.stringify(adv.state)); } catch { /* sin almacenamiento */ }
+}
+
+function _advHero() {
+    const hero = _rpgPreviewHero();
+    if (adv.state.hp != null) hero.hp = Math.max(1, Math.min(hero.maxHp, adv.state.hp));
+    return hero;
+}
+
+function _advRefreshHud() {
+    const h = adv.hero;
+    Adventure.setHud(`❤️ ${h.hp}/${h.maxHp} · 🪙 ${meta.gold} · 🧪 ${Meta.potionCount(meta)}`);
+}
+
+function _advOpen() {
+    if (!adv.state) adv.state = _advLoad();
+    adv.hero = _advHero();
+    UI.toggleRpgView('rpgAdventureView');
+    Adventure.open({
+        onExit: () => { UI.toggleRpgView('rpgStartView'); UI.renderRpgHeroCard(_rpgPreviewHero()); _refreshShopButton(); },
+        onEnemy: p => _advStartCombat(p),
+        onScene: id => { adv.state.scene = id; _advSave(); },
+        isGone: id => !!adv.state.gone[id]
+    }, adv.state.scene);
+    _advRefreshHud();
+}
+
+function _advRenderCombat() {
+    const scene = ZAFIAS.scenes[adv.state.scene];
+    UI.renderRpgCombat(adv.combat, { where: scene ? scene.name : ZAFIAS.name });
+}
+
+function _advStartCombat(p) {
+    const def = p.enemy || { type: 'monster', floor: 0 };
+    const m = Engine.createRpgMonster(def.type, def.floor, 0);
+    m.name = p.name; m.baseName = p.name; m.icon = '👺';
+    adv.point = p;
+    adv.combat = Engine.createRpgCombat(adv.hero, m, Math.random);
+    adv.combat.potions = Meta.potionCount(meta);
+    Adventure.close();
+    UI.toggleRpgView('rpgCombatView');
+    UI.hideRpgCombatResult();
+    UI.clearRpgCombatLog();
+    UI.addRpgCombatLog(`👺 ${m.name} te corta el paso. ¡Elige tu acción!`, 'system');
+    adv.combat.intro.forEach(ev => UI.addRpgCombatLog(ev.text, 'player'));
+    adv.combat.intro = [];
+    _advRenderCombat();
+}
+
+function _advCombatAct(action, skillId) {
+    const c = adv.combat;
+    if (!c || c.over) return;
+    const res = Engine.rpgCombatAction(c, action, skillId);
+    if (!res.ok) { UI.addRpgCombatLog(`⚠️ ${res.error}`, 'system'); return; }
+    if (action === 'potion') { meta.potions = c.potions; persistMeta(); }
+    res.events.forEach(ev => UI.addRpgCombatLog(ev.text, ev.actor === 'hero' ? 'player' : 'enemy'));
+    _advRenderCombat();
+    UI.playRpgCombatFx(res.events);
+    adv.state.hp = adv.hero.hp;
+    _advSave();
+    if (c.over) _advFinishCombat();
+}
+
+function _advFinishCombat() {
+    const c = adv.combat;
+    const m = c.monster;
+    if (c.result === 'victory') {
+        const { gold, xp, lvl } = _rpgGrantVictory(m);
+        Meta.recordCombatWin(meta);
+        persistMeta();
+        adv.state.gone[adv.point.id] = true;   // no vuelve hasta que duermas en la posada
+        _advSave();
+        UI.showRpgCombatResult({ result: 'victory', title: '¡Victoria!', button: 'SEGUIR EXPLORANDO',
+            detail: `+${gold} 🪙 · +${xp} XP${lvl.levelsGained > 0 ? ` · ¡Subes a nivel ${lvl.newLevel}!` : ''}` });
+    } else if (c.result === 'fled') {
+        UI.showRpgCombatResult({ result: 'fled', title: 'Has huido', detail: `${m.name} sigue en el camino.`, button: 'VOLVER' });
+    } else {
+        const lost = Math.floor(meta.gold * ADV_DEFEAT_GOLD_LOSS);
+        Meta.recordGold(meta, -lost);
+        persistMeta();
+        adv.state.hp = null;                    // despiertas con la vida llena
+        adv.state.scene = ZAFIAS.startScene;
+        _advSave();
+        UI.showRpgCombatResult({ result: 'defeat', title: 'Has caído', button: 'DESPERTAR EN LA POSADA',
+            detail: `Te recogen y despiertas en la posada de Zafias${lost > 0 ? `, con ${lost} 🪙 menos` : ''}.` });
+    }
+}
+
+function _advCombatContinue() {
+    const c = adv.combat;
+    if (!c || !c.over) return;
+    const fell = c.result === 'defeat';
+    adv.combat = null;
+    adv.point = null;
+    UI.hideRpgCombatResult();
+    _advOpen();
+    if (fell) Adventure.goTo(ZAFIAS.startScene);
+}
+
 function _rpgCombatContinue() {
     const r = gameState.rpg;
     const c = r.combat;
@@ -762,14 +890,7 @@ function _rpgCombatContinue() {
         r.stats.combatsWon++;
         Meta.recordMonsterDefeated(meta, m.baseName || m.name);
         Meta.recordCombatWin(meta);
-        // La recompensa se multiplica por tres cosas: la profundidad, la variante del monstruo y La Forja
-        const depthMul = Math.pow(RPG_BALANCE.depth.goldMul, m.tier || 0);
-        const gold = Math.max(1, Math.round((RPG_BALANCE.gold[m.type] || RPG_BALANCE.gold.monster)
-            * depthMul * (m.goldMul || 1) * (1 + Meta.upgradeEffect(meta, 'buen_ojo'))));
-        Meta.recordGold(meta, gold);
-        const xp = Math.max(1, Math.round((Meta.XP_REWARD[m.type] || Meta.XP_REWARD.monster)
-            * depthMul * (m.xpMul || 1) * (1 + Meta.upgradeEffect(meta, 'estudio'))));
-        const lvl = Meta.recordXp(meta, xp);
+        const { gold, xp, lvl } = _rpgGrantVictory(m);
         Meta.recordDepth(meta, { depth: Engine.rpgAbsoluteFloor(m.tier || 0, m.floor), tier: m.tier || 0 });
         persistMeta();
         _rpgAdvanceTo(r.pendingNodeId);
@@ -848,16 +969,14 @@ function initEvents() {
         const btn = e.target.closest('[data-rpg-action]');
         if (!btn || btn.disabled) return;
         const action = btn.dataset.rpgAction;
-        if (action === 'skills' || action === 'back') {
-            gameState.rpg.combatMenu = action === 'skills' ? 'skills' : 'main';
-            _rpgRefreshCombat();
-            persist();
-        } else {
-            _rpgCombatAct(action, btn.dataset.rpgSkill);
-        }
+        // La misma pantalla sirve a los dos modos: si hay un combate de la aventura en curso, es suyo
+        if (adv.combat) _advCombatAct(action, btn.dataset.rpgSkill);
+        else _rpgCombatAct(action, btn.dataset.rpgSkill);
     });
     safeListener('rpgCombatResult', 'click', (e) => {
-        if (e.target.closest('#btnRpgCombatContinue')) _rpgCombatContinue();
+        if (!e.target.closest('#btnRpgCombatContinue')) return;
+        if (adv.combat) _advCombatContinue();
+        else _rpgCombatContinue();
     });
     safeListener('rpgEndView', 'click', (e) => {
         if (e.target.closest('#btnRpgEndForge')) { _rpgOpenShop('end'); return; }
@@ -879,11 +998,8 @@ function initEvents() {
     });
     safeListener('btnRpgShop', 'click', () => _rpgOpenShop('start'));
 
-    // --- 🧭 Modo Aventura (prueba de concepto) ---
-    safeListener('btnRpgAdventure', 'click', () => {
-        UI.toggleRpgView('rpgAdventureView');
-        Adventure.open(() => UI.toggleRpgView('rpgStartView'));
-    });
+    // --- 🧭 Modo Aventura ---
+    safeListener('btnRpgAdventure', 'click', () => _advOpen());
     safeListener('btnShopBack', 'click', () => _rpgCloseShop());
     safeListener('shopBody', 'click', (e) => {
         const btn = e.target.closest('[data-shop-buy]');

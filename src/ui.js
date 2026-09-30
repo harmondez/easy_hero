@@ -366,13 +366,14 @@ function _rpgWeaponIcon(hero) {
 }
 
 /** Dibuja el escenario, los dos lados del panel y la barra de acciones. */
-export function renderRpgCombat(combat) {
+export function renderRpgCombat(combat, opts = {}) {
     if (!combat) return;
     const { hero, monster } = combat;
     const tags = { monster: 'Monstruo', subboss: 'Sub-jefe', boss: 'Jefe final' };
 
+    // opts.where: dónde se pelea (en la aventura, el nombre de la escena en vez del piso)
     const title = document.getElementById('rpgCombatTitle');
-    if (title) title.textContent = `⚔️ Combate · Piso ${monster.floor + 1} · Ronda ${combat.turn}`;
+    if (title) title.textContent = `⚔️ Combate · ${opts.where || `Piso ${monster.floor + 1}`} · Ronda ${combat.turn}`;
 
     const heroSlot = document.getElementById('rpgCombatHero');
     if (heroSlot) heroSlot.innerHTML = _rpgHudSide(hero, `Nivel ${hero.level}`, _rpgHeroStatus(combat), 'hero');

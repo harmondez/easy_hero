@@ -1147,12 +1147,25 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     await adv.click('.adv-marker[data-point="al-bosque"]', { force: true });
     await sleep(250);
     assert('La salida lleva a la escena del bosque', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'bosque');
-    assert('El enemigo se ve en la escena antes de pelear (goblin mirando a la izquierda)',
-        (await adv.$$eval('.adv-world .adv-enemy', els => els.filter(e => /goblin_left/.test(e.src)).length)) === 1);
+    assert('Los 3 goblins del bosque se ven en la escena antes de pelear (mirando a la izquierda)',
+        (await adv.$$eval('.adv-world .adv-enemy', els => els.filter(e => /goblin_left/.test(e.src)).length)) === 3);
     await adv.click('.adv-marker[data-point="goblin-1"]', { force: true });
     await sleep(250);
-    assert('Pulsar al goblin: el héroe va hasta él por el sendero y le habla', /Goblin/.test(await adv.$eval('.adv-dialogue-who', el => el.textContent)));
-    await adv.keyboard.press('Escape');
+    assert('Pulsar al goblin: el héroe va hasta él y el goblin le grita', /Goblin/.test(await adv.$eval('.adv-dialogue-who', el => el.textContent)));
+    await adv.click('.adv-dialogue-next');
+    await sleep(250);
+    assert('Tras su grito empieza un combate de verdad, en la pantalla de lado, con el nombre del bosque',
+        await adv.$eval('#rpgCombatView', el => getComputedStyle(el).display !== 'none')
+        && /bosque/i.test(await adv.$eval('#rpgCombatTitle', el => el.textContent)));
+    for (let i = 0; i < 60 && !(await adv.$('#btnRpgCombatContinue')); i++) { await adv.click('[data-rpg-action="attack"]'); await sleep(30); }
+    assert('Vencerle da oro y XP', /🪙/.test(await adv.$eval('#rpgCombatResult', el => el.textContent)));
+    await adv.click('#btnRpgCombatContinue');
+    await sleep(250);
+    assert('Tras la victoria vuelves al bosque y ese goblin ya no está',
+        (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'bosque' && !(await adv.$('.adv-marker[data-point="goblin-1"]')));
+    const saved = await adv.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
+    assert('La aventura se guarda: escena, vida y enemigos vencidos', saved.scene === 'bosque' && saved.gone['goblin-1'] === true && saved.hp > 0);
+    assert('La barra de la aventura muestra vida, oro y pociones', /❤️ \d+\/\d+ · 🪙 \d+ · 🧪 \d+/.test(await adv.$eval('.adv-hud', el => el.textContent)));
     await adv.click('.adv-back');
     await sleep(150);
     assert('«Volver al inicio» sale de la aventura', await adv.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
