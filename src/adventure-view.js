@@ -132,8 +132,10 @@ function renderActors() {
         img.src = ENEMY_SPRITE.src;
         img.alt = '';
         img.draggable = false;
-        img.style.height = `${ENEMY_SPRITE.h.toFixed(1)}px`;
-        img.style.width = `${(ENEMY_SPRITE.h * ENEMY_SPRITE.ratio).toFixed(1)}px`;
+        // Los jefes de misión se ven más grandes, como en el combate
+        const h = ENEMY_SPRITE.h * ({ subboss: 1.25, boss: 1.5 }[p.enemy && p.enemy.type] || 1);
+        img.style.height = `${h.toFixed(1)}px`;
+        img.style.width = `${(h * ENEMY_SPRITE.ratio).toFixed(1)}px`;
         img.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) translate(-50%, -100%)`;
         els.world.insertBefore(img, els.hero);
     });

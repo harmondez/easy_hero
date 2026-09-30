@@ -33,7 +33,7 @@ y se pulen en rondas posteriores. Prioridad web de escritorio; en móvil basta c
    vuelta a la aldea y diálogo de cierre. Las zonas se abren por historia. Borrador de textos para corregir.
 3. ✅ **C3 · La aldea funciona** (hecho) — **posada** (dormir: cura y repuebla el bosque), **tienda** (pociones; La
    Forja accesible desde la aldea) y la **cueva** que baja al descenso con el mismo héroe.
-4. **C4 · Variedad mínima de enemigos** 🟢 — el goblin teñido por familia (filtro CSS) y más grande si es
+4. ✅ **C4 · Variedad mínima de enemigos** (hecho) — el goblin teñido por familia (filtro CSS) y más grande si es
    sub-jefe o jefe, hasta que llegue su arte.
 5. **C5 · Publicar la 1.5.0** 🟢 — README, CHANGELOG, versión.
 

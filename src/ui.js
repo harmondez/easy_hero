@@ -444,9 +444,35 @@ function _rpgRenderStage(hero, monster) {
         img.width = RPG_MONSTER_SPRITE.w;
         img.height = RPG_MONSTER_SPRITE.h;
     }
-    // Misma escala de píxel para los dos: la altura del enemigo es relativa a la del héroe
-    monActor.style.setProperty('--ratio', (RPG_MONSTER_SPRITE.h / RPG_HERO_SPRITE_H).toFixed(3));
-    if (img) img.alt = monster.name;
+    // Misma escala de píxel para los dos: la altura del enemigo es relativa a la del héroe (y crece si es jefe)
+    const size = RPG_MONSTER_SIZE[monster.type] || 1;
+    monActor.style.setProperty('--ratio', (size * RPG_MONSTER_SPRITE.h / RPG_HERO_SPRITE_H).toFixed(3));
+    if (img) {
+        img.alt = monster.name;
+        img.style.filter = rpgMonsterTint(monster);
+    }
+}
+
+// Mientras no haya arte de cada monstruo, el goblin se tiñe: un color por especie y, si tiene linaje, el suyo
+const RPG_MONSTER_SIZE = { subboss: 1.25, boss: 1.5 };
+const RPG_SPECIES_TINTS = [
+    'hue-rotate(70deg)', 'hue-rotate(150deg)', 'hue-rotate(210deg) saturate(1.2)', 'hue-rotate(290deg)',
+    'grayscale(0.8) brightness(1.15)', 'sepia(0.5) hue-rotate(-40deg) saturate(1.5)', 'hue-rotate(110deg) brightness(0.85)'
+];
+const RPG_LINEAGE_TINTS = {
+    plaga: 'hue-rotate(35deg) saturate(1.8)', brasas: 'sepia(1) saturate(4) hue-rotate(-25deg)',
+    carrona: 'sepia(0.5) brightness(0.8)', sangre: 'hue-rotate(250deg) saturate(1.8)',
+    huesos: 'grayscale(1) brightness(1.3)', forja: 'sepia(0.8) saturate(2) brightness(1.1)',
+    abismo: 'hue-rotate(180deg) brightness(0.7) saturate(1.4)', niebla: 'grayscale(0.6) brightness(1.2) opacity(0.85)'
+};
+export function rpgMonsterTint(monster) {
+    const lin = monster.variants && monster.variants.lin;
+    if (lin && RPG_LINEAGE_TINTS[lin]) return RPG_LINEAGE_TINTS[lin];
+    const name = monster.baseName || monster.name || '';
+    if (/goblin|grask/i.test(name)) return 'none';   // los goblins, con su color de siempre
+    let h = 0;
+    for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return RPG_SPECIES_TINTS[h % RPG_SPECIES_TINTS.length];
 }
 
 // Golpe fuerte en camino: frase sobre el escenario y el enemigo brillando en rojo (sin moverse, sin cifras)
