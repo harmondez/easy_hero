@@ -22,9 +22,13 @@ export const ZAFIAS = {
     scenes: {
         aldea: {
             name: 'La aldea de Zafias',
-            box: { x: 10, y: 290, w: 400, h: 430 },
+            box: { x: 10, y: 290, w: 400, h: 520 },   // hasta la cueva del sur
             start: { x: 300, y: 530 },
             points: [
+                // Lugares: la posada (dormir cura y hace volver a los enemigos), la tienda y la cueva al descenso
+                { id: 'posada', kind: 'inn', name: 'Posada: dormir', x: 150, y: 400 },
+                { id: 'tienda', kind: 'shop', name: 'Tienda y forja', x: 236, y: 525 },
+                { id: 'cueva', kind: 'cave', name: 'Cueva del sur: bajar al descenso', x: 255, y: 790, via: [{ x: 300, y: 600 }, { x: 270, y: 700 }] },
                 { id: 'posadera', kind: 'npc', name: 'Maela, la posadera', x: 190, y: 420, talk: [
                     { when: ['misionCumplida'], dialogue: 'posadera-despues' },
                     { when: ['defeated:grask'], dialogue: 'posadera-fin', set: 'misionCumplida', reward: { gold: 60, potions: 1 } },
@@ -89,6 +93,10 @@ export const ZAFIAS_DIALOGUES = {
     ],
     'posadera-despues': [
         { who: 'Maela, la posadera', text: 'El bosque respira otra vez. Pero dicen que de las cuevas del sur salen cosas peores…' }
+    ],
+    'posada-dormir': [
+        { who: 'Posada de Zafias', text: 'Te dejas caer en la cama. Afuera, el bosque cruje toda la noche…' },
+        { who: 'Posada de Zafias', text: 'Despiertas descansado. Pero en los caminos vuelven a oírse pasos de goblin.' }
     ],
     herrero: [
         { who: 'Bram, el herrero', text: '¿Esa espada? Ha visto días mejores. Y peores, a juzgar por las mellas.' },

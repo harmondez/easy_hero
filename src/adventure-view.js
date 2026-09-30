@@ -11,14 +11,14 @@ const WALK_SPEED = 95;          // píxeles de mapa por segundo
 const CAMERA_EASE = 0.12;       // cuánto se acerca la cámara a su objetivo en cada fotograma
 const ZOOM_MIN = 1.5;           // por debajo, el héroe se ve diminuto
 const ZOOM_MAX = 2.4;           // por encima, el mapa (1434 px) se ve borroso
-const MARKER_ICONS = { npc: '💬', enemy: '⚔️', exit: '🚪' };
+const MARKER_ICONS = { npc: '💬', enemy: '⚔️', exit: '🚪', inn: '🛏️', shop: '🛒', cave: '🕳️' };
 
 const zone = ZAFIAS;
 const st = {
     scene: null, hero: { x: 0, y: 0, facing: 1 }, path: null, onArrive: null,
     cam: { x: 0, y: 0, z: 2 }, dialogue: null, raf: 0, last: 0, fps: null,
     // Quien controla la aventura (main.js): salir, pelear, hablar, guardar la escena y qué puntos se ven
-    hooks: { onExit: null, onEnemy: null, onTalk: null, onScene: null, isShown: () => true }
+    hooks: { onExit: null, onEnemy: null, onTalk: null, onPlace: null, onScene: null, isShown: () => true }
 };
 let els = null;
 
@@ -216,6 +216,12 @@ function onPointClick(id) {
             walkTo(p.arrive.x, p.arrive.y);   // sigue andando mientras la cámara viaja a la escena nueva
         } else {
             st.hero.facing = p.x < st.hero.x ? -1 : 1;   // mira hacia quien le habla
+            // Lugares de la aldea (posada, tienda, cueva): lo que pasa lo decide quien controla la aventura
+            if (['inn', 'shop', 'cave'].includes(p.kind) && st.hooks.onPlace) {
+                const t = st.hooks.onPlace(p);
+                if (t) openDialogue(t.dialogue, t.onDone);
+                return;
+            }
             if (p.kind === 'npc' && st.hooks.onTalk) {
                 // Lo que dice depende de la historia: lo decide quien controla la aventura
                 const t = st.hooks.onTalk(p);

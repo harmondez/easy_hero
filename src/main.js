@@ -217,6 +217,7 @@ function _rpgOpenShop(from) {
 
 function _rpgCloseShop() {
     if (gameState.rpg.shopFrom === 'end') { UI.toggleRpgView('rpgEndView'); return; }
+    if (gameState.rpg.shopFrom === 'adventure') { _advOpen(); return; }
     UI.toggleRpgView('rpgStartView');
     UI.renderRpgHeroCard(_rpgPreviewHero());
     _refreshShopButton();
@@ -811,6 +812,37 @@ function _advTalk(p) {
     };
 }
 
+// Los lugares de la aldea
+function _advPlace(p) {
+    if (p.kind === 'inn') {
+        // Dormir: vida llena y los enemigos normales vuelven a los caminos (los jefes de misión no)
+        return {
+            dialogue: 'posada-dormir',
+            onDone: () => {
+                adv.state.hp = null;
+                adv.state.gone = {};
+                _advSave();
+                adv.hero = _advHero();
+                Adventure.refresh();
+                _advRefreshHud();
+            }
+        };
+    }
+    if (p.kind === 'shop') {
+        Adventure.close();
+        _rpgOpenShop('adventure');
+        return null;
+    }
+    if (p.kind === 'cave') {
+        // La cueva baja al descenso de siempre: si hay una partida a medias, se retoma; si no, empieza una
+        Adventure.close();
+        if (Save.peekRun(storage)) _rpgResume();
+        else _rpgStartRun(null);
+        return null;
+    }
+    return null;
+}
+
 // El objetivo de la misión, a la vista (estilo DragonFable: siempre sabes qué toca)
 function _advQuestText() {
     const f = adv.state.flags;
@@ -835,6 +867,7 @@ function _advOpen() {
         onExit: () => { UI.toggleRpgView('rpgStartView'); UI.renderRpgHeroCard(_rpgPreviewHero()); _refreshShopButton(); },
         onEnemy: p => _advStartCombat(p),
         onTalk: p => _advTalk(p),
+        onPlace: p => _advPlace(p),
         onScene: id => { adv.state.scene = id; _advSave(); },
         isShown: p => _advIsShown(p)
     }, adv.state.scene);

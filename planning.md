@@ -31,7 +31,7 @@ y se pulen en rondas posteriores. Prioridad web de escritorio; en móvil basta c
 2. ✅ **C2 · La primera misión, al estilo DragonFable** (hecho) — Maela (la posadera) te pide limpiar el bosque de
    goblins → 3-5 combates en el bosque → el jefe goblin en el **campamento** (escena nueva) → recompensa →
    vuelta a la aldea y diálogo de cierre. Las zonas se abren por historia. Borrador de textos para corregir.
-3. **C3 · La aldea funciona** 🟡 — **posada** (dormir: cura y repuebla el bosque), **tienda** (pociones; La
+3. ✅ **C3 · La aldea funciona** (hecho) — **posada** (dormir: cura y repuebla el bosque), **tienda** (pociones; La
    Forja accesible desde la aldea) y la **cueva** que baja al descenso con el mismo héroe.
 4. **C4 · Variedad mínima de enemigos** 🟢 — el goblin teñido por familia (filtro CSS) y más grande si es
    sub-jefe o jefe, hasta que llegue su arte.
@@ -79,6 +79,8 @@ perdieron y hay citas de otros juegos.
 - **Aventura:** editor `?editor=zafias` para colocar puntos con el ratón; caminos como grafo en vez de recodos;
   motor puro separado (`src/adventure.js`) si la lógica crece.
 - **Móvil:** en el bosque a 390 px el héroe queda pegado al borde al llegar.
+- **Aventura (de C3):** al morir o abandonar el descenso bajado desde la cueva vuelves al inicio, no a la aldea;
+  los marcadores de la aldea se ven pequeños entre tanto detalle del mapa.
 - **Aventura (de C2):** el cofre pintado del campamento aún no hace nada; el objetivo de la misión va en la
   barra de arriba como texto (merecería su propio cartel); Maela no tiene retrato.
 - **Aventura (de C1):** colocar mejor los 3 goblins (el vigía queda entre árboles); prueba de navegador de la

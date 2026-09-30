@@ -1169,9 +1169,29 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     assert('La barra de la aventura muestra vida, oro y pociones', /❤️ \d+\/\d+ · 🪙 \d+ · 🧪 \d+/.test(await adv.$eval('.adv-hud', el => el.textContent)));
     assert('La misión cuenta el goblin vencido (1/3) y el camino al campamento sigue cerrado',
         /1\/3/.test(await adv.$eval('.adv-hud', el => el.textContent)) && !(await adv.$('.adv-marker[data-point="al-campamento"]')));
-    await adv.click('.adv-back');
-    await sleep(150);
-    assert('«Volver al inicio» sale de la aventura', await adv.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
+    // La aldea funciona: posada, tienda y cueva
+    const talkAll = async () => { for (let i = 0; i < 8 && !(await adv.$eval('.adv-dialogue', el => el.hidden)); i++) { await adv.click('.adv-dialogue-next'); await sleep(50); } };
+    await adv.click('.adv-marker[data-point="a-la-aldea"]', { force: true });
+    await sleep(200);
+    await adv.click('.adv-marker[data-point="posada"]', { force: true });
+    await sleep(200);
+    await talkAll();
+    const slept = await adv.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
+    assert('Dormir en la posada cura del todo y hace volver a los goblins', slept.hp === null && Object.keys(slept.gone).length === 0
+        && slept.flags['defeated:goblin-1'] === true);
+    await adv.click('.adv-marker[data-point="tienda"]', { force: true });
+    await sleep(250);
+    assert('La tienda de la aldea abre La Forja (con las pociones)', await adv.$eval('#rpgShopView', el => getComputedStyle(el).display !== 'none')
+        && !!(await adv.$('[data-shop-buy="potion"]')));
+    await adv.click('#btnShopBack');
+    await sleep(250);
+    assert('Al salir de la tienda vuelves a la aldea', await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none'));
+    await adv.click('.adv-marker[data-point="cueva"]', { force: true });
+    await sleep(400);
+    assert('La cueva del sur baja al descenso de siempre', await adv.$eval('#rpgMapView', el => getComputedStyle(el).display !== 'none'));
+    await adv.click('#btnRpgAbandon');
+    await sleep(200);
+    assert('Abandonar ese descenso te deja en el inicio', await adv.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
     assert('Sin errores de página en la aventura', advErrors.length === 0);
     await adv.context().close();
 }
