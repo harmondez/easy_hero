@@ -5,6 +5,8 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.5.0] - 2026-09-30
+
 ### ✨ Novedades
 - ⚔️ **Combate de lado**: tu héroe a la izquierda y el enemigo a la derecha, sobre un bosque pintado. Al atacar,
   cada uno se lanza hacia el otro, el daño sale encima del golpeado y vuelve a su sitio. De momento todos los

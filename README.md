@@ -2,9 +2,14 @@
 
 # 🗡️ Easy Hero
 
-### Elige tu ruta. Toma decisiones. Descubre quién eres.
+### Explora Zafias. Pelea de tú a tú. Baja hasta donde te atrevas.
 
-*Un juego de aventuras por turnos que se juega en el navegador. La mazmorra no tiene fondo: ¿hasta dónde llegas?*
+*Un RPG por turnos que se juega en el navegador, con el alma de los clásicos como DragonFable:
+una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
+
+<br>
+
+<img src="docs/img/combate.jpg" alt="Combate de lado: el héroe a la izquierda y un orco a la derecha, en un bosque pintado; el orco brilla en rojo porque prepara un golpe fuerte" width="760">
 
 <br>
 
@@ -12,14 +17,14 @@
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.4.2-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.5.0-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
 ![Móvil y PC](https://img.shields.io/badge/m%C3%B3vil%20y%20PC-8b5cf6?style=flat-square)
 ![Español](https://img.shields.io/badge/idioma-espa%C3%B1ol-ef4444?style=flat-square)
 
-[Novedades](#-novedades) · [La idea](#-la-idea) · [Cómo se juega](#-cómo-se-juega) · [Tu héroe](#%EF%B8%8F-tu-héroe) · [Eventos](#-eventos-15-historias-2-decisiones) · [Estado](#-estado-del-juego) · [Qué viene](#-qué-viene)
+[Novedades](#-novedades) · [La idea](#-la-idea) · [Modo aventura](#-modo-aventura-zafias) · [Cómo se juega](#-cómo-se-juega) · [Tu héroe](#%EF%B8%8F-tu-héroe) · [Eventos](#-eventos-15-historias-2-decisiones) · [Estado](#-estado-del-juego) · [Qué viene](#-qué-viene)
 
 </div>
 
@@ -27,7 +32,27 @@
 
 ## 🆕 Novedades
 
-**Versión 1.4.2** · 30 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.5.0** · 30 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+
+> [!IMPORTANT]
+> **La gran actualización visual.** Easy Hero deja atrás las cartas y los emojis en combate: ahora peleas **de lado,
+> cara a cara**, sobre escenarios pintados, y tienes **un mundo que explorar** por encima de la mazmorra.
+
+| | Qué hay de nuevo |
+|:-:|------------------|
+| 🧭 | **Modo aventura: Zafias.** Un mapa pintado que recorres escena a escena con tu héroe de siempre: una aldea con sus vecinos, un bosque lleno de goblins y un campamento con su jefe |
+| 📜 | **Tu primera misión.** Maela, la posadera, te encarga limpiar el bosque. El objetivo siempre a la vista y una recompensa al volver |
+| ⚔️ | **Combate de lado**, como en los clásicos del navegador: tu héroe a la izquierda, el enemigo a la derecha. Cada golpe es una **embestida** y el daño salta encima del golpeado |
+| 📜 | **Panel de pergamino**: tu vida, la del enemigo y un gran **¡Atacar!** en el centro, con el resto de acciones a un clic |
+| 🌬️ | **El enemigo ya no anuncia lo que hará.** Hay que aprender a leerlo: antes de un golpe fuerte lo verás tensarse y brillar en rojo |
+| 🧪 | **Pociones**: curan el 40 % de tu vida a cambio del turno. Llevas hasta 3 y no se pierden entre partidas |
+| 🏘️ | **La aldea funciona**: duerme en la **posada** para curarte, compra en la **tienda** y baja a la mazmorra por la **cueva del sur** |
+| 🎨 | Cada especie de monstruo tiene su color, y los jefes se ven más grandes |
+
+<details>
+<summary><b>📦 Lo que trajeron las versiones anteriores (1.4.x)</b></summary>
+
+<br>
 
 | | Qué hay de nuevo |
 |:-:|------------------|
@@ -37,7 +62,7 @@
 | 🎁 | **El botín ya no se elige 1 de 3**: cae un solo objeto. Los combates normales también sueltan algo de vez en cuando, casi siempre común; lo bueno se gana en cofres y sub-jefes |
 | 🕳️ | **El descenso no tiene fin**: vencer al jefe ya no acaba la partida. El suelo se abre y bajas a otro tramo, más duro y más rico. Tu marca es la **profundidad** |
 | ⚒️ | **La Forja**: por fin hay dónde gastar el oro. 8 mejoras **permanentes** que no se pierden al morir |
-| 🧬 | **Variantes de monstruo**: «Orco Colérico de la Plaga». 22 formas raras que cambian cómo pelea, y una que te **oculta su intención** |
+| 🧬 | **Variantes de monstruo**: «Orco Colérico de la Plaga». 22 formas raras que cambian cómo pelea |
 | 👾 | **90 monstruos y 6 jefes**: cada tramo del descenso estrena criaturas que no has visto |
 | ⛏️ | **Expedición**: la mazmorra rinde oro mientras no juegas, hasta 8 horas |
 | 🌫️ | **Niebla de guerra**: el mapa se recorre hacia abajo desde el piso 0 y lo que queda a más de 3 pisos por delante se cubre hasta que te acercas |
@@ -47,6 +72,8 @@
 | 🐉 | **El trofeo del jefe**: vence al Dragón Ancestral y te quedas con un objeto legendario para todas tus rutas futuras |
 | 🏰 | **Nueva ambientación**: fantasía oscura de mazmorra, piedra y forja en vez del azul genérico de antes |
 | 📖🎒🏆 | **Bestiario, colección y 15 logros**, accesibles desde el menú de la cabecera |
+
+</details>
 
 ---
 
@@ -61,7 +88,33 @@ pícaro o elementalista.
 
 | ⏱️ Una partida | 🗺️ El mapa | ⚔️ El combate | 🌱 Tu héroe |
 |:---:|:---:|:---:|:---:|
-| Dura hasta que caes | Nuevo en cada tramo | Por turnos, con menú | Más fuerte en cada partida |
+| Dura hasta que caes | Nuevo en cada tramo | Por turnos, de lado | Más fuerte en cada partida |
+
+---
+
+## 🧭 Modo aventura: Zafias
+
+Por encima de la mazmorra hay un mundo. **Zafias** es una aldea a las puertas de un bosque que los goblins han
+tomado, y la recorres **escena a escena** sobre un mapa pintado: pulsa a un vecino, a un enemigo o un camino, y tu
+héroe irá andando hasta allí.
+
+<p align="center">
+  <img src="docs/img/aventura.jpg" alt="La aldea de Zafias: Maela, la posadera, te cuenta que tres goblins vigilan los cruces del bosque" width="680">
+</p>
+
+- 📜 **Misiones con historia.** Habla con los vecinos: Maela, la posadera, te pedirá echar a los goblins del
+  bosque y acabar con **Grask**, su jefe. Lo que te toca hacer está siempre a la vista, arriba.
+- 👺 **Enemigos que ves venir.** Los goblins esperan en los caminos; pulsa uno y empieza el combate. Si los
+  vences desaparecen… hasta que duermes en la posada y vuelven.
+- 🗺️ **Zonas que se abren.** El campamento goblin no aparece hasta que limpias el bosque.
+- 🏘️ **La aldea es tu base.** La **posada** te cura, la **tienda** vende pociones y mejoras, y la **cueva del
+  sur** baja al descenso de siempre.
+- 🛡️ **El mismo héroe.** Tu nivel, tus estadísticas, La Forja, el oro y las pociones son los mismos en la aventura
+  y en la mazmorra. Si caes, despiertas en la posada con algo menos de oro.
+
+<p align="center">
+  <img src="docs/img/bosque.jpg" alt="El bosque de los cruces, con tres goblins en los caminos y el objetivo de la misión arriba" width="680">
+</p>
 
 ---
 
@@ -72,7 +125,7 @@ pícaro o elementalista.
 </p>
 
 1. **🗺️ Elige tu camino.** Cada punto del mapa es un combate, un cofre, un evento, una hoguera o un sub-jefe. Avanzas hacia abajo hasta el **jefe del tramo**; lo que queda lejos se ve cubierto por niebla de guerra hasta que te acercas.
-2. **⚔️ Combate por turnos.** Ves lo que va a hacer el enemigo **antes** de elegir, y decides: atacar, defenderte, usar una habilidad o huir.
+2. **⚔️ Combate por turnos, de lado.** Atacas, te defiendes, usas una habilidad, bebes una poción o huyes. Lo que hará el enemigo no se anuncia: se aprende.
 3. **🔥 Recupera fuerzas.** En las hogueras puedes descansar o afilar tu arma. **Siempre hay una antes del jefe.**
 4. **🎲 Decide en los eventos.** Te encuentras con una situación y **dos decisiones**. Ninguna sale gratis.
 5. **🕳️ Y sigues bajando.** Vencer al jefe **no acaba la partida**: el suelo se abre, recuperas toda la vida y entras en un tramo nuevo, con criaturas que no conoces y que pegan un 50 % más. Termina cuando caes.
@@ -81,31 +134,30 @@ pícaro o elementalista.
 
 ### El combate
 
-<p align="center">
-  <img src="docs/img/combate.jpg" alt="Un combate contra El Lector, el enemigo que lee tus movimientos" width="620">
-</p>
+Peleas **de lado, cara a cara**: tu héroe a la izquierda y el enemigo a la derecha. Cada golpe es una embestida,
+y el daño salta sobre quien lo recibe. Abajo, en el panel de pergamino, están tu vida, la del enemigo y tus acciones.
 
 | Acción | Qué hace |
 |--------|----------|
-| 🗡️ **Atacar** | Golpeas una vez |
-| 🛡️ **Defender** | El golpe de esta ronda hace la mitad. Solo sirve si el enemigo va a atacar |
-| ✨ **Habilidades** | Golpe de Fuego: 5 de daño, tarda 3 rondas en volver a estar listo |
+| 🗡️ **¡Atacar!** | Golpeas con tu arma. El botón te dice cuánto daño haces |
+| 🛡️ **Defender** | El próximo golpe que recibas hace la mitad |
+| 🔥 **Habilidades** | Cada una a un clic. Golpe de Fuego: 5 de daño, y tarda 3 rondas en volver a estar lista |
+| 🧪 **Poción** | Recuperas el 40 % de tu vida, pero gastas el turno. Llevas hasta 3 |
 | 🏃 **Huir** | Sales del combate (te hacen daño al irte). No se puede huir de sub-jefes ni de jefes |
 
-#### 👁️ Ves lo que va a hacer el enemigo
+#### 🌬️ Aprende a leer al enemigo
 
-Sobre cada enemigo aparece **su próximo movimiento**, y ese movimiento es exactamente el que hará. Así, Defender deja de ser una apuesta y pasa a ser una decisión.
+El enemigo **no anuncia** lo que va a hacer, como en los clásicos. Pero cada uno tiene **su forma de pelear**, y
+se le nota:
 
-| Lo que ves | Qué significa |
-|:----------:|---------------|
-| ⚔️ **Ataca 5** | Te hará 5 de daño |
-| 💥 **Golpe fuerte 9** | Un golpe grande: es el momento de defenderte |
-| ⚡ **Reúne fuerzas** | No ataca ahora, pero prepara algo fuerte |
-| 🛡️ **Se protege** | Este turno recibirá la mitad de daño |
-| 💚 **Se cura** | Recupera vida |
-| 💤 **Descansa** | No hace nada |
+- Antes de un **golpe fuerte**, se tensa y **brilla en rojo**, y una frase te avisa: *«Orco tensa todo el cuerpo.
+  Algo gordo se avecina.»* Es el momento de defenderte.
+- El **diario** del combate cuenta cada movimiento: quien lo lee aprende que el Esqueleto se protege, que el
+  Murciélago se cura y que tras «reúne fuerzas» viene algo gordo.
+- Los **sub-jefes y jefes** siguen secuencias fijas: si caes, la próxima vez sabrás qué viene.
 
-Cada uno de los **90 monstruos** tiene su forma de atacar: el Goblin carga y golpea fuerte, el Esqueleto se protege, el Murciélago se cura… Y en profundidad aparecen **variantes** («Orco Colérico de la Plaga») que cambian las reglas del combate.
+Cada uno de los **90 monstruos** tiene su estilo, y en profundidad aparecen **variantes** («Orco Colérico de la
+Plaga») que cambian las reglas del combate.
 
 ---
 
@@ -199,20 +251,23 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.4.1, sigue en desarrollo.** El equilibrio está ajustado para que un jugador medio **venza al primer jefe unas 2 de cada 5 partidas**, porque ese jefe ya no es el final: es la puerta al descenso sin fondo
+> **Versión 1.5.0, sigue en desarrollo.** El equilibrio del descenso está ajustado para que un jugador medio **venza al primer jefe unas 2 de cada 5 partidas**, porque ese jefe ya no es el final: es la puerta al descenso sin fondo
 > (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
 
 ### ✅ Ya se puede jugar
 
+- 🧭 **Modo aventura en Zafias**: aldea, bosque y campamento goblin, con la primera misión, posada, tienda y la cueva al descenso
+- ⚔️ **Combate de lado** con embestidas, números de daño y un panel de pergamino con ¡Atacar! y el resto a un clic
+- 🌬️ **Enemigos que se aprenden**: sin intenciones a la vista, pero los golpes fuertes se ven venir
+- 🧪 **Pociones** que curan el 40 % y se guardan entre partidas
 - 🕳️ **Descenso sin fin**: tramos de 16 pisos encadenados, cada uno más duro y más rico que el anterior
 - ⚒️ **La Forja**: 8 mejoras permanentes que se compran con el oro y no se pierden al morir
 - ⛏️ **Expedición**: la mazmorra rinde oro mientras no juegas (hasta 8 horas)
 - 🗺️ Mapa que cambia en cada tramo, con **niebla de guerra**
-- ⚔️ Combate por turnos: atacar, defender, habilidad y huir
 - 🧬 **Estadísticas primarias y nivel permanente**: Fuerza, Destreza, Inteligencia y Vitalidad; sube de nivel y reparte tú mismo los puntos
 - ⚔️ **Tu equipo, siempre visible** junto al mapa, y un **inventario de 10 ranuras** (o más, con La Forja) tras un botón aparte
 - 🎒 **Equipo de 4 ranuras y 5 rarezas**, con 122 objetos y 24 afijos (ver más abajo)
-- 👁️ **Ves lo que va a hacer cada enemigo** antes de elegir, y **90 monstruos** con su propia forma de atacar
+- 👾 **90 monstruos** con su propia forma de atacar, y 6 jefes
 - 🔥 **Hogueras** para descansar o equiparte, con una siempre antes del jefe
 - 🎲 **15 eventos** con dos decisiones cada uno
 - 💀 Sub-jefes **opcionales** (siempre hay un camino sin ellos), cofres con botín y un jefe final
@@ -236,7 +291,11 @@ Todo lo que viene está explicado, con sus motivos, en **[planning.md](planning.
 
 ## 🔮 Qué viene
 
-Lo haremos en **cuatro entregas**. Empezamos por hacer el juego **ganable y claro**, y después añadimos profundidad.
+> [!TIP]
+> **Lo próximo en Zafias:** más misiones y zonas (el santuario de piedras, el castillo), retratos en los diálogos
+> y arte propio para cada monstruo, para que cada criatura deje de ser un goblin teñido.
+
+El descenso sigue su propio plan, en **cuatro entregas**: primero hacer el juego **ganable y claro**, y después añadir profundidad.
 
 | Entrega | Nombre | Qué trae |
 |:-------:|--------|----------|

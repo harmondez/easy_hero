@@ -430,6 +430,21 @@ por el juego. Detectado aislando el caso; conviene usar una función como sustit
 **La investigación del usuario** (`research/`) confirma el rumbo; lo que se adopta, adapta y aparca quedó en
 `planning.md`. Lo urgente que trae: sin intenciones hace falta **telegrafiado sin números** (frases y postura).
 
+## 2026-09-30 · Versión 1.5.0: Zafias jugable de punta a punta
+
+**Cambio de método pedido por el usuario:** «no hagas tanta sobreingeniería»: primero contenido funcional estilo
+DragonFable; los detalles, a la sección **Perfilados** de `planning.md`. Con esa regla, el camino crítico C1-C5
+salió en una sola tanda:
+- **C1** combates de verdad en la aventura (el mismo héroe; vida y vencidos guardados aparte en
+  `easy-hero-adventure`, para no pisar un descenso a medias; derrota → posada, −10 % de oro).
+- **C2** la primera misión (Maela → 3 goblins → campamento → Grask → recompensa), con marcas de historia
+  (`defeated:<id>`, `requires`, `talk` por etapas) definidas como datos en `src/data/zones/zafias.js`.
+- **C3** la aldea: posada (cura y repuebla), tienda (La Forja) y la cueva que baja al descenso.
+- **C4** el goblin teñido por especie/linaje (filtros CSS) y jefes más grandes.
+- **C5** publicación con README nuevo y capturas.
+
+Cada paso se probó jugando la misión completa con un guion automático antes de comitear.
+
 ---
 
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)

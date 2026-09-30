@@ -1,15 +1,15 @@
-import * as UI from './ui.js?v=1.4.2';
-import * as Engine from './engine.js?v=1.4.2';
-import * as Events from './events.js?v=1.4.2';
-import * as Save from './save.js?v=1.4.2';
-import * as Items from './items.js?v=1.4.2';
-import * as Meta from './meta.js?v=1.4.2';
-import * as Adventure from './adventure-view.js?v=1.4.2';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.4.2';
-import { RPG_BALANCE } from './data/balance.js?v=1.4.2';
-import { tierName } from './data/monsters.js?v=1.4.2';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.4.2';
-import { GAME_VERSION } from './version.js?v=1.4.2';
+import * as UI from './ui.js?v=1.5.0';
+import * as Engine from './engine.js?v=1.5.0';
+import * as Events from './events.js?v=1.5.0';
+import * as Save from './save.js?v=1.5.0';
+import * as Items from './items.js?v=1.5.0';
+import * as Meta from './meta.js?v=1.5.0';
+import * as Adventure from './adventure-view.js?v=1.5.0';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.5.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.5.0';
+import { tierName } from './data/monsters.js?v=1.5.0';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.5.0';
+import { GAME_VERSION } from './version.js?v=1.5.0';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;

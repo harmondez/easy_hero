@@ -12,10 +12,11 @@
 
 ## 📍 Estado actual
 
-**Publicado hasta la 1.4.2:** entregas A y B1, decorado/onboarding, 4 paneles, Personaje/inventario, oro y
+**Publicado hasta la 1.5.0:** entregas A y B1, decorado/onboarding, 4 paneles, Personaje/inventario, oro y
 trofeo del jefe, primarias con nivel permanente, niebla de guerra, **el descenso sin fin** (tramos, La Forja,
 expedición, 90 monstruos, 22 variantes), el equipo siempre visible, el botín de una sola gota, el harness de
-fuzzing y el mapa en el centro como mazmorra visual. Detalle en [historial.md](historial.md).
+fuzzing, el mapa en el centro como mazmorra visual y **la 1.5.0: combate de lado estilo DragonFable y el Modo
+Aventura en Zafias** (primera misión, aldea con posada, tienda y cueva). Detalle en [historial.md](historial.md).
 
 ---
 
@@ -35,11 +36,11 @@ y se pulen en rondas posteriores. Prioridad web de escritorio; en móvil basta c
    Forja accesible desde la aldea) y la **cueva** que baja al descenso con el mismo héroe.
 4. ✅ **C4 · Variedad mínima de enemigos** (hecho) — el goblin teñido por familia (filtro CSS) y más grande si es
    sub-jefe o jefe, hasta que llegue su arte.
-5. **C5 · Publicar la 1.5.0** 🟢 — README, CHANGELOG, versión.
+5. ✅ **C5 · Publicar la 1.5.0** (hecho)
 
 Después: más misiones y zonas de Zafias (santuario, castillo), retratos en los diálogos, más fondos de combate.
 
-### ✅ Hecho (sin publicar, en local)
+### ✅ Hecho (publicado en la 1.5.0)
 - Prueba de concepto: Zafias por escenas (aldea y bosque), cámara, héroe caminando, 2 NPC con diálogo, goblin
   visible. 60 fps también con la CPU ×4 más lenta.
 - Combate de lado: héroe a la izquierda, enemigo a la derecha, embestida + número de daño, fondo de bosque.
