@@ -414,6 +414,22 @@ decisiones quedaron en `planning.md`. Prioridad: **web de escritorio primero**; 
 más de 33 ms, tanto normal como con la CPU a ×4 más lenta (Chromium sin interfaz, 1440×900). La prueba de
 concepto confirma que el stack aguanta; el riesgo que queda es el arte, no la técnica.
 
+## 2026-09-30 · Panel de pergamino, adiós a las intenciones y pociones (A2)
+
+**Decisiones del usuario (dos tandas):** barra con ¡Atacar! grande + iconos a un clic; diario plegado; pociones
+al 40 % que gastan turno (máx. 3, se conservan entre partidas, 40 de oro fijo en La Forja); final del combate
+como cartel sobre el escenario. Y un giro de fondo: **las intenciones dejan de mostrarse** («nos desviamos de
+Slay the Spire y nos acercamos a DragonFable»). Los enemigos mantienen sus patrones, solo ocultos; tu ataque
+sigue diciendo su daño, pero calculado sin la defensa del enemigo (si no, delataría que va a protegerse).
+«de la Niebla» perdió su sentido (ocultaba la intención) y pasó a emboscada: su primer golpe ×2.
+
+**Un fallo propio de camino:** el script que adaptó las pruebas usaba `String.replace` con `$$eval` en el
+texto de sustitución, y `$$` ahí significa «un `$`»: dos pruebas quedaron con `$eval` y fallaban por eso, no
+por el juego. Detectado aislando el caso; conviene usar una función como sustitución en esos scripts.
+
+**La investigación del usuario** (`research/`) confirma el rumbo; lo que se adopta, adapta y aparca quedó en
+`planning.md`. Lo urgente que trae: sin intenciones hace falta **telegrafiado sin números** (frases y postura).
+
 ---
 
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)

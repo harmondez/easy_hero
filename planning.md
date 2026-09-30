@@ -58,14 +58,31 @@ CSS y la Web Animations API. Sin bundler ni framework.
 | Marcadores pintados del mapa | Se usan **como posiciones** de NPC, enemigos y cofres |
 | Primera versión de la aventura | **Aldea + bosque + cueva** |
 | Historia | **Borrador mío** como datos editables; el dueño del juego corrige |
+| Barra de acciones | **¡ATACAR! grande** en el centro + iconos a un clic: Defender, cada habilidad por separado, Poción, Huir |
+| Diario de combate | **Plegado** bajo el panel: se ve la última línea, un clic lo despliega |
+| Intenciones del enemigo | **Ya no se muestran** (nos alejamos de Slay the Spire, hacia DragonFable). Los enemigos **mantienen sus patrones** (cargar, curarse, protegerse), solo que ocultos: el diario los delata |
+| Previsiones en botones | Se quitan las del **enemigo** («recibirías X»); se quedan las **tuyas** («ataco: 5 de daño») |
+| Variante «oculta su intención» | Se **cambia por otra** que encaje (propuesta: «Sigiloso», su primer golpe hace el doble) |
+| Pociones | Curan el **40 %** de la vida máxima, **gastan turno**, máx. **3**, **se conservan entre partidas**, precio **fijo de 40 de oro**; hasta que exista la aldea se compran en La Forja |
+| Final del combate | **Momento en el escenario**: el vencido se desvanece y aparece un cartel grande con la recompensa y «Continuar» |
+| PNG originales de `img/` | **Ignorados en git** (`/img/*.png`); en el repo solo las versiones optimizadas |
+
+**Riesgo anotado:** los bots del banco de equilibrio deciden viendo la intención; un jugador ya no la ve, así que el
+juego real será algo más difícil que lo que mide el banco. Revisar la tasa de victoria tras A.
 
 ### A · Interfaz de combate estilo DragonFable 🔴 → versión 1.5.0
 Sustituye a las dos cartas actuales en **todos** los combates. El motor de combate no cambia.
 - ✅ **A1 · Escenario** (hecho en la prueba de concepto): héroe a la izquierda, goblin a la derecha sobre
   `img/bg/forest.webp`, embestida + número de daño + vuelta. Queda para A2 quitar las cartas de debajo.
-- **A2 · Panel de pergamino abajo** 🟡: héroe (nombre, nivel, vida) a la izquierda, enemigo (nombre, tipo,
-  vida, estado, intención) a la derecha, y en el centro la barra de acciones con un gran **¡ATACAR!** y los
-  iconos de Defender, cada habilidad, Huir y **Poción**. El diario queda plegable.
+- ✅ **A2 · Panel de pergamino** (hecho, sin publicar): tú · ¡ATACAR! + iconos (Defender, cada habilidad,
+  Poción, Huir) · el enemigo; intenciones fuera de la interfaz; diario plegado; cartel de victoria/derrota sobre
+  el escenario; «de la Niebla» pasa a emboscada (primer golpe ×2); pociones (40 %, gastan turno, máx. 3, 40 de
+  oro en La Forja, se conservan entre partidas).
+- **A2b · Telegrafiado sin números** 🟢 (nuevo, por la investigación; **prioritario**: sin intenciones, un golpe
+  fuerte por sorpresa se siente injusto): cuando el enemigo carga o va a protegerse, una **frase atmosférica**
+  sobre el escenario («El orco respira hondo…») y una **postura** en CSS (brillo, se echa atrás). Sin cifras.
+- **A2c · Jefes con rotación y furia** 🟢: sub-jefes y jefes con secuencias fijas aprendibles (ya existe
+  `monster.step`) y **furia** bajo el 30 % de vida (tinte rojo + frase + un cambio de patrón).
 - **A3 · Goblin teñido y momentos** 🟡: tinte y aura por familia/variante, jefes más grandes. Entrada del
   combate, victoria y derrota como un momento orquestado.
 - **A4 · Pociones** 🟢: objeto consumible en el motor (curar X), acción de combate y contador; se compran en la
@@ -90,6 +107,21 @@ una zona con zoom). El héroe (`img/hero.png`) es la imagen, que camina hasta el
 - **B4 · Aldea y cueva** 🟡: posada (dormir: cura y repuebla), tienda de pociones, y la cueva que lanza el
   descenso con el mismo héroe.
 - **B5 · Contenido** 🟡: borrador de la historia de Zafias, NPC y enemigos por escena, para corregir.
+
+### Lo que sacamos de la investigación (`research/Investigación Desarrollo Easy Hero.md`, 2026-09-30)
+**Conclusión: confirma el rumbo, no hay que parar.** Coincide con lo ya decidido: pociones al 40 % con tope,
+patrones ocultos que se aprenden, misiones cortas de 3-6 combates, la aventura para la historia y el descenso
+para la rejugabilidad.
+- **Se adopta:** telegrafiado por frases y postura (A2b), rotaciones y furia de jefes (A2c), una **herramienta
+  de preparación de sprites** (recorte, línea de pies, escala de píxel común, paleta única) y una nota de
+  créditos sobre el arte hecho con IA (precaución barata; no está verificado que sea obligatoria).
+- **Se adapta:** los tintes por familia con **filtros CSS** o un tinte de canvas hecho una vez, no con un
+  shader WebGL (la investigación lo propone para miles de sprites; aquí hay dos en pantalla).
+- **Se aparca:** fórmulas de acierto/fallo y «plink» (más fallos = más frustración; parte de sus fuentes ni
+  siquiera son de DragonFable), alquimia de pociones, cambios de acumulación de estados, enfriamientos que
+  solo bajan al atacar. Debilidades elementales ×0,5/×1,5: buena idea para más adelante, con los 6 tipos de daño.
+- **Con cuidado:** varias fórmulas del informe se perdieron (salen como imágenes vacías) y algunas citas son
+  de otros juegos; se toma como orientación, no como datos.
 
 **Arte que se irá necesitando** (no bloquea): más enemigos mirando a la izquierda, NPC, fondos de combate de
 cueva y mazmorra.

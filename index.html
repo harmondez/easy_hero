@@ -149,18 +149,19 @@
                 <div class="rpg-stage" id="rpgStage">
                     <div class="rpg-actor is-hero" id="rpgActorHero"><img src="img/sprites/hero_right.png" alt="Tu héroe" width="195" height="244" draggable="false"></div>
                     <div class="rpg-actor is-monster" id="rpgActorMonster"><img src="img/sprites/goblin_left.png" alt="El enemigo" width="175" height="217" draggable="false"></div>
+                    <!-- El final del combate es un momento sobre el propio escenario -->
+                    <div class="rpg-combat-result" id="rpgCombatResult" style="display:none;"></div>
                 </div>
-                <div class="rpg-arena">
-                    <div id="rpgCombatHero" class="rpg-fighter-slot"></div>
-                    <div class="rpg-arena-vs">VS</div>
-                    <div id="rpgCombatMonster" class="rpg-fighter-slot"></div>
+                <!-- Panel de pergamino: tú a la izquierda, las acciones en el centro, el enemigo a la derecha -->
+                <div class="rpg-hud">
+                    <div id="rpgCombatHero" class="rpg-hud-slot"></div>
+                    <div class="rpg-actions" id="rpgCombatActions"></div>
+                    <div id="rpgCombatMonster" class="rpg-hud-slot"></div>
                 </div>
-                <div class="rpg-actions" id="rpgCombatActions"></div>
-                <div class="rpg-combat-result" id="rpgCombatResult" style="display:none;"></div>
-                <div class="rpg-log">
-                    <div class="rpg-log-title">📜 Combate</div>
+                <details class="rpg-log rpg-combat-log">
+                    <summary><span class="rpg-log-title">📜 Diario</span><span class="rpg-log-last" id="rpgCombatLogLast"></span></summary>
                     <div class="rpg-log-content" id="rpgCombatLogContent"></div>
-                </div>
+                </details>
             </div>
         </section>
     </main>

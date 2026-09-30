@@ -32,3 +32,6 @@ desktop.ini
 
 # Configuración local de Claude Code
 .claude/settings.local.json
+
+# Arte original del usuario (PNG grandes): en el repo solo van las versiones optimizadas de img/sprites, img/bg e img/zones
+/img/*.png

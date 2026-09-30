@@ -156,8 +156,8 @@ export const MONSTER_LINEAGES = [
         id: 'niebla', name: 'de la Niebla',
         hpMul: 1.15, goldMul: 1.8, xpMul: 1.4,
         minTier: 2,
-        rules: { hideIntent: true },
-        desc: 'No puedes ver lo que va a hacer.'
+        rules: { ambush: 2 },
+        desc: 'Surge de la niebla: su primer golpe hace el doble.'
     }
 ];
 

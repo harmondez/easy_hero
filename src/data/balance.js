@@ -45,6 +45,10 @@ globalThis.__RPG_BALANCE__ = globalThis.__RPG_BALANCE__ || {
     // El ritmo sube con la profundidad alcanzada para que siga significando algo en tramos hondos.
     expedition: { goldPerHour: 15, maxHours: 8 },
 
+    // Pociones: curan una parte de la vida máxima y gastan el turno (el enemigo responde). Son tuyas entre
+    // partidas, con un tope, y se compran con oro a precio fijo en La Forja (en la aldea, cuando exista).
+    potion: { heal: 0.4, max: 3, price: 40 },
+
     // Variantes de monstruo (data/variants.js): un adjetivo y/o un linaje sobre el nombre base.
     // La probabilidad crece con el tramo: `base + porTramo × tramo`, con tope.
     variants: {

@@ -41,6 +41,7 @@ const emptyMeta = () => ({
     gold: 0,                    // nunca se pierde, ni al morir: es lo que se gasta en La Forja
     trophyItem: null,           // el objeto legendario del jefe final: una vez ganado, para siempre
     upgrades: {},               // id de La Forja -> nivel comprado (permanente)
+    potions: 0,                 // pociones que llevas encima: son tuyas entre partidas (tope en RPG_BALANCE.potion.max)
     bestDepth: 0,               // profundidad absoluta máxima alcanzada (el récord del descenso)
     bestTier: 0,                // tramo más hondo al que se ha llegado
     variantsSeen: {},           // nombre base -> { adj: {id: true}, lin: {id: true} }: medallas del bestiario
@@ -114,6 +115,23 @@ export function buyUpgrade(meta, id) {
     meta.gold -= cost;
     meta.upgrades[id] = upgradeLevel(meta, id) + 1;
     return { ok: true, cost, level: meta.upgrades[id] };
+}
+
+// --- 🧪 Pociones: se compran con oro a precio fijo y se llevan encima entre partidas ---
+export const potionCount = meta => Math.max(0, meta.potions | 0);
+
+export function canBuyPotion(meta) {
+    const P = RPG_BALANCE.potion;
+    return potionCount(meta) < P.max && meta.gold >= P.price;
+}
+
+/** Compra una poción. Devuelve { ok, cost, count }; `ok: false` si no llega el oro o ya llevas el máximo. */
+export function buyPotion(meta) {
+    const cost = RPG_BALANCE.potion.price;
+    if (!canBuyPotion(meta)) return { ok: false, cost, count: potionCount(meta) };
+    meta.gold -= cost;
+    meta.potions = potionCount(meta) + 1;
+    return { ok: true, cost, count: meta.potions };
 }
 
 /** Lo que aporta ahora mismo una mejora (nivel × lo de cada nivel). 0 si no se ha comprado. */

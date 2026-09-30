@@ -3,6 +3,7 @@ import * as Items from './items.js?v=1.4.2';
 import * as Meta from './meta.js?v=1.4.2';
 import * as Stats from './stats.js?v=1.4.2';
 import { upgradeAmountText } from './data/upgrades.js?v=1.4.2';
+import { RPG_BALANCE } from './data/balance.js?v=1.4.2';
 import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.4.2';
 
 // =============================================
@@ -267,11 +268,26 @@ export function renderShop(meta) {
             </button>
         </article>`;
     }).join('');
+    // La poción no es una mejora: es un consumible que llevas encima, con tope y precio fijo
+    const P = RPG_BALANCE.potion;
+    const potions = Meta.potionCount(meta);
+    const potionFull = potions >= P.max;
+    const potionCard = `
+        <article class="shop-card ${potionFull ? 'is-maxed' : meta.gold >= P.price ? 'is-affordable' : 'is-locked'}">
+            <div class="shop-icon">🧪</div>
+            <div class="shop-info">
+                <div class="shop-name">Poción de vida <span class="shop-level">llevas ${potions} de ${P.max}</span></div>
+                <div class="shop-desc">En combate cura el ${Math.round(P.heal * 100)} % de tu vida máxima, a cambio de tu turno. Las que no gastes se quedan contigo.</div>
+            </div>
+            <button type="button" class="shop-buy" data-shop-buy="potion" ${potionFull || meta.gold < P.price ? 'disabled' : ''}>
+                ${potionFull ? 'LLENO' : `🪙 ${P.price}`}
+            </button>
+        </article>`;
     el.innerHTML = `
         <div class="shop-purse">Tu oro: <b>🪙 ${meta.gold}</b></div>
         <p class="shop-note">Lo que compras aquí es <b>para siempre</b>: no se pierde al morir ni al empezar otra ruta.
         Las mejoras con nivel se pueden comprar una y otra vez, cada vez más caras.</p>
-        <div class="shop-grid">${cards}</div>`;
+        <div class="shop-grid">${potionCard}${cards}</div>`;
 }
 
 export function addRpgLog(msg, type = 'system') {
@@ -289,44 +305,37 @@ export function clearRpgLog() {
     if (el) el.innerHTML = '';
 }
 
-// --- ⚔️ Combate RPG (héroe a la izquierda, monstruo a la derecha) ---
+// --- ⚔️ Combate RPG: escenario de lado + panel de pergamino (héroe · acciones · enemigo) ---
+// Estilo DragonFable: lo que hará el enemigo NO se anuncia. Sus patrones siguen ahí (cargar, protegerse,
+// curarse) y el diario los delata, pero nada de la interfaz lo predice.
 
-// La intención del monstruo: lo que va a hacer en su turno, visible ANTES de elegir la acción
-function _rpgIntentHtml(monster) {
-    const v = Engine.rpgIntentView(monster);
-    if (!v) return '';
-    const value = v.value != null ? ` <span class="rpg-intent-value">${v.value}</span>` : '';
-    return `<div class="rpg-intent is-${esc(v.kind)}" title="${esc(v.hint)}">
-        <span class="rpg-intent-icon">${v.icon}</span><span class="rpg-intent-text"><b>${esc(v.label)}</b>${value}</span>
+function _rpgHpBar(f) {
+    const hpPct = Math.max(0, Math.min(100, (f.hp / f.maxHp) * 100));
+    return `<div class="rpg-hud-hp" role="img" aria-label="Vida ${f.hp} de ${f.maxHp}">
+        <div class="rpg-hud-hpfill" style="width:${hpPct}%"></div>
+        <span class="rpg-stat hp">${f.hp} / ${f.maxHp}</span>
     </div>`;
 }
 
-function _rpgFighterCard(f, tag, status, intentHtml = '') {
-    const hpPct = Math.max(0, Math.min(100, (f.hp / f.maxHp) * 100));
+function _rpgHudSide(f, sub, status, side) {
     return `
-        <article class="rpg-fighter-card ${f.hp <= 0 ? 'is-down' : ''}" style="--accent: ${esc(f.color)}">
-            <div class="rpg-fighter-tag">${esc(tag)}</div>
-            <div class="rpg-fighter-icon">${f.icon}</div>
-            <div class="rpg-fighter-name">${esc(f.name)}</div>
-            ${intentHtml}
-            <div class="rpg-fighter-hpbar"><div class="rpg-fighter-hpfill" style="width:${hpPct}%"></div></div>
-            <div class="rpg-fighter-stats">
-                <div class="rpg-stat atk"><b>ATK</b> ${f.atq}</div>
-                <div class="rpg-stat hp"><b>HP</b> ${f.hp} / ${f.maxHp}</div>
-            </div>
-            <div class="rpg-fighter-status">${status || '&nbsp;'}</div>
+        <article class="rpg-hud-card is-${side} ${f.hp <= 0 ? 'is-down' : ''}">
+            <div class="rpg-hud-name">${esc(f.name)}</div>
+            <div class="rpg-hud-sub">${esc(sub)}</div>
+            ${_rpgHpBar(f)}
+            <div class="rpg-hud-status">${status || '&nbsp;'}</div>
         </article>`;
 }
 
-function _rpgActionButton(attrs, icon, label, hint, disabled) {
-    return `<button type="button" class="rpg-action" ${attrs} ${disabled ? 'disabled' : ''}>
-        <span class="rpg-action-icon">${icon}</span>
+function _rpgActionButton(attrs, icon, label, hint, disabled, extra = '') {
+    return `<button type="button" class="rpg-action" ${attrs} ${disabled ? 'disabled' : ''} title="${esc(hint)}">
+        <span class="rpg-action-icon" aria-hidden="true">${icon}</span>
         <span class="rpg-action-label">${esc(label)}</span>
-        <span class="rpg-action-hint">${esc(hint)}</span>
+        <span class="rpg-action-hint">${esc(hint)}</span>${extra}
     </button>`;
 }
 
-const RPG_ACTION_NAMES = { attack: 'ATACAR', defend: 'DEFENDER', skill: 'HABILIDADES' };
+const RPG_ACTION_NAMES = { attack: 'ATACAR', defend: 'DEFENDER', skill: 'HABILIDAD', potion: 'POCIÓN' };
 
 // Estado del enemigo: quemadura, veneno y, si lee tus movimientos, la acción que ha memorizado (repetirla = golpe doble)
 function _rpgMonsterStatus(combat) {
@@ -341,13 +350,23 @@ function _rpgMonsterStatus(combat) {
     return parts.join(' · ');
 }
 
+// Tu estado: defensa, y lo que te hacen las variantes «de la Plaga» y «de las Brasas»
+function _rpgHeroStatus(combat) {
+    const parts = [];
+    if (combat.defending) parts.push('🛡️ Defendiendo');
+    const s = combat.heroStatus || {};
+    if (s.burn) parts.push(`🔥 Ardes ${s.burn.dmg}×${s.burn.turns}`);
+    if (s.poison > 0) parts.push(`☠️ Veneno ${s.poison}`);
+    return parts.join(' · ');
+}
+
 function _rpgWeaponIcon(hero) {
     const w = hero.equipment && hero.equipment.weapon;
     return (w && Items.DAMAGE_TYPES[w.damaged] && Items.DAMAGE_TYPES[w.damaged].icon) || '🗡️';
 }
 
-/** Dibuja las dos cartas y el menú de acciones. opts.menu: 'main' | 'skills' */
-export function renderRpgCombat(combat, opts = {}) {
+/** Dibuja el escenario, los dos lados del panel y la barra de acciones. */
+export function renderRpgCombat(combat) {
     if (!combat) return;
     const { hero, monster } = combat;
     const tags = { monster: 'Monstruo', subboss: 'Sub-jefe', boss: 'Jefe final' };
@@ -356,43 +375,51 @@ export function renderRpgCombat(combat, opts = {}) {
     if (title) title.textContent = `⚔️ Combate · Piso ${monster.floor + 1} · Ronda ${combat.turn}`;
 
     const heroSlot = document.getElementById('rpgCombatHero');
-    if (heroSlot) heroSlot.innerHTML = _rpgFighterCard(hero, `Nivel ${hero.level}`, combat.defending ? '🛡️ Defendiendo' : '');
+    if (heroSlot) heroSlot.innerHTML = _rpgHudSide(hero, `Nivel ${hero.level}`, _rpgHeroStatus(combat), 'hero');
     const monSlot = document.getElementById('rpgCombatMonster');
-    if (monSlot) monSlot.innerHTML = _rpgFighterCard(monster, monster.tag || tags[monster.type] || 'Monstruo', _rpgMonsterStatus(combat), combat.over ? '' : _rpgIntentHtml(monster));
+    if (monSlot) monSlot.innerHTML = _rpgHudSide(monster, monster.tag || tags[monster.type] || 'Monstruo', _rpgMonsterStatus(combat), 'monster');
     _rpgRenderStage(hero, monster);
 
     const bar = document.getElementById('rpgCombatActions');
     if (!bar) return;
     if (combat.over) { bar.innerHTML = ''; return; }
 
-    if (opts.menu === 'skills') {
-        const skillButtons = Object.keys(Engine.RPG_SKILLS).map(id => {
-            const s = Engine.rpgSkillInfo(hero, id, combat);
-            const cd = combat.cooldowns[s.id];
-            const hint = cd > 0 ? `${s.desc} · Enfriando (${cd})` : `${s.desc} · Listo`;
-            return _rpgActionButton(`data-rpg-action="skill" data-rpg-skill="${esc(s.id)}"`, s.icon, s.name, hint, cd > 0);
-        }).join('');
-        bar.innerHTML = skillButtons + _rpgActionButton('data-rpg-action="back"', '↩️', 'VOLVER', 'Elegir otra acción', false);
-        return;
-    }
-
-    const hits = Engine.rpgAttackHits(combat);
+    // Tu ataque sí lo conoces (es tu arma), pero sin descontar si el enemigo se protege: eso sería anunciarlo
+    const unguarded = { ...combat, monster: { ...monster, intent: null } };
+    const hits = Engine.rpgAttackHits(unguarded);
     const dmg = hits.reduce((a, b) => a + b, 0);
     const attackHint = hits.length > 1 ? `Ataco ${hits.length} veces: ${hits.join(' + ')} = ${dmg} de daño` : `Ataco una vez: ${dmg} de daño`;
-    const guarded = monster.intent && monster.intent.k === 'guard';
-    const incoming = Engine.rpgIncomingPreview(combat, false);
-    const defendHint = incoming > 0
-        ? `Recibiría ${Engine.rpgIncomingPreview(combat, true)} en vez de ${incoming}`
-        : 'Ahora no te ataca: defenderte no aporta nada';
+    const defendHint = `El próximo golpe que recibas hará la mitad${hero.guard ? ` y ${hero.guard} menos` : ''}`;
     const canFlee = Engine.rpgCanFlee(combat);
     const noSkills = !!(hero.vows && hero.vows.noSkills);
     const fleeHint = canFlee ? 'Salgo del combate (me golpean al huir)'
         : (hero.vows && hero.vows.noFlee ? 'Tu voto de acero lo impide' : 'No se puede huir de este combate');
-    bar.innerHTML =
-        _rpgActionButton('data-rpg-action="attack"', _rpgWeaponIcon(hero), 'ATACAR', `${attackHint}${guarded ? ' (se protege)' : ''}`, false) +
-        _rpgActionButton('data-rpg-action="defend"', '🛡️', 'DEFENDER', defendHint, false) +
-        _rpgActionButton('data-rpg-action="skills"', '✨', 'HABILIDADES', noSkills ? 'Tu voto de silencio lo impide' : 'Golpe de Fuego y más', noSkills) +
-        _rpgActionButton('data-rpg-action="flee"', '🏃', 'HUIR', fleeHint, !canFlee);
+    const potions = combat.potions | 0;
+    const potionHeal = Math.max(1, Math.round(hero.maxHp * RPG_BALANCE.potion.heal));
+    const potionHint = potions <= 0 ? 'No te quedan pociones (se compran en La Forja)'
+        : hero.hp >= hero.maxHp ? 'Ya tienes la vida al máximo'
+        : `Recupero hasta ${potionHeal} de vida, pero gasto el turno`;
+
+    const skills = Object.keys(Engine.RPG_SKILLS).map(id => {
+        const s = Engine.rpgSkillInfo(hero, id, combat);
+        const cd = combat.cooldowns[s.id];
+        const hint = noSkills ? 'Tu voto de silencio lo impide' : cd > 0 ? `${s.desc} · Lista en ${cd} ${cd === 1 ? 'ronda' : 'rondas'}` : s.desc;
+        const badge = cd > 0 ? `<span class="rpg-action-badge">${cd}</span>` : '';
+        // En el icono cabe una palabra: «Golpe de Fuego» → «Fuego» (el nombre completo va en el tooltip)
+        const short = s.name.split(' ').pop();
+        return _rpgActionButton(`data-rpg-action="skill" data-rpg-skill="${esc(s.id)}"`, s.icon, short, `${s.name}: ${hint}`, noSkills || cd > 0, badge);
+    }).join('');
+
+    bar.innerHTML = `
+        <div class="rpg-actions-side">
+            ${_rpgActionButton('data-rpg-action="defend"', '🛡️', 'Defender', defendHint, false)}
+            ${skills}
+        </div>
+        ${_rpgActionButton('data-rpg-action="attack" data-main', _rpgWeaponIcon(hero), '¡Atacar!', attackHint, false)}
+        <div class="rpg-actions-side">
+            ${_rpgActionButton('data-rpg-action="potion"', '🧪', 'Poción', potionHint, potions <= 0 || hero.hp >= hero.maxHp, `<span class="rpg-action-badge is-count">${potions}</span>`)}
+            ${_rpgActionButton('data-rpg-action="flee"', '🏃', 'Huir', fleeHint, !canFlee)}
+        </div>`;
 }
 
 // --- 🎭 Escenario: héroe a la izquierda mirando a la derecha, enemigo a la derecha mirando a la izquierda ---
@@ -495,23 +522,30 @@ export function addRpgCombatLog(msg, type = 'system') {
     div.innerHTML = esc(msg);
     el.appendChild(div);
     el.scrollTop = el.scrollHeight;
+    // Plegado, el diario enseña solo la última línea
+    const last = document.getElementById('rpgCombatLogLast');
+    if (last) last.textContent = msg;
 }
 
 export function clearRpgCombatLog() {
     const el = document.getElementById('rpgCombatLogContent');
     if (el) el.innerHTML = '';
+    const last = document.getElementById('rpgCombatLogLast');
+    if (last) last.textContent = '';
 }
 
-/** Panel de fin de combate. info: { result, title, detail, button } */
+/** Final del combate: un cartel sobre el escenario (el vencido ya se desvanece). info: { result, title, detail, button } */
 export function showRpgCombatResult(info) {
     const el = document.getElementById('rpgCombatResult');
     if (!el || !info) return;
     el.className = `rpg-combat-result is-${esc(info.result)}`;
     el.innerHTML = `
-        <div class="rpg-result-title">${esc(info.title)}</div>
-        <div class="rpg-result-detail">${esc(info.detail || '')}</div>
-        <button type="button" id="btnRpgCombatContinue" class="btn-forge">${esc(info.button || 'CONTINUAR')}</button>`;
-    el.style.display = 'block';
+        <div class="rpg-result-plate">
+            <div class="rpg-result-title">${esc(info.title)}</div>
+            <div class="rpg-result-detail">${esc(info.detail || '')}</div>
+            <button type="button" id="btnRpgCombatContinue" class="btn-forge">${esc(info.button || 'CONTINUAR')}</button>
+        </div>`;
+    el.style.display = 'flex';
 }
 
 export function hideRpgCombatResult() {

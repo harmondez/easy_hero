@@ -97,15 +97,20 @@ await page.click('#rpgMap .rpg-node.is-available');
 await sleep(400);
 assert('Pulsar un monstruo abre el combate',
     await page.$eval('#rpgCombatView', el => getComputedStyle(el).display !== 'none'));
-const heroBox = await (await page.$('#rpgCombatHero .rpg-fighter-card')).boundingBox();
-const monBox = await (await page.$('#rpgCombatMonster .rpg-fighter-card')).boundingBox();
-assert('Héroe a la izquierda y monstruo a la derecha', heroBox && monBox && heroBox.x + heroBox.width <= monBox.x);
-assert('Ambos se muestran como carta con ATK/HP',
-    (await page.$$eval('.rpg-fighter-card .rpg-stat', els => els.length)) === 4);
+const heroBox = await (await page.$('#rpgCombatHero .rpg-hud-card')).boundingBox();
+const monBox = await (await page.$('#rpgCombatMonster .rpg-hud-card')).boundingBox();
+assert('Panel de pergamino: tu lado a la izquierda y el del enemigo a la derecha', heroBox && monBox && heroBox.x + heroBox.width <= monBox.x);
+assert('Cada lado muestra su vida con números', (await page.$$eval('.rpg-hud-card .rpg-stat.hp', els => els.length)) === 2);
 const labels = await page.$$eval('#rpgCombatActions .rpg-action-label', els => els.map(e => e.textContent.trim()));
-assert('Acciones: Atacar / Defender / Habilidades / Huir', labels.join(',') === 'ATACAR,DEFENDER,HABILIDADES,HUIR');
-assert('El enemigo muestra su INTENCIÓN antes de que elijas: «Ataca 1» (el Slime empieza atacando)',
-    /Ataca/.test(await page.$eval('#rpgCombatMonster .rpg-intent', el => el.textContent)) && (await page.$$('#rpgCombatMonster .rpg-intent.is-attack')).length === 1);
+assert('Acciones a un clic: Defender, cada habilidad, ¡Atacar!, Poción y Huir', labels.join(',') === 'Defender,Fuego,¡Atacar!,Poción,Huir');
+assert('¡Atacar! es el botón protagonista (el más grande)', await page.evaluate(() => {
+    const [main, ...rest] = [document.querySelector('[data-rpg-action="attack"]'), ...document.querySelectorAll('.rpg-action:not([data-main])')];
+    return rest.every(b => b.offsetWidth < main.offsetWidth);
+}));
+assert('Estilo DragonFable: lo que hará el enemigo NO se anuncia (sin cartel de intención)', (await page.$$('#rpgCombatView .rpg-intent')).length === 0);
+assert('…ni se predice en los botones: Defender no dice cuánto recibirías',
+    !/Recibiría|no te ataca/.test(await page.$eval('[data-rpg-action="defend"]', el => el.title)));
+assert('Sin pociones, el botón de Poción está apagado y lo explica', await page.$eval('[data-rpg-action="potion"]', el => el.disabled && /No te quedan/.test(el.title)));
 assert('Escenario de lado: el fondo del bosque está pintado', /forest\.webp/.test(await page.$eval('#rpgStage', el => getComputedStyle(el).backgroundImage)));
 const heroActor = await (await page.$('#rpgActorHero')).boundingBox();
 const monActor = await (await page.$('#rpgActorMonster')).boundingBox();
@@ -118,13 +123,11 @@ await page.click('[data-rpg-action="defend"]');
 await sleep(150);
 assert('Defender queda anotado',
     (await page.$$eval('#rpgCombatLogContent .log-entry', els => els.map(e => e.textContent).join('|'))).includes('se defiende'));
-assert('La intención cambia cada ronda: tras atacar, el Slime anuncia que DESCANSA',
-    /Descansa/.test(await page.$eval('#rpgCombatMonster .rpg-intent', el => el.textContent)) && (await page.$$('#rpgCombatMonster .rpg-intent.is-rest')).length === 1);
+assert('El diario está plegado y enseña la última línea', await page.$eval('.rpg-combat-log', el => !el.open)
+    && (await page.$eval('#rpgCombatLogLast', el => el.textContent)).length > 0);
 
-await page.click('[data-rpg-action="skills"]');
-await sleep(100);
 const skillBtn = await page.$('[data-rpg-skill="fire_strike"]');
-assert('Habilidades abre un submenú con Golpe de Fuego', !!skillBtn);
+assert('Golpe de Fuego está a un clic, sin submenú', !!skillBtn);
 await skillBtn.click();
 await sleep(150);
 assert('Golpe de Fuego inflige 5 de daño (6 → 1 HP)',
@@ -134,11 +137,8 @@ assert('Escenario: al golpear, la imagen del héroe se lanza hacia el enemigo',
 await sleep(120);
 assert('Escenario: el daño sale como número encima del enemigo (-5)',
     (await page.$$eval('#rpgStage .rpg-stage-float', els => els.map(e => e.textContent))).includes('-5'));
-await page.click('[data-rpg-action="skills"]');
-await sleep(100);
-assert('Golpe de Fuego queda enfriándose', await page.$eval('[data-rpg-skill="fire_strike"]', el => el.disabled));
-await page.click('[data-rpg-action="back"]');
-await sleep(100);
+assert('Golpe de Fuego queda enfriándose, con las rondas que faltan a la vista',
+    await page.$eval('[data-rpg-skill="fire_strike"]', el => el.disabled && /\d/.test(el.querySelector('.rpg-action-badge')?.textContent || '')));
 
 await page.click('[data-rpg-action="flee"]');
 await sleep(150);
@@ -300,11 +300,11 @@ for (let step = 0; step < 12 && !sawLockedSkills; step++) {
     await sleep(150);
     await takeLoot();
     if (await visible('#rpgCombatView')) {
-        sawLockedSkills = await page.$eval('[data-rpg-action="skills"]', el => el.disabled);
+        sawLockedSkills = await page.$$eval('[data-rpg-action="skill"]', els => els.length > 0 && els.every(el => el.disabled));
         await finishCombat();
     } else if (await visible('#rpgEventView')) await resolveEventFirstOptions();
 }
-assert('Con el Voto de Silencio el botón HABILIDADES está bloqueado en combate', sawLockedSkills);
+assert('Con el Voto de Silencio las habilidades están bloqueadas en combate', sawLockedSkills);
 
 // -- El puente de cuerdas: salto de piso
 await openEvent('puente_cuerdas');
@@ -550,49 +550,61 @@ async function showCombat(type, floor, heroHp = 500) {
     await sleep(150);
 }
 
-console.log('\n👁️ Intenciones visibles');
+console.log('\n🫥 Patrones ocultos (estilo DragonFable) y pociones');
 {
-    const intentText = () => page.$eval('#rpgCombatMonster .rpg-intent', el => el.textContent.replace(/\s+/g, ' ').trim());
-    const hint = act => page.$eval(`[data-rpg-action="${act}"] .rpg-action-hint`, el => el.textContent);
     const heroHp = () => page.evaluate(() => window.gameState.rpg.hero.hp);
+    const logText = () => page.$$eval('#rpgCombatLogContent .log-entry', els => els.map(e => e.textContent).join('|'));
 
-    // Orco (piso 8): carga y luego golpe fuerte
+    // Orco (piso 8): sigue cargando y luego golpeando fuerte, pero ya no lo anuncia
     await showCombat('monster', 7);
-    assert('El Orco empieza «reuniendo fuerzas» (⚡) y no ataca', /Reúne fuerzas/.test(await intentText()) && (await page.$$('#rpgCombatMonster .rpg-intent.is-charge')).length === 1);
-    assert('Si no va a atacar, la pista de Defender lo dice', /no te ataca/i.test(await hint('defend')));
+    assert('El Orco no anuncia nada antes de actuar', (await page.$$('#rpgCombatView .rpg-intent')).length === 0);
     await page.click('[data-rpg-action="defend"]');
     await sleep(150);
-    assert('Defenderte cuando no ataca no sirve de nada: no pierdes vida', await heroHp() === 500);
-    assert('La siguiente intención es un GOLPE FUERTE (💥) con su daño a la vista',
-        (await page.$$('#rpgCombatMonster .rpg-intent.is-heavy')).length === 1 && /Golpe fuerte/.test(await intentText()));
-    const dmg = Number(await page.$eval('#rpgCombatMonster .rpg-intent-value', el => el.textContent));
-    const shown = await hint('defend');
-    assert('La pista de Defender calcula lo que recibirías: «Recibiría X en vez de Y»',
-        new RegExp(`Recibiría ${Math.ceil(dmg / 2)} en vez de ${dmg}`).test(shown));
-    await page.screenshot({ path: shot('combate-intencion'), fullPage: true });
-    const before = await heroHp();
-    await page.click('[data-rpg-action="defend"]');
-    await sleep(150);
-    assert('Defender ante el golpe fuerte lo reduce a la mitad, justo como anunciaba', before - (await heroHp()) === Math.ceil(dmg / 2));
+    assert('Su patrón sigue ahí: primero reúne fuerzas y no te toca (el diario lo delata)',
+        await heroHp() === 500 && /reúne fuerzas/.test(await logText()));
 
-    // Esqueleto (piso 6): se protege primero
+    // Esqueleto (piso 6): se protege primero; la pista de Atacar NO lo delata
     await showCombat('monster', 5);
-    assert('El Esqueleto anuncia que SE PROTEGE (🛡️)', /Se protege/.test(await intentText()) && (await page.$$('#rpgCombatMonster .rpg-intent.is-guard')).length === 1);
-    assert('La pista de Atacar avisa de que el daño se reducirá', /se protege/.test(await hint('attack')));
-    await page.evaluate(() => { window.gameState.rpg.hero.atq = 6; window.UI.renderRpgCombat(window.gameState.rpg.combat, { menu: 'main' }); });
+    await page.evaluate(() => { window.gameState.rpg.hero.atq = 6; window.UI.renderRpgCombat(window.gameState.rpg.combat); });
+    assert('Tu ataque dice su daño completo aunque el enemigo vaya a protegerse (no se adelanta nada)',
+        /6 de daño/.test(await page.$eval('[data-rpg-action="attack"]', el => el.title)));
     const mhp = await page.evaluate(() => window.gameState.rpg.combat.monster.hp);
     await page.click('[data-rpg-action="attack"]');
     await sleep(150);
-    assert('Atacar a un enemigo que se protege hace la mitad (6 → 3)', mhp - (await page.evaluate(() => window.gameState.rpg.combat.monster.hp)) === 3);
-    assert('La intención es siempre visible mientras el combate sigue', (await page.$$('#rpgCombatMonster .rpg-intent')).length === 1);
+    assert('Pero al golpear se protege: hace la mitad (6 → 3) y el diario lo cuenta',
+        mhp - (await page.evaluate(() => window.gameState.rpg.combat.monster.hp)) === 3 && /se protege/.test(await logText()));
 
-    // Al terminar el combate la intención desaparece
-    await page.evaluate(() => { window.gameState.rpg.hero.atq = 9999; });
-    await page.click('[data-rpg-action="attack"]');
-    await sleep(150);
-    assert('Al vencer, la carta del enemigo ya no muestra intención', (await page.$$('#rpgCombatMonster .rpg-intent')).length === 0);
-    // salir del combate ficticio
-    await page.evaluate(() => { const r = window.gameState.rpg; r.combat = null; r.combatResult = null; window.UI.hideRpgCombatResult(); window.UI.toggleRpgView('rpgMapView'); });
+    // Pociones: 40 % de la vida máxima, gastan turno, son tuyas entre partidas
+    await showCombat('monster', 0);
+    await page.evaluate(() => {
+        const r = window.gameState.rpg;
+        r.hero.hp = 100; window.gameMeta.potions = 2; r.combat.potions = 2;
+        window.UI.renderRpgCombat(r.combat);
+    });
+    assert('Con pociones, el botón las cuenta', (await page.$eval('[data-rpg-action="potion"] .rpg-action-badge', el => el.textContent)) === '2'
+        && !(await page.$eval('[data-rpg-action="potion"]', el => el.disabled)));
+    const turnBefore = await page.evaluate(() => window.gameState.rpg.combat.turn);
+    await page.click('[data-rpg-action="potion"]');
+    await sleep(250);
+    const after = await page.evaluate(() => ({ hp: window.gameState.rpg.hero.hp, left: window.gameState.rpg.combat.potions, meta: window.gameMeta.potions, turn: window.gameState.rpg.combat.turn }));
+    assert('Beber cura el 40 % de la vida máxima (500 → +200) y el enemigo responde (gasta el turno)',
+        after.hp >= 100 + 200 - 10 && after.hp <= 300 && after.turn === turnBefore + 1);
+    assert('La poción se gasta en el combate y en tu progreso (quedan 1)', after.left === 1 && after.meta === 1);
+    assert('La curación sale como número verde sobre el héroe',
+        (await page.$$eval('#rpgStage .rpg-stage-float.is-heal', els => els.map(e => e.textContent))).includes('+200'));
+    await page.evaluate(() => { const r = window.gameState.rpg; r.hero.hp = r.hero.maxHp; window.UI.renderRpgCombat(r.combat); });
+    assert('Con la vida al máximo no se puede beber', await page.$eval('[data-rpg-action="potion"]', el => el.disabled && /al máximo/.test(el.title)));
+    await page.evaluate(() => { const r = window.gameState.rpg; r.combat = null; r.combatResult = null; window.UI.hideRpgCombatResult(); });
+
+    // La Forja vende pociones a precio fijo, con tope
+    await page.evaluate(() => { window.gameMeta.gold = 100; window.gameMeta.potions = 0; window.UI.renderShop(window.gameMeta); window.UI.toggleRpgView('rpgShopView'); });
+    await page.click('[data-shop-buy="potion"]');
+    await sleep(100);
+    assert('La Forja vende la poción a 40 de oro', await page.evaluate(() => window.gameMeta.potions === 1 && window.gameMeta.gold === 60));
+    await page.evaluate(() => { window.gameMeta.potions = 3; window.UI.renderShop(window.gameMeta); });
+    assert('Con 3 pociones encima ya no se pueden comprar más', await page.$eval('[data-shop-buy="potion"]', el => el.disabled));
+    // Limpieza: el resto de pruebas asumen una cuenta sin pociones ni oro extra
+    await page.evaluate(() => { window.gameMeta.potions = 0; window.gameMeta.gold = 0; window.UI.toggleRpgView('rpgMapView'); });
 }
 
 console.log('\n🏁 Fin de partida');
@@ -681,11 +693,11 @@ console.log('\n💾 Guardar y retomar');
     await page.click('#btnRpgContinue');
     await sleep(300);
     const restored = await page.evaluate(() => { const c = window.gameState.rpg.combat; return { mhp: c.monster.hp, hhp: window.gameState.rpg.hero.hp, intent: JSON.stringify(c.monster.intent), turn: c.turn, name: c.monster.name, seed: window.gameState.rpg.seed }; });
-    assert('Retomas EN MEDIO DEL COMBATE: mismo enemigo, misma vida, misma ronda y la misma intención',
+    assert('Retomas EN MEDIO DEL COMBATE: mismo enemigo, misma vida, misma ronda y el mismo plan (oculto) del enemigo',
         await visible('#rpgCombatView') && restored.mhp === inFight.mhp && restored.hhp === inFight.hhp && restored.turn === inFight.turn
         && restored.intent === inFight.intent && restored.name === inFight.name && restored.seed === seed1);
-    assert('El combate retomado se ve completo: intención y acciones disponibles',
-        (await page.$$('#rpgCombatMonster .rpg-intent')).length === 1 && (await page.$$('#rpgCombatActions .rpg-action')).length === 4);
+    assert('El combate retomado se ve completo: vida del enemigo y las 5 acciones',
+        (await page.$$('#rpgCombatActions .rpg-action')).length === 5 && !!(await page.$('#rpgCombatMonster .rpg-stat.hp')));
     for (let i = 0; i < 40 && !(await page.$('#btnRpgCombatContinue')); i++) { await page.click('[data-rpg-action="attack"]'); await sleep(40); }
     await page.click('#btnRpgCombatContinue');
     await sleep(250);
@@ -985,9 +997,11 @@ console.log('\n⚒️ La Forja: gastar el oro en mejoras permanentes');
     await sleep(200);
     assert('La Forja es una vista propia, no un panel superpuesto',
         await visible('#rpgShopView') && !(await visible('#panelOverlay')));
-    assert('Se ofrecen las 8 mejoras del catálogo', (await page.$$('#shopBody .shop-card')).length === 8);
+    // 8 mejoras + la poción (que no es mejora: es un consumible con tope)
+    assert('Se ofrecen las 8 mejoras del catálogo y la poción', (await page.$$('#shopBody .shop-card')).length === 9
+        && !!(await page.$('#shopBody [data-shop-buy="potion"]')));
     assert('Con 399 de oro, lo barato se puede comprar y la mejora de 400 no',
-        (await page.$$('#shopBody .shop-card.is-affordable')).length === 7 && (await page.$$('#shopBody .shop-buy:disabled')).length === 1);
+        (await page.$$('#shopBody .shop-card.is-affordable')).length === 8 && (await page.$$('#shopBody .shop-buy:disabled')).length === 1);
 
     await page.click('[data-shop-buy="constitucion"]');
     await sleep(200);

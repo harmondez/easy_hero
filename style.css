@@ -203,12 +203,13 @@ body {
 /* --- 🎭 Escenario de combate: fondo pintado de lado, héroe a la izquierda y enemigo a la derecha --- */
 .rpg-stage {
     position: relative;
+    box-sizing: border-box;
     max-width: 960px;
     margin: 0 auto 16px;
     aspect-ratio: 16 / 7;
     overflow: hidden;
     border: 1px solid var(--border-strong);
-    border-radius: 6px;
+    border-radius: 6px 6px 0 0;    /* abajo se une al panel de pergamino */
     background: var(--bg-main) url('img/bg/forest.webp') center 70% / cover no-repeat;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6), var(--shadow-elevated);
     isolation: isolate;
@@ -635,117 +636,163 @@ body {
     color: var(--gold);
 }
 
-.rpg-arena {
+/* --- 📜 Panel de pergamino: tú · acciones · el enemigo (pegado bajo el escenario, como una sola pieza) --- */
+.rpg-hud {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: "hero actions monster";
     align-items: center;
-    gap: clamp(8px, 3vw, 28px);
-    max-width: 860px;
-    margin: 0 auto;
-}
-
-.rpg-fighter-slot { position: relative; display: flex; justify-content: center; }
-
-.rpg-arena-vs {
-    font-family: Georgia, serif;
-    font-size: clamp(1.6rem, 4vw, 2.6rem);
-    font-weight: 900; font-style: italic;
-    color: var(--gold);
-    text-shadow: 0 0 22px var(--gold-glow);
-}
-
-.rpg-fighter-card {
-    --accent: var(--primary);
-    position: relative;
-    width: min(100%, 290px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: clamp(16px, 3vw, 26px) clamp(12px, 2.4vw, 22px) clamp(14px, 2.4vw, 20px);
+    gap: clamp(10px, 2vw, 22px);
+    max-width: 960px;
+    box-sizing: border-box;        /* mismo ancho exacto que el escenario */
+    margin: -16px auto 0;          /* se come el margen del escenario: queda pegado a él */
+    padding: 14px clamp(12px, 2vw, 20px);
+    color: var(--parchment-ink);
     background:
-        radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 62%),
-        linear-gradient(160deg, var(--bg-card-elevated), var(--bg-card));
-    border: 1px solid var(--border-color);
-    border-top: 3px solid var(--accent);
-    border-radius: 18px;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent), 0 18px 40px -14px color-mix(in srgb, var(--accent) 45%, transparent), var(--shadow-elevated);
-    transition: filter 0.3s ease, opacity 0.3s ease;
+        radial-gradient(ellipse at 18% 0%, rgba(255, 255, 255, 0.3), transparent 55%),
+        linear-gradient(180deg, var(--parchment), color-mix(in srgb, var(--parchment) 80%, var(--parchment-edge)));
+    border: 2px solid var(--parchment-edge);
+    border-top-width: 3px;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), var(--shadow-elevated);
+    position: relative;
+    z-index: 1;
 }
-.rpg-fighter-card.is-down { filter: grayscale(1); opacity: 0.55; }
+#rpgCombatHero { grid-area: hero; }
+#rpgCombatMonster { grid-area: monster; }
+.rpg-hud .rpg-actions { grid-area: actions; }
 
-.rpg-fighter-tag { font-size: 0.68rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); }
-.rpg-fighter-icon { font-size: clamp(3.4rem, 9vw, 5rem); line-height: 1; filter: drop-shadow(0 8px 18px color-mix(in srgb, var(--accent) 60%, transparent)); }
-.rpg-fighter-name { font-size: clamp(1.05rem, 2.6vw, 1.4rem); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
-
-.rpg-fighter-hpbar {
-    align-self: stretch;
-    height: 10px;
-    background: #450a0a;
-    border-radius: 6px;
+.rpg-hud-card { display: flex; flex-direction: column; gap: 4px; min-width: 0; transition: opacity 0.4s ease 0.45s; }
+.rpg-hud-card.is-monster { text-align: right; align-items: flex-end; }
+.rpg-hud-card.is-down { opacity: 0.55; }
+.rpg-hud-name {
+    max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: var(--font-display);
+    font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+    font-weight: 800;
+    color: #6a2c10;
+}
+.rpg-hud-sub { font-size: 0.78rem; font-weight: 600; color: color-mix(in srgb, var(--parchment-ink) 70%, var(--parchment)); }
+.rpg-hud-hp {
+    position: relative;
+    width: 100%;
+    height: 20px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #3a1510;
+    border: 1px solid #22100b;
+    border-radius: 3px;
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5);
 }
-.rpg-fighter-hpfill { height: 100%; background: linear-gradient(90deg, var(--danger), var(--danger-hover)); transition: width 0.4s ease-out; }
-
-.rpg-fighter-stats {
-    align-self: stretch;
-    display: flex; flex-direction: column; gap: 4px;
-    padding: 10px 14px;
-    background: rgba(2, 6, 23, 0.4);
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
+.rpg-hud-hpfill {
+    height: 100%;
+    background: linear-gradient(180deg, #e0553b, var(--danger) 55%, var(--danger-hover));
+    transition: width 0.4s ease-out;
 }
-.rpg-fighter-stats .rpg-stat { font-size: clamp(0.8rem, 2vw, 0.98rem); }
-.rpg-fighter-status { min-height: 1.1em; font-size: 0.75rem; font-weight: 700; color: var(--info); letter-spacing: 1px; }
-
-/* --- Acciones --- */
-.rpg-actions {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(clamp(140px, 22vw, 200px), 1fr));
-    gap: 10px;
-    max-width: 860px;
-    margin: 18px auto 0;
+.rpg-hud-card.is-monster .rpg-hud-hpfill { margin-left: auto; }   /* la vida del enemigo se vacía hacia fuera */
+.rpg-hud-hp .rpg-stat.hp {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font: 700 0.8rem ui-monospace, 'Courier New', monospace;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
 }
+.rpg-hud-status { min-height: 1.1em; font-size: 0.76rem; font-weight: 700; color: #5a3d1c; }
 
+/* --- Acciones: ¡Atacar! protagonista y el resto como iconos a un clic --- */
+.rpg-actions { display: flex; align-items: center; gap: 10px; }
+.rpg-actions-side { display: flex; gap: 6px; }
 .rpg-action {
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    padding: 12px 10px;
-    color: var(--text-main);
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    width: 64px; height: 62px;
+    padding: 4px;
+    color: var(--parchment);
     font-family: inherit;
-    background: linear-gradient(160deg, var(--bg-card-elevated), var(--border-color));
-    border: 1px solid var(--border-strong);
-    border-radius: 12px;
+    background: linear-gradient(180deg, #5a3b22, #3a2616);
+    border: 2px solid #22160c;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 0 rgba(0, 0, 0, 0.35);
     cursor: pointer;
-    text-align: center;
-    transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    transition: transform 0.1s ease, filter 0.15s ease;
 }
-.rpg-action:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--primary-light); box-shadow: 0 8px 20px -8px var(--primary-glow); }
-.rpg-action:active:not(:disabled) { transform: scale(0.97); }
-.rpg-action:focus-visible { outline: 2px solid var(--primary-light); outline-offset: 2px; }
-.rpg-action:disabled { opacity: 0.4; cursor: not-allowed; }
-.rpg-action-icon { font-size: 1.5rem; line-height: 1; }
-.rpg-action-label { font-weight: 800; letter-spacing: 1.5px; font-size: 0.85rem; }
-.rpg-action-hint { font-size: 0.68rem; color: var(--text-muted); line-height: 1.3; }
+.rpg-action:hover:not(:disabled) { filter: brightness(1.18); transform: translateY(-2px); }
+.rpg-action:active:not(:disabled) { transform: translateY(1px); }
+.rpg-action:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.rpg-action:disabled { filter: grayscale(0.85) brightness(0.8); opacity: 0.55; cursor: not-allowed; }
+.rpg-action-icon { font-size: 1.45rem; line-height: 1; }
+.rpg-action-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.68rem; font-weight: 700; }
+/* La explicación va en el tooltip (title) y para lectores de pantalla: no ocupa sitio */
+.rpg-action-hint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.rpg-action-badge {
+    position: absolute; top: -7px; right: -7px;
+    min-width: 20px; height: 20px; padding: 0 5px;
+    display: grid; place-items: center;
+    font: 700 0.72rem ui-monospace, monospace;
+    color: #fff;
+    background: #22160c;
+    border: 2px solid var(--parchment-edge);
+    border-radius: 999px;
+}
+.rpg-action-badge.is-count { background: #1f5d2c; }
+.rpg-action[data-main] {
+    width: clamp(130px, 14vw, 170px); height: 76px;
+    color: #fff4e0;
+    background: linear-gradient(180deg, var(--primary-light), var(--primary) 45%, var(--primary-hover));
+    border-color: #5a2208;
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.3), 0 3px 0 #5a2208, 0 8px 18px -6px var(--primary-glow);
+}
+.rpg-action[data-main] .rpg-action-icon { font-size: 1.3rem; }
+.rpg-action[data-main] .rpg-action-label {
+    font-family: var(--font-display);
+    font-size: 1.35rem; font-weight: 800;
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
 
-/* --- Fin de combate --- */
+/* --- Final del combate: un cartel sobre el escenario, cuando termina el último golpe --- */
 .rpg-combat-result {
-    max-width: 860px;
-    margin: 18px auto 0;
-    padding: 20px;
-    text-align: center;
-    background: linear-gradient(160deg, var(--bg-card-elevated), var(--bg-card));
-    border: 1px solid var(--border-strong);
-    border-radius: 14px;
-    box-shadow: var(--shadow-elevated);
-    animation: rpgViewIn 0.3s ease both;
+    position: absolute; inset: 0;
+    z-index: 4;
+    align-items: center; justify-content: center;
+    padding: 16px;
+    background: radial-gradient(ellipse at center, rgba(21, 16, 12, 0.55), rgba(21, 16, 12, 0.85));
+    animation: rpgResultIn 0.45s ease-out 0.5s both;
 }
-.rpg-combat-result.is-victory { border-color: var(--gold); box-shadow: 0 0 30px var(--gold-glow), var(--shadow-elevated); }
-.rpg-combat-result.is-defeat { border-color: var(--danger); }
-.rpg-result-title { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+.rpg-result-plate {
+    min-width: min(100%, 380px);
+    padding: 18px 28px 20px;
+    text-align: center;
+    background: linear-gradient(180deg, var(--bg-card-elevated), var(--bg-card));
+    border: 2px solid var(--border-strong);
+    border-radius: 6px;
+    box-shadow: var(--shadow-elevated);
+}
+.rpg-result-title { font-family: var(--font-display); font-size: clamp(1.7rem, 4.4vw, 2.6rem); font-weight: 800; }
+.rpg-combat-result.is-victory .rpg-result-plate { border-color: var(--gold); box-shadow: 0 0 40px var(--gold-glow), var(--shadow-elevated); }
 .rpg-combat-result.is-victory .rpg-result-title { color: var(--gold); }
+.rpg-combat-result.is-defeat .rpg-result-plate { border-color: var(--danger); }
 .rpg-combat-result.is-defeat .rpg-result-title { color: var(--danger); }
-.rpg-result-detail { margin: 6px 0 14px; color: var(--text-muted); font-size: 0.9rem; }
+.rpg-result-detail { margin: 6px 0 14px; color: var(--text-light); font-size: 0.92rem; }
+@keyframes rpgResultIn { from { opacity: 0; } }
+
+/* --- Diario plegado bajo el panel: se lee la última línea --- */
+.rpg-combat-log { max-width: 960px; margin: 10px auto 0; }
+.rpg-combat-log summary { display: flex; align-items: baseline; gap: 12px; cursor: pointer; list-style: none; }
+.rpg-combat-log summary::-webkit-details-marker { display: none; }
+.rpg-combat-log summary::before { content: '▸'; color: var(--text-dim); transition: transform 0.15s ease; }
+.rpg-combat-log[open] summary::before { transform: rotate(90deg); }
+.rpg-combat-log .rpg-log-title { margin: 0; }
+.rpg-log-last { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; color: var(--text-light); }
+.rpg-combat-log[open] .rpg-log-last { visibility: hidden; }
+.rpg-combat-log .rpg-log-content { margin-top: 8px; }
+
+@media (max-width: 760px) {
+    .rpg-hud { grid-template-columns: 1fr 1fr; grid-template-areas: "hero monster" "actions actions"; }
+    .rpg-hud .rpg-actions { justify-content: center; flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .rpg-combat-result { animation: none; }
+}
 
 .rpg-log-content .log-entry.player { color: #93c5fd; }
 .rpg-log-content .log-entry.enemy { color: #fca5a5; }
@@ -826,30 +873,7 @@ body {
 .rpg-legend-item.type-event { --node-color: #22d3ee; }
 .rpg-node.type-event { --node-color: #22d3ee; }
 
-/* --- 👁️ Intención del enemigo: lo que hará en su turno --- */
-.rpg-intent {
-    --intent: #ef4444;
-    display: inline-flex; align-items: center; gap: 8px;
-    margin: 2px auto 4px;
-    padding: 5px 14px;
-    font-size: 0.95rem; font-weight: 800;
-    color: #fff;
-    background: color-mix(in srgb, var(--intent) 22%, #0b1220);
-    border: 2px solid var(--intent);
-    border-radius: 999px;
-    box-shadow: 0 0 14px color-mix(in srgb, var(--intent) 45%, transparent);
-    animation: rpgIntentPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.rpg-intent-icon { font-size: 1.25rem; line-height: 1; }
-.rpg-intent-value { font-family: 'Courier New', monospace; font-size: 1.2rem; color: #fecaca; }
-.rpg-intent.is-attack { --intent: #ef4444; }
-.rpg-intent.is-heavy { --intent: #f97316; animation: rpgIntentPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), rpgIntentPulse 1.1s ease-in-out infinite 0.4s; }
-.rpg-intent.is-heavy .rpg-intent-value { color: #fed7aa; }
-.rpg-intent.is-charge { --intent: #eab308; }
-.rpg-intent.is-guard { --intent: #3b82f6; }
-.rpg-intent.is-heal { --intent: #22c55e; }
-.rpg-intent.is-rest { --intent: #94a3b8; }
-@keyframes rpgIntentPop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+/* Pulso de aviso (lo usa el aviso de puntos por repartir) */
 @keyframes rpgIntentPulse { 0%, 100% { box-shadow: 0 0 10px color-mix(in srgb, var(--intent) 40%, transparent); } 50% { box-shadow: 0 0 22px color-mix(in srgb, var(--intent) 80%, transparent); } }
 
 /* --- 🔥 Hoguera --- */
@@ -910,9 +934,6 @@ body {
 .rpg-end-seed .btn-secondary { padding: 4px 12px; font-size: 0.75rem; }
 .rpg-end-actions { display: flex; flex-direction: column; gap: 10px; }
 
-@media (prefers-reduced-motion: reduce) {
-    .rpg-intent, .rpg-intent.is-heavy { animation: none; }
-}
 
 /* ---------- 🎒 Equipo: las 4 ranuras del héroe y el botín «1 de 3» ---------- */
 .rpg-gear { display: flex; gap: 6px; margin-top: 6px; }
@@ -963,8 +984,8 @@ body {
 }
 
 /* ---------- 🖋️ Cinzel para los momentos de impacto; el resto se queda en Work Sans ---------- */
-.rpg-hero-card-name, .rpg-hero-name, .rpg-fighter-name,
-.rpg-combat-title, .rpg-arena-vs, .rpg-event-title, .rpg-end-title, .rpg-result-title,
+.rpg-hero-card-name, .rpg-hero-name,
+.rpg-combat-title, .rpg-event-title, .rpg-end-title, .rpg-result-title,
 .panel-title, .rpg-log-title, .rpg-combat-result .rpg-result-title {
     font-family: var(--font-display);
 }

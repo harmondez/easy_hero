@@ -12,7 +12,17 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 - 🧭 **Modo aventura (prueba)**: un botón nuevo en el inicio abre Zafias. Recorre la aldea y el bosque escena a
   escena, habla con sus vecinos y encuéntrate con el primer goblin. Aún no hay combate ni progreso en la aventura.
 
+- 📜 **Panel de pergamino** bajo el escenario: tu vida a la izquierda, la del enemigo a la derecha y en el centro
+  un gran **¡Atacar!** con el resto de acciones a un clic (Defender, cada habilidad, Poción y Huir).
+- 🧪 **Pociones**: curan el 40 % de tu vida a cambio del turno. Se compran en La Forja (40 de oro), llevas hasta
+  3 y no se pierden entre partidas.
+- 🏆 El final del combate es un cartel sobre el propio escenario.
+
 ### 🔧 Cambios
+- **El enemigo ya no anuncia lo que va a hacer.** Sigue teniendo su forma de pelear (cargar, protegerse,
+  curarse), pero hay que aprenderla; el diario la delata.
+- La variante «de la Niebla» ya no oculta nada (no hay nada que ocultar): ahora su primer golpe hace el doble.
+- El diario del combate va plegado y enseña solo la última línea.
 - Los números de daño ya no salen sobre las cartas, sino en el escenario. Se deja de cargar GSAP desde internet.
 
 ## [1.4.2] - 2026-09-30

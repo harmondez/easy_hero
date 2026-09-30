@@ -222,7 +222,8 @@ function _rpgCloseShop() {
 }
 
 function _rpgBuyUpgrade(id) {
-    if (!Meta.buyUpgrade(meta, id).ok) return;
+    const bought = id === 'potion' ? Meta.buyPotion(meta) : Meta.buyUpgrade(meta, id);
+    if (!bought.ok) return;
     Meta.checkAchievements(meta, null, { floors: Engine.RPG_MAP_CONFIG.floors });
     persistMeta();
     UI.renderShop(meta);
@@ -255,6 +256,7 @@ function _rpgResume() {
     UI.clearRpgLog();
     r.log.forEach(l => UI.addRpgLog(l.msg, l.type));
     if (r.combat) {
+        r.combat.potions = Meta.potionCount(meta);   // la fuente de verdad es el progreso, no la partida guardada
         UI.toggleRpgView('rpgCombatView');
         UI.clearRpgCombatLog();
         UI.addRpgCombatLog('▶️ Retomas el combate donde lo dejaste.', 'system');
@@ -580,6 +582,7 @@ function _rpgStartCombat(node, customMonster) {
     const variants = customMonster ? null : Engine.pickMonsterVariants(r.seed, node.id, tier, node.floor);
     const monster = customMonster || Engine.createRpgMonster(node.type, node.floor, tier, variants);
     r.combat = Engine.createRpgCombat(r.hero, monster, r.rng);
+    r.combat.potions = Meta.potionCount(meta);   // las pociones son tuyas: entran al combate las que lleves
     r.combatMenu = 'main';
     r.pendingNodeId = node.id;
     Meta.recordMonsterSeen(meta, monster.baseName || monster.name);
@@ -607,6 +610,7 @@ function _rpgCombatAct(action, skillId) {
         return;
     }
     r.combatMenu = 'main';
+    if (action === 'potion') { meta.potions = c.potions; persistMeta(); }
     res.events.forEach(ev => UI.addRpgCombatLog(ev.text, ev.actor === 'hero' ? 'player' : 'enemy'));
     _rpgRefreshCombat();
     UI.playRpgCombatFx(res.events);

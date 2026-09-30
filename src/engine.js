@@ -479,6 +479,7 @@ export function createRpgCombat(hero, monster, rng = Math.random) {
         lastAction: null, // para enemigos con IA que leen tus movimientos
         state: _newCombatState(),
         heroStatus: { burn: null, poison: 0 }, // lo que te hacen las variantes «de la Plaga» y «de las Brasas»
+        potions: 0,       // las que llevas encima; quien crea el combate las pone y recoge las que sobren
         intro: [],        // lo que ocurre al empezar (el equipo puede curarte): la interfaz lo cuenta en el diario
         over: false,
         result: null // 'victory' | 'defeat' | 'fled'
@@ -495,10 +496,6 @@ export function createRpgCombat(hero, monster, rng = Math.random) {
 export function rpgIntentView(monster) {
     const it = monster && monster.intent;
     if (!it) return null;
-    // «de la Niebla»: apaga a propósito la mecánica estrella del juego. No sabes lo que viene.
-    if (monster.rules && monster.rules.hideIntent) {
-        return { icon: '🌫️', label: '¿?', value: null, kind: 'hidden', hint: 'La niebla te impide ver lo que va a hacer' };
-    }
     if (it.k === 'attack') {
         const heavy = it.m >= 1.8;
         return { icon: heavy ? '💥' : '⚔️', label: heavy ? 'Golpe fuerte' : 'Ataca', value: it.dmg, kind: heavy ? 'heavy' : 'attack',
@@ -752,7 +749,7 @@ function _rpgHeroTakesHit(combat, dmg, events) {
 
 /**
  * Resuelve una acción del héroe y la respuesta del monstruo (la intención que se veía).
- * action: 'attack' | 'defend' | 'skill' | 'flee'
+ * action: 'attack' | 'defend' | 'skill' | 'potion' | 'flee'
  * Devuelve { ok, error?, events, over, result }. Cada evento: { actor, target, kind, amount, text }
  */
 export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
@@ -828,6 +825,13 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
         events.push({ actor: 'hero', target: 'hero', kind: combat.result === 'fled' ? 'flee' : 'defeat', amount: 0,
             text: combat.result === 'fled' ? `🏃 ${hero.name} huye del combate.` : `💀 ${hero.name} cae al huir.` });
         return { ok: true, events, over: true, result: combat.result };
+    } else if (action === 'potion') {
+        if (!(combat.potions > 0)) return { ok: false, error: 'No te quedan pociones.', events: [], over: false, result: null };
+        if (hero.hp >= hero.maxHp) return { ok: false, error: 'Ya tienes la vida al máximo.', events: [], over: false, result: null };
+        combat.potions--;
+        combat.state.frenzy = 0;
+        const healed = _healHero(hero, Math.max(1, Math.round(hero.maxHp * RPG_BALANCE.potion.heal)));
+        events.push({ actor: 'hero', target: 'hero', kind: 'heal', amount: healed, text: `🧪 ${hero.name} bebe una poción: recupera ${healed} de vida.` });
     } else {
         return { ok: false, error: 'Acción desconocida.', events: [], over: false, result: null };
     }
@@ -850,9 +854,16 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
             dmg *= 2;
             events.push({ actor: 'monster', target: 'monster', kind: 'read', amount: 0, text: `👁️ ${monster.name} lee tus movimientos: ¡has repetido la acción y su golpe será doble!` });
         }
+        const mRules = monster.rules || {};
+        // «de la Niebla»: su primer golpe del combate hace el doble (la emboscada se gasta aunque lo esquives)
+        const ambush = mRules.ambush && !combat.state.ambushDone;
+        if (ambush) {
+            dmg = Math.round(dmg * mRules.ambush);
+            combat.state.ambushDone = true;
+            events.push({ actor: 'monster', target: 'monster', kind: 'ambush', amount: 0, text: `🌫️ ${monster.name} surge de la niebla: ¡su primer golpe hace el doble!` });
+        }
         // Esquiva (DEX): si esquivas, el golpe no llega y no hay nada más que mitigar
         const dodged = hero.dodgeChance > 0 && combat.rng() < hero.dodgeChance;
-        const mRules = monster.rules || {};
         const halved = combat.defending && !mRules.pierceGuard;   // «Certero»: defenderse no sirve
         if (dodged) dmg = 0;
         else {
