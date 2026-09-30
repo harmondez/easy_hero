@@ -19,112 +19,73 @@ fuzzing y el mapa en el centro como mazmorra visual. Detalle en [historial.md](h
 
 ---
 
-## 🎭 Próximo: el combate de lado y el Modo Aventura
+## 🎭 Ruta actual: Easy Hero estilo DragonFable
 
-Dos construcciones. **Primero el combate (A)**: lo usan el descenso de hoy y la aventura de mañana, y ya
-tenemos el arte que necesita. **Después la aventura (B)**, que termina lanzando combates de A.
+**Regla de esta ruta: primero que sea funcional y con contenido.** Los detalles van a **🧩 Perfilados** (abajo)
+y se pulen en rondas posteriores. Prioridad web de escritorio; en móvil basta con que funcione.
 
-### Viabilidad técnica (revisada el 2026-09-30)
-Todo cabe en una **web estática** (GitHub Pages o el dominio propio) con el stack actual: JavaScript vanilla,
-CSS y la Web Animations API. Sin bundler ni framework.
-- Cámara con zoom, héroe deslizándose, diálogos, embestidas y números de daño: CSS y DOM, sin techo a la vista.
-- Si hicieran falta efectos pesados (agua, luz, cientos de partículas): **PixiJS** solo en la capa de pintado.
-  Sigue siendo JavaScript; el motor puro y sus pruebas no se tocan. Se decide en B, no antes.
-- Pages solo sirve archivos: el guardado sigue en `localStorage`. Nube, cuentas o rankings irían con un
-  servicio externo (Supabase o Firebase) llamado desde la web. Si algún día hicieran falta cabeceras HTTP
-  propias, los mismos archivos se mudan a Cloudflare Pages o Netlify.
-- Descartados **Godot** (reescritura completa, 30–40 MB por visita, interfaz más cara) y **Flutter** (pensado
-  para apps). Solo tendrían sentido con física, 3D o acción en tiempo real, que no están en el plan.
-- **Riesgo real: el arte**, no la técnica. Cada enemigo necesita su imagen mirando a la izquierda.
-- **Prioridad: web de escritorio.** Se diseña y se mide en pantalla ancha; en móvil basta con que funcione.
-- ✅ **Prueba de concepto hecha** (sin publicar): Zafias con cámara y dos escenas, y la embestida del combate.
-  60 fps sin tirones, también con la CPU ×4 más lenta. Detalle en [historial.md](historial.md).
+### 🔥 Camino crítico (en este orden)
+1. **C1 · Combates de verdad en la aventura** 🟡 — los enemigos del bosque abren la pantalla de combate de lado
+   con el héroe de siempre. Victoria: el enemigo desaparece y da oro/XP. Derrota: despiertas en la posada con
+   la vida llena y algo menos de oro. La aventura se guarda (escena, enemigos vencidos, zonas abiertas).
+2. **C2 · La primera misión, al estilo DragonFable** 🟡 — Maela (la posadera) te pide limpiar el bosque de
+   goblins → 3-5 combates en el bosque → el jefe goblin en el **campamento** (escena nueva) → recompensa →
+   vuelta a la aldea y diálogo de cierre. Las zonas se abren por historia. Borrador de textos para corregir.
+3. **C3 · La aldea funciona** 🟡 — **posada** (dormir: cura y repuebla el bosque), **tienda** (pociones; La
+   Forja accesible desde la aldea) y la **cueva** que baja al descenso con el mismo héroe.
+4. **C4 · Variedad mínima de enemigos** 🟢 — el goblin teñido por familia (filtro CSS) y más grande si es
+   sub-jefe o jefe, hasta que llegue su arte.
+5. **C5 · Publicar la 1.5.0** 🟢 — README, CHANGELOG, versión.
+
+Después: más misiones y zonas de Zafias (santuario, castillo), retratos en los diálogos, más fondos de combate.
+
+### ✅ Hecho (sin publicar, en local)
+- Prueba de concepto: Zafias por escenas (aldea y bosque), cámara, héroe caminando, 2 NPC con diálogo, goblin
+  visible. 60 fps también con la CPU ×4 más lenta.
+- Combate de lado: héroe a la izquierda, enemigo a la derecha, embestida + número de daño, fondo de bosque.
+- Panel de pergamino (¡Atacar! grande + iconos), diario plegado, cartel de victoria/derrota sobre el escenario.
+- Sin intenciones visibles (patrones ocultos); «de la Niebla» pasa a emboscada.
+- Pociones (40 %, gastan turno, máx. 3, 40 de oro en La Forja, se conservan entre partidas).
+- Telegrafiado de golpes fuertes: una frase sobre el escenario y el enemigo brilla en rojo, sin cifras.
 
 ### Decisiones cerradas (2026-09-30)
 | Tema | Decisión |
 |---|---|
 | Héroe | **El mismo** que el descenso: nivel, equipo, oro y Forja compartidos |
 | Relación | Zafias es la superficie; **las cuevas bajan al descenso** de siempre |
-| Derrota en la aventura | **Vuelves a la aldea** (posada) con la vida recuperada y pierdes un poco del oro que llevabas. Lo vencido sigue vencido |
+| Derrota en la aventura | **Vuelves a la posada** con la vida recuperada y pierdes un poco del oro que llevabas. Lo vencido sigue vencido |
 | Movimiento | **Pulsar un punto de interés** (NPC, enemigo, salida): el héroe camina solo hasta él |
 | Enemigos | **Visibles** en la escena; al vencerlos desaparecen y **reaparecen al dormir en la posada** |
-| Desbloqueo de escenas | **Por historia**: hablar con NPC y vencer enemigos abre la siguiente zona |
+| Desbloqueo de escenas | **Por historia** |
 | Dificultad | **Fija por zona** (bosque bajo, campamento medio, castillo alto) |
 | Interfaz de combate | La nueva, **en todos los combates**, también en el descenso |
-| Arte de enemigo | El **goblin teñido por familia** (tinte y aura por tipo, más grande si es jefe) hasta que llegue su imagen |
-| Fondo de combate | **`img/battle_background.png`** (bosque pintado de lado, 1536×1024) |
-| Pociones | **Sí**: botón en la barra de combate; se compran en la aldea |
-| Mapa | **`img/world_map_nolines.png`** (sin cuadrícula; mismo tamaño, 1434×1097, así que el zoom se limita) |
-| Marcadores pintados del mapa | Se usan **como posiciones** de NPC, enemigos y cofres |
-| Primera versión de la aventura | **Aldea + bosque + cueva** |
+| Arte de enemigo | El **goblin teñido por familia** hasta que llegue su imagen |
+| Intenciones del enemigo | **No se muestran** (hacia DragonFable). Patrones ocultos; el diario y el telegrafiado los delatan |
+| Pociones | **40 %**, gastan turno, máx. **3**, se conservan entre partidas, **40 de oro** fijo |
 | Historia | **Borrador mío** como datos editables; el dueño del juego corrige |
-| Barra de acciones | **¡ATACAR! grande** en el centro + iconos a un clic: Defender, cada habilidad por separado, Poción, Huir |
-| Diario de combate | **Plegado** bajo el panel: se ve la última línea, un clic lo despliega |
-| Intenciones del enemigo | **Ya no se muestran** (nos alejamos de Slay the Spire, hacia DragonFable). Los enemigos **mantienen sus patrones** (cargar, curarse, protegerse), solo que ocultos: el diario los delata |
-| Previsiones en botones | Se quitan las del **enemigo** («recibirías X»); se quedan las **tuyas** («ataco: 5 de daño») |
-| Variante «oculta su intención» | Se **cambia por otra** que encaje (propuesta: «Sigiloso», su primer golpe hace el doble) |
-| Pociones | Curan el **40 %** de la vida máxima, **gastan turno**, máx. **3**, **se conservan entre partidas**, precio **fijo de 40 de oro**; hasta que exista la aldea se compran en La Forja |
-| Final del combate | **Momento en el escenario**: el vencido se desvanece y aparece un cartel grande con la recompensa y «Continuar» |
-| PNG originales de `img/` | **Ignorados en git** (`/img/*.png`); en el repo solo las versiones optimizadas |
+| Mapa y fondos | `img/zones/zafias.webp` (sin cuadrícula) y `img/bg/forest.webp`; los PNG originales, ignorados en git |
 
-**Riesgo anotado:** los bots del banco de equilibrio deciden viendo la intención; un jugador ya no la ve, así que el
-juego real será algo más difícil que lo que mide el banco. Revisar la tasa de victoria tras A.
+**Técnica:** todo cabe en web estática con JavaScript vanilla y Web Animations API (revisado el 2026-09-30;
+Godot y Flutter descartados). El riesgo real es el arte, no la técnica.
 
-### A · Interfaz de combate estilo DragonFable 🔴 → versión 1.5.0
-Sustituye a las dos cartas actuales en **todos** los combates. El motor de combate no cambia.
-- ✅ **A1 · Escenario** (hecho en la prueba de concepto): héroe a la izquierda, goblin a la derecha sobre
-  `img/bg/forest.webp`, embestida + número de daño + vuelta. Queda para A2 quitar las cartas de debajo.
-- ✅ **A2 · Panel de pergamino** (hecho, sin publicar): tú · ¡ATACAR! + iconos (Defender, cada habilidad,
-  Poción, Huir) · el enemigo; intenciones fuera de la interfaz; diario plegado; cartel de victoria/derrota sobre
-  el escenario; «de la Niebla» pasa a emboscada (primer golpe ×2); pociones (40 %, gastan turno, máx. 3, 40 de
-  oro en La Forja, se conservan entre partidas).
-- **A2b · Telegrafiado sin números** 🟢 (nuevo, por la investigación; **prioritario**: sin intenciones, un golpe
-  fuerte por sorpresa se siente injusto): cuando el enemigo carga o va a protegerse, una **frase atmosférica**
-  sobre el escenario («El orco respira hondo…») y una **postura** en CSS (brillo, se echa atrás). Sin cifras.
-- **A2c · Jefes con rotación y furia** 🟢: sub-jefes y jefes con secuencias fijas aprendibles (ya existe
-  `monster.step`) y **furia** bajo el 30 % de vida (tinte rojo + frase + un cambio de patrón).
-- **A3 · Goblin teñido y momentos** 🟡: tinte y aura por familia/variante, jefes más grandes. Entrada del
-  combate, victoria y derrota como un momento orquestado.
-- **A4 · Pociones** 🟢: objeto consumible en el motor (curar X), acción de combate y contador; se compran en la
-  aldea (en A, provisionalmente, en La Forja o la tienda que exista).
-- **A5 · Pruebas y publicación** 🟢: pruebas de navegador del escenario y la barra, móvil, reducir movimiento.
+**Investigación** (`research/Investigación Desarrollo Easy Hero.md`): confirma el rumbo. De ella salen el
+telegrafiado (hecho) y varias ideas que están abajo, en Perfilados. Tomada como orientación: algunas fórmulas se
+perdieron y hay citas de otros juegos.
 
-### B · Modo Aventura: Zafias por escenas 🔴 → versión 1.6.0
-Botón nuevo **🧭 MODO AVENTURA** en el inicio. El mapa se recorre **escena a escena** (la cámara encuadra
-una zona con zoom). El héroe (`img/hero.png`) es la imagen, que camina hasta el punto que pulses.
-- **B0 · Editor** 🟢: el mapa ya está en WebP (0,7 MB). Falta el editor `?editor=zafias` para colocar con el
-  ratón escenas, puntos, salidas y recodos, y copiar el resultado a los datos (hoy se colocan a mano con capturas
-  con cuadrícula).
-- **B1 · Escenas y movimiento** 🟡: la prueba ya tiene visor, cámara, héroe caminando, marcadores y recodos `via`
-  en `src/adventure-view.js`. Falta el motor puro `src/adventure.js` (escena actual, escenas abiertas, enemigos
-  vencidos) con su guardado, y caminos como grafo en vez de recodos sueltos.
-- Pendiente menor (móvil, no bloquea): en la escena del bosque a 390 px, el héroe queda pegado al borde izquierdo
-  al llegar, porque la cámara no sale del recuadro de la escena.
-- **B2 · Encuentros dialécticos** 🟢: los NPC de la aldea. Solo historia: cuadro de pergamino, «Siguiente ▸»
-  hasta el final. Diálogos como datos (`src/data/dialogues/`). Pueden abrir la siguiente escena.
-- **B3 · Encuentros de combate** 🟡: los enemigos del bosque abren la interfaz de A. Vencidos desaparecen hasta
-  dormir en la posada. Derrota → posada con la vida llena y menos oro. La aventura se guarda.
-- **B4 · Aldea y cueva** 🟡: posada (dormir: cura y repuebla), tienda de pociones, y la cueva que lanza el
-  descenso con el mismo héroe.
-- **B5 · Contenido** 🟡: borrador de la historia de Zafias, NPC y enemigos por escena, para corregir.
-
-### Lo que sacamos de la investigación (`research/Investigación Desarrollo Easy Hero.md`, 2026-09-30)
-**Conclusión: confirma el rumbo, no hay que parar.** Coincide con lo ya decidido: pociones al 40 % con tope,
-patrones ocultos que se aprenden, misiones cortas de 3-6 combates, la aventura para la historia y el descenso
-para la rejugabilidad.
-- **Se adopta:** telegrafiado por frases y postura (A2b), rotaciones y furia de jefes (A2c), una **herramienta
-  de preparación de sprites** (recorte, línea de pies, escala de píxel común, paleta única) y una nota de
-  créditos sobre el arte hecho con IA (precaución barata; no está verificado que sea obligatoria).
-- **Se adapta:** los tintes por familia con **filtros CSS** o un tinte de canvas hecho una vez, no con un
-  shader WebGL (la investigación lo propone para miles de sprites; aquí hay dos en pantalla).
-- **Se aparca:** fórmulas de acierto/fallo y «plink» (más fallos = más frustración; parte de sus fuentes ni
-  siquiera son de DragonFable), alquimia de pociones, cambios de acumulación de estados, enfriamientos que
-  solo bajan al atacar. Debilidades elementales ×0,5/×1,5: buena idea para más adelante, con los 6 tipos de daño.
-- **Con cuidado:** varias fórmulas del informe se perdieron (salen como imágenes vacías) y algunas citas son
-  de otros juegos; se toma como orientación, no como datos.
-
-**Arte que se irá necesitando** (no bloquea): más enemigos mirando a la izquierda, NPC, fondos de combate de
-cueva y mazmorra.
+### 🧩 Perfilados (más adelante, cuando el bucle sea jugable)
+- **Jefes:** furia bajo el 30 % de vida (tinte rojo + frase + cambio de patrón); patrones propios para los 5
+  jefes profundos (hoy comparten el del jefe final).
+- **Telegrafiado:** frases por tipo de enemigo; ¿avisar también de curarse o protegerse?; postura con arte propio.
+- **Aventura:** editor `?editor=zafias` para colocar puntos con el ratón; caminos como grafo en vez de recodos;
+  motor puro separado (`src/adventure.js`) si la lógica crece.
+- **Móvil:** en el bosque a 390 px el héroe queda pegado al borde al llegar.
+- **Arte:** herramienta de preparación de sprites (recorte, línea de pies, escala de píxel, paleta única de ~32
+  colores); nota en créditos sobre el arte hecho con IA; fondos de cueva y mazmorra.
+- **Combate:** debilidades elementales ×0,5/×1,5 con los 6 tipos de daño; entrada del combate como momento.
+- **Equilibrio:** los bots del banco siguen «viendo» la intención; el juego real será algo más difícil de lo
+  que mide. Revisar la tasa de victoria.
+- **Aparcado de la investigación:** fórmulas de acierto/fallo y «plink», alquimia de pociones, acumulación de
+  estados, enfriamientos que solo bajan al atacar.
 
 ---
 

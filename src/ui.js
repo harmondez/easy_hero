@@ -379,6 +379,7 @@ export function renderRpgCombat(combat) {
     const monSlot = document.getElementById('rpgCombatMonster');
     if (monSlot) monSlot.innerHTML = _rpgHudSide(monster, monster.tag || tags[monster.type] || 'Monstruo', _rpgMonsterStatus(combat), 'monster');
     _rpgRenderStage(hero, monster);
+    _rpgRenderTelegraph(combat);
 
     const bar = document.getElementById('rpgCombatActions');
     if (!bar) return;
@@ -445,6 +446,23 @@ function _rpgRenderStage(hero, monster) {
     // Misma escala de píxel para los dos: la altura del enemigo es relativa a la del héroe
     monActor.style.setProperty('--ratio', (RPG_MONSTER_SPRITE.h / RPG_HERO_SPRITE_H).toFixed(3));
     if (img) img.alt = monster.name;
+}
+
+// Golpe fuerte en camino: frase sobre el escenario y el enemigo brillando en rojo (sin moverse, sin cifras)
+function _rpgRenderTelegraph(combat) {
+    const cap = document.getElementById('rpgStageCaption');
+    const mon = document.getElementById('rpgActorMonster');
+    const tell = Engine.rpgTelegraph(combat);
+    if (mon) mon.classList.toggle('is-winding', !!tell);
+    if (!cap) return;
+    if (!tell) { cap.hidden = true; cap.textContent = ''; return; }
+    if (cap.textContent !== tell.text) {
+        cap.textContent = tell.text;
+        cap.classList.remove('is-in');
+        void cap.offsetWidth;   // reinicia la entrada si cambia la frase
+        cap.classList.add('is-in');
+    }
+    cap.hidden = false;
 }
 
 /** Qué pinta cada suceso del combate: quién embiste, a quién y qué número sale. null = nada visible. */

@@ -562,6 +562,13 @@ console.log('\n🫥 Patrones ocultos (estilo DragonFable) y pociones');
     await sleep(150);
     assert('Su patrón sigue ahí: primero reúne fuerzas y no te toca (el diario lo delata)',
         await heroHp() === 500 && /reúne fuerzas/.test(await logText()));
+    assert('Lo siguiente es un golpe fuerte: una frase lo avisa sobre el escenario, sin cifras',
+        await visible('#rpgStageCaption') && !/\d/.test(await page.$eval('#rpgStageCaption', el => el.textContent)));
+    assert('…y el enemigo brilla en rojo mientras lo prepara', await page.$eval('#rpgActorMonster', el => el.classList.contains('is-winding')));
+    await page.click('[data-rpg-action="defend"]');
+    await sleep(150);
+    assert('Tras soltar el golpe, la frase y el brillo desaparecen',
+        !(await visible('#rpgStageCaption')) && !(await page.$eval('#rpgActorMonster', el => el.classList.contains('is-winding'))));
 
     // Esqueleto (piso 6): se protege primero; la pista de Atacar NO lo delata
     await showCombat('monster', 5);

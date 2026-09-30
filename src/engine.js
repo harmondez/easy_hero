@@ -3,6 +3,7 @@ import { pickMonsterDef } from './data/monsters.js?v=1.4.2';
 import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.4.2';
 import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.4.2';
 import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.4.2';
+import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.4.2';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)
@@ -505,6 +506,18 @@ export function rpgIntentView(monster) {
     if (it.k === 'guard') return { icon: '🛡️', label: 'Se protege', value: null, kind: 'guard', hint: 'Recibirá la mitad de daño esta ronda' };
     if (it.k === 'heal') return { icon: '💚', label: 'Se cura', value: Math.max(1, Math.round(monster.maxHp * it.p)), kind: 'heal', hint: 'Recupera vida' };
     return { icon: '💤', label: 'Descansa', value: null, kind: 'rest', hint: 'No hace nada esta ronda' };
+}
+
+/**
+ * Telegrafiado sin números: si lo próximo del enemigo es un golpe fuerte, una frase que lo avisa.
+ * Devuelve { kind: 'heavy', text } o null. No dice cuánto hará ni gasta azar (la frase sale de la ronda).
+ */
+export function rpgTelegraph(combat) {
+    if (!combat || combat.over) return null;
+    const it = combat.monster && combat.monster.intent;
+    if (!it || it.k !== 'attack' || it.m < HEAVY_TELL_MIN) return null;
+    const text = HEAVY_TELLS[(combat.turn - 1) % HEAVY_TELLS.length].replace('{name}', combat.monster.name);
+    return { kind: 'heavy', text };
 }
 
 export function rpgSkillReady(combat, skillId) {

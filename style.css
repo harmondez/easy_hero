@@ -246,6 +246,35 @@ body {
     background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 70%);
 }
 .rpg-actor.is-down { opacity: 0.35; filter: grayscale(1) brightness(0.7); }
+/* Golpe fuerte en camino: el enemigo arde en rojo, sin moverse (el único movimiento es la embestida) */
+.rpg-actor.is-winding { animation: rpgWinding 1.1s ease-in-out infinite; }
+@keyframes rpgWinding {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 70, 40, 0.85)) drop-shadow(0 0 2px rgba(255, 70, 40, 0.9)); }
+    50% { filter: drop-shadow(0 0 18px rgba(255, 90, 50, 1)) drop-shadow(0 0 4px rgba(255, 120, 60, 1)) brightness(1.15); }
+}
+/* La frase que lo avisa: arriba, centrada, sin cifras */
+.rpg-stage-caption {
+    position: absolute;
+    left: 50%; top: 12px;
+    z-index: 3;
+    transform: translateX(-50%);
+    max-width: min(86%, 560px);
+    padding: 7px 16px;
+    font-style: italic;
+    font-size: clamp(0.85rem, 1.6vw, 1rem);
+    font-weight: 600;
+    text-align: center;
+    color: #ffd9c7;
+    background: rgba(21, 16, 12, 0.78);
+    border: 1px solid rgba(214, 67, 47, 0.7);
+    border-radius: 4px;
+    box-shadow: 0 0 18px rgba(214, 67, 47, 0.35);
+    pointer-events: none;
+}
+.rpg-stage-caption[hidden] { display: none; }
+/* Entra cuando ya ha terminado la ronda (tras las embestidas) */
+.rpg-stage-caption.is-in { animation: rpgCaptionIn 0.5s ease-out 0.55s both; }
+@keyframes rpgCaptionIn { from { opacity: 0; } }
 
 .rpg-stage-float {
     position: absolute;
@@ -278,6 +307,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .rpg-stage-float { animation: rpgStageFade 0.9s ease-out forwards; }
     @keyframes rpgStageFade { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
+    .rpg-actor.is-winding { animation: none; filter: drop-shadow(0 0 10px rgba(255, 90, 50, 0.9)); }
+    .rpg-stage-caption.is-in { animation: none; }
 }
 
 /* --- Entradas de diario --- */

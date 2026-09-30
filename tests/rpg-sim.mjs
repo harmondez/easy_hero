@@ -6,7 +6,7 @@ import {
     createRpgHero, rpgMonsterStats, generateRpgMap, rpgAvailableNodes,
     createRpgMonster, createRpgCombat, rpgCombatAction, rpgSkillReady, rpgCanFlee,
     rpgVictoryReward, applyRpgReward, RPG_MIN_EVENTS_PER_ROUTE, RPG_MIN_CAMPFIRES_PER_ROUTE,
-    rpgIntentView, rpgAttackPreview, rpgIncomingPreview
+    rpgIntentView, rpgAttackPreview, rpgIncomingPreview, rpgTelegraph
 } from '../src/engine.js';
 import { RPG_BALANCE } from '../src/data/balance.js';
 import { createRng, newSeed, seedToCode, codeToSeed } from '../src/rng.js';
@@ -333,6 +333,14 @@ console.log('\n👁️ Intenciones del enemigo (se ven ANTES de actuar y se ejec
         return icons.every(([mv, ic]) => rpgIntentView(start([mv], 4).monster).icon === ic);
     })());
     assert('rpgIncomingPreview es 0 si el enemigo no va a atacar', rpgIncomingPreview(start([CHARGE], 4), false) === 0);
+
+    // Telegrafiado sin números (estilo DragonFable): solo los golpes fuertes, y sin decir cuánto
+    const tell = rpgTelegraph(start([atk(2)], 4));
+    assert('un golpe fuerte (×2) se telegrafía con una frase que nombra al enemigo', tell && tell.kind === 'heavy' && tell.text.includes(c.monster.name));
+    assert('…y la frase no revela el daño', !/\d/.test(tell.text));
+    assert('un golpe normal, cargar, protegerse o descansar no se telegrafían',
+        [atk(1), CHARGE, GUARD, REST].every(mv => rpgTelegraph(start([mv], 4)) === null));
+    assert('telegrafiar no gasta azar (la misma ronda da la misma frase)', rpgTelegraph(start([atk(2.5)], 4)).text === rpgTelegraph(start([atk(2.5)], 4)).text);
 
     // Huir cuesta el ATK base, no la intención
     c = start([atk(3)], 4);
