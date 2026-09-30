@@ -39,6 +39,11 @@
     --font-body: 'Work Sans', system-ui, sans-serif;
 
     --shadow-elevated: 0 14px 34px -10px rgba(0, 0, 0, 0.7), 0 4px 14px rgba(0, 0, 0, 0.5);
+
+    /* Pergamino de los diálogos del Modo Aventura */
+    --parchment: #e8d5ae;
+    --parchment-ink: #3a2816;
+    --parchment-edge: #9c7442;
 }
 
 html { scroll-behavior: smooth; }
@@ -195,22 +200,83 @@ body {
 .rpg-stat.atk { color: #f59e0b; }
 .rpg-stat.hp { color: #ef4444; }
 
-/* --- Números de daño flotantes --- */
-.dmg-float {
-    position: absolute;
-    font-weight: 900;
-    font-size: 1.4rem;
-    pointer-events: none;
-    z-index: 50;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.5);
-    animation: dmg-rise 0.9s ease-out forwards;
+/* --- 🎭 Escenario de combate: fondo pintado de lado, héroe a la izquierda y enemigo a la derecha --- */
+.rpg-stage {
+    position: relative;
+    max-width: 960px;
+    margin: 0 auto 16px;
+    aspect-ratio: 16 / 7;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: var(--bg-main) url('img/bg/forest.webp') center 70% / cover no-repeat;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6), var(--shadow-elevated);
+    isolation: isolate;
 }
-.dmg-float.hp { color: #ef4444; }
-.dmg-float.heal { color: #10b981; }
-@keyframes dmg-rise {
-    0% { opacity: 1; transform: translateY(0) scale(1); }
-    50% { opacity: 1; transform: translateY(-30px) scale(1.2); }
-    100% { opacity: 0; transform: translateY(-60px) scale(0.6); }
+/* Viñeta cálida: el bosque se funde con la piedra de la interfaz y los combatientes resaltan */
+.rpg-stage::before {
+    content: '';
+    position: absolute; inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 70% 80% at 50% 62%, transparent 45%, rgba(21, 16, 12, 0.75) 100%),
+        linear-gradient(180deg, rgba(21, 16, 12, 0.35), transparent 30%, transparent 75%, rgba(21, 16, 12, 0.55));
+}
+.rpg-actor {
+    position: absolute;
+    bottom: 36%;
+    height: 48%;
+    z-index: 1;
+    transition: opacity 0.4s ease 0.45s, filter 0.4s ease 0.45s;
+}
+.rpg-actor.is-hero { left: 14%; }
+.rpg-actor.is-monster { right: 14%; height: calc(48% * var(--ratio, 0.889)); }
+.rpg-actor.is-attacking { z-index: 2; }
+.rpg-actor img { display: block; height: 100%; width: auto; user-select: none; -webkit-user-drag: none; }
+/* Sombra en el suelo, para que pisen el camino y no floten */
+.rpg-actor::after {
+    content: '';
+    position: absolute;
+    left: 12%; right: 12%; bottom: -5%;
+    height: 10%;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 70%);
+}
+.rpg-actor.is-down { opacity: 0.35; filter: grayscale(1) brightness(0.7); }
+
+.rpg-stage-float {
+    position: absolute;
+    z-index: 3;
+    transform: translate(-50%, -100%);
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 800;
+    color: #ff6a4d;
+    -webkit-text-stroke: 1px rgba(0, 0, 0, 0.6);
+    text-shadow: 0 3px 0 rgba(0, 0, 0, 0.75), 0 0 14px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    white-space: nowrap;
+    animation: rpgStageFloat 0.95s ease-out forwards;
+}
+.rpg-stage-float.is-crit { color: var(--gold); font-size: clamp(1.8rem, 5.4vw, 2.9rem); }
+.rpg-stage-float.is-heal { color: #8fd46a; }
+.rpg-stage-float.is-miss { color: var(--text-light); font-size: clamp(1rem, 2.8vw, 1.4rem); }
+@keyframes rpgStageFloat {
+    0% { opacity: 0; transform: translate(-50%, -70%) scale(0.6); }
+    14% { opacity: 1; transform: translate(-50%, -100%) scale(1.18); }
+    30% { transform: translate(-50%, -110%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -190%) scale(1); }
+}
+@media (max-width: 640px) {
+    .rpg-stage { aspect-ratio: 4 / 3; background-position: 30% center; }
+    .rpg-actor.is-hero { left: 6%; }
+    .rpg-actor.is-monster { right: 6%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .rpg-stage-float { animation: rpgStageFade 0.9s ease-out forwards; }
+    @keyframes rpgStageFade { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
 }
 
 /* --- Entradas de diario --- */
@@ -1342,4 +1408,168 @@ body {
     .rpg-loot-layout { flex-direction: column; align-items: stretch; }
     .gear-panel-loot { flex: 1 1 auto; width: 100%; align-self: stretch; }
     .gear-panel-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* --- 🧭 Modo Aventura: el mapa de Zafias como mundo, la cámara encuadra una escena --- */
+.adv-viewport {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--bg-main);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    box-shadow: var(--shadow-elevated);
+    touch-action: manipulation;
+}
+/* Viñeta de antorcha: los bordes se oscurecen, el centro respira */
+.adv-viewport::after {
+    content: '';
+    position: absolute; inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: radial-gradient(ellipse 75% 75% at 50% 50%, transparent 55%, rgba(21, 16, 12, 0.7) 100%);
+}
+.adv-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.adv-world > img:first-child { display: block; width: 100%; height: 100%; image-rendering: pixelated; user-select: none; }
+.adv-hero {
+    position: absolute; left: 0; top: 0;
+    transform-origin: 50% 100%;
+    filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.55));
+    user-select: none;
+    will-change: transform;
+}
+.adv-enemy {
+    position: absolute; left: 0; top: 0;
+    filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.55));
+    user-select: none;
+    pointer-events: none;
+}
+/* El paso: un leve balanceo mientras camina (sin sprites) */
+.adv-hero.is-walking { animation: advStep 0.32s ease-in-out infinite; }
+@keyframes advStep { 50% { translate: 0 -1.6px; } }
+
+.adv-markers { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.adv-marker {
+    position: absolute; left: 0; top: 0;
+    margin: -22px 0 0 -22px;
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    padding: 0;
+    background: none; border: 0; cursor: pointer;
+    pointer-events: auto;
+    --marker: var(--gold);
+}
+.adv-marker.is-enemy { --marker: var(--danger); }
+.adv-marker.is-exit { --marker: var(--text-light); }
+/* Anillo en el suelo + icono flotando encima */
+.adv-marker::before {
+    content: '';
+    position: absolute;
+    left: 8px; right: 8px; top: 26px; height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--marker);
+    box-shadow: 0 0 10px var(--marker);
+    opacity: 0.85;
+}
+.adv-marker-icon {
+    position: relative;
+    top: -8px;
+    font-size: 1.25rem;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.8));
+    transition: transform 0.15s ease;
+}
+.adv-marker:hover .adv-marker-icon, .adv-marker:focus-visible .adv-marker-icon { transform: translateY(-3px) scale(1.12); }
+/* El enemigo ya se ve dibujado: basta con su anillo a los pies */
+.adv-marker.is-enemy .adv-marker-icon { visibility: hidden; }
+.adv-marker:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
+.adv-marker-name {
+    position: absolute;
+    top: 44px; left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 8px;
+    white-space: nowrap;
+    font-size: 0.78rem; font-weight: 600;
+    color: var(--text-main);
+    background: rgba(21, 16, 12, 0.85);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.adv-marker:hover .adv-marker-name, .adv-marker:focus-visible .adv-marker-name { opacity: 1; }
+@media (hover: none) { .adv-marker-name { opacity: 0.9; } }
+
+/* Cartel de escena: una placa grabada que aparece al llegar */
+.adv-plaque {
+    position: absolute;
+    left: 16px; top: 14px;
+    z-index: 4;
+    padding: 6px 14px 7px;
+    font-family: var(--font-display);
+    font-size: clamp(0.95rem, 2.4vw, 1.25rem);
+    font-weight: 800;
+    color: var(--gold);
+    background: linear-gradient(180deg, var(--bg-card-elevated), var(--bg-card));
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--primary);
+    border-radius: 3px;
+    box-shadow: var(--shadow-elevated);
+    pointer-events: none;
+}
+.adv-plaque.is-in { animation: advPlaque 0.6s cubic-bezier(.2, .7, .3, 1); }
+@keyframes advPlaque { from { opacity: 0; transform: translateX(-14px); } }
+
+.adv-fps {
+    position: absolute; right: 10px; top: 10px; z-index: 4;
+    padding: 2px 8px;
+    font: 600 0.75rem ui-monospace, monospace;
+    color: var(--text-main);
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 4px;
+}
+
+/* Diálogo de pergamino: solo historia, «Siguiente» hasta el final */
+.adv-dialogue {
+    position: absolute; inset: 0;
+    z-index: 5;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding: 14px;
+    background: linear-gradient(180deg, transparent 45%, rgba(21, 16, 12, 0.55));
+    cursor: pointer;
+}
+.adv-dialogue[hidden] { display: none; }
+.adv-dialogue-box {
+    position: relative;
+    width: min(100%, 640px);
+    padding: 14px 18px 12px;
+    color: var(--parchment-ink);
+    background:
+        radial-gradient(ellipse at 20% 10%, rgba(255, 255, 255, 0.35), transparent 60%),
+        linear-gradient(180deg, var(--parchment), color-mix(in srgb, var(--parchment) 82%, var(--parchment-edge)));
+    border: 2px solid var(--parchment-edge);
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), var(--shadow-elevated);
+    animation: advDialogueIn 0.25s ease-out;
+}
+@keyframes advDialogueIn { from { opacity: 0; transform: translateY(10px); } }
+.adv-dialogue-who { font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: #7a3514; }
+.adv-dialogue-text { margin: 6px 0 10px; font-size: clamp(0.92rem, 2.3vw, 1.02rem); line-height: 1.5; max-width: 62ch; }
+.adv-dialogue-next {
+    display: block; margin-left: auto;
+    padding: 6px 16px;
+    font: 700 0.85rem var(--font-body);
+    color: var(--parchment);
+    background: var(--parchment-ink);
+    border: 0; border-radius: 3px;
+    cursor: pointer;
+}
+.adv-dialogue-next:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+@media (max-width: 640px) {
+    .adv-viewport { aspect-ratio: 3 / 4; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .adv-hero.is-walking, .adv-plaque.is-in, .adv-dialogue-box { animation: none; }
 }

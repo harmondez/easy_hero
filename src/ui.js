@@ -19,48 +19,10 @@ export function esc(str) {
     });
 }
 
-// --- Efectos de combate (números flotantes y sacudida) ---
-export function spawnDmgFloat(parentSelector, type, value) {
-    const dmg = Number(value);
-    if (isNaN(dmg) || dmg <= 0) return;
-    const parent = document.querySelector(parentSelector);
-    if (!parent) return;
-
-    const el = document.createElement('div');
-    el.className = `dmg-float ${type}`;
-    el.innerText = type === 'heal' ? `+${dmg}` : `-${dmg}`;
-    el.style.left = (20 + Math.random() * 40) + '%';
-    el.style.top = '10%';
-    parent.style.position = 'relative';
-    parent.appendChild(el);
-
-    if (typeof gsap !== 'undefined') {
-        try {
-            gsap.fromTo(el,
-                { y: 0, opacity: 1, scale: 0.5 },
-                { y: -60, opacity: 0, scale: 1.2, duration: 1.0, ease: "power2.out", onComplete: () => el.remove() }
-            );
-        } catch (e) { setTimeout(() => el.remove(), 1000); }
-    } else {
-        setTimeout(() => el.remove(), 1000);
-    }
-}
-
-export function playHitAnimation(selector, isAlly) {
-    const el = document.querySelector(selector);
-    if (!el || typeof gsap === 'undefined') return;
-    try {
-        const color = isAlly ? 'rgba(59,130,246,0.8)' : 'rgba(239,68,68,0.8)';
-        gsap.timeline()
-            .to(el, { x: isAlly ? 10 : -10, duration: 0.05 })
-            .to(el, { x: 0, duration: 0.25, ease: "elastic.out(1,0.3)", boxShadow: `0 0 20px ${color}`, onComplete: () => { el.style.boxShadow = ''; } });
-    } catch (e) {}
-}
-
 // --- 🗡️ MODO RPG (Carta de Héroe + mapa de ruta) ---
 
 export function toggleRpgView(view) {
-    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgLootView', 'rpgCharView', 'rpgShopView', 'rpgTierView', 'rpgCombatView', 'rpgEndView'].forEach(id => {
+    ['rpgStartView', 'rpgMapView', 'rpgEventView', 'rpgLootView', 'rpgCharView', 'rpgShopView', 'rpgTierView', 'rpgAdventureView', 'rpgCombatView', 'rpgEndView'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = id === view ? 'block' : 'none';
     });
@@ -397,6 +359,7 @@ export function renderRpgCombat(combat, opts = {}) {
     if (heroSlot) heroSlot.innerHTML = _rpgFighterCard(hero, `Nivel ${hero.level}`, combat.defending ? '🛡️ Defendiendo' : '');
     const monSlot = document.getElementById('rpgCombatMonster');
     if (monSlot) monSlot.innerHTML = _rpgFighterCard(monster, monster.tag || tags[monster.type] || 'Monstruo', _rpgMonsterStatus(combat), combat.over ? '' : _rpgIntentHtml(monster));
+    _rpgRenderStage(hero, monster);
 
     const bar = document.getElementById('rpgCombatActions');
     if (!bar) return;
@@ -432,15 +395,95 @@ export function renderRpgCombat(combat, opts = {}) {
         _rpgActionButton('data-rpg-action="flee"', '🏃', 'HUIR', fleeHint, !canFlee);
 }
 
-/** Números flotantes y sacudida sobre la carta que recibe el golpe, en secuencia. */
+// --- 🎭 Escenario: héroe a la izquierda mirando a la derecha, enemigo a la derecha mirando a la izquierda ---
+// De momento todos los enemigos usan el goblin; cuando haya más arte, se elige aquí por monstruo.
+const RPG_MONSTER_SPRITE = { src: 'img/sprites/goblin_left.png', w: 175, h: 217 };
+const RPG_HERO_SPRITE_H = 244;   // alto de img/sprites/hero_right.png
+const RPG_LUNGE_MS = 460;        // ida y vuelta de la embestida
+const RPG_LUNGE_IMPACT = 0.4;    // punto de la embestida en que llega el golpe (y sale el número)
+const RPG_FX_GAP_MS = 140;       // pausa entre un golpe y el siguiente
+
+function _rpgRenderStage(hero, monster) {
+    const heroActor = document.getElementById('rpgActorHero');
+    const monActor = document.getElementById('rpgActorMonster');
+    if (!heroActor || !monActor) return;
+    heroActor.classList.toggle('is-down', hero.hp <= 0);
+    monActor.classList.toggle('is-down', monster.hp <= 0);
+    const img = monActor.querySelector('img');
+    if (img && !img.src.endsWith(RPG_MONSTER_SPRITE.src)) {
+        img.src = RPG_MONSTER_SPRITE.src;
+        img.width = RPG_MONSTER_SPRITE.w;
+        img.height = RPG_MONSTER_SPRITE.h;
+    }
+    // Misma escala de píxel para los dos: la altura del enemigo es relativa a la del héroe
+    monActor.style.setProperty('--ratio', (RPG_MONSTER_SPRITE.h / RPG_HERO_SPRITE_H).toFixed(3));
+    if (img) img.alt = monster.name;
+}
+
+/** Qué pinta cada suceso del combate: quién embiste, a quién y qué número sale. null = nada visible. */
+function _rpgFxStep(ev) {
+    if (ev.kind === 'dodge') return { from: 'hero', to: 'monster', text: '¡Esquiva!', cls: 'is-miss' };
+    if (!(ev.amount > 0)) return null;
+    if (ev.kind === 'heal') return { to: ev.target, text: `+${ev.amount}`, cls: 'is-heal' };
+    const lunge = ['attack', 'crit', 'skill'].includes(ev.kind) && ev.actor !== ev.target;
+    return { from: lunge ? (ev.target === 'hero' ? 'monster' : 'hero') : null, to: ev.target,
+        text: `-${ev.amount}${ev.kind === 'crit' ? '!' : ''}`, cls: ev.kind === 'crit' ? 'is-crit' : '' };
+}
+
+function _rpgStageFloat(stage, actor, text, cls) {
+    const s = stage.getBoundingClientRect();
+    const a = actor.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = `rpg-stage-float ${cls}`;
+    el.textContent = text;
+    el.style.left = `${a.left - s.left + a.width / 2}px`;
+    el.style.top = `${a.top - s.top}px`;
+    stage.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+}
+
+let _rpgFxRun = 0;
+/** Cada golpe: el atacante se lanza rápido hacia el otro, sale el daño encima del golpeado y vuelve a su sitio. En secuencia. */
 export function playRpgCombatFx(events) {
-    (events || []).forEach((ev, i) => {
-        if (!ev.amount || ev.amount <= 0) return;
-        const selector = (ev.target === 'hero' ? '#rpgCombatHero' : '#rpgCombatMonster') + ' .rpg-fighter-card';
+    const stage = document.getElementById('rpgStage');
+    if (!stage) return;
+    const run = ++_rpgFxRun;   // una acción nueva corta la secuencia anterior
+    stage.querySelectorAll('.rpg-stage-float').forEach(el => el.remove());
+    const actors = { hero: document.getElementById('rpgActorHero'), monster: document.getElementById('rpgActorMonster') };
+    Object.values(actors).forEach(a => a && a.getAnimations().forEach(x => x.cancel()));
+    const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let t = 0;
+    (events || []).forEach(ev => {
+        const step = _rpgFxStep(ev);
+        if (!step || !actors[step.to]) return;
+        const lunge = step.from && !still;
         setTimeout(() => {
-            spawnDmgFloat(selector, 'hp', ev.amount);
-            playHitAnimation(selector, ev.target === 'hero');
-        }, i * 380);
+            if (run !== _rpgFxRun) return;
+            const target = actors[step.to];
+            const hit = () => {
+                if (run !== _rpgFxRun) return;
+                _rpgStageFloat(stage, target, step.text, step.cls);
+                if (step.cls !== 'is-miss' && step.cls !== 'is-heal' && !still) {
+                    target.animate([{ filter: 'brightness(2.2) saturate(0.4)' }, { filter: 'none' }], { duration: 220, easing: 'ease-out' });
+                }
+            };
+            if (!lunge) { hit(); return; }
+            const attacker = actors[step.from];
+            const a = attacker.getBoundingClientRect();
+            const b = target.getBoundingClientRect();
+            // Hasta meterse un poco en el hueco del otro, no hasta atravesarlo
+            const dx = step.from === 'hero' ? (b.left - a.right) + b.width * 0.3 : -((a.left - b.right) + b.width * 0.3);
+            attacker.animate([
+                { transform: 'translateX(0)', easing: 'cubic-bezier(.55,0,.9,.45)' },
+                { transform: `translateX(${dx}px)`, offset: RPG_LUNGE_IMPACT, easing: 'cubic-bezier(.2,.6,.35,1)' },
+                { transform: 'translateX(0)' }
+            ], { duration: RPG_LUNGE_MS });
+            attacker.classList.add('is-attacking');
+            setTimeout(hit, RPG_LUNGE_MS * RPG_LUNGE_IMPACT);
+            setTimeout(() => attacker.classList.remove('is-attacking'), RPG_LUNGE_MS);
+        }, t);
+        t += (lunge ? RPG_LUNGE_MS : 260) + RPG_FX_GAP_MS;
     });
 }
 

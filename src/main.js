@@ -4,6 +4,7 @@ import * as Events from './events.js?v=1.4.2';
 import * as Save from './save.js?v=1.4.2';
 import * as Items from './items.js?v=1.4.2';
 import * as Meta from './meta.js?v=1.4.2';
+import * as Adventure from './adventure-view.js?v=1.4.2';
 import { RPG_BALANCE } from './data/balance.js?v=1.4.2';
 import { tierName } from './data/monsters.js?v=1.4.2';
 import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.4.2';
@@ -873,6 +874,12 @@ function initEvents() {
         if (e.target.closest('#btnRpgDescend')) _rpgDescend();
     });
     safeListener('btnRpgShop', 'click', () => _rpgOpenShop('start'));
+
+    // --- 🧭 Modo Aventura (prueba de concepto) ---
+    safeListener('btnRpgAdventure', 'click', () => {
+        UI.toggleRpgView('rpgAdventureView');
+        Adventure.open(() => UI.toggleRpgView('rpgStartView'));
+    });
     safeListener('btnShopBack', 'click', () => _rpgCloseShop());
     safeListener('shopBody', 'click', (e) => {
         const btn = e.target.closest('[data-shop-buy]');

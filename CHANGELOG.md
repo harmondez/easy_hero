@@ -5,6 +5,16 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+### ✨ Novedades
+- ⚔️ **Combate de lado**: tu héroe a la izquierda y el enemigo a la derecha, sobre un bosque pintado. Al atacar,
+  cada uno se lanza hacia el otro, el daño sale encima del golpeado y vuelve a su sitio. De momento todos los
+  enemigos se ven como un goblin.
+- 🧭 **Modo aventura (prueba)**: un botón nuevo en el inicio abre Zafias. Recorre la aldea y el bosque escena a
+  escena, habla con sus vecinos y encuéntrate con el primer goblin. Aún no hay combate ni progreso en la aventura.
+
+### 🔧 Cambios
+- Los números de daño ya no salen sobre las cartas, sino en el escenario. Se deja de cargar GSAP desde internet.
+
 ## [1.4.2] - 2026-09-30
 
 ### ✨ Novedades

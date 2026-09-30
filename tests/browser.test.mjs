@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 import { chromium } from 'playwright';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webp': 'image/webp' };
 
 const server = http.createServer((req, res) => {
     const urlPath = decodeURIComponent(req.url.split('?')[0]);
@@ -106,6 +106,13 @@ const labels = await page.$$eval('#rpgCombatActions .rpg-action-label', els => e
 assert('Acciones: Atacar / Defender / Habilidades / Huir', labels.join(',') === 'ATACAR,DEFENDER,HABILIDADES,HUIR');
 assert('El enemigo muestra su INTENCIÓN antes de que elijas: «Ataca 1» (el Slime empieza atacando)',
     /Ataca/.test(await page.$eval('#rpgCombatMonster .rpg-intent', el => el.textContent)) && (await page.$$('#rpgCombatMonster .rpg-intent.is-attack')).length === 1);
+assert('Escenario de lado: el fondo del bosque está pintado', /forest\.webp/.test(await page.$eval('#rpgStage', el => getComputedStyle(el).backgroundImage)));
+const heroActor = await (await page.$('#rpgActorHero')).boundingBox();
+const monActor = await (await page.$('#rpgActorMonster')).boundingBox();
+assert('Escenario: el héroe SIEMPRE a la izquierda y el enemigo SIEMPRE a la derecha',
+    heroActor && monActor && heroActor.width > 0 && heroActor.x + heroActor.width <= monActor.x);
+assert('Escenario: el enemigo usa la imagen del goblin mirando a la izquierda (arte provisional para todos)',
+    /goblin_left\.png$/.test(await page.$eval('#rpgActorMonster img', el => el.src)));
 
 await page.click('[data-rpg-action="defend"]');
 await sleep(150);
@@ -122,6 +129,11 @@ await skillBtn.click();
 await sleep(150);
 assert('Golpe de Fuego inflige 5 de daño (6 → 1 HP)',
     /1\s*\/\s*6/.test(await page.$eval('#rpgCombatMonster .rpg-stat.hp', el => el.textContent)));
+assert('Escenario: al golpear, la imagen del héroe se lanza hacia el enemigo',
+    (await page.$eval('#rpgActorHero', el => el.getAnimations().length)) > 0);
+await sleep(120);
+assert('Escenario: el daño sale como número encima del enemigo (-5)',
+    (await page.$$eval('#rpgStage .rpg-stage-float', els => els.map(e => e.textContent))).includes('-5'));
 await page.click('[data-rpg-action="skills"]');
 await sleep(100);
 assert('Golpe de Fuego queda enfriándose', await page.$eval('[data-rpg-skill="fire_strike"]', el => el.disabled));
@@ -1079,6 +1091,52 @@ console.log('\n📱 Móvil (390 × 844)');
     await mobile.screenshot({ path: shot('evento-movil'), fullPage: true });
     assert('Sin errores de página en el móvil', mobileErrors.length === 0);
     await mobile.context().close();
+}
+
+// ---------------------------------------------
+console.log('\n🧭 Modo Aventura (prueba de concepto)');
+{
+    // Con «reducir movimiento» el héroe llega al instante: la prueba no depende de la velocidad al caminar
+    const adv = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })).newPage();
+    const advErrors = [];
+    adv.on('pageerror', e => advErrors.push(e.message));
+    await adv.goto(url, { waitUntil: 'load', timeout: 30000 });
+    await sleep(300);
+    await adv.click('#btnRpgAdventure');
+    await sleep(400);
+    assert('El botón «Modo aventura» abre la vista de Zafias', await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none'));
+    assert('Empieza en la aldea, con su cartel', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea'
+        && /aldea/i.test(await adv.$eval('.adv-plaque', el => el.textContent)));
+    assert('La aldea tiene 2 NPC y una salida', (await adv.$$('.adv-marker.is-npc')).length === 2 && (await adv.$$('.adv-marker.is-exit')).length === 1);
+    assert('El mapa se ve con zoom (la cámara escala el mundo)', await adv.$eval('.adv-world', el => /scale\((1\.[5-9]|2\.)/.test(el.style.transform)));
+
+    await adv.click('.adv-marker[data-point="posadera"]');
+    await sleep(250);
+    assert('Pulsar un NPC: el héroe camina hasta él y se abre el diálogo', !(await adv.$eval('.adv-dialogue', el => el.hidden))
+        && /Maela/.test(await adv.$eval('.adv-dialogue-who', el => el.textContent)));
+    const pages = [];
+    for (let i = 0; i < 5 && !(await adv.$eval('.adv-dialogue', el => el.hidden)); i++) {
+        pages.push(await adv.$eval('.adv-dialogue-next', el => el.textContent));
+        await adv.click('.adv-dialogue-next');
+        await sleep(60);
+    }
+    assert('El diálogo es solo historia: «Siguiente» hasta la última línea, que dice «Cerrar»',
+        pages.length === 3 && pages[0] === 'Siguiente' && pages[2] === 'Cerrar' && await adv.$eval('.adv-dialogue', el => el.hidden));
+
+    await adv.click('.adv-marker[data-point="al-bosque"]', { force: true });
+    await sleep(250);
+    assert('La salida lleva a la escena del bosque', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'bosque');
+    assert('El enemigo se ve en la escena antes de pelear (goblin mirando a la izquierda)',
+        (await adv.$$eval('.adv-world .adv-enemy', els => els.filter(e => /goblin_left/.test(e.src)).length)) === 1);
+    await adv.click('.adv-marker[data-point="goblin-1"]', { force: true });
+    await sleep(250);
+    assert('Pulsar al goblin: el héroe va hasta él por el sendero y le habla', /Goblin/.test(await adv.$eval('.adv-dialogue-who', el => el.textContent)));
+    await adv.keyboard.press('Escape');
+    await adv.click('.adv-back');
+    await sleep(150);
+    assert('«Volver al inicio» sale de la aventura', await adv.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
+    assert('Sin errores de página en la aventura', advErrors.length === 0);
+    await adv.context().close();
 }
 
 console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📊 RESULTS: ${passed} passed, ${failed} failed\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);

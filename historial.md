@@ -390,6 +390,30 @@ sitios del test daban el mapa por hecho. Días antes se había despachado como �
 era. Corregido haciendo que esos sitios resuelvan el botín, y verificado forzando el 100 % de combates con
 botín (182/182). Además, el goteo de botín, que no tenía ninguna prueba de navegador, ya la tiene.
 
+## 2026-09-30 · Giro visual: prueba de concepto del combate de lado y del Modo Aventura
+
+**De dónde salió.** El usuario aporta arte pixel art (héroe, goblin, fondo de bosque pintado de lado, mapa de
+Zafias) y quiere las vibes de DragonFable. Acepta salir del «minimalista con emojis», pero **sin muros que obliguen
+a cambiar de lenguaje**. Tras revisar la viabilidad (todo cabe en web estática con vanilla + Web Animations API;
+PixiJS solo como capa de pintado si hiciera falta; Godot/Flutter descartados) y tres tandas de preguntas, las
+decisiones quedaron en `planning.md`. Prioridad: **web de escritorio primero**; en móvil basta con que funcione.
+
+**Qué se construyó (prueba de concepto, sin publicar):**
+- **Combate de lado** (paso A1): `#rpgStage` sobre `img/bg/forest.webp`, héroe siempre a la izquierda y enemigo
+  (el goblin, provisional para todos) siempre a la derecha. Único movimiento: embestida rápida hacia el otro con
+  WAAPI, número de daño encima del golpeado al impactar, y vuelta. Sustituye a los efectos viejos sobre las cartas
+  (y a GSAP del CDN, que solo usaban ellos). Las cartas siguen debajo hasta el panel de pergamino (A2).
+- **Modo Aventura** (`src/adventure-view.js`, datos en `src/data/zones/zafias.js`): el mapa es un «mundo» que se
+  desplaza y escala con `transform`; la escena llena el visor y la cámara sigue al héroe dentro de su recuadro;
+  marcadores en capa de pantalla (tamaño fijo con cualquier zoom); aldea con 2 NPC y diálogo de pergamino
+  («Siguiente» → «Cerrar»), bosque con el goblin visible; recodos `via` para que el héroe siga el sendero en vez
+  de cruzar árboles. `?debug` muestra los fps.
+- Imágenes a WebP: mapa 3,7 MB → 0,7 MB; fondo 2,8 MB → 0,25 MB. Sprites recortados a su silueta (`img/sprites/`).
+
+**Medido, no supuesto.** Caminando y con la cámara viajando entre escenas: 60 fps de media y ningún fotograma de
+más de 33 ms, tanto normal como con la CPU a ×4 más lenta (Chromium sin interfaz, 1440×900). La prueba de
+concepto confirma que el stack aguanta; el riesgo que queda es el arte, no la técnica.
+
 ---
 
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)
