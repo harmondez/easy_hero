@@ -9,8 +9,18 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 - ⚔️ **Combate de lado**: tu héroe a la izquierda y el enemigo a la derecha, sobre un bosque pintado. Al atacar,
   cada uno se lanza hacia el otro, el daño sale encima del golpeado y vuelve a su sitio. De momento todos los
   enemigos se ven como un goblin.
-- 🧭 **Modo aventura (prueba)**: un botón nuevo en el inicio abre Zafias. Recorre la aldea y el bosque escena a
-  escena, habla con sus vecinos y encuéntrate con el primer goblin. Aún no hay combate ni progreso en la aventura.
+- 🧭 **Modo aventura: Zafias.** Un botón nuevo en el inicio abre el mapa de Zafias, que se recorre escena a
+  escena con tu héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
+  - **La primera misión**: Maela, la posadera, te pide echar a los goblins del bosque. Vencidos los tres, se abre
+    el sendero al **campamento goblin**, con su guardia y **Grask**, el jefe. Vuelve con ella a por la recompensa.
+    El objetivo de la misión está siempre a la vista.
+  - **Combates de verdad** contra los enemigos que ves en el mapa, en la misma pantalla de lado.
+  - **La aldea**: la **posada** (dormir cura del todo y los goblins vuelven a los caminos), la **tienda** (La
+    Forja y las pociones) y la **cueva del sur**, que baja al descenso.
+  - Si caes, despiertas en la posada con la vida llena y un 10 % menos de oro. Tu progreso se guarda solo.
+- 🎨 Mientras no haya arte de cada monstruo, el goblin se tiñe con un color por especie y otro por linaje
+  (la Plaga en verde tóxico, las Brasas en fuego…), y los sub-jefes y jefes se ven más grandes.
+- 🌬️ **Los golpes fuertes se ven venir**: una frase sobre el escenario y el enemigo brillando en rojo, sin cifras.
 
 - 📜 **Panel de pergamino** bajo el escenario: tu vida a la izquierda, la del enemigo a la derecha y en el centro
   un gran **¡Atacar!** con el resto de acciones a un clic (Defender, cada habilidad, Poción y Huir).
