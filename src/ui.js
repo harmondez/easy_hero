@@ -106,48 +106,91 @@ export function rpgHeroTags(hero) {
 }
 
 
-export function renderRpgHeroPanel(hero, progressText, gold) {
+/**
+ * El panel del personaje, a la derecha del mapa y siempre a la vista: dónde estás, vida, ataque,
+ * nivel permanente con su experiencia, las 4 primarias y el oro. Solo muestra: repartir puntos
+ * se hace en el Inventario, que es donde vive todo lo que se toca.
+ */
+export function renderRpgHeroPanel(hero, progressText, meta) {
     const el = document.getElementById('rpgHeroPanel');
     if (!el || !hero) return;
     const tagsHtml = rpgHeroTags(hero).map(t => `<span class="rpg-hero-tag">${t.icon} ${esc(t.text)}</span>`).join('');
     const hpPct = Math.max(0, Math.min(100, (hero.hp / hero.maxHp) * 100));
+    const level = (meta && meta.charLevel) || 1;
+    const need = Stats.xpToNext(level);
+    const xp = (meta && meta.xp) || 0;
+    const xpPct = Math.max(0, Math.min(100, Math.round(100 * xp / need)));
+    const points = (meta && meta.statPoints) || 0;
+    const primaries = Stats.PRIMARY_KEYS.map(k => {
+        const info = Stats.PRIMARY_INFO[k];
+        return `<div class="hero-panel-primary" title="${esc(`${info.name}: ${info.desc}`)}">
+            <span aria-hidden="true">${info.icon}</span><b>${info.short}</b><span class="hero-panel-num">${hero.primary[k]}</span>
+        </div>`;
+    }).join('');
     el.style.setProperty('--accent', hero.color);
     el.innerHTML = `
-        <div class="rpg-hero-avatar">${hero.icon}</div>
-        <div class="rpg-hero-info">
-            <div class="rpg-hero-name">${esc(hero.name)}</div>
-            <div class="rpg-hero-hp"><div class="rpg-hero-hp-fill" style="width:${hpPct}%"></div><span><b>HP</b> ${hero.hp} / ${hero.maxHp}</span></div>
-            <div class="rpg-hero-stats">
-                <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
-                ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
-                ${gold != null ? `<span class="rpg-stat gold">🪙 ${gold}</span>` : ''}
+        <div class="hero-panel-head">
+            <div class="rpg-hero-avatar">${hero.icon}</div>
+            <div class="hero-panel-id">
+                <div class="rpg-hero-name">${esc(hero.name)}</div>
+                <div class="hero-panel-where">${esc(progressText || '')}</div>
             </div>
-            ${tagsHtml ? `<div class="rpg-hero-tags">${tagsHtml}</div>` : ''}
         </div>
-        <div class="rpg-hero-progress">${esc(progressText || '')}</div>`;
+        <div class="rpg-hero-hp"><div class="rpg-hero-hp-fill" style="width:${hpPct}%"></div><span><b>HP</b> ${hero.hp} / ${hero.maxHp}</span></div>
+        <div class="rpg-hero-stats">
+            <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
+            ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
+            ${meta ? `<span class="rpg-stat gold">🪙 ${meta.gold}</span>` : ''}
+        </div>
+        <div class="hero-panel-level">
+            <div class="hero-panel-level-row"><span>🧬 Nivel ${level}</span><span class="hero-panel-num">${xp} / ${need} XP</span></div>
+            <div class="panel-progress-bar"><div class="panel-progress-fill" style="width:${xpPct}%"></div></div>
+        </div>
+        <div class="hero-panel-primaries">${primaries}</div>
+        ${points ? `<div class="hero-panel-points">✨ ${points} punto${points === 1 ? '' : 's'} por repartir en el Inventario</div>` : ''}
+        ${tagsHtml ? `<div class="rpg-hero-tags">${tagsHtml}</div>` : ''}`;
 }
 
 // Niebla de guerra: cuántos pisos por delante de la posición actual se ven con claridad.
 // Piso actual + este número de opciones se ve; a partir de ahí, niebla, y se despeja según avanzas.
 const RPG_FOG_AHEAD = 3;
 
+// Desorden del mapa, en % del ancho/alto: rompe la rejilla perfecta para que parezca excavado a mano.
+// Medido, no a ojo: con 2 %/1 % se solapaban salas en el 4,7 % de los mapas en un móvil de 390 px (una sala
+// junto a un sub-jefe); con estos valores, 0 de 600 mapas. La curva de los pasillos pone el resto del efecto.
+const RPG_JITTER_X = 1.2;
+const RPG_JITTER_Y = 0.6;
+const RPG_CORRIDOR_BEND = 2.6;   // cuánto se curva un pasillo, en unidades del viewBox (0-100)
+
+// Hash estable de un texto a [0, 1): el mapa se descoloca SIEMPRE igual para la misma partida, sin
+// tocar el azar del juego (eso cambiaría la semilla y las comprobaciones exactas).
+function _hash01(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return ((h >>> 0) % 1000003) / 1000003;
+}
+
 /**
- * Dibuja el mapa: aristas en un SVG en porcentajes (se estira con el contenedor) y
- * nodos como botones posicionados en % (columna) / % (piso, el piso 0 arriba: se avanza hacia abajo).
- * Los pisos que quedan a más de RPG_FOG_AHEAD opciones de la posición actual se cubren con niebla de guerra.
+ * Dibuja el mapa como una mazmorra: pasillos curvos excavados (SVG en porcentajes, que se estira con el
+ * contenedor) y salas como botones posicionados en %, el piso 0 arriba (se avanza hacia abajo).
+ * Los pisos a más de RPG_FOG_AHEAD opciones de tu posición son un hueco sin dibujar: la niebla de guerra.
  * state: { currentId, visitedIds, heroIcon, animate }
  */
 export function renderRpgMap(map, state = {}) {
     const el = document.getElementById('rpgMap');
     if (!el || !map) return;
     const { floors, cols } = map;
+    const tier = map.tier || 0;
     const visitedIds = state.visitedIds || [];
     const visited = new Set(visitedIds);
     const currentId = state.currentId || null;
     const skip = !!state.skip;
     const available = new Set(Engine.rpgAvailableNodes(map, currentId, skip));
     const byId = new Map(map.nodes.map(n => [n.id, n]));
-    const pos = n => ({ x: (n.col + 0.5) / cols * 100, y: (n.floor + 0.5) / floors * 100 });
+    const pos = n => ({
+        x: (n.col + 0.5) / cols * 100 + (_hash01(`${n.id}|x`) - 0.5) * 2 * RPG_JITTER_X,
+        y: (n.floor + 0.5) / floors * 100 + (_hash01(`${n.id}|y`) - 0.5) * 2 * RPG_JITTER_Y
+    });
 
     const taken = new Set();
     for (let i = 1; i < visitedIds.length; i++) taken.add(`${visitedIds[i - 1]}>${visitedIds[i]}`);
@@ -160,14 +203,25 @@ export function renderRpgMap(map, state = {}) {
     const isFogged = n => (n.floor - currentFloor) > RPG_FOG_AHEAD && n.id !== currentId
         && !visited.has(n.id) && !available.has(n.id);
 
-    const lines = map.nodes.flatMap(n => n.next.map(id => {
-        const to = byId.get(id);
-        const a = pos(n);
-        const b = pos(to);
-        const cls = taken.has(`${n.id}>${id}`) ? 'is-taken' : (openFrom.has(n.id) ? 'is-open' : '');
-        const fog = isFogged(to) ? ' is-fog' : '';
-        return `<line class="rpg-edge ${cls}${fog}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" vector-effect="non-scaling-stroke"/>`;
-    })).join('');
+    // Cada pasillo es una curva suave (no una línea recta) con una bóveda excavada debajo. La curva sale del
+    // hash de sus dos extremos, así que el mismo pasillo se dobla siempre hacia el mismo lado.
+    const tunnels = [], paths = [];
+    for (const n of map.nodes) {
+        for (const id of n.next) {
+            const to = byId.get(id);
+            const a = pos(n), b = pos(to);
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const bend = (_hash01(`${n.id}>${id}`) - 0.5) * 2 * RPG_CORRIDOR_BEND;
+            const cx = (a.x + b.x) / 2 - (dy / len) * bend;
+            const cy = (a.y + b.y) / 2 + (dx / len) * bend;
+            const d = `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
+            const cls = taken.has(`${n.id}>${id}`) ? 'is-taken' : (openFrom.has(n.id) ? 'is-open' : '');
+            const fog = isFogged(to) ? ' is-fog' : '';
+            tunnels.push(`<path class="rpg-tunnel${fog}" d="${d}" vector-effect="non-scaling-stroke"/>`);
+            paths.push(`<path class="rpg-edge ${cls}${fog}" d="${d}" vector-effect="non-scaling-stroke"/>`);
+        }
+    }
 
     const nodesHtml = map.nodes.map((n, i) => {
         const t = Engine.RPG_NODE_TYPES[n.type];
@@ -179,9 +233,10 @@ export function renderRpgMap(map, state = {}) {
         const hero = st === 'is-current' ? ` data-hero="${esc(state.heroIcon || '')}"` : '';
         let icon = t.icon, name = t.name, info = t.desc;
         if (fogged) {
-            icon = '❓'; name = 'Niebla de guerra'; info = 'Aún no has explorado tan lejos.';
+            // Un hueco sin dibujar: ni icono ni tipo. No se sabe qué hay hasta que la luz llega
+            icon = ''; name = 'Zona sin explorar'; info = 'Aún no has llegado tan lejos.';
         } else if (n.type === 'monster' || n.type === 'subboss' || n.type === 'boss') {
-            const s = Engine.rpgMonsterStats(n.type, n.floor);
+            const s = Engine.rpgMonsterStats(n.type, n.floor, tier);
             info = `${t.desc} ATK ${s.atq} · HP ${s.hp}`;
         }
         return `<button type="button" class="rpg-node type-${esc(n.type)} ${st}${fogged ? ' is-fog' : ''}" data-rpg-node="${esc(n.id)}"
@@ -189,13 +244,16 @@ export function renderRpgMap(map, state = {}) {
             title="${esc(name)} — ${esc(info)}" aria-label="${fogged ? esc(name) : `${esc(name)}, piso ${n.floor + 1}`}">${icon}</button>`;
     }).join('');
 
+    // La antorcha del héroe: la luz que le rodea. Es el único movimiento del mapa que no pide el jugador
+    const lit = current ? pos(current) : { x: 50, y: 0 };
     const boss = byId.get(map.bossId);
     const bp = pos(boss);
     const bossFogged = isFogged(boss);
     el.style.setProperty('--rpg-floors', floors);
     el.classList.toggle('animate', !!state.animate);
     el.innerHTML = `
-        <svg class="rpg-map-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>
+        <div class="rpg-map-light" style="left:${lit.x}%;top:${lit.y}%" aria-hidden="true"></div>
+        <svg class="rpg-map-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${tunnels.join('')}${paths.join('')}</svg>
         ${nodesHtml}
         <div class="rpg-boss-tag${bossFogged ? ' is-fog' : ''}" style="left:${bp.x}%;top:${bp.y}%">${bossFogged ? '???' : 'JEFE FINAL'}</div>`;
 
@@ -503,22 +561,22 @@ export function gearPanelHtml(hero, opts = {}) {
                 <span class="gear-slot-stats">${esc(lines.slice(0, 2).join(' · '))}</span>
             </span></li>`;
     }).join('');
-    const gold = opts.gold != null ? `<span class="rpg-stat gold">🪙 ${opts.gold}</span>` : '';
-    return `
-        <div class="gear-panel-title">⚔️ Tu equipo</div>
-        <ul class="gear-panel-list">${slots}</ul>
+    // En el mapa las estadísticas ya están en el panel del personaje; en el botín no hay otro panel, así que van aquí
+    const foot = opts.showStats === false ? '' : `
         <div class="gear-panel-foot">
             <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
             <span class="rpg-stat hp"><b>HP</b> ${hero.hp}/${hero.maxHp}</span>
             ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
-            ${gold}
         </div>`;
+    return `
+        <div class="gear-panel-title">⚔️ Tu equipo</div>
+        <ul class="gear-panel-list">${slots}</ul>${foot}`;
 }
 
 /** Pinta el panel de equipo fijo del mapa. */
-export function renderGearPanel(hero, gold) {
+export function renderGearPanel(hero) {
     const el = document.getElementById('rpgGearPanel');
-    if (el) el.innerHTML = gearPanelHtml(hero, { gold });
+    if (el) el.innerHTML = gearPanelHtml(hero, { showStats: false });
 }
 
 export function renderRpgLoot(view) {

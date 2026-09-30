@@ -360,6 +360,36 @@ sigue en verde sin cambios de comportamiento para el jugador.
 `tests/balance-guard.mjs`) sigue sin simular variantes ni tramos > 0 — es la misma limitación ya apuntada en
 `planning.md` antes de este harness; extenderlo es trabajo aparte, no tocado aquí.
 
+## 2026-09-30 · El mapa en el centro y la mazmorra visual
+
+**De dónde salió.** El usuario compartió una captura de un editor de RPG táctico como referencia de
+composición (no de arte): un mapa grande en el centro con paneles de información a los lados. Se descartó
+imitar el terreno con tiles/sprites (exige arte con licencia y choca con «vanilla, sin build») y el usuario
+eligió **terminar la mazmorra visual ya diseñada** en la Fase 1 del 2026-09-29, que se había quedado sin
+construir al desviarse al motor incremental, más **un panel del personaje a la derecha**.
+
+**Cómo quedó:**
+- `.map-layout` pasa de flex a **grid con zonas** (`gear · map · hero`): tres columnas en ancho, con los
+  laterales `position: sticky` para que sigan a la vista al bajar por un mapa de ~1000 px; dos columnas en
+  medio; una sola en móvil (personaje, equipo, mapa). `#rpgHeroPanel` se muda de la cabecera a la derecha y
+  concentra identidad, vida, ATK, nivel con XP, las 4 primarias y el oro (solo lectura: repartir puntos sigue
+  en el Inventario). El pie de estadísticas del panel de equipo se quita en el mapa para no repetirlas.
+- Mapa: pasillos como `<path>` curvos (curva cuadrática con un doblez que sale de un hash de sus extremos) con
+  una bóveda oscura debajo; salas descolocadas con otro hash (nunca `rng()` del juego); fondo de roca con
+  gradientes y vetas en CSS; la niebla como hueco sin dibujar (sin icono ni borde); y la **antorcha del héroe**
+  como único movimiento autónomo del mapa, respetando `prefers-reduced-motion`.
+
+**Un número medido, no elegido.** El desorden de las salas empezó en 2 % × 1 % y la prueba de móvil falló:
+midiendo 300 mapas a 390 px, el 4,7 % tenía una sala pegada a un sub-jefe en la columna de al lado. Con
+**1,2 % × 0,6 %**, 0 solapes en 600 mapas, con ~5 px de margen. La curva de los pasillos pone el resto del
+efecto orgánico.
+
+**Un fallo de pruebas de la 1.4.1 que se había colado.** La prueba de navegador fallaba ~1 de cada 4 veces
+desde que los combates normales sueltan botín: tras ganar, podía abrirse el botín en vez del mapa, y tres
+sitios del test daban el mapa por hecho. Días antes se había despachado como «intermitencia conocida»; no lo
+era. Corregido haciendo que esos sitios resuelvan el botín, y verificado forzando el 100 % de combates con
+botín (182/182). Además, el goteo de botín, que no tenía ninguna prueba de navegador, ya la tiene.
+
 ---
 
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)

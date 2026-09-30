@@ -57,7 +57,6 @@
             <!-- Vista 2: mapa de ruta -->
             <div id="rpgMapView" class="rpg-view" style="display:none;">
                 <div class="rpg-topbar">
-                    <div class="rpg-hero-panel" id="rpgHeroPanel"></div>
                     <div class="rpg-topbar-actions">
                         <button type="button" id="btnRpgChar" class="btn-secondary">🎒 INVENTARIO</button>
                         <button type="button" id="btnRpgNewMap" class="btn-secondary">🔀 NUEVA RUTA</button>
@@ -65,12 +64,14 @@
                     </div>
                 </div>
                 <div class="rpg-legend" id="rpgLegend"></div>
+                <!-- El mapa en el centro, con el equipo a un lado y el personaje al otro, siempre a la vista -->
                 <div class="map-layout">
                     <aside class="gear-panel" id="rpgGearPanel"></aside>
                     <div class="rpg-map-wrap">
                         <div class="rpg-map-start">🚪 INICIO DE LA RUTA</div>
                         <div class="rpg-map" id="rpgMap"></div>
                     </div>
+                    <aside class="hero-panel" id="rpgHeroPanel"></aside>
                 </div>
                 <div class="rpg-log" id="rpgLog">
                     <div class="rpg-log-title">📜 Diario de la ruta</div>

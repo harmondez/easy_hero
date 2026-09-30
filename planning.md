@@ -12,19 +12,16 @@
 
 ## 📍 Estado actual
 
-**Publicado hasta la 1.4.0:** entregas A y B1, decorado/onboarding, 4 paneles, pantalla de Personaje/inventario,
-oro y trofeo del jefe, estadísticas primarias con nivel permanente, el mapa con niebla de guerra, y **el
-descenso sin fin** (tramos encadenados, La Forja, expedición, 90 monstruos y 22 variantes). Detalle en
-[historial.md](historial.md).
+**Publicado hasta la 1.4.1:** entregas A y B1, decorado/onboarding, 4 paneles, Personaje/inventario, oro y
+trofeo del jefe, primarias con nivel permanente, niebla de guerra, **el descenso sin fin** (tramos, La Forja,
+expedición, 90 monstruos, 22 variantes), el equipo siempre visible, el botín de una sola gota y el harness de
+fuzzing. Detalle en [historial.md](historial.md).
 
-**🚧 Sin publicar, listo para revisar:** el equipo ya no se oculta tras un botón — una columna fija lo muestra
-siempre, junto al mapa y junto al botín (para comparar sin cambiar de pantalla). El botín deja de elegirse «1 de
-3»: cae un único objeto, con la rareza sesgada según de dónde venga (los combates normales sueltan algo 1 de
-cada 4 veces, casi siempre gris; lo bueno se gana en cofres y sub-jefes). De paso, corregido un fallo real: el
-botín se fabricaba con el piso dentro del tramo en vez de la profundidad absoluta, así que en tramos hondos el
-equipo se quedaba congelado. Equilibrio recalibrado (`hpPerFloor` 2,9 → 2,0) para el nuevo botín, más débil sin
-el «mejor de tres». 720 comprobaciones en verde.
-Detalle y decisiones en [historial.md](historial.md).
+**🚧 Sin publicar, listo para revisar:** el mapa en el centro con el equipo a un lado y el personaje al otro
+(paneles que te siguen al bajar), y el mapa como mazmorra de verdad: pasillos curvos excavados, salas
+descolocadas, antorcha del héroe y la niebla como hueco sin dibujar. 729 comprobaciones en verde.
+Detalle en [historial.md](historial.md).
+
 
 **Backlog abierto de B1 (no bloquea nada, se retoma cuando convenga):**
 - Capturas de pantalla (`SHOT_DIR=…`) de la pantalla de botín y el panel de 4 ranuras, para revisar el aspecto.
@@ -32,10 +29,9 @@ Detalle y decisiones en [historial.md](historial.md).
 - El experto (37,8 %) casi no dobla ya al sensato (22,3 %): revisar cuando lleguen las mejoras de B2.
 
 **Backlog abierto del decorado (no bloquea nada):**
-- Solo se rediseñó la pantalla de inicio a fondo; el resto de vistas (mapa, combate, eventos, botín, fin) solo
-  heredan la paleta nueva por la cascada de variables CSS, sin una pasada propia todavía.
+- La pantalla de inicio y el mapa ya tienen su pasada visual propia; combate, eventos, botín y fin de ruta solo
+  heredan la paleta por la cascada de variables CSS.
 - El catálogo de eventos «vistos X/15» no tiene panel propio (el dato ya se registra en `meta.eventsSeenEver`).
-- Los 15 logros son un primer borrador (el plan preveía ~20); fácil de ampliar en `src/meta.js`.
 
 **Backlog abierto del inventario/oro/trofeo (no bloquea nada):**
 - La pantalla de Personaje no muestra los **afijos completos** de cada objeto tan detallados como podría (usa

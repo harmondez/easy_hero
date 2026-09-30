@@ -5,6 +5,27 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+### ✨ Novedades
+- 🗺️ **El mapa ocupa el centro, con el equipo a un lado y el personaje al otro**, siempre a la vista. Los dos
+  paneles te siguen al bajar por el mapa, así que nunca pierdes de vista tu vida ni lo que llevas puesto. El
+  panel del personaje reúne vida, ataque, nivel, experiencia, las 4 primarias y el oro; la cabecera queda solo
+  con las acciones.
+- 🏚️ **El mapa ya parece una mazmorra**, no un grafo: pasillos curvos excavados en roca en lugar de líneas
+  rectas, salas ligeramente descolocadas (se acabó la rejilla perfecta), y **la antorcha del héroe** iluminando
+  lo que tiene alrededor.
+- 🌫️ **La niebla de guerra es un hueco sin dibujar**: más allá de lo que ilumina tu antorcha no ves salas ni
+  iconos, solo se intuyen los túneles que siguen hacia abajo.
+
+### 🐛 Correcciones
+- Los últimos restos del azul-índigo antiguo (fondo del mapa, salas, pasillos, etiqueta del jefe en niebla)
+  pasan a la paleta de piedra y forja.
+- La ficha de un monstruo en el mapa enseñaba sus estadísticas del primer tramo aunque estuvieras más abajo.
+
+### 🛠️ Por dentro
+- Corregida una prueba de navegador que fallaba ~1 de cada 4 veces desde la 1.4.1: tras ganar un combate normal
+  podía caer botín, y la prueba daba por hecho que volvías al mapa. Ahora se valida también con el 100 % de
+  combates soltando botín. 8 comprobaciones nuevas (182 en el navegador).
+
 ## [1.4.1] - 2026-09-29
 
 ### ✨ Novedades

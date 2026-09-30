@@ -116,16 +116,17 @@ function log(msg, type = 'system') {
 function _rpgProgressText() {
     const r = gameState.rpg;
     if (!r.map) return '';
-    if (!r.currentId) return 'Elige tu primer nodo';
+    const where = tierName(r.map.tier || 0);
+    if (!r.currentId) return `${where} · elige tu primer paso`;
     const node = r.map.nodes.find(n => n.id === r.currentId);
-    if (!node) return '';
-    return node.type === 'boss' ? 'Jefe final' : `Piso ${node.floor + 1} / ${r.map.floors - 1}`;
+    if (!node) return where;
+    return node.type === 'boss' ? `${where} · jefe` : `${where} · piso ${node.floor + 1} / ${r.map.floors - 1}`;
 }
 
 function _rpgRefreshMap(animate) {
     const r = gameState.rpg;
-    UI.renderRpgHeroPanel(r.hero, _rpgProgressText(), meta.gold);
-    UI.renderGearPanel(r.hero, meta.gold);   // el equipo va siempre a la vista, no tras un botón
+    UI.renderRpgHeroPanel(r.hero, _rpgProgressText(), meta);
+    UI.renderGearPanel(r.hero);   // el equipo va siempre a la vista, no tras un botón
     UI.renderRpgMap(r.map, {
         currentId: r.currentId,
         visitedIds: r.visitedIds,

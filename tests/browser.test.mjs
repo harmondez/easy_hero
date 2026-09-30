@@ -34,6 +34,8 @@ function assert(label, cond) {
     else { failed++; console.log(`  ❌ ${label}`); }
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Arriba del todo: los helpers de más abajo (takeLoot…) la usan desde la primera sección
+const visible = sel => page.$eval(sel, el => getComputedStyle(el).display !== 'none').catch(() => false);
 const shotDir = process.env.SHOT_DIR || '';
 const shot = name => path.join(shotDir || os_tmp(), `${name}.png`);
 function os_tmp() { return process.env.TEMP || process.env.TMPDIR || '/tmp'; }
@@ -79,6 +81,15 @@ assert('Hay hogueras 🔥 en el mapa y en la leyenda',
     && (await page.$eval('#rpgLegend', el => el.textContent)).includes('Hoguera'));
 assert('Los sub-jefes son minoría en el mapa (menos del 15 % de los nodos)',
     (await page.$$eval('#rpgMap .rpg-node.type-subboss', els => els.length)) < 0.15 * (await page.$$eval('#rpgMap .rpg-node', els => els.length)));
+assert('El equipo y el personaje se ven a los lados del mapa, sin abrir nada',
+    await page.isVisible('#rpgGearPanel') && await page.isVisible('#rpgHeroPanel') && (await page.$$('#rpgGearPanel .gear-slot')).length === 4
+    && /Nivel/.test(await page.$eval('#rpgHeroPanel', el => el.textContent)));
+assert('El panel del personaje muestra las 4 primarias', (await page.$$('#rpgHeroPanel .hero-panel-primary')).length === 4);
+assert('La niebla es un hueco sin dibujar: las salas lejanas no revelan su icono',
+    await page.$$eval('#rpgMap .rpg-node.is-fog', els => els.length > 0 && els.every(e => e.textContent.trim() === '')));
+assert('Los pasillos se dibujan como curvas excavadas, no como líneas rectas',
+    (await page.$$('#rpgMap path.rpg-tunnel')).length > 0 && (await page.$$('#rpgMap line')).length === 0);
+assert('La antorcha del héroe ilumina el mapa', !!(await page.$('#rpgMap .rpg-map-light')));
 await page.screenshot({ path: shot('mapa-escritorio'), fullPage: true });
 
 console.log('\n⚔️ Combate');
@@ -135,13 +146,13 @@ for (let i = 0; i < 30 && !(await page.$('#btnRpgCombatContinue')); i++) {
 assert('Ganar muestra el panel de victoria', (await page.$eval('#rpgCombatResult', el => el.textContent)).includes('Victoria'));
 await page.click('#btnRpgCombatContinue');
 await sleep(300);
+await takeLoot();   // un combate normal puede soltar botín (1 de cada 4): se resuelve antes de mirar el mapa
 assert('Tras ganar, el nodo pasa a ser tu posición', (await page.$$('#rpgMap .rpg-node.is-current')).length === 1);
 assert('Ganar ya no da fuerza (viene del equipo); solo sube el nivel', await page.evaluate(() =>
     window.gameState.rpg.hero.atq === 1 && window.gameState.rpg.hero.level === 2));
 
 // ---------------------------------------------
 console.log('\n🎲 Eventos en el navegador');
-const visible = sel => page.$eval(sel, el => getComputedStyle(el).display !== 'none').catch(() => false);
 async function finishCombat() {
     for (let i = 0; i < 60 && !(await page.$('#btnRpgCombatContinue')); i++) {
         await page.click('[data-rpg-action="attack"]');
@@ -149,6 +160,7 @@ async function finishCombat() {
     }
     await page.click('#btnRpgCombatContinue');
     await sleep(120);
+    await takeLoot();   // el goteo de botín de los combates normales
 }
 async function resolveEventFirstOptions() {
     for (let i = 0; i < 8 && !(await page.$('#btnRpgEventContinue')); i++) {
@@ -665,6 +677,7 @@ console.log('\n💾 Guardar y retomar');
     for (let i = 0; i < 40 && !(await page.$('#btnRpgCombatContinue')); i++) { await page.click('[data-rpg-action="attack"]'); await sleep(40); }
     await page.click('#btnRpgCombatContinue');
     await sleep(250);
+    await takeLoot();   // si el combate soltó botín, se resuelve: si no, el guardado retomaría el botín y no el mapa
 
     // 2) En el mapa
     const onMap = await page.evaluate(() => ({ cur: window.gameState.rpg.currentId, hp: window.gameState.rpg.hero.hp, atq: window.gameState.rpg.hero.atq, visited: window.gameState.rpg.visitedIds.length, mapJson: JSON.stringify(window.gameState.rpg.map) }));
@@ -923,6 +936,26 @@ assert('Empuñar el trofeo lo equipa de verdad', eqAfter !== eqBefore);
 assert('El trofeo sigue disponible tras equiparlo (no se consume: es permanente)', !!(await page.$('.char-trophy')));
 await page.click('#btnCharBack');
 await sleep(150);
+
+// ---------------------------------------------
+console.log('\n🩸 Goteo de botín en los combates normales');
+{
+    // La probabilidad real es 1 de 4: se fuerza al 100 % para comprobar el camino de forma determinista
+    await page.evaluate(() => { window.__RPG_BALANCE__.loot.combatDropChance = 1; });
+    await showCombat('monster', 6);
+    for (let i = 0; i < 60 && !(await page.$('#btnRpgCombatContinue')); i++) { await page.click('[data-rpg-action="attack"]'); await sleep(40); }
+    await page.click('#btnRpgCombatContinue');
+    await sleep(200);
+    assert('Ganar un combate normal puede soltar botín: se abre «Entre los restos» con UN objeto',
+        await visible('#rpgLootView') && /Entre los restos/.test(await page.$eval('#rpgLootBody', el => el.textContent))
+        && (await page.$$('#rpgLootBody .rpg-loot-card')).length === 1);
+    assert('Junto al botín se ve tu equipo, con la ranura afectada resaltada',
+        !!(await page.$('#rpgLootBody .gear-panel')) && (await page.$$('#rpgLootBody .gear-slot.is-highlight')).length === 1);
+    await page.click('#btnRpgLootDiscard');
+    await sleep(150);
+    assert('Tras decidir vuelves al mapa', await visible('#rpgMapView'));
+    await page.evaluate(() => { window.__RPG_BALANCE__.loot.combatDropChance = 0.25; });
+}
 
 // ---------------------------------------------
 console.log('\n⚒️ La Forja: gastar el oro en mejoras permanentes');

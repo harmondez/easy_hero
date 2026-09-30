@@ -307,34 +307,18 @@ body {
 
 .rpg-start-note { margin: 0; font-size: 0.85rem; line-height: 1.5; color: var(--text-muted); }
 
-/* --- Barra superior (héroe + acciones) --- */
+/* --- Barra superior: solo las acciones (el héroe vive en su columna, junto al mapa) --- */
 .rpg-topbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 14px;
-    max-width: 860px;
+    max-width: 1340px;
     margin: 0 auto 14px;
 }
 
-.rpg-hero-panel {
-    --accent: var(--primary);
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex: 1 1 340px;
-    min-width: 0;
-    padding: 12px 16px;
-    background: linear-gradient(160deg, var(--bg-card-elevated), var(--bg-card));
-    border: 1px solid var(--border-color);
-    border-left: 4px solid var(--accent);
-    border-radius: 12px;
-    box-shadow: var(--shadow-elevated);
-}
-
 .rpg-hero-avatar { font-size: 2.4rem; line-height: 1; flex-shrink: 0; filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--accent) 60%, transparent)); }
-.rpg-hero-info { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
 .rpg-hero-name { font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 .rpg-hero-hp {
     position: relative;
@@ -350,8 +334,7 @@ body {
     display: flex; align-items: center; justify-content: center; gap: 5px;
     font-size: 0.68rem; font-family: 'Courier New', monospace; text-shadow: 0 1px 2px #000;
 }
-.rpg-hero-stats { display: flex; gap: 14px; font-size: 0.78rem; }
-.rpg-hero-progress { font-size: 0.75rem; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-align: right; }
+.rpg-hero-stats { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 0.78rem; }
 
 .rpg-topbar-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
@@ -380,17 +363,22 @@ body {
 .rpg-legend-item.type-boss { --node-color: #f97316; }
 
 /* --- Mapa --- */
+/* Roca de mazmorra: luz cálida en la entrada, oscuridad al fondo, y dos vetas finas cruzadas que dan
+   textura de piedra sin cargar ni una imagen. El viñeteado interior cierra la sala como una cueva. */
 .rpg-map-wrap {
     max-width: 860px;
     margin: 0 auto;
     padding: 36px clamp(12px, 3vw, 34px) 56px;
     background:
-        radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.10), transparent 40%),
-        radial-gradient(circle at 50% 100%, rgba(99, 102, 241, 0.10), transparent 45%),
-        linear-gradient(180deg, rgba(15, 23, 42, 0.65), rgba(2, 6, 23, 0.85));
-    border: 1px solid var(--border-color);
+        radial-gradient(ellipse 70% 30% at 50% 0%, rgba(217, 102, 44, 0.12), transparent 70%),
+        radial-gradient(ellipse 90% 40% at 50% 100%, rgba(0, 0, 0, 0.55), transparent 70%),
+        repeating-linear-gradient(115deg, rgba(0, 0, 0, 0.13) 0 1.5px, transparent 1.5px 5px),
+        repeating-linear-gradient(28deg, rgba(255, 236, 210, 0.025) 0 1px, transparent 1px 9px),
+        linear-gradient(180deg, #211912, #15100b 55%, #0c0806);
+    border: 1px solid var(--border-strong);
     border-radius: 16px;
-    box-shadow: var(--shadow-elevated);
+    box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.75), var(--shadow-elevated);
+    overflow: hidden;
 }
 
 .rpg-map {
@@ -402,8 +390,18 @@ body {
 
 .rpg-map-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 
+/* El pasillo: una bóveda oscura excavada en la roca, y por encima el rastro del camino */
+.rpg-tunnel {
+    fill: none;
+    stroke: rgba(0, 0, 0, 0.42);
+    stroke-width: 13;
+    stroke-linecap: round;
+}
+.rpg-tunnel.is-fog { stroke: rgba(0, 0, 0, 0.12); }   /* sin excavar todavía: apenas se intuye */
+
 .rpg-edge {
-    stroke: rgba(148, 163, 184, 0.28);
+    fill: none;
+    stroke: rgba(196, 164, 124, 0.26);
     stroke-width: 2;
     stroke-dasharray: 5 6;
     stroke-linecap: round;
@@ -411,7 +409,22 @@ body {
 }
 .rpg-edge.is-open { stroke: var(--primary-light); stroke-width: 3; stroke-dasharray: none; filter: drop-shadow(0 0 4px var(--primary-glow)); }
 .rpg-edge.is-taken { stroke: var(--gold); stroke-width: 3; stroke-dasharray: none; filter: drop-shadow(0 0 4px var(--gold-glow)); }
-.rpg-edge.is-fog { stroke: rgba(100, 116, 139, 0.16); }
+.rpg-edge.is-fog { stroke: rgba(160, 140, 115, 0.08); }
+
+/* La antorcha del héroe: un halo cálido que respira. Es el único movimiento que el mapa hace solo */
+.rpg-map-light {
+    position: absolute;
+    width: 420px; height: 420px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(240, 150, 70, 0.20) 0%, rgba(217, 102, 44, 0.08) 38%, transparent 68%);
+    pointer-events: none;
+    animation: rpgTorch 3.2s ease-in-out infinite;
+}
+@keyframes rpgTorch {
+    0%, 100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+    40% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+    70% { opacity: 0.8; transform: translate(-50%, -50%) scale(0.98); }
+}
 
 .rpg-node {
     --node-color: #ef4444;
@@ -427,7 +440,7 @@ body {
     font-size: calc(var(--node-size) * 0.5);
     line-height: 1;
     color: inherit;
-    background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--node-color) 35%, #1e293b), #0b1220);
+    background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--node-color) 32%, #2a2018), #0e0a07);
     border: 3px solid var(--node-color);
     border-radius: 50%;
     box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--node-color) 70%, transparent);
@@ -441,12 +454,14 @@ body {
 .rpg-node.type-boss { --node-color: #f97316; --node-size: clamp(56px, 10vw, 88px); border-width: 4px; box-shadow: 0 0 34px -4px rgba(249, 115, 22, 0.7); }
 
 .rpg-node.is-locked { opacity: 0.42; filter: saturate(0.35); }
+/* Niebla de guerra: un hueco sin dibujar, no una sala. Sin borde ni icono; solo una sombra que se intuye */
 .rpg-node.is-fog {
-    --node-color: #64748b;
-    opacity: 0.55;
-    filter: blur(0.5px) saturate(0.2);
-    background: radial-gradient(circle at 35% 30%, rgba(100, 116, 139, 0.3), #0b1220);
-    box-shadow: 0 0 14px -2px rgba(100, 116, 139, 0.5);
+    --node-color: transparent;
+    opacity: 0.5;
+    filter: blur(2px);
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 72%);
+    border-color: transparent;
+    box-shadow: none;
 }
 .rpg-node.is-visited { opacity: 0.75; filter: saturate(0.6); }
 .rpg-node.is-visited::after {
@@ -507,7 +522,7 @@ body {
     white-space: nowrap;
     pointer-events: none;
 }
-.rpg-boss-tag.is-fog { color: var(--text-dim); background: rgba(51, 65, 85, 0.6); border-color: #64748b; }
+.rpg-boss-tag.is-fog { color: var(--text-dim); background: rgba(20, 14, 10, 0.75); border-color: var(--border-strong); }
 
 .rpg-map-start {
     margin-bottom: 6px;
@@ -533,8 +548,6 @@ body {
 .rpg-log-content .log-entry.victory { color: var(--gold); font-weight: 700; }
 
 @media (max-width: 600px) {
-    .rpg-hero-panel { flex-wrap: wrap; }
-    .rpg-hero-progress { text-align: left; width: 100%; }
     .rpg-topbar-actions { width: 100%; }
     .rpg-topbar-actions .btn-secondary { flex: 1; }
 }
@@ -543,6 +556,7 @@ body {
     .rpg-node.is-available::before,
     .rpg-node.is-current::before,
     .rpg-view,
+    .rpg-map-light,
     .rpg-map.animate .rpg-node { animation: none; }
 }
 
@@ -1221,20 +1235,67 @@ body {
 .rpg-tier-card .rpg-end-achievements b { display: inline; margin: 0; }
 .rpg-tier-card .rpg-end-ach-title { margin-bottom: 6px; }
 
-/* --- ⚔️ Equipo siempre a la vista (mapa y botín) --- */
+/* --- 🗺️ La pantalla del mapa: equipo · mapa · personaje ---
+   Grid con zonas: en ancho, tres columnas y los laterales pegados arriba al hacer scroll (el mapa mide
+   ~1000 px, así que sin sticky el equipo y la vida se perderían al bajar). En medio, los dos paneles se
+   apilan a la izquierda. En móvil, todo en una columna: personaje, equipo y mapa. */
 .map-layout {
-    display: flex; align-items: flex-start; gap: 16px;
-    max-width: 1180px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr) 250px;
+    grid-template-areas: "gear map hero";
+    align-items: start;
+    gap: 16px;
+    max-width: 1340px; margin: 0 auto;
 }
-.map-layout .rpg-map-wrap { flex: 1; min-width: 0; margin: 0; }
+.map-layout > .gear-panel { grid-area: gear; position: sticky; top: 12px; }
+.map-layout > .rpg-map-wrap { grid-area: map; max-width: none; margin: 0; }
+.map-layout > .hero-panel { grid-area: hero; position: sticky; top: 12px; }
 
-.gear-panel {
-    flex: 0 0 240px;
+@media (max-width: 1180px) {
+    /* La fila del personaje se ajusta a su contenido; la del equipo absorbe el resto del alto del mapa */
+    .map-layout { grid-template-columns: 250px minmax(0, 1fr); grid-template-rows: auto 1fr; grid-template-areas: "hero map" "gear map"; }
+    .map-layout > .gear-panel, .map-layout > .hero-panel { position: static; }
+}
+@media (max-width: 860px) {
+    .map-layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "hero" "gear" "map"; }
+}
+
+.gear-panel, .hero-panel {
     padding: 14px;
     background: linear-gradient(170deg, var(--bg-card-elevated), var(--bg-card));
     border: 1px solid var(--border-color);
     border-radius: 14px;
     box-shadow: var(--shadow-elevated);
+}
+
+/* Panel del personaje */
+.hero-panel { --accent: var(--primary); display: flex; flex-direction: column; gap: 10px; border-top: 3px solid var(--accent); }
+.hero-panel-head { display: flex; align-items: center; gap: 10px; }
+.hero-panel-head .rpg-hero-avatar { font-size: 2rem; }
+.hero-panel-id { min-width: 0; }
+.hero-panel-where { font-size: 0.72rem; font-weight: 700; color: var(--gold); letter-spacing: 0.5px; }
+.hero-panel-num { font-family: ui-monospace, SFMono-Regular, monospace; }
+.hero-panel-level { padding-top: 8px; border-top: 1px dashed var(--border-color); }
+.hero-panel-level-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.78rem; color: var(--text-light); }
+.hero-panel-level-row .hero-panel-num { color: var(--text-muted); font-size: 0.72rem; }
+.hero-panel-primaries { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.hero-panel-primary {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 8px;
+    font-size: 0.78rem;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    cursor: help;
+}
+.hero-panel-primary b { font-size: 0.7rem; letter-spacing: 1px; color: var(--text-muted); }
+.hero-panel-primary .hero-panel-num { margin-left: auto; font-weight: 700; color: var(--text-main); }
+.hero-panel-points {
+    padding: 6px 8px;
+    font-size: 0.74rem; font-weight: 700; color: var(--gold);
+    background: rgba(240, 176, 60, 0.10);
+    border: 1px solid rgba(240, 176, 60, 0.35);
+    border-radius: 7px;
 }
 .gear-panel-title {
     margin-bottom: 10px; padding-bottom: 8px;
@@ -1277,9 +1338,8 @@ body {
 .gear-panel-loot { flex: 0 0 230px; }
 
 @media (max-width: 860px) {
-    /* En columna, sin esto el mapa se encoge a su ancho mínimo de contenido en vez de ocupar la pantalla */
-    .map-layout, .rpg-loot-layout { flex-direction: column; align-items: stretch; }
-    .gear-panel, .gear-panel-loot { flex: 1 1 auto; width: 100%; align-self: stretch; }
-    .map-layout .rpg-map-wrap { width: 100%; }
+    /* Botín en columna: sin align-items: stretch el panel se encoge a su ancho mínimo de contenido */
+    .rpg-loot-layout { flex-direction: column; align-items: stretch; }
+    .gear-panel-loot { flex: 1 1 auto; width: 100%; align-self: stretch; }
     .gear-panel-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
