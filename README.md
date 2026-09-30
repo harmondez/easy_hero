@@ -12,7 +12,7 @@
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.4.1-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.4.2-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -27,10 +27,12 @@
 
 ## 🆕 Novedades
 
-**Versión 1.4.1** · 30 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.4.2** · 30 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 | | Qué hay de nuevo |
 |:-:|------------------|
+| 🗺️ | **El mapa en el centro, en grande**: tu equipo a un lado y tu personaje (vida, nivel, primarias, oro) al otro, siempre a la vista mientras exploras |
+| 🔥 | **Una mazmorra de verdad**: túneles curvos excavados en la roca, salas desalineadas y una antorcha que ilumina dónde estás. Lo lejano es oscuridad |
 | ⚔️ | **El equipo siempre a la vista**, junto al mapa y junto al botín: nunca hace falta abrir nada para ver qué llevas puesto ni para compararlo |
 | 🎁 | **El botín ya no se elige 1 de 3**: cae un solo objeto. Los combates normales también sueltan algo de vez en cuando, casi siempre común; lo bueno se gana en cofres y sub-jefes |
 | 🕳️ | **El descenso no tiene fin**: vencer al jefe ya no acaba la partida. El suelo se abre y bajas a otro tramo, más duro y más rico. Tu marca es la **profundidad** |

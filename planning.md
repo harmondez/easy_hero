@@ -12,15 +12,10 @@
 
 ## 📍 Estado actual
 
-**Publicado hasta la 1.4.1:** entregas A y B1, decorado/onboarding, 4 paneles, Personaje/inventario, oro y
+**Publicado hasta la 1.4.2:** entregas A y B1, decorado/onboarding, 4 paneles, Personaje/inventario, oro y
 trofeo del jefe, primarias con nivel permanente, niebla de guerra, **el descenso sin fin** (tramos, La Forja,
-expedición, 90 monstruos, 22 variantes), el equipo siempre visible, el botín de una sola gota y el harness de
-fuzzing. Detalle en [historial.md](historial.md).
-
-**🚧 Sin publicar, listo para revisar:** el mapa en el centro con el equipo a un lado y el personaje al otro
-(paneles que te siguen al bajar), y el mapa como mazmorra de verdad: pasillos curvos excavados, salas
-descolocadas, antorcha del héroe y la niebla como hueco sin dibujar. 729 comprobaciones en verde.
-Detalle en [historial.md](historial.md).
+expedición, 90 monstruos, 22 variantes), el equipo siempre visible, el botín de una sola gota, el harness de
+fuzzing y el mapa en el centro como mazmorra visual. Detalle en [historial.md](historial.md).
 
 
 **Backlog abierto de B1 (no bloquea nada, se retoma cuando convenga):**

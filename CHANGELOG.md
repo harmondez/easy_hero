@@ -5,6 +5,8 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.4.2] - 2026-09-30
+
 ### ✨ Novedades
 - 🗺️ **El mapa ocupa el centro, con el equipo a un lado y el personaje al otro**, siempre a la vista. Los dos
   paneles te siguen al bajar por el mapa, así que nunca pierdes de vista tu vida ni lo que llevas puesto. El
