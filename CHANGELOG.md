@@ -5,6 +5,9 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+### ✨ Novedades
+- 👹 **El Orco tiene por fin su propio dibujo** en combate, el primero hecho con la nueva fábrica de arte.
+
 ### 🔧 Cambios
 - 🖼️ **Taller de sprites** (`npm run sprites`): los PNG de `img/entrantes/` se recortan, se alinean por los pies y
   se guardan en WebP, y quedan registrados en `src/data/art.js`.

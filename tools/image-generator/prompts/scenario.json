@@ -1,0 +1,31 @@
+{
+  "_doc": "Escenarios: BACKGROUND (fondo de combate de lado) y MAP (región explorable entera, una sola imagen maestra que luego se recorta).",
+  "background": {
+    "kind": "background",
+    "uses_sprite_rules": false,
+    "references": "background",
+    "subject": "a side-view battle stage background showing {name}{details}",
+    "pose": "wide side-scrolling composition, the location seen from the side; a clear, mostly open walkable ground band across the lower third (where two fighters will stand facing each other, one on the left and one on the right); the visual interest is in the middle and far layers behind",
+    "mandatory": [
+      "No characters, people, creatures or enemies anywhere.",
+      "No HUD, interface, text, frames or borders.",
+      "Leave the left third and the right third of the lower ground band uncluttered for the fighters.",
+      "It is a background stage, not a map: side view, not top-down."
+    ]
+  },
+  "map": {
+    "kind": "map",
+    "uses_sprite_rules": false,
+    "references": "map",
+    "subject": "one single continuous overworld map of a region called {name}{details}",
+    "pose": "top-down 3/4 classic 16-bit RPG world map view of the WHOLE region in one image",
+    "mandatory": [
+      "ONE continuous, geographically coherent region, NOT a collage, NOT separate panels, NO grid, NO tiles, NO borders between areas.",
+      "Roads and paths connect the points of interest; rivers flow continuously; terrain transitions are gradual.",
+      "Every area shares the same scale, perspective, palette and lighting.",
+      "No text, labels, legend, compass, UI or frame.",
+      "Place each point of interest in the region of the image indicated in the layout, with open space around it."
+    ],
+    "layout_doc": "Las zonas del mapa se colocan en una rejilla de 3×3 (norte/centro/sur × oeste/centro/este). El prompt pide cada punto de interés en su casilla y el MAP CUTTER recorta exactamente esas casillas (con margen) del mapa maestro: nunca se vuelve a generar nada."
+  }
+}

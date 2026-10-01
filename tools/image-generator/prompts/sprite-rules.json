@@ -1,0 +1,10 @@
+{
+  "_doc": "Reglas comunes a todo lo que va sobre fondo blanco y luego se recorta (personajes, enemigos, NPC, jefes, props). Las usa el PromptBuilder automáticamente.",
+  "isolated_subject": [
+    "Full body / whole object visible, nothing cut off by the image edges, with clear empty margin on all four sides.",
+    "Centered in the image.",
+    "Pure flat white background (#FFFFFF), perfectly uniform.",
+    "No scenery, no ground, no floor line, no cast shadow, no ambient effects, no extra objects or characters.",
+    "Single subject only."
+  ]
+}

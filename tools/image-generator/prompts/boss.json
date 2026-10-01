@@ -1,0 +1,12 @@
+{
+  "_doc": "Jefes: las mismas reglas que un enemigo (izquierda, perfil, fondo blanco), pero más imponentes.",
+  "kind": "boss",
+  "uses_sprite_rules": true,
+  "references": "enemy",
+  "subject": "{name}, a powerful boss enemy for a 2D fantasy RPG battle screen, larger and more ornate than a common enemy, imposing silhouette{details}",
+  "pose": "walking toward the LEFT, menacing stance, strict side view (profile), body and face clearly oriented to the left side of the image",
+  "mandatory": [
+    "The boss faces and walks to the LEFT. Strict side profile.",
+    "Full body visible, no parts cut off."
+  ]
+}

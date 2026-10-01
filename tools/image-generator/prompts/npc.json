@@ -1,0 +1,12 @@
+{
+  "_doc": "NPC de la aventura (aldeanos, comerciantes…): de lado, mirando a la izquierda (hablan con el héroe, que llega desde la izquierda o la derecha según el camino).",
+  "kind": "npc",
+  "uses_sprite_rules": true,
+  "references": "npc",
+  "subject": "{name}, a friendly villager NPC for a 2D fantasy RPG{details}",
+  "pose": "standing relaxed, strict side view (profile) facing LEFT",
+  "mandatory": [
+    "Strict side profile facing LEFT.",
+    "Full body visible, no parts cut off."
+  ]
+}

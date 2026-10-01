@@ -458,6 +458,20 @@ Cada paso se probó jugando la misión completa con un guion automático antes d
 - Pruebas de navegador nuevas: abandonar el descenso de la cueva (aldea) y de inicio (inicio), y la derrota en la
   aventura (posada, vida llena, −10 % de oro).
 
+## 2026-10-01 · Asset Factory: arte generado con Gemini
+
+**Qué es.** `tools/image-generator/` (`npm run generate -- <tipo> <nombre>`): prompt = plantilla del tipo + STYLE_BIBLE
+(con el estilo de los prompts del director en `taller/`) → Gemini → validación → quitar fondo en local → PNG
+transparente → taller de sprites → juego. Escenarios: BACKGROUND (fondo de combate) y MAP (mapa maestro + MAP CUTTER
+con recortes literales verificados píxel a píxel). Manual en `tools/image-generator/README.md`.
+
+**Decisiones y hallazgos.** Node en vez de Python (reutiliza `sharp` y el taller de sprites). `gemini-2.5-flash-image`
+se apaga el 2026-10-02: se usa `gemini-3.1-flash-lite-image` (0,034 $), que solo devuelve JPEG (se pasa a PNG en
+local). Quitar fondo sin servicios externos: relleno desde los bordes + huecos interiores + borde descontaminado
+respecto al contorno (sin halo). La primera imagen (un orco) salió mirando a la DERECHA pese al prompt: el modelo
+copiaba la orientación de la referencia del héroe → referencias por tipo y `fix --flip` para arreglar sin pagar.
+Fondo blanco y no negro: los contornos casi negros se perderían. Coste de la prueba: una imagen (~0,034 $).
+
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)
 Accesorio = rasgo pasivo casi sin números · mejoras con las mismas 5 rarezas del equipo · descartar cura 3 HP
 (luego ajustado a 3+1/rareza) · hoguera da 1 de 3 con mínimo Poco común · 4-6 ofertas de objeto por ruta ·

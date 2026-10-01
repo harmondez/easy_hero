@@ -41,3 +41,7 @@ desktop.ini
 /_site/
 # Piezas del mapa para rehacer en alta (material de trabajo: node tools/split-map.mjs)
 /img/map-divided/
+# La plantilla de variables SÍ se sube (sin claves reales)
+!.env.example
+# Taller de la fábrica de assets: crudos, mapas maestros, regiones y metadatos (zona de trabajo, no se sube)
+/taller/

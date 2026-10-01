@@ -1,0 +1,8 @@
+{
+  "_doc": "Props, obstáculos, estructuras y elementos ambientales: objetos sueltos sobre fondo blanco, que luego se recortan y se pueden componer sobre los mapas o escenarios.",
+  "prop":      { "kind": "prop",      "uses_sprite_rules": true, "references": "map", "subject": "a {name} prop for a 2D fantasy RPG{details}",      "pose": "seen from the same top-down 3/4 overworld angle as the world map", "mandatory": ["Whole object visible, no parts cut off."] },
+  "obstacle":  { "kind": "obstacle",  "uses_sprite_rules": true, "references": "map", "subject": "a {name} obstacle for a 2D fantasy RPG map{details}", "pose": "seen from the same top-down 3/4 overworld angle as the world map", "mandatory": ["Whole object visible, no parts cut off."] },
+  "structure": { "kind": "structure", "uses_sprite_rules": true, "references": "map", "subject": "a {name} building/structure for a 2D fantasy RPG world map{details}", "pose": "seen from the same top-down 3/4 overworld angle as the world map", "mandatory": ["Whole structure visible, no parts cut off."] },
+  "ambient":   { "kind": "ambient",   "uses_sprite_rules": true, "references": "map", "subject": "a {name} ambient decoration for a 2D fantasy RPG map{details}", "pose": "seen from the same top-down 3/4 overworld angle as the world map", "mandatory": ["Whole element visible, no parts cut off."] },
+  "terrain":   { "kind": "terrain",   "uses_sprite_rules": false, "references": "map", "subject": "a seamless, tileable {name} terrain texture for a 2D fantasy RPG world map{details}", "pose": "top-down 3/4 overworld view, evenly lit, no focal object", "mandatory": ["The texture must tile seamlessly on all four edges.", "No objects, characters or text; only the ground surface."] }
+}

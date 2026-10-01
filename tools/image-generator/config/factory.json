@@ -1,0 +1,135 @@
+{
+  "_doc": "Configuración de la fábrica de assets. El modelo y los tamaños se cambian aquí, sin tocar código.",
+  "provider": {
+    "name": "gemini",
+    "api_key_env": "GOOGLE_API_KEY",
+    "model": "gemini-3.1-flash-lite-image",
+    "_model_doc": "Modelos de imagen actuales (oct. 2026): gemini-3.1-flash-lite-image (0,034 $/img 1K, solo 1K), gemini-3.1-flash-image (0,045 $ a 512, 0,067 $ a 1K), gemini-3-pro-image (0,134 $). gemini-2.5-flash-image se apaga el 2026-10-02.",
+    "timeout_ms": 120000,
+    "retries": {
+      "max_attempts": 4,
+      "base_delay_ms": 2000,
+      "max_delay_ms": 30000
+    },
+    "max_reference_images": 3,
+    "output_mime": "image/jpeg",
+    "_output_mime_doc": "Formato que devuelve la API (gemini-3.1-flash-lite-image solo admite image/jpeg). La fábrica lo convierte a PNG en local: el asset final es siempre PNG."
+  },
+  "budget": {
+    "_doc": "Freno de seguridad: precio estimado por imagen y máximo de imágenes por ejecución.",
+    "usd_per_image": {
+      "gemini-2.5-flash-image": 0.039,
+      "gemini-3.1-flash-lite-image": 0.0336,
+      "gemini-3.1-flash-image": 0.067,
+      "gemini-3-pro-image": 0.134
+    },
+    "max_images_per_run": 1
+  },
+  "paths": {
+    "workshop": "taller",
+    "game_intake": "img/entrantes",
+    "_doc": "workshop: crudos, finales PNG, mapas maestros, regiones y metadatos (no se sube). game_intake: donde el taller de sprites (npm run sprites) recoge lo que entra al juego."
+  },
+  "types": {
+    "character": {
+      "category": "characters",
+      "prompt": "character",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": "heroe"
+    },
+    "enemy": {
+      "category": "enemies",
+      "prompt": "enemy",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": "enemigo"
+    },
+    "npc": {
+      "category": "npcs",
+      "prompt": "npc",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": null
+    },
+    "boss": {
+      "category": "bosses",
+      "prompt": "boss",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": "enemigo"
+    },
+    "prop": {
+      "category": "props",
+      "prompt": "prop",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": null
+    },
+    "obstacle": {
+      "category": "obstacles",
+      "prompt": "obstacle",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": null
+    },
+    "structure": {
+      "category": "structures",
+      "prompt": "structure",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": null
+    },
+    "ambient": {
+      "category": "ambient",
+      "prompt": "ambient",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": null
+    },
+    "terrain": {
+      "category": "terrain",
+      "prompt": "terrain",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": false,
+      "game_prefix": null
+    },
+    "background": {
+      "category": "backgrounds",
+      "prompt": "background",
+      "aspect_ratio": "16:9",
+      "image_size": "1K",
+      "remove_background": false,
+      "game_prefix": "fondo"
+    },
+    "map": {
+      "category": "maps",
+      "prompt": "map",
+      "aspect_ratio": "4:3",
+      "image_size": "1K",
+      "remove_background": false,
+      "game_prefix": "escena"
+    },
+    "_doc": "game_prefix: con qué nombre entra al juego por el taller de sprites (enemigo_/heroe_/fondo_/escena_). null = se queda en taller/ hasta que el juego lo use."
+  },
+  "background_removal": {
+    "_doc": "Quitar el fondo blanco en local (sin servicios externos): relleno desde los bordes (white_threshold), huecos blancos interiores grandes (hole_min_ratio) y, en una franja de edge_band px alrededor de la figura, los píxeles más claros que su contorno (edge_contrast) reciben transparencia y se les descuenta el blanco: sin halo.",
+    "white_threshold": 236,
+    "min_subject_coverage": 0.03,
+    "max_white_remnant_ratio": 0.002,
+    "edge_margin_px": 2,
+    "edge_band": 3,
+    "hole_min_ratio": 0.0004,
+    "_doc_holes": "hole_min_ratio: una zona casi blanca encerrada (entre brazos, piernas…) se quita si ocupa al menos esta fracción de la imagen (0,04 % ≈ 420 px a 1024×1024); los ojos o brillos, más pequeños, se respetan.",
+    "edge_contrast": 24
+  }
+}

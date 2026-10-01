@@ -5,7 +5,13 @@
 // Cada entrada: { src, w, h }. El combate usa estas imágenes si existen; si no, el goblin teñido de siempre.
 // =============================================
 export const ART = {
-    "sprites": {},
+    "sprites": {
+        "enemigo_orco": {
+            "src": "img/sprites/enemigo_orco.webp",
+            "w": 186,
+            "h": 256
+        }
+    },
     "bg": {},
     "zones": {}
 };

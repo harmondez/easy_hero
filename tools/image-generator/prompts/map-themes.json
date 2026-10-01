@@ -1,0 +1,26 @@
+{
+  "_doc": "Regiones de cada mapa: qué punto de interés va en qué casilla de la rejilla 3×3 (NW N NE / W C E / SW S SE). El mismo layout sirve para pedir el mapa maestro y para que el MAP CUTTER recorte exactamente esas zonas. Un tema que no esté aquí se puede pasar con --regions \"id:CASILLA:descripción,…\".",
+  "volcanic_world": {
+    "details": "a volcanic land of black rock, ash and glowing lava",
+    "layout": [
+      { "id": "volcano",       "cell": "N",  "label": "a huge active volcano with a glowing crater" },
+      { "id": "lava_river",    "cell": "C",  "label": "a winding river of glowing lava crossed by a stone bridge" },
+      { "id": "ruins",         "cell": "W",  "label": "ancient temple ruins half-buried in ash" },
+      { "id": "cave_entrance", "cell": "SW", "label": "a dark cave entrance in the cliffs with torches" },
+      { "id": "fortress",      "cell": "E",  "label": "an obsidian fortress on a rocky plateau" },
+      { "id": "mountain_pass", "cell": "S",  "label": "a narrow mountain pass with a winding road" }
+    ]
+  },
+  "tropical_world": {
+    "details": "a lush tropical island region",
+    "layout": [
+      { "id": "jungle",    "cell": "NW", "label": "dense green jungle" },
+      { "id": "waterfall", "cell": "N",  "label": "a tall waterfall falling into a river" },
+      { "id": "temple",    "cell": "NE", "label": "an overgrown stone temple" },
+      { "id": "village",   "cell": "C",  "label": "a small village of huts on stilts" },
+      { "id": "cave",      "cell": "W",  "label": "a cave entrance under the cliffs" },
+      { "id": "cliffs",    "cell": "E",  "label": "tall sea cliffs" },
+      { "id": "beach",     "cell": "S",  "label": "a sandy beach with palm trees and a small pier" }
+    ]
+  }
+}

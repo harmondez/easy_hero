@@ -1,0 +1,12 @@
+{
+  "_doc": "Personajes jugables y aliados: miran a la DERECHA (el héroe siempre está a la izquierda del combate).",
+  "kind": "character",
+  "uses_sprite_rules": true,
+  "references": "character",
+  "subject": "a {name} hero character for a 2D fantasy RPG battle screen{details}",
+  "pose": "walking toward the RIGHT, mid-stride, strict side view (profile), body and face clearly oriented to the right side of the image",
+  "mandatory": [
+    "The character faces and walks to the RIGHT. Strict side profile.",
+    "Full body visible from head to feet, no parts cut off."
+  ]
+}

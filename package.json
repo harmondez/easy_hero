@@ -21,9 +21,11 @@
     "test:core": "node tests/version-check.mjs && node tests/rpg-sim.mjs && node tests/events-sim.mjs && node tests/items-sim.mjs && node tests/meta-sim.mjs && node tests/stats-sim.mjs && node tests/save-sim.mjs && node tests/balance-guard.mjs && node tests/sprites-sim.mjs",
     "build:site": "node tools/build-site.mjs",
     "sprites": "node tools/sprites.mjs",
-    "test:sprites": "node tests/sprites-sim.mjs"
+    "test:sprites": "node tests/sprites-sim.mjs",
+    "generate": "node tools/image-generator/cli.mjs"
   },
   "devDependencies": {
+    "@google/genai": "^2.25.0",
     "playwright": "^1.60.0",
     "sharp": "^0.35.5"
   }

@@ -1,0 +1,12 @@
+{
+  "_doc": "ENEMY IMAGE RULES (obligatorias): caminando hacia la izquierda, perfil lateral, cuerpo completo, centrado, fondo blanco puro, sin escenario/suelo/sombras. Después: quitar fondo → PNG transparente (el asset del juego).",
+  "kind": "enemy",
+  "uses_sprite_rules": true,
+  "references": "enemy",
+  "subject": "a {name} enemy for a 2D fantasy RPG battle screen{details}",
+  "pose": "walking toward the LEFT, mid-stride, strict side view (profile), body and face clearly oriented to the left side of the image, weapon in hand ready to fight",
+  "mandatory": [
+    "The creature faces and walks to the LEFT. Strict side profile, not three-quarter, not facing the viewer.",
+    "Full body visible from head to feet, no parts cut off."
+  ]
+}
