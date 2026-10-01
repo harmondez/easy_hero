@@ -39,3 +39,5 @@ desktop.ini
 /img/entrantes/
 # Web montada para publicar (npm run build:site)
 /_site/
+# Piezas del mapa para rehacer en alta (material de trabajo: node tools/split-map.mjs)
+/img/map-divided/
