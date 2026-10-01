@@ -1565,6 +1565,22 @@ body {
 .adv-stop-text { font-size: 0.95rem; letter-spacing: 0.02em; }
 .adv-stop:not(.is-exit) .adv-stop-text { font-family: ui-monospace, 'Courier New', monospace; }
 .adv-stop.is-cleared .adv-stop-label { opacity: 0.75; }
+/* Salidas a otra escena: un cartel dorado que brilla despacio, con una flecha hacia donde llevan y el destino */
+.adv-stop.is-exit .adv-stop-dot { width: 22px; height: 22px; }
+.adv-stop.is-exit .adv-stop-label {
+    gap: 7px; padding: 3px 11px 4px 8px;
+    border: 2px solid var(--gold);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent);
+    animation: advExitGlow 2.2s ease-in-out infinite;
+}
+.adv-stop.is-exit .adv-stop-text { display: flex; flex-direction: column; line-height: 1.15; font-size: 1rem; }
+.adv-stop.is-exit .adv-stop-text small { font-size: 0.72rem; font-weight: 600; opacity: 0.75; }
+.adv-exit-arrow { display: inline-block; font-size: 1.25rem; line-height: 1; color: var(--primary); }
+/* Fuera de la pantalla: el cartel espera en el borde, más vivo, y la flecha señala hacia la salida */
+.adv-stop.is-exit.is-offscreen .adv-stop-label { background: var(--gold); border-color: var(--parchment-edge); }
+.adv-stop.is-exit.is-offscreen .adv-exit-arrow { color: var(--parchment-ink); }
+.adv-stop.is-exit.is-offscreen .adv-stop-dot { opacity: 0; }
+@keyframes advExitGlow { 50% { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 12px 3px color-mix(in srgb, var(--gold) 55%, transparent); } }
 .adv-stop-name {
     position: absolute; left: 50%; bottom: 100%;
     transform: translateX(-50%);
@@ -1582,7 +1598,7 @@ body {
 }
 .adv-stop:hover .adv-stop-name, .adv-stop:focus-visible .adv-stop-name { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
-    .adv-stop-dot, .adv-stop-dot::after { animation: none; }
+    .adv-stop-dot, .adv-stop-dot::after, .adv-stop.is-exit .adv-stop-label { animation: none; }
 }
 
 /* Cartel de escena: una placa grabada que aparece al llegar */

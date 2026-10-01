@@ -2,13 +2,13 @@
 // 🧭 Modo Aventura (controlador): Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
 // Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
 // =============================================
-import * as UI from './ui.js?v=1.7.0';
-import * as Engine from './engine.js?v=1.7.0';
-import * as Meta from './meta.js?v=1.7.0';
-import * as Adventure from './adventure-view.js?v=1.7.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.7.0';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.7.0';
-import { creatureFor } from './data/creatures.js?v=1.7.0';
+import * as UI from './ui.js?v=1.7.1';
+import * as Engine from './engine.js?v=1.7.1';
+import * as Meta from './meta.js?v=1.7.1';
+import * as Adventure from './adventure-view.js?v=1.7.1';
+import { RPG_BALANCE } from './data/balance.js?v=1.7.1';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.7.1';
+import { creatureFor } from './data/creatures.js?v=1.7.1';
 
 // Lo que la aventura necesita del resto del juego (main.js se lo da al arrancar): el almacenamiento, el progreso
 // permanente y algunas piezas del descenso (el héroe base, las recompensas, La Forja, bajar a la mazmorra).
@@ -106,8 +106,10 @@ function _advPlace(p) {
 // El objetivo de la misión, a la vista (estilo DragonFable: siempre sabes qué toca)
 function _advQuestText() {
     const f = adv.state.flags;
-    if (f.misionCumplida) return '📜 Misión cumplida';
-    if (f['defeated:grask']) return '📜 Vuelve con Maela a la aldea';
+    // Tras Grask, la pista del jefe de la zona: la guarida del lobo, pasado el campamento
+    if (f.misionCumplida) return f['defeated:feronius'] ? '📜 Misión cumplida · Zafias está en paz'
+        : '📜 Misión cumplida · Algo aúlla pasado el campamento, al sureste';
+    if (f['defeated:grask']) return f['defeated:feronius'] ? '📜 Vuelve con Maela a la aldea' : '📜 Vuelve con Maela a la aldea · Algo aúlla al sureste del campamento';
     if (!f.misionAceptada) return '📜 Habla con Maela, la posadera';
     const goblins = ['goblin-1', 'goblin-2', 'goblin-3'].filter(id => f[`defeated:${id}`]).length;
     if (goblins < 3) return `📜 Echa a los goblins del bosque: ${goblins}/3`;

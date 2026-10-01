@@ -83,7 +83,15 @@ await sleep(250);
 const grask = await playOut();
 assert('Grask pelea con su dibujo propio y cae', !!grask && grask.won && /enemigo_grask/.test(grask.src));
 assert('La misión pide volver con Maela', /Vuelve con Maela/.test(await hud()));
-assert('Vencido Grask aparecen su botín y el sendero a la guarida del lobo', !!(await stop('botin')) && !!(await stop('a-la-guarida')));
+assert('Vencido Grask aparecen su botín y la bajada a la guarida del lobo', !!(await stop('botin')) && !!(await stop('a-la-guarida')));
+assert('La misión ya apunta al jefe de la zona («algo aúlla al sureste»)', /aúlla/.test(await hud()));
+const inView = await page.evaluate(() => {
+    const v = document.querySelector('.adv-viewport').getBoundingClientRect();
+    const l = document.querySelector('.adv-stop[data-point="a-la-guarida"] .adv-stop-label').getBoundingClientRect();
+    return l.left >= v.left - 1 && l.right <= v.right + 1 && l.top >= v.top - 1 && l.bottom <= v.bottom + 1;
+});
+assert('La salida a la guarida se ve siempre: si cae fuera de la pantalla, espera en el borde con su flecha', inView
+    && /guarida del lobo/i.test(await page.$eval('.adv-stop[data-point="a-la-guarida"]', el => el.textContent)));
 
 const g0 = await gold(), p0 = await potions();
 await page.click('.adv-stop[data-point="botin"]', { force: true });
@@ -108,8 +116,10 @@ assert('Feronius se ve más grande que un lobo normal (es el jefe)', sizes.jefe 
 
 await page.click('.adv-stop[data-point="feronius"]', { force: true });
 await sleep(250);
+const wolfRatio = await page.evaluate(() => new Promise(r => setTimeout(() => r(parseFloat(getComputedStyle(document.getElementById('rpgActorMonster')).getPropertyValue('--ratio'))), 200)));
 const wolf = await playOut();
 assert('El lobo de guardia corta el paso: hay que vencerlo antes de llegar al jefe', !!wolf && wolf.won && /enemigo_lobo-de-zafias/.test(wolf.src));
+assert('En combate, el lobo llega a media altura del héroe (no tan alto como él)', wolfRatio > 0.45 && wolfRatio < 0.7);
 await page.click('.adv-stop[data-point="huesos"]', { force: true });
 await sleep(250);
 assert('Los huesos roídos (punto de interés) avisan de lo que espera', /Huesos/.test(await page.$eval('.adv-dialogue-who', el => el.textContent)));

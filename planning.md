@@ -27,14 +27,12 @@
      (55 si solo atacas); Feronius se vence a la primera perdiendo ~65 % de la vida; ~60 de oro al final.
    - Las fichas de gnolls y orcos (`creatures.js`) usan pisos 2-6 de la escala vieja: recalibrarlas con el banco
      cuando se coloquen.
-   - Tras la misión, el objetivo dice «Misión cumplida» y no apunta a Feronius: añadir una pista («algo aúlla al
-     sureste del campamento»).
 
 1. **Arte con la Asset Factory** (`tools/image-generator`, ~0,034 $ por imagen):
    - **Fondos de combate por zona**: el combate usa siempre `img/bg/forest.webp`; debe usar el fondo de su zona
      (`src/data/art.js` → `bg`).
-   - **Escala por especie**: todo sprite se normaliza a ≤256 px de alto, así que un orco sale igual de alto que el
-     héroe. Guardar una escala por monstruo y aplicarla en el combate.
+   - **Escala por especie**: hecha para las criaturas con nombre (`scale` en `creatures.js`: lobo ×0,55,
+     Feronius ×0,55 sobre su ×1,5 de jefe). Falta para los monstruos del descenso y Grask (siguen a ≤256 px).
    - **Comprobar la orientación** automáticamente (el modelo a veces dibuja mirando al lado contrario; hoy se
      arregla a mano con `fix --flip`).
    - **Colocar las criaturas de la recámara** (`src/data/creatures.js`: lobos, gnolls, orcos y sus tres jefes, ya con

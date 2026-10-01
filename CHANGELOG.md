@@ -5,6 +5,16 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.7.1] - 2026-10-01
+
+### ✨ Novedades
+- 🐺 **Cada criatura con su tamaño**: los lobos llegan a media altura del torso de tu héroe, y Feronius es grande
+  sin llenar la pantalla (en el combate y en el mapa). Bajo su nombre pone «Jefe de Zafias».
+- 🚪 **Salidas que se encuentran**: cada salida es un cartel dorado que brilla, con una flecha hacia donde lleva y
+  el nombre de la escena de destino. Si queda fuera de la pantalla, su cartel espera en el borde apuntando hacia
+  ella, y se puede pulsar igual.
+- 📜 Tras vencer a Grask, el objetivo avisa: «Algo aúlla al sureste del campamento».
+
 ## [1.7.0] - 2026-10-01
 
 ### ✨ Novedades

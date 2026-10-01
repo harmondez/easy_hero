@@ -17,7 +17,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.7.0-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.7.1-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -32,7 +32,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 ## 🆕 Novedades
 
-**Versión 1.7.0** · 1 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.7.1** · 1 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **La gran actualización visual.** Easy Hero deja atrás las cartas y los emojis en combate: ahora peleas **de lado,
@@ -40,6 +40,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 | | Qué hay de nuevo |
 |:-:|------------------|
+| 🚪 | **Nuevo en la 1.7.1 — Salidas que se encuentran y criaturas a su tamaño:** carteles dorados con flecha hacia cada salida (si no se ve, te espera en el borde de la pantalla), lobos a media altura de tu héroe y un Feronius grande que ya no llena la pantalla |
 | 🐺 | **Nuevo en la 1.7.0 — Feronius el Feroz, el jefe de Zafias:** vence a Grask y se abre **la guarida del lobo**, al fondo del barranco. El lobo alfa te espera en la boca de su cueva |
 | 🗺️ | **Nuevo en la 1.7.0 — Zafias en alta resolución y mucho más grande:** el mapa rehecho y nítido, **28 paradas** en vez de 10, lobos en el bosque y una segunda salida de la aldea |
 | 🔍 | **Nuevo en la 1.7.0 — Puntos de interés:** paradas doradas que se miran en vez de pelearse. Algunas esconden oro o una poción la primera vez: el pozo, un fardo en la orilla, el botín de Grask… |

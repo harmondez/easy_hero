@@ -12,17 +12,21 @@
 //   pattern   arquetipo de movimientos de PATTERNS (monsters.js)
 //   atkMul / hpMul   multiplican el daño y la vida respecto a su piso
 //   rules     reglas de combate, las mismas que las variantes (variants.js): physResist (defensa), rageBelow…
+//   tag       etiqueta bajo su nombre en el combate (si no, «Monstruo», «Sub-jefe» o «Jefe final»)
+//   scale     tamaño en pantalla respecto a su dibujo (los dibujos se normalizan a la altura del héroe: un lobo a
+//             cuatro patas saldría tan alto como él). Se multiplica por el ×1,25 / ×1,5 de los jefes
 // =============================================
-import { PATTERNS } from './monsters.js?v=1.7.0';
+import { PATTERNS } from './monsters.js?v=1.7.1';
 
 export const CREATURES = {
     // --- Lobos ---
     'lobo-de-zafias': {
-        name: 'Lobo de Zafias', icon: '🐺', type: 'monster', floor: 1, pattern: 'rapido'
+        name: 'Lobo de Zafias', icon: '🐺', type: 'monster', floor: 1, pattern: 'rapido',
+        scale: 0.55   // a media altura del torso del héroe
     },
     feronius: {
-        name: 'Feronius el Feroz', icon: '🐺', type: 'boss', floor: 1, pattern: 'agresivo',
-        atkMul: 0.8, hpMul: 0.85,
+        name: 'Feronius el Feroz', icon: '🐺', type: 'boss', tag: 'Jefe de Zafias', floor: 1, pattern: 'agresivo',
+        atkMul: 0.8, hpMul: 0.85, scale: 0.55,   // con el ×1,5 de jefe: grande, pero sin llenar la pantalla
         rules: { rageBelow: 0.3, rageAtkMul: 1.5 },
         desc: 'El lobo alfa y jefe de Zafias: no deja de morder y, herido, se vuelve loco.'
     },

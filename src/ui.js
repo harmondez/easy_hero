@@ -1,12 +1,12 @@
-import * as Engine from './engine.js?v=1.7.0';
-import * as Items from './items.js?v=1.7.0';
-import * as Meta from './meta.js?v=1.7.0';
-import * as Stats from './stats.js?v=1.7.0';
-import { upgradeAmountText } from './data/upgrades.js?v=1.7.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.7.0';
-import { ART } from './data/art.js?v=1.7.0';
-import { monsterArt, heroArt } from './art.js?v=1.7.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.7.0';
+import * as Engine from './engine.js?v=1.7.1';
+import * as Items from './items.js?v=1.7.1';
+import * as Meta from './meta.js?v=1.7.1';
+import * as Stats from './stats.js?v=1.7.1';
+import { upgradeAmountText } from './data/upgrades.js?v=1.7.1';
+import { RPG_BALANCE } from './data/balance.js?v=1.7.1';
+import { ART } from './data/art.js?v=1.7.1';
+import { monsterArt, heroArt } from './art.js?v=1.7.1';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.7.1';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -448,7 +448,7 @@ function _rpgRenderStage(hero, monster) {
     _rpgSetSprite(heroActor.querySelector('img'), heroSprite);
     _rpgSetSprite(img, sprite);
     // Misma escala de píxel para los dos: la altura del enemigo es relativa a la del héroe (y crece si es jefe)
-    const size = RPG_MONSTER_SIZE[monster.type] || 1;
+    const size = (RPG_MONSTER_SIZE[monster.type] || 1) * (monster.scale || 1);   // jefes más grandes; cada especie, su tamaño
     monActor.style.setProperty('--ratio', (size * sprite.h / heroSprite.h).toFixed(3));
     if (img) {
         img.alt = monster.name;

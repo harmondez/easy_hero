@@ -1,7 +1,7 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.7.0';
-import { ART } from './data/art.js?v=1.7.0';
-import { monsterArt } from './art.js?v=1.7.0';
-import { creatureFor } from './data/creatures.js?v=1.7.0';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.7.1';
+import { ART } from './data/art.js?v=1.7.1';
+import { monsterArt } from './art.js?v=1.7.1';
+import { creatureFor } from './data/creatures.js?v=1.7.1';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo
@@ -19,6 +19,7 @@ const ZOOM_MAX = 2.4;           // el mapa se pinta a 1434 px lógicos; la image
 const FACE_GAP = 20;            // ante un enemigo, el héroe se para a esta distancia (no encima de él)
 const STOP_ICONS = { npc: '💬', enemy: '⚔️', exit: '🚪', inn: '🛏️', shop: '🛒', cave: '🕳️', poi: '🔍' };
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const EXIT_EDGE = { x: 110, top: 70, bottom: 70 };   // margen (px de pantalla) de las salidas pegadas al borde
 
 const zone = ZAFIAS;
 const st = {
@@ -121,7 +122,19 @@ function applyTransforms() {
     els.world.style.transform = `translate3d(${(w / 2 - x * z).toFixed(2)}px, ${(h / 2 - y * z).toFixed(2)}px, 0) scale(${z.toFixed(4)})`;
     els.hero.style.transform = `translate3d(${st.hero.x.toFixed(2)}px, ${st.hero.y.toFixed(2)}px, 0) translate(-50%, -100%) scaleX(${st.hero.facing})`;
     els.markers.querySelectorAll('.adv-stop').forEach(m => {
-        const p = project(+m.dataset.x, +m.dataset.y);
+        let p = project(+m.dataset.x, +m.dataset.y);
+        // Una salida fuera de la pantalla se queda en el borde, con la flecha apuntando hacia donde está
+        if (m.classList.contains('is-exit')) {
+            const edge = { x: Math.min(w - EXIT_EDGE.x, Math.max(EXIT_EDGE.x, p.x)), y: Math.min(h - EXIT_EDGE.bottom, Math.max(EXIT_EDGE.top, p.y)) };
+            const off = p.x < 0 || p.x > w || p.y < 0 || p.y > h;   // solo si de verdad no se ve
+            m.classList.toggle('is-offscreen', off);
+            const arrow = m.querySelector('.adv-exit-arrow');
+            if (arrow) {
+                const deg = off ? Math.atan2(p.y - edge.y, p.x - edge.x) * 180 / Math.PI : +arrow.dataset.deg;
+                arrow.style.transform = `rotate(${deg.toFixed(0)}deg)`;
+            }
+            if (off) p = edge;
+        }
         m.style.transform = `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0)`;
     });
 }
@@ -185,7 +198,8 @@ function renderActors() {
         img.alt = '';
         img.draggable = false;
         // Los jefes de misión se ven más grandes, como en el combate
-        const h = HERO_MAP_H * (sprite.h / HERO_SPRITE_H) * ({ subboss: 1.25, boss: 1.5 }[(creatureFor(p) || p.enemy || {}).type] || 1);
+        const h = HERO_MAP_H * (sprite.h / HERO_SPRITE_H) * ({ subboss: 1.25, boss: 1.5 }[(creatureFor(p) || p.enemy || {}).type] || 1)
+            * ((creatureFor(p) || {}).scale || 1);   // cada especie con su tamaño (un lobo, a media altura del héroe)
         img.style.height = `${h.toFixed(1)}px`;
         img.style.width = `${(h * sprite.w / sprite.h).toFixed(1)}px`;
         // Sus pies quedan por encima del punto (y de su latido): así la parada roja se ve siempre
@@ -203,12 +217,21 @@ function renderPaths() {
     els.paths.innerHTML = `<path class="adv-path-halo" d="${d}"/><path class="adv-path-ink" d="${d}"/>`;
 }
 
+/** Cartel de una salida: una flecha que apunta hacia donde lleva (hacia fuera de la escena) y la escena de destino. */
+function exitLabel(p) {
+    const b = st.scene.box;
+    const deg = Math.atan2(p.y - (b.y + b.h / 2), p.x - (b.x + b.w / 2)) * 180 / Math.PI;
+    const dest = zone.scenes[p.to];
+    return `<span class="adv-exit-arrow" data-deg="${deg.toFixed(0)}" style="transform: rotate(${deg.toFixed(0)}deg)" aria-hidden="true">➜</span>`
+        + `<span class="adv-stop-text">${esc(p.name)}${dest ? `<small>${esc(dest.name)}</small>` : ''}</span>`;
+}
+
 function renderMarkers() {
     els.markers.innerHTML = st.scene.points.filter(p => st.hooks.isShown(p)).map(p => {
         const cleared = p.kind === 'enemy' && st.hooks.isCleared(p);
         const icon = p.kind === 'exit' ? STOP_ICONS.exit : cleared ? '✓' : STOP_ICONS[p.kind] || '';
         const text = p.kind === 'exit' ? esc(p.name) : STOP_LABELS[p.id] || '';
-        const label = `<span class="adv-stop-icon">${icon}</span><span class="adv-stop-text">${text}</span>`;
+        const label = p.kind === 'exit' ? exitLabel(p) : `<span class="adv-stop-icon">${icon}</span><span class="adv-stop-text">${text}</span>`;
         return `
         <button type="button" class="adv-stop is-${p.kind}${cleared ? ' is-cleared' : ''}" data-point="${esc(p.id)}" data-x="${p.x}" data-y="${p.y}" aria-label="${esc(`${STOP_LABELS[p.id] || ''} ${p.name}`)}">
             <span class="adv-stop-dot" aria-hidden="true"></span>

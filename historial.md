@@ -566,3 +566,13 @@ cofres solo dan objetos · legendarios máx. 1 igual, sin límite total · equip
   cuenta: el bot que solo ataca necesita 55 combates y cae 5 veces (2 el que se defiende y bebe).
 - `tests/adventure-flow.test.mjs` (en `npm test`): el final de Zafias jugado en el navegador, del campamento a
   Maela pasando por Grask, el botín, la guarida y Feronius.
+
+## 2026-10-01 · Tras la prueba del director: tamaños y salidas que se encuentran
+- Lobos demasiado grandes y Feronius llenando la pantalla: los dibujos se normalizan a la altura del héroe, así que
+  un cuadrúpedo salía tan alto como él. Campo `scale` en `creatures.js` (lobo ×0,55, a media altura del torso;
+  Feronius ×0,55 sobre el ×1,5 de jefe ≈ 0,85 del héroe), aplicado en el combate y en el mapa. Feronius lleva la
+  etiqueta «Jefe de Zafias» en vez de «Jefe final».
+- Costaba encontrar al jefe: la cámara sigue al héroe y la salida a la guarida quedaba fuera de la pantalla. Las
+  salidas son ahora un cartel dorado que brilla, con una flecha hacia donde llevan y el nombre de la escena de
+  destino; si la salida no se ve, su cartel espera pegado al borde apuntando hacia ella (y se puede pulsar). Tras
+  vencer a Grask, el objetivo añade «Algo aúlla al sureste del campamento».

@@ -1,9 +1,9 @@
-import { RPG_BALANCE } from './data/balance.js?v=1.7.0';
-import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.7.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.7.0';
-import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.7.0';
-import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.7.0';
-import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.7.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.7.1';
+import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.7.1';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.7.1';
+import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.7.1';
+import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.7.1';
+import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.7.1';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)
@@ -399,6 +399,8 @@ export function createRpgCreature(c, tier = 0) {
     m.atq = Math.max(1, Math.round(m.atq * (c.atkMul || 1)));
     m.maxHp = m.hp = Math.max(1, Math.round(m.maxHp * (c.hpMul || 1)));
     m.rules = { ...(c.rules || {}) };
+    if (c.scale) m.scale = c.scale;   // tamaño en pantalla (lo usa la interfaz)
+    if (c.tag) m.tag = c.tag;         // la etiqueta bajo su nombre («Jefe de Zafias»)
     return m;
 }
 

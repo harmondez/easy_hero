@@ -17,7 +17,7 @@
 //              (`set` pone una marca al terminar de hablar; `reward` da oro y pociones una sola vez)
 // Marcas: `defeated:<id>` al vencer a ese enemigo (permanente) y las que pongan los diálogos.
 // =============================================
-import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.7.0';
+import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.7.1';
 
 const GOBLINS_DEL_BOSQUE = ['defeated:goblin-1', 'defeated:goblin-2', 'defeated:goblin-3'];
 
@@ -58,7 +58,7 @@ export const ZAFIAS = {
                 { id: 'cueva', kind: 'cave', name: 'Cueva del sur: bajar al descenso', x: 258, y: 806 },
                 // Dos salidas al bosque: el camino real por el norte y el sendero del sur, junto a los escalones
                 { id: 'al-bosque', kind: 'exit', name: 'Al bosque', x: 345, y: 352, to: 'bosque', arriveAt: 'a-la-aldea' },
-                { id: 'al-bosque-sur', kind: 'exit', name: 'Sendero del sur', x: 402, y: 700, to: 'bosque', arriveAt: 'sendero-aldea' }
+                { id: 'al-bosque-sur', kind: 'exit', name: 'Al bosque (sur)', x: 402, y: 700, to: 'bosque', arriveAt: 'sendero-aldea' }
             ],
             links: [
                 ['plaza', 'cruce-norte'],
@@ -157,7 +157,7 @@ export const ZAFIAS = {
                     { when: ['visto:botin'], dialogue: 'botin-visto' },
                     { dialogue: 'botin', set: 'visto:botin', reward: { gold: 40, potions: 1 } }
                 ] },
-                { id: 'a-la-guarida', kind: 'exit', name: 'Sendero del sureste', x: 1302, y: 768, requires: ['defeated:grask'],
+                { id: 'a-la-guarida', kind: 'exit', name: 'Bajar al barranco', x: 1302, y: 768, requires: ['defeated:grask'],
                     to: 'guarida', arriveAt: 'al-campamento-desde-guarida' }
             ],
             links: [
