@@ -5,6 +5,12 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+### 🔧 Cambios
+- 🧭 **Aventura más legible**: los iconos y números de las paradas (💬 ⚔️ 🛏️ 🛒 🕳️) se ven más grandes, y el goblin ya
+  no tapa su punto rojo.
+- 🕳️ **Vuelta a la aldea**: si bajas al descenso desde la cueva de Zafias y la ruta termina (caes o abandonas),
+  regresas a la aldea en el Modo Aventura. Si empezaste el descenso desde el inicio, todo sigue como antes.
+
 ## [1.5.1] - 2026-09-30
 
 ### ✨ Novedades

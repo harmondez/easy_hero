@@ -1195,10 +1195,60 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     await sleep(400);
     assert('La cueva del sur baja al descenso de siempre', await adv.$eval('#rpgMapView', el => getComputedStyle(el).display !== 'none'));
     await adv.click('#btnRpgAbandon');
+    await sleep(300);
+    assert('Abandonar el descenso bajado desde la cueva te devuelve a la aldea, no al inicio',
+        await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none')
+        && (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea'
+        && !(await adv.evaluate(() => 'fromCave' in JSON.parse(localStorage.getItem('easy-hero-adventure')))));
+    // Desde el inicio todo sigue igual: el descenso termina en el inicio
+    await adv.click('.adv-back');
     await sleep(200);
-    assert('Abandonar ese descenso te deja en el inicio', await adv.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
+    await adv.click('#btnRpgStart');
+    await sleep(300);
+    await adv.click('#btnRpgAbandon');
+    await sleep(200);
+    assert('Un descenso empezado desde el inicio, al abandonarlo, te deja en el inicio',
+        await adv.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
     assert('Sin errores de página en la aventura', advErrors.length === 0);
     await adv.context().close();
+}
+
+// ---------------------------------------------
+console.log('\n💀 Modo Aventura: caer en un combate y bajar a la cueva');
+{
+    const fall = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })).newPage();
+    const fallErrors = [];
+    fall.on('pageerror', e => fallErrors.push(e.message));
+    await fall.goto(url, { waitUntil: 'load', timeout: 30000 });
+    await sleep(300);
+    // Partida preparada: 200 de oro y 1 de vida en el bosque, para caer en el primer golpe
+    await fall.evaluate(() => {
+        window.gameMeta.gold = 200;
+        localStorage.setItem('easy-hero-meta', JSON.stringify(window.gameMeta));
+        localStorage.setItem('easy-hero-adventure', JSON.stringify({ v: 1, scene: 'bosque', hp: 1, gone: {}, flags: { misionAceptada: true } }));
+    });
+    await fall.reload({ waitUntil: 'load' });
+    await sleep(400);
+    await fall.click('#btnRpgAdventure');
+    await sleep(400);
+    await fall.click('.adv-stop[data-point="goblin-1"]', { force: true });
+    await sleep(250);
+    await fall.click('.adv-dialogue-next');
+    await sleep(250);
+    for (let i = 0; i < 40 && !(await fall.$('#btnRpgCombatContinue')); i++) { await fall.click('[data-rpg-action="attack"]'); await sleep(30); }
+    assert('Con 1 de vida, el goblin te derriba: sale el cartel «Has caído»',
+        /Has caído/.test(await fall.$eval('#rpgCombatResult', el => el.textContent)));
+    await fall.click('#btnRpgCombatContinue');
+    await sleep(300);
+    const woke = await fall.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
+    const meta = await fall.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-meta')));
+    assert('Tras caer despiertas en la posada de la aldea', await fall.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none')
+        && (await fall.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea' && woke.scene === 'aldea');
+    assert('…con la vida llena', woke.hp === null
+        && await fall.$eval('.adv-hud', el => { const m = /❤️ (\d+)\/(\d+)/.exec(el.textContent); return !!m && m[1] === m[2]; }));
+    assert('…y un 10 % menos de oro (200 → 180)', meta.gold === 180);
+    assert('Sin errores de página al caer', fallErrors.length === 0);
+    await fall.context().close();
 }
 
 console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📊 RESULTS: ${passed} passed, ${failed} failed\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);

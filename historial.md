@@ -447,6 +447,17 @@ Cada paso se probó jugando la misión completa con un guion automático antes d
 
 ---
 
+## 2026-10-01 · Perfilados de la aventura (encargo en la nube, issue #2)
+- **Etiquetas de parada**: icono (1,3 rem) y número (monoespaciada) en elementos propios; antes eran texto de 0,74 rem.
+- **El enemigo no tapa su punto**: el sprite se coloca con los pies 11 px de mapa por encima de la parada (`ENEMY_OFFSET`);
+  el punto y su latido quedan siempre a la vista.
+- **Vuelta a la aldea tras el descenso de la cueva**: la cueva marca `fromCave` en el guardado de la aventura solo si
+  *empieza* un descenso nuevo (si retoma uno a medias, no cambia su origen). Al terminar la ruta (`_rpgBackToStart`:
+  fin de partida o abandonar) se consume la marca y se reabre la aventura. Empezar desde el botón del inicio borra
+  una marca vieja. La marca vive en el guardado, así que sobrevive a recargar la página.
+- Pruebas de navegador nuevas: abandonar el descenso de la cueva (aldea) y de inicio (inicio), y la derrota en la
+  aventura (posada, vida llena, −10 % de oro).
+
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)
 Accesorio = rasgo pasivo casi sin números · mejoras con las mismas 5 rarezas del equipo · descartar cura 3 HP
 (luego ajustado a 3+1/rareza) · hoguera da 1 de 3 con mínimo Poco común · 4-6 ofertas de objeto por ruta ·
