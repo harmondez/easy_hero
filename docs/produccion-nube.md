@@ -48,8 +48,9 @@ Circuito probado de punta a punta con el PR #1 (2026-10-01): pruebas en verde, v
   4. El `<id>` de un enemigo es el **nombre base** del monstruo sin tildes y con guiones: «Goblin» → `enemigo_goblin.png`,
      «Rata Gigante» → `enemigo_rata-gigante.png`. En el combate se usa sin tinte y con su proporción real; los monstruos sin imagen
      siguen con el goblin teñido. El héroe usa la primera `heroe_*` (por orden alfabético) si hay alguna.
-- **Calibración**: el primer encargo sirve para medir cuánto cuesta uno típico (saldo antes y después);
-  con eso se reparte el resto.
+- **Calibración (2026-10-01)**: los dos primeros encargos (#2 perfilados y #3 taller de sprites, Sonnet, esfuerzo
+  alto, a la vez) costaron **3 $ entre los dos** (~1,5 $ cada uno; quedan 97 $). El crédito da para muchos más
+  encargos de los previstos: se puede subir el ritmo y usar Opus donde aporte.
 
 ## Fase 0 · Preparar el terreno (en local, sin crédito)
 
