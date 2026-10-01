@@ -58,7 +58,8 @@
 - **Combate:** debilidades elementales ×0,5/×1,5 con los 6 tipos de daño; entrada del combate como momento.
 - **Equilibrio:** los bots del banco siguen «viendo» la intención; revisar la tasa de victoria real.
 - **Móvil:** en el bosque a 390 px el héroe queda pegado al borde al llegar.
-- **Pruebas:** «Descansar cura el 30 %» de la hoguera parece intermitente.
+- **Pruebas intermitentes:** «Descansar cura el 30 %» y «Hay hogueras 🔥 en el mapa y en la leyenda» fallan de vez
+  en cuando (pasan al repetir); probablemente dependen del mapa al azar.
 - **CI:** subir `upload-artifact`, `configure-pages` y `deploy-pages` cuando saquen versión sin Node 20.
 - **Créditos:** nota sobre el arte hecho con IA (precaución, no verificado que sea obligatoria).
 
