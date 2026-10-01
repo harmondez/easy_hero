@@ -6,6 +6,10 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 ## [Sin publicar]
 
 ### 🔧 Cambios
+- 🖼️ **Taller de sprites** (`npm run sprites`): los PNG de `img/entrantes/` se recortan, se alinean por los pies y
+  se guardan en WebP, y quedan registrados en `src/data/art.js`.
+- ⚔️ En el combate, un monstruo con imagen propia la usa sin tinte y con su proporción real; el héroe también si
+  tiene `heroe_*`. Los demás siguen siendo el goblin teñido de siempre.
 - 🧭 **Aventura más legible**: los iconos y números de las paradas (💬 ⚔️ 🛏️ 🛒 🕳️) se ven más grandes, y el goblin ya
   no tapa su punto rojo.
 - 🕳️ **Vuelta a la aldea**: si bajas al descenso desde la cueva de Zafias y la ruta termina (caes o abandonas),

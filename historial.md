@@ -467,3 +467,17 @@ cofres solo dan objetos · legendarios máx. 1 igual, sin límite total · equip
 - «5 rarezas es mucho contenido»: resuelto con base fija + pocas bases + afijos compartidos, calibrado con el banco.
 - «El test del navegador tardaba 88 s»: sigue igual de acotado (ahora 113 pruebas, ~131 s); no ha hecho falta acelerarlo aún.
 - «La opinión de un bot no es la de un jugador»: sigue siendo una limitación conocida; sin jugadores reales todavía (S15 pendiente).
+
+---
+
+## 2026-10-01 · Oleada 1 · Taller de sprites (encargo #3)
+- `npm run sprites` (`tools/sprites.mjs`, con `sharp` como dependencia de desarrollo): cada PNG de `img/entrantes/` se
+  recorta al contorno (2 px de aire a los lados y arriba, los pies tocan el borde inferior), baja a 256 px de alto como
+  máximo (nunca se amplía) y sale en WebP sin pérdida. Fondos → `img/bg/`, escenas → `img/zones/`, sin recortar.
+- Manifiesto `src/data/art.js` (ruta, ancho, alto de cada imagen). Una tanda nueva **añade** al manifiesto sin perder lo
+  anterior, porque la carpeta de entrada no se sube. Consulta pura en `src/art.js` (id por nombre base: «Rata Gigante» →
+  `enemigo_rata-gigante`).
+- Combate: imagen propia sin tinte y con su proporción real (`--ratio` = alto del monstruo / alto del héroe); sin imagen,
+  el goblin teñido. Héroe: la primera `heroe_*` por orden alfabético, si hay; si no, `hero_right.png`.
+- Pruebas: `tests/sprites-sim.mjs` (en `test:core`, con imágenes generadas al vuelo) y una sección en el navegador que
+  sirve un manifiesto de prueba.

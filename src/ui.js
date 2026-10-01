@@ -4,6 +4,8 @@ import * as Meta from './meta.js?v=1.5.1';
 import * as Stats from './stats.js?v=1.5.1';
 import { upgradeAmountText } from './data/upgrades.js?v=1.5.1';
 import { RPG_BALANCE } from './data/balance.js?v=1.5.1';
+import { ART } from './data/art.js?v=1.5.1';
+import { monsterArt, heroArt } from './art.js?v=1.5.1';
 import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.5.1';
 
 // =============================================
@@ -425,9 +427,10 @@ export function renderRpgCombat(combat, opts = {}) {
 }
 
 // --- 🎭 Escenario: héroe a la izquierda mirando a la derecha, enemigo a la derecha mirando a la izquierda ---
-// De momento todos los enemigos usan el goblin; cuando haya más arte, se elige aquí por monstruo.
+// Cada criatura usa su imagen del taller de sprites (src/data/art.js) si la tiene; si no, el goblin de siempre
+// (teñido por especie/linaje). Lo mismo el héroe: su heroe_* si existe, si no hero_right.png.
 const RPG_MONSTER_SPRITE = { src: 'img/sprites/goblin_left.png', w: 175, h: 217 };
-const RPG_HERO_SPRITE_H = 244;   // alto de img/sprites/hero_right.png
+const RPG_HERO_SPRITE = { src: 'img/sprites/hero_right.png', w: 195, h: 244 };
 const RPG_LUNGE_MS = 460;        // ida y vuelta de la embestida
 const RPG_LUNGE_IMPACT = 0.4;    // punto de la embestida en que llega el golpe (y sale el número)
 const RPG_FX_GAP_MS = 140;       // pausa entre un golpe y el siguiente
@@ -439,18 +442,26 @@ function _rpgRenderStage(hero, monster) {
     heroActor.classList.toggle('is-down', hero.hp <= 0);
     monActor.classList.toggle('is-down', monster.hp <= 0);
     const img = monActor.querySelector('img');
-    if (img && !img.src.endsWith(RPG_MONSTER_SPRITE.src)) {
-        img.src = RPG_MONSTER_SPRITE.src;
-        img.width = RPG_MONSTER_SPRITE.w;
-        img.height = RPG_MONSTER_SPRITE.h;
-    }
+    const own = monsterArt(ART, monster.baseName || monster.name);
+    const sprite = own || RPG_MONSTER_SPRITE;
+    const heroSprite = heroArt(ART) || RPG_HERO_SPRITE;
+    _rpgSetSprite(heroActor.querySelector('img'), heroSprite);
+    _rpgSetSprite(img, sprite);
     // Misma escala de píxel para los dos: la altura del enemigo es relativa a la del héroe (y crece si es jefe)
     const size = RPG_MONSTER_SIZE[monster.type] || 1;
-    monActor.style.setProperty('--ratio', (size * RPG_MONSTER_SPRITE.h / RPG_HERO_SPRITE_H).toFixed(3));
+    monActor.style.setProperty('--ratio', (size * sprite.h / heroSprite.h).toFixed(3));
     if (img) {
         img.alt = monster.name;
-        img.style.filter = rpgMonsterTint(monster);
+        // Con imagen propia, sin tinte: el arte ya trae su color
+        img.style.filter = own ? 'none' : rpgMonsterTint(monster);
     }
+}
+
+function _rpgSetSprite(img, sprite) {
+    if (!img || img.getAttribute('src') === sprite.src) return;
+    img.src = sprite.src;
+    img.width = sprite.w;
+    img.height = sprite.h;
 }
 
 // Mientras no haya arte de cada monstruo, el goblin se tiñe: un color por especie y, si tiene linaje, el suyo
