@@ -94,8 +94,9 @@ perdieron y hay citas de otros juegos.
 - **Aventura (de C1):** colocar mejor los 3 goblins (el vigía queda entre árboles); prueba de navegador de la
   derrota en la aventura; el equipo del descenso no viaja a la aventura (hoy vas con la espada básica y tu
   nivel/primarias/Forja).
-- **Arte:** herramienta de preparación de sprites (recorte, línea de pies, escala de píxel, paleta única de ~32
-  colores); nota en créditos sobre el arte hecho con IA; fondos de cueva y mazmorra.
+- **Arte:** paleta única de ~32 colores y escala de píxel común para los sprites (el taller ya recorta y alinea
+  los pies); nota en créditos sobre el arte hecho con IA; fondos de cueva y mazmorra. Conectar el manifiesto
+  `src/data/art.js` con los sprites del mapa de la aventura y con los fondos/escenas.
 - **Combate:** debilidades elementales ×0,5/×1,5 con los 6 tipos de daño; entrada del combate como momento.
 - **Equilibrio:** los bots del banco siguen «viendo» la intención; el juego real será algo más difícil de lo
   que mide. Revisar la tasa de victoria.

@@ -37,6 +37,17 @@ Circuito probado de punta a punta con el PR #1 (2026-10-01): pruebas en verde, v
 - **Tablero**: GitHub Issues (etiquetas `nube`, `oleada-N`, `sonnet`/`opus`).
 - **Arte**: el director deja PNG por tandas en `img/entrantes/` con nombres claros (`enemigo_lobo.png`,
   `fondo_cueva.png`, `heroe_*.png`, `escena_*.png`). El taller de sprites los procesa. Esa carpeta no se sube.
+- **Taller de sprites** (`npm run sprites`): procesa lo que haya en `img/entrantes/`.
+  1. Deja los PNG (con fondo transparente) en `img/entrantes/` con estos nombres, `<id>` en minúsculas, sin tildes y con guiones:
+     `enemigo_<id>.png` (mira a la izquierda), `heroe_<id>.png` (a la derecha), `fondo_<id>.png` (fondo de combate de lado),
+     `escena_<id>.png` (mapa de una zona).
+  2. `npm run sprites`. Enemigos y héroes: se recortan al contorno (2 px de aire; los pies tocan el borde inferior), bajan a
+     256 px de alto como máximo (nunca se amplían) y salen en WebP en `img/sprites/`. Fondos → `img/bg/`, escenas → `img/zones/`,
+     sin recortar. Lo que no cumple el nombre se avisa y se salta.
+  3. Todo queda registrado en `src/data/art.js` (no se edita a mano). Se sube lo procesado y el manifiesto, nunca los PNG originales.
+  4. El `<id>` de un enemigo es el **nombre base** del monstruo sin tildes y con guiones: «Goblin» → `enemigo_goblin.png`,
+     «Rata Gigante» → `enemigo_rata-gigante.png`. En el combate se usa sin tinte y con su proporción real; los monstruos sin imagen
+     siguen con el goblin teñido. El héroe usa la primera `heroe_*` (por orden alfabético) si hay alguna.
 - **Calibración**: el primer encargo sirve para medir cuánto cuesta uno típico (saldo antes y después);
   con eso se reparte el resto.
 

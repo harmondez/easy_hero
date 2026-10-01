@@ -1201,6 +1201,55 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     await adv.context().close();
 }
 
+console.log('\n🖼️ Imágenes propias de los monstruos (taller de sprites)');
+{
+    // Un manifiesto de prueba servido en lugar del vacío: Slime y un héroe con imagen propia; el resto, sin ella
+    const sharp = (await import('sharp')).default;
+    const mk = (w, h) => sharp({ create: { width: w, height: h, channels: 4, background: { r: 200, g: 30, b: 30, alpha: 1 } } }).webp({ lossless: true }).toBuffer();
+    const slimeWebp = await mk(120, 80);
+    const heroWebp = await mk(100, 200);
+    const manifest = `export const ART = { sprites: {
+        enemigo_slime: { src: 'img/sprites/enemigo_slime.webp', w: 120, h: 80 },
+        heroe_prueba: { src: 'img/sprites/heroe_prueba.webp', w: 100, h: 200 } }, bg: {}, zones: {} };`;
+    const art = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    const artErrors = [];
+    art.on('pageerror', e => artErrors.push(e.message));
+    await art.route(/\/src\/data\/art\.js/, r => r.fulfill({ contentType: 'text/javascript', body: manifest }));
+    await art.route(/\/img\/sprites\/enemigo_slime\.webp/, r => r.fulfill({ contentType: 'image/webp', body: slimeWebp }));
+    await art.route(/\/img\/sprites\/heroe_prueba\.webp/, r => r.fulfill({ contentType: 'image/webp', body: heroWebp }));
+    await art.goto(url, { waitUntil: 'load', timeout: 30000 });
+    await sleep(500);
+    await art.click('#btnRpgStart');
+    await sleep(700);
+    await art.click('#rpgMap .rpg-node.is-available');
+    await sleep(400);
+    const stage = () => art.evaluate(() => {
+        const img = document.querySelector('#rpgActorMonster img');
+        return {
+            src: img.getAttribute('src'), filter: img.style.filter, ratio: document.getElementById('rpgActorMonster').style.getPropertyValue('--ratio'),
+            heroSrc: document.querySelector('#rpgActorHero img').getAttribute('src')
+        };
+    });
+    // El combate es de verdad; solo cambiamos de qué criatura se trata, y una acción repinta el escenario
+    await art.evaluate(() => { const m = window.gameState.rpg.combat.monster; m.baseName = 'Lobo'; m.name = 'Lobo'; delete m.variants; });
+    await art.click('[data-rpg-action="defend"]');
+    await sleep(300);
+    let st = await stage();
+    assert('Un monstruo SIN imagen propia sigue con el goblin de siempre', /goblin_left\.png$/.test(st.src));
+    assert('…y con su tinte (el lobo no es verde-goblin)', st.filter !== 'none' && st.filter !== '');
+    await art.evaluate(() => { const m = window.gameState.rpg.combat.monster; m.baseName = 'Slime'; m.name = 'Slime'; delete m.variants; });
+    await art.click('[data-rpg-action="defend"]');
+    await sleep(300);
+    st = await stage();
+    assert('Un monstruo CON imagen en el manifiesto usa su imagen (Slime → enemigo_slime.webp)', /img\/sprites\/enemigo_slime\.webp$/.test(st.src));
+    assert('…sin tinte', st.filter === 'none');
+    assert('…con su proporción real respecto al héroe (80 / 200 = 0,4)', Math.abs(parseFloat(st.ratio) - 0.4) < 0.01);
+    assert('El héroe usa su heroe_* si existe', /img\/sprites\/heroe_prueba\.webp$/.test(st.heroSrc));
+    assert('La imagen propia carga de verdad (no está rota)', await art.$eval('#rpgActorMonster img', el => el.complete && el.naturalWidth === 120));
+    assert('Sin errores de página con imágenes propias', artErrors.length === 0);
+    await art.context().close();
+}
+
 console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📊 RESULTS: ${passed} passed, ${failed} failed\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 await browser.close();
 server.close();

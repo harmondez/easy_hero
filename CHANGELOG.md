@@ -5,6 +5,12 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+### 🔧 Cambios
+- 🖼️ **Taller de sprites** (`npm run sprites`): los PNG de `img/entrantes/` se recortan, se alinean por los pies y
+  se guardan en WebP, y quedan registrados en `src/data/art.js`.
+- ⚔️ En el combate, un monstruo con imagen propia la usa sin tinte y con su proporción real; el héroe también si
+  tiene `heroe_*`. Los demás siguen siendo el goblin teñido de siempre.
+
 ## [1.5.1] - 2026-09-30
 
 ### ✨ Novedades
