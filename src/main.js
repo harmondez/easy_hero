@@ -245,6 +245,7 @@ function _rpgBackToStart() {
     UI.renderRpgHeroCard(_rpgPreviewHero());
     _refreshShopButton();
     refreshContinueButton();
+    AdventureMode.returnFromDescent();   // si bajaste desde la cueva de Zafias, vuelves a la aldea
 }
 
 // Retoma la partida guardada exactamente donde estaba (mapa, evento o combate a medias)
@@ -818,6 +819,7 @@ function _rpgCombatContinue() {
 function initEvents() {
     // --- 🗡️ RPG ---
     safeListener('btnRpgStart', 'click', () => {
+        AdventureMode.forgetDescentOrigin();
         const input = document.getElementById('rpgSeedInput');
         _rpgStartRun(input ? codeToSeed(input.value) : null);
     });
@@ -958,7 +960,12 @@ AdventureMode.init({
     rpgOpenShop: _rpgOpenShop,
     refreshShopButton: _refreshShopButton,
     // La cueva del sur: si hay un descenso a medias se retoma; si no, empieza uno
-    enterDescent: () => { if (Save.peekRun(storage)) _rpgResume(); else _rpgStartRun(null); }
+    // Devuelve cuál de las dos cosas ha pasado, para que la aventura sepa si volver a la aldea al terminar
+    enterDescent: () => {
+        if (Save.peekRun(storage)) { _rpgResume(); return 'resumed'; }
+        _rpgStartRun(null);
+        return 'new';
+    }
 });
 UI.toggleRpgView('rpgStartView');
 UI.renderRpgHeroCard(_rpgPreviewHero());
