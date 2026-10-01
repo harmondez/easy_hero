@@ -38,7 +38,7 @@ noviembre de 2026**). Decidido con el dueño del juego el 2026-10-01.
 - [x] CLAUDE.md: reglas para trabajar solo (rama, nunca publicar, pruebas antes del PR, historial, dudas al PR).
 - [x] Plantilla de encargo (`.github/ISSUE_TEMPLATE/encargo.md`), plantilla de PR y etiquetas (`nube`, `oleada-1..4`, `sonnet`, `opus`, `calibración`).
 - [x] Partir `main.js`: la aventura vive en `src/adventure.js`.
-- [ ] Vistas previas por PR en Cloudflare Pages (cuenta del director: la conecta él, pasos en el chat del 2026-10-01).
+- [x] Vistas previas por PR en Cloudflare (Workers con archivos estáticos: `wrangler.jsonc` + `npm run build:site`; conectado el 2026-10-01).
 - [ ] Claude en la nube: conectar GitHub en claude.ai/code y revisar la red del entorno (ver abajo).
 
 **Detalle pendiente (no bloquea):** GitHub avisa de que `upload-artifact`, `configure-pages` y `deploy-pages` aún usan
