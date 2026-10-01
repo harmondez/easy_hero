@@ -3,6 +3,8 @@
 {
   "name": "easy-hero",
   "compatibility_date": "2026-10-01",
+  // Vistas previas de cada rama/PR (wrangler preview): el bloque puede ir vacío
+  "previews": {},
   "assets": {
     "directory": "./_site"
   }
