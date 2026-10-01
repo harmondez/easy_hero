@@ -4,8 +4,7 @@ import * as Events from './events.js?v=1.5.1';
 import * as Save from './save.js?v=1.5.1';
 import * as Items from './items.js?v=1.5.1';
 import * as Meta from './meta.js?v=1.5.1';
-import * as Adventure from './adventure-view.js?v=1.5.1';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.5.1';
+import * as AdventureMode from './adventure.js?v=1.5.1';
 import { RPG_BALANCE } from './data/balance.js?v=1.5.1';
 import { tierName } from './data/monsters.js?v=1.5.1';
 import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.5.1';
@@ -217,7 +216,7 @@ function _rpgOpenShop(from) {
 
 function _rpgCloseShop() {
     if (gameState.rpg.shopFrom === 'end') { UI.toggleRpgView('rpgEndView'); return; }
-    if (gameState.rpg.shopFrom === 'adventure') { _advOpen(); return; }
+    if (gameState.rpg.shopFrom === 'adventure') { AdventureMode.open(); return; }
     UI.toggleRpgView('rpgStartView');
     UI.renderRpgHeroCard(_rpgPreviewHero());
     _refreshShopButton();
@@ -754,200 +753,6 @@ function _rpgGrantVictory(m) {
     return { gold, xp, lvl };
 }
 
-// =============================================
-// 🧭 Modo Aventura: Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
-// Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
-// =============================================
-const ADV_KEY = 'easy-hero-adventure';
-const ADV_DEFEAT_GOLD_LOSS = 0.1;   // caer en la aventura cuesta el 10 % del oro que llevas
-const adv = { state: null, hero: null, combat: null, point: null };
-
-function _advLoad() {
-    try {
-        const d = JSON.parse((storage && storage.getItem(ADV_KEY)) || 'null');
-        if (d && d.v === 1) return { gone: {}, flags: {}, ...d };
-    } catch { /* guardado dañado: se empieza de cero */ }
-    // gone: vencidos que vuelven al dormir · flags: marcas de la historia (permanentes)
-    return { v: 1, scene: ZAFIAS.startScene, hp: null, gone: {}, flags: {} };
-}
-function _advSave() {
-    try { if (storage) storage.setItem(ADV_KEY, JSON.stringify(adv.state)); } catch { /* sin almacenamiento */ }
-}
-
-function _advHero() {
-    const hero = _rpgPreviewHero();
-    if (adv.state.hp != null) hero.hp = Math.max(1, Math.min(hero.maxHp, adv.state.hp));
-    return hero;
-}
-
-const _advHas = flags => (flags || []).every(f => adv.state.flags[f]);
-
-// Una parada se ve si la historia lo permite
-const _advIsShown = p => _advHas(p.requires);
-
-// Un enemigo está vencido (su parada queda con ✓ y se puede cruzar) hasta que duermes en la posada;
-// los de misión (`once`), para siempre
-const _advIsCleared = p => p.kind === 'enemy' && (!!adv.state.gone[p.id] || !!(p.once && adv.state.flags[`defeated:${p.id}`]));
-
-// Lo que dice un NPC: la primera entrada de su `talk` cuyas marcas se cumplen. Al terminar, marca y recompensa.
-function _advTalk(p) {
-    if (!p.talk) return p.dialogue ? { dialogue: p.dialogue } : null;
-    const entry = p.talk.find(t => _advHas(t.when));
-    if (!entry) return null;
-    return {
-        dialogue: entry.dialogue,
-        onDone: () => {
-            if (entry.set && !adv.state.flags[entry.set]) {
-                adv.state.flags[entry.set] = true;
-                if (entry.reward) {
-                    if (entry.reward.gold) Meta.recordGold(meta, entry.reward.gold);
-                    if (entry.reward.potions) meta.potions = Math.min(RPG_BALANCE.potion.max, Meta.potionCount(meta) + entry.reward.potions);
-                    persistMeta();
-                }
-                _advSave();
-                Adventure.refresh();
-                _advRefreshHud();
-            }
-        }
-    };
-}
-
-// Los lugares de la aldea
-function _advPlace(p) {
-    if (p.kind === 'inn') {
-        // Dormir: vida llena y los enemigos normales vuelven a los caminos (los jefes de misión no)
-        return {
-            dialogue: 'posada-dormir',
-            onDone: () => {
-                adv.state.hp = null;
-                adv.state.gone = {};
-                _advSave();
-                adv.hero = _advHero();
-                Adventure.refresh();
-                _advRefreshHud();
-            }
-        };
-    }
-    if (p.kind === 'shop') {
-        Adventure.close();
-        _rpgOpenShop('adventure');
-        return null;
-    }
-    if (p.kind === 'cave') {
-        // La cueva baja al descenso de siempre: si hay una partida a medias, se retoma; si no, empieza una
-        Adventure.close();
-        if (Save.peekRun(storage)) _rpgResume();
-        else _rpgStartRun(null);
-        return null;
-    }
-    return null;
-}
-
-// El objetivo de la misión, a la vista (estilo DragonFable: siempre sabes qué toca)
-function _advQuestText() {
-    const f = adv.state.flags;
-    if (f.misionCumplida) return '📜 Misión cumplida';
-    if (f['defeated:grask']) return '📜 Vuelve con Maela a la aldea';
-    if (!f.misionAceptada) return '📜 Habla con Maela, la posadera';
-    const goblins = ['goblin-1', 'goblin-2', 'goblin-3'].filter(id => f[`defeated:${id}`]).length;
-    if (goblins < 3) return `📜 Echa a los goblins del bosque: ${goblins}/3`;
-    return '📜 Entra en el campamento goblin y acaba con Grask';
-}
-
-function _advRefreshHud() {
-    const h = adv.hero;
-    Adventure.setHud(`❤️ ${h.hp}/${h.maxHp} · 🪙 ${meta.gold} · 🧪 ${Meta.potionCount(meta)}   ${_advQuestText()}`);
-}
-
-function _advOpen() {
-    if (!adv.state) adv.state = _advLoad();
-    adv.hero = _advHero();
-    UI.toggleRpgView('rpgAdventureView');
-    Adventure.open({
-        onExit: () => { UI.toggleRpgView('rpgStartView'); UI.renderRpgHeroCard(_rpgPreviewHero()); _refreshShopButton(); },
-        onEnemy: p => _advStartCombat(p),
-        onTalk: p => _advTalk(p),
-        onPlace: p => _advPlace(p),
-        onScene: id => { adv.state.scene = id; _advSave(); },
-        isShown: p => _advIsShown(p),
-        isCleared: p => _advIsCleared(p)
-    }, adv.state.scene);
-    _advRefreshHud();
-}
-
-function _advRenderCombat() {
-    const scene = ZAFIAS.scenes[adv.state.scene];
-    UI.renderRpgCombat(adv.combat, { where: scene ? scene.name : ZAFIAS.name });
-}
-
-function _advStartCombat(p) {
-    const def = p.enemy || { type: 'monster', floor: 0 };
-    const m = Engine.createRpgMonster(def.type, def.floor, 0);
-    m.name = p.name; m.baseName = p.name; m.icon = '👺';
-    adv.point = p;
-    adv.combat = Engine.createRpgCombat(adv.hero, m, Math.random);
-    adv.combat.potions = Meta.potionCount(meta);
-    Adventure.close();
-    UI.toggleRpgView('rpgCombatView');
-    UI.hideRpgCombatResult();
-    UI.clearRpgCombatLog();
-    UI.addRpgCombatLog(`👺 ${m.name} te corta el paso. ¡Elige tu acción!`, 'system');
-    adv.combat.intro.forEach(ev => UI.addRpgCombatLog(ev.text, 'player'));
-    adv.combat.intro = [];
-    _advRenderCombat();
-}
-
-function _advCombatAct(action, skillId) {
-    const c = adv.combat;
-    if (!c || c.over) return;
-    const res = Engine.rpgCombatAction(c, action, skillId);
-    if (!res.ok) { UI.addRpgCombatLog(`⚠️ ${res.error}`, 'system'); return; }
-    if (action === 'potion') { meta.potions = c.potions; persistMeta(); }
-    res.events.forEach(ev => UI.addRpgCombatLog(ev.text, ev.actor === 'hero' ? 'player' : 'enemy'));
-    _advRenderCombat();
-    UI.playRpgCombatFx(res.events);
-    adv.state.hp = adv.hero.hp;
-    _advSave();
-    if (c.over) _advFinishCombat();
-}
-
-function _advFinishCombat() {
-    const c = adv.combat;
-    const m = c.monster;
-    if (c.result === 'victory') {
-        const { gold, xp, lvl } = _rpgGrantVictory(m);
-        Meta.recordCombatWin(meta);
-        persistMeta();
-        adv.state.gone[adv.point.id] = true;   // no vuelve hasta que duermas en la posada
-        adv.state.flags[`defeated:${adv.point.id}`] = true;   // pero la historia recuerda que lo venciste
-        _advSave();
-        UI.showRpgCombatResult({ result: 'victory', title: '¡Victoria!', button: 'SEGUIR EXPLORANDO',
-            detail: `+${gold} 🪙 · +${xp} XP${lvl.levelsGained > 0 ? ` · ¡Subes a nivel ${lvl.newLevel}!` : ''}` });
-    } else if (c.result === 'fled') {
-        UI.showRpgCombatResult({ result: 'fled', title: 'Has huido', detail: `${m.name} sigue en el camino.`, button: 'VOLVER' });
-    } else {
-        const lost = Math.floor(meta.gold * ADV_DEFEAT_GOLD_LOSS);
-        Meta.recordGold(meta, -lost);
-        persistMeta();
-        adv.state.hp = null;                    // despiertas con la vida llena
-        adv.state.scene = ZAFIAS.startScene;
-        _advSave();
-        UI.showRpgCombatResult({ result: 'defeat', title: 'Has caído', button: 'DESPERTAR EN LA POSADA',
-            detail: `Te recogen y despiertas en la posada de Zafias${lost > 0 ? `, con ${lost} 🪙 menos` : ''}.` });
-    }
-}
-
-function _advCombatContinue() {
-    const c = adv.combat;
-    if (!c || !c.over) return;
-    const fell = c.result === 'defeat';
-    adv.combat = null;
-    adv.point = null;
-    UI.hideRpgCombatResult();
-    _advOpen();
-    if (fell) Adventure.goTo(ZAFIAS.startScene);
-}
-
 function _rpgCombatContinue() {
     const r = gameState.rpg;
     const c = r.combat;
@@ -1050,12 +855,12 @@ function initEvents() {
         if (!btn || btn.disabled) return;
         const action = btn.dataset.rpgAction;
         // La misma pantalla sirve a los dos modos: si hay un combate de la aventura en curso, es suyo
-        if (adv.combat) _advCombatAct(action, btn.dataset.rpgSkill);
+        if (AdventureMode.inCombat()) AdventureMode.combatAct(action, btn.dataset.rpgSkill);
         else _rpgCombatAct(action, btn.dataset.rpgSkill);
     });
     safeListener('rpgCombatResult', 'click', (e) => {
         if (!e.target.closest('#btnRpgCombatContinue')) return;
-        if (adv.combat) _advCombatContinue();
+        if (AdventureMode.inCombat()) AdventureMode.combatContinue();
         else _rpgCombatContinue();
     });
     safeListener('rpgEndView', 'click', (e) => {
@@ -1079,7 +884,7 @@ function initEvents() {
     safeListener('btnRpgShop', 'click', () => _rpgOpenShop('start'));
 
     // --- 🧭 Modo Aventura ---
-    safeListener('btnRpgAdventure', 'click', () => _advOpen());
+    safeListener('btnRpgAdventure', 'click', () => AdventureMode.open());
     safeListener('btnShopBack', 'click', () => _rpgCloseShop());
     safeListener('shopBody', 'click', (e) => {
         const btn = e.target.closest('[data-shop-buy]');
@@ -1145,6 +950,16 @@ const expedition = Meta.claimExpedition(meta);
 Meta.checkAchievements(meta, null, { floors: Engine.RPG_MAP_CONFIG.floors });
 Meta.saveMeta(storage, meta);
 
+// La aventura recibe lo que necesita del descenso y del progreso permanente
+AdventureMode.init({
+    storage, meta, persistMeta,
+    rpgPreviewHero: _rpgPreviewHero,
+    rpgGrantVictory: _rpgGrantVictory,
+    rpgOpenShop: _rpgOpenShop,
+    refreshShopButton: _refreshShopButton,
+    // La cueva del sur: si hay un descenso a medias se retoma; si no, empieza uno
+    enterDescent: () => { if (Save.peekRun(storage)) _rpgResume(); else _rpgStartRun(null); }
+});
 UI.toggleRpgView('rpgStartView');
 UI.renderRpgHeroCard(_rpgPreviewHero());
 _refreshShopButton();
