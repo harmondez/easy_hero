@@ -33,12 +33,16 @@ noviembre de 2026**). Decidido con el dueño del juego el 2026-10-01.
 
 ## Fase 0 · Preparar el terreno (en local, sin crédito)
 
-- [ ] GitHub Actions: `npm test` en cada PR y en `main`; publicar la web con Actions solo si pasa.
-- [ ] Entorno de la nube: script de arranque (Node, `npm ci`, Chromium de Playwright).
-- [ ] CLAUDE.md: reglas para trabajar solo (rama, nunca publicar, pruebas antes del PR, historial, dudas al PR).
-- [ ] Plantilla de encargo (issue template) y etiquetas.
-- [ ] Partir `main.js`: la aventura a su propio módulo, para que dos sesiones no se pisen.
-- [ ] Vistas previas por PR en Cloudflare Pages (cuenta del director, ya existe).
+- [x] GitHub Actions: `npm test` en cada PR y en `main`; publicar la web con Actions solo si pasa (`.github/workflows/ci.yml`; Pages ya publica por Actions).
+- [x] Entorno de la nube: hook SessionStart → `scripts/cloud-setup.sh` (`npm ci` + Chromium si la red deja; si no, `npm run test:core`).
+- [x] CLAUDE.md: reglas para trabajar solo (rama, nunca publicar, pruebas antes del PR, historial, dudas al PR).
+- [x] Plantilla de encargo (`.github/ISSUE_TEMPLATE/encargo.md`), plantilla de PR y etiquetas (`nube`, `oleada-1..4`, `sonnet`, `opus`, `calibración`).
+- [x] Partir `main.js`: la aventura vive en `src/adventure.js`.
+- [ ] Vistas previas por PR en Cloudflare Pages (cuenta del director: la conecta él, pasos en el chat del 2026-10-01).
+- [ ] Claude en la nube: conectar GitHub en claude.ai/code y revisar la red del entorno (ver abajo).
+
+**Detalle pendiente (no bloquea):** GitHub avisa de que `upload-artifact`, `configure-pages` y `deploy-pages` aún usan
+Node 20 (las fuerza a Node 24 y funcionan); subirlas de versión cuando saquen la nueva.
 
 ## Oleadas
 
