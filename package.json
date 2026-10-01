@@ -17,7 +17,8 @@
     "test:balance": "node tests/balance-guard.mjs",
     "balance": "node tools/balance.mjs",
     "test:browser": "node tests/browser.test.mjs",
-    "test": "node tests/version-check.mjs && node tests/rpg-sim.mjs && node tests/events-sim.mjs && node tests/items-sim.mjs && node tests/meta-sim.mjs && node tests/stats-sim.mjs && node tests/save-sim.mjs && node tests/balance-guard.mjs && node tests/browser.test.mjs"
+    "test": "npm run test:core && node tests/browser.test.mjs",
+    "test:core": "node tests/version-check.mjs && node tests/rpg-sim.mjs && node tests/events-sim.mjs && node tests/items-sim.mjs && node tests/meta-sim.mjs && node tests/stats-sim.mjs && node tests/save-sim.mjs && node tests/balance-guard.mjs"
   },
   "devDependencies": {
     "playwright": "^1.60.0"

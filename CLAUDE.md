@@ -30,3 +30,24 @@ Easy Hero usa siempre esta dirección estética. No volver al azul-índigo/Inter
 - `planning.md` es **solo lo pendiente**; lo ya decidido o implementado va a `historial.md` (log
   compacto). Actualiza el que corresponda al terminar un cambio de alcance.
 - Antes de comitear: `npm test` (motor, eventos, equipo, guardado, equilibrio y navegador).
+
+## Trabajo autónomo (sesiones en la nube y encargos)
+
+Si trabajas en una sesión en la nube (`CLAUDE_CODE_REMOTE=true`) o sobre un **issue con la etiqueta `nube`**,
+eres un «obrero» de la cadena descrita en `docs/produccion-nube.md`. Reglas:
+
+- **Un encargo = una rama = un pull request.** La rama se llama `nube/<n.º-de-issue>-<tema-corto>`. El PR enlaza
+  el issue con `Closes #N`. Nunca trabajes sobre `main` ni hagas `git push` a `main`.
+- **Nunca publiques ni subas versión**: nada de `tools/version.mjs`, etiquetas `v*`, ni tocar `README.md`
+  "Novedades". Eso lo hace el integrador al fusionar.
+- **Haz solo lo que pide el encargo.** Respeta su lista de «No tocar». Si ves algo más que mejorar, anótalo en
+  la descripción del PR (sección «Para después»), no lo hagas.
+- **Pruebas antes de abrir el PR**: `npm test` si hay Chromium; si no, `npm run test:core` y dilo en el PR (el
+  navegador lo pasará GitHub Actions). Añade pruebas para lo nuevo, pocas y que se entiendan.
+- **Contenido como datos**: zonas, misiones, diálogos y monstruos van en `src/data/`, no en código.
+- **Documenta**: una entrada corta en `historial.md` (qué se hizo y por qué) y, si cambia algo jugable, una línea
+  en `CHANGELOG.md` bajo `[Sin publicar]`. Saca de `planning.md` lo que el encargo deja hecho.
+- **Ante una duda de diseño, no inventes**: elige la opción más conservadora, sigue, y explícala en el PR
+  («Decisiones que tomé»). Si la duda bloquea, para y pregúntalo en el PR.
+- **Respeta la dirección visual** de este archivo y escribe todo en español, como el resto del proyecto.
+- **Commits** en español, explicando el porqué, terminados en la línea de coautoría de Claude.

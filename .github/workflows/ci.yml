@@ -1,0 +1,74 @@
+# =============================================
+# 🧪 Pruebas en cada pull request y en main · 🚀 publicación en GitHub Pages solo si pasan
+# Es el control de calidad de la cadena de producción (docs/produccion-nube.md): un PR en rojo no se fusiona,
+# y main solo se publica con todas las pruebas en verde.
+# =============================================
+name: Pruebas y publicación
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruebas:
+    name: npm test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Chromium para las pruebas de navegador
+        run: npx playwright install --with-deps chromium
+      - run: npm test
+        env:
+          SHOT_DIR: capturas
+      - name: Capturas de las pruebas (para revisar el aspecto)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: capturas
+          if-no-files-found: ignore
+          retention-days: 7
+
+  publicar:
+    name: Publicar en GitHub Pages
+    needs: pruebas
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      # Solo lo que el juego necesita: la página, el estilo, el código y las imágenes optimizadas
+      - name: Montar la web
+        run: |
+          mkdir -p _site
+          cp index.html style.css _site/
+          cp -r src img _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

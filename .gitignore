@@ -35,3 +35,5 @@ desktop.ini
 
 # Arte original del usuario (PNG grandes): en el repo solo van las versiones optimizadas de img/sprites, img/bg e img/zones
 /img/*.png
+# Arte que el director deja por tandas para el taller de sprites (no se sube; se sube lo procesado)
+/img/entrantes/
