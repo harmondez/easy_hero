@@ -1,4 +1,6 @@
 import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.5.1';
+import { ART } from './data/art.js?v=1.5.1';
+import { monsterArt } from './art.js?v=1.5.1';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo
@@ -168,20 +170,23 @@ function tick(now) {
 
 // Los enemigos se ven en la escena antes de pelear: su imagen va en el mundo, junto a su parada
 const ENEMY_OFFSET = { x: 5, y: 11 };   // píxeles de mapa: hacia la derecha y hacia arriba desde su parada
-const ENEMY_SPRITE = { src: 'img/sprites/goblin_left.png', ratio: 175 / 217, h: HERO_MAP_H * 217 / 244 };
+// Sin arte propio, el goblin de siempre. Con arte (src/data/art.js, por el `sprite` de la parada o su nombre), el suyo.
+const ENEMY_SPRITE = { src: 'img/sprites/goblin_left.png', w: 175, h: 217 };
+const HERO_SPRITE_H = 244;   // misma escala de píxel que el héroe
 
 function renderActors() {
     els.world.querySelectorAll('.adv-enemy').forEach(el => el.remove());
     st.scene.points.filter(p => p.kind === 'enemy' && st.hooks.isShown(p) && !st.hooks.isCleared(p)).forEach(p => {
+        const sprite = monsterArt(ART, p.sprite || p.name) || ENEMY_SPRITE;
         const img = document.createElement('img');
         img.className = 'adv-enemy';
-        img.src = ENEMY_SPRITE.src;
+        img.src = sprite.src;
         img.alt = '';
         img.draggable = false;
         // Los jefes de misión se ven más grandes, como en el combate
-        const h = ENEMY_SPRITE.h * ({ subboss: 1.25, boss: 1.5 }[p.enemy && p.enemy.type] || 1);
+        const h = HERO_MAP_H * (sprite.h / HERO_SPRITE_H) * ({ subboss: 1.25, boss: 1.5 }[p.enemy && p.enemy.type] || 1);
         img.style.height = `${h.toFixed(1)}px`;
-        img.style.width = `${(h * ENEMY_SPRITE.ratio).toFixed(1)}px`;
+        img.style.width = `${(h * sprite.w / sprite.h).toFixed(1)}px`;
         // Sus pies quedan por encima del punto (y de su latido): así la parada roja se ve siempre
         img.style.transform = `translate3d(${p.x + ENEMY_OFFSET.x}px, ${p.y - ENEMY_OFFSET.y}px, 0) translate(-50%, -100%)`;
         els.world.insertBefore(img, els.hero);

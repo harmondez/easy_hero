@@ -7,6 +7,7 @@
 //   `arriveAt` (en las salidas) la parada de la escena de destino donde apareces
 //   `enemy`    contra qué se pelea (tipo y piso fijan su fuerza: la dificultad es fija por zona)
 //   `once`     el enemigo no vuelve nunca (jefes de misión); los demás reaparecen al dormir en la posada
+//   `sprite`   (enemigos) con qué id se busca su imagen en src/data/art.js (enemigo_<sprite>); si no, por su nombre
 //   `requires` marcas de la historia que hacen falta para que el punto aparezca (todas)
 //   `talk`     lo que dice un NPC según la historia: gana la primera entrada cuyas marcas `when` se cumplen
 //              (`set` pone una marca al terminar de hablar; `reward` da oro y pociones una sola vez)
@@ -86,7 +87,7 @@ export const ZAFIAS = {
                 // Sobre los marcadores rojos pintados en el mapa
                 { id: 'guardia', kind: 'enemy', name: 'Goblin de guardia', x: 1060, y: 568,
                     enemy: { type: 'monster', floor: 3 }, dialogue: 'guardia' },
-                { id: 'grask', kind: 'enemy', name: 'Grask, jefe goblin', x: 1185, y: 628, once: true,
+                { id: 'grask', kind: 'enemy', name: 'Grask, jefe goblin', sprite: 'grask', x: 1185, y: 628, once: true,
                     requires: ['defeated:guardia'], enemy: { type: 'subboss', floor: 3 }, dialogue: 'grask' }
             ],
             links: [

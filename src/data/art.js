@@ -6,6 +6,11 @@
 // =============================================
 export const ART = {
     "sprites": {
+        "enemigo_grask": {
+            "src": "img/sprites/enemigo_grask.webp",
+            "w": 196,
+            "h": 256
+        },
         "enemigo_orco": {
             "src": "img/sprites/enemigo_orco.webp",
             "w": 186,

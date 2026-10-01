@@ -26,8 +26,16 @@ Tipos: `character`, `enemy`, `npc`, `boss`, `prop`, `obstacle`, `structure`, `am
 Opciones: `--dry-run`, `--force` (rehacer; lo anterior se aparta con fecha), `--variant`, `--details`, `--regions`,
 `--model`, `--no-game`, `--game-id`.
 
-**Usa nombres en español para los enemigos** («orco», «rata-gigante»): el combate busca la imagen por el nombre
-base del monstruo.
+**El juego busca cada imagen por un id**: en el descenso, el nombre base del monstruo en español («Orco» →
+`enemigo_orco`); en la aventura, el campo `sprite` de la parada en `src/data/zones/*.js` (Grask → `sprite: 'grask'`).
+Si el nombre del asset no coincide, entrégalo con `--game-id`: `npm run generate -- boss grask --game-id grask`.
+
+**Ejemplo completo (goblin jefe para Grask):**
+```bash
+npm run generate -- boss grask --game-id grask --details "a huge goblin chieftain, bone crown, jagged cleaver, red war cloak"
+```
+Genera, quita el fondo, valida, crea `img/sprites/enemigo_grask.webp`, lo registra en `src/data/art.js` y Grask
+lo usa al momento en el mapa del campamento y en su combate (más grande por ser sub-jefe).
 
 ## Dónde va cada cosa
 | Qué | Dónde |

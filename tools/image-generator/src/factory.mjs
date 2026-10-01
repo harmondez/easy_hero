@@ -105,7 +105,8 @@ export class AssetFactory {
         const prefix = plan.typeConfig.game_prefix;
         if (!prefix) return null;
         const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fabrica-'));
-        const intakeName = `${prefix}_${plan.id}.png`;
+        // El id con el que lo busca el juego (p. ej. el nombre base del monstruo en español); por defecto, el del asset
+        const intakeName = `${prefix}_${slug(plan.gameId || plan.id)}.png`;
         fs.copyFileSync(pngFile, path.join(tmp, intakeName));
         try {
             const res = await processSprites({ root: this.root, inDir: tmp });
@@ -119,6 +120,7 @@ export class AssetFactory {
     // ---------- AssetGenerator: personajes, enemigos, NPC, jefes, props… ----------
     async generateAsset(type, name, opts = {}) {
         const plan = this.plan(type, name, opts);
+        plan.gameId = opts.gameId || '';
         if (opts.dryRun) return { dryRun: true, plan };
         this.guardOverwrite(plan, opts.force);
         fs.mkdirSync(plan.dir, { recursive: true });
@@ -178,7 +180,7 @@ export class AssetFactory {
         }
         const check = tc.remove_background ? await validateSprite(fs.readFileSync(final), this.config.background_removal) : await validateImage(fs.readFileSync(final));
         if (!check.ok) throw new Error(`Tras el arreglo no pasa la validación: ${check.errors.join('; ')}`);
-        const plan = { id: gameId ? slug(gameId) : id, typeConfig: tc };
+        const plan = { id, gameId, typeConfig: tc };
         const game = await this._toGame(plan, final);
         Object.assign(meta, { validation: check, game, fixedAt: new Date().toISOString() });
         writeMeta(metaFile, meta);
@@ -209,6 +211,7 @@ export class AssetFactory {
         const theme = this.mapThemes[name] || {};
         const layout = this.mapLayout(name, opts.regions);
         const plan = this.plan('map', name, { ...opts, details: opts.details || theme.details || '', layout });
+        plan.gameId = opts.gameId || '';
         // Archivos con los nombres del contrato del MAP: <map>_full.png, regions/, manifest.json
         plan.files = { raw: path.join(plan.dir, `${plan.id.replace(/-/g, '_')}_full.png`), final: path.join(plan.dir, `${plan.id.replace(/-/g, '_')}_full.png`), meta: path.join(plan.dir, `${plan.id}.meta.json`) };
         if (opts.dryRun) return { dryRun: true, plan, layout };

@@ -160,7 +160,8 @@ function _advRenderCombat() {
 function _advStartCombat(p) {
     const def = p.enemy || { type: 'monster', floor: 0 };
     const m = Engine.createRpgMonster(def.type, def.floor, 0);
-    m.name = p.name; m.baseName = p.name; m.icon = '👺';
+    // baseName: con qué nombre se busca su arte (p. sprite en los datos de la zona; si no, su nombre)
+    m.name = p.name; m.baseName = p.sprite || p.name; m.icon = '👺';
     adv.point = p;
     adv.combat = Engine.createRpgCombat(adv.hero, m, Math.random);
     adv.combat.potions = Meta.potionCount(ctx.meta);

@@ -20,6 +20,7 @@
 //     --regions <lista> (mapas) zonas «id:CASILLA:descripción» con CASILLA en NW N NE W C E SW S SE
 //     --model <id>      usa otro modelo solo esta vez (por defecto, el de config/factory.json)
 //     --no-game         no lo entrega al juego (se queda en taller/)
+//     --game-id <id>    con qué nombre lo busca el juego (p. ej. el nombre base del monstruo: orco, grask)
 //     fix <tipo> <nombre> [--flip] [--game-id id]   arregla uno ya generado sin pagar: voltearlo y/o reentregarlo con otro id
 //     list              lista lo que ya ha generado la fábrica
 // =============================================
@@ -75,7 +76,7 @@ try {
         process.exit(0);
     }
     if (!name) throw new Error('Falta el nombre: p. ej. «npm run generate -- enemy orc».');
-    const opts = { dryRun: !!args.dryRun, force: !!args.force, variant: args.variant || '', details: args.details || '', regions: args.regions, noGame: !!args.noGame };
+    const opts = { dryRun: !!args.dryRun, force: !!args.force, variant: args.variant || '', details: args.details || '', regions: args.regions, noGame: !!args.noGame, gameId: args.gameId || '' };
     const result = type === 'map' ? await factory.generateMap(name, opts)
         : type === 'background' ? await factory.generateBackground(name, opts)
         : await factory.generateAsset(type, name, opts);

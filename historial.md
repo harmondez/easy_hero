@@ -472,6 +472,14 @@ respecto al contorno (sin halo). La primera imagen (un orco) salió mirando a la
 copiaba la orientación de la referencia del héroe → referencias por tipo y `fix --flip` para arreglar sin pagar.
 Fondo blanco y no negro: los contornos casi negros se perderían. Coste de la prueba: una imagen (~0,034 $).
 
+## 2026-10-01 · Repaso de la Asset Factory y Grask
+
+Revisión «creation-ready»: `budget.max_images_per_run` no se usaba (cada ejecución genera UNA imagen) → fuera;
+`--game-id` solo existía en `fix` → también al generar; el mapa de la aventura pintaba siempre el goblin y Grask
+nunca encontraría su arte (lo buscaba como «grask-jefe-goblin») → el visor usa `src/data/art.js` y las paradas
+tienen `sprite`. Prueba real: `boss grask` salió a la primera mirando a la izquierda (con la referencia del goblin
+y no la del héroe), y se ve en el mapa y en el combate. Gasto acumulado de Google: 2 imágenes (~0,07 $).
+
 ## Supuestos confirmados antes de B1 (las 8 dudas que quedaban)
 Accesorio = rasgo pasivo casi sin números · mejoras con las mismas 5 rarezas del equipo · descartar cura 3 HP
 (luego ajustado a 3+1/rareza) · hoguera da 1 de 3 con mínimo Poco común · 4-6 ofertas de objeto por ruta ·

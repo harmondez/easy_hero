@@ -16,14 +16,13 @@
     "_output_mime_doc": "Formato que devuelve la API (gemini-3.1-flash-lite-image solo admite image/jpeg). La fábrica lo convierte a PNG en local: el asset final es siempre PNG."
   },
   "budget": {
-    "_doc": "Freno de seguridad: precio estimado por imagen y máximo de imágenes por ejecución.",
+    "_doc": "Precio estimado por imagen (lo enseñan el dry-run y el log). Cada ejecución genera UNA imagen.",
     "usd_per_image": {
       "gemini-2.5-flash-image": 0.039,
       "gemini-3.1-flash-lite-image": 0.0336,
       "gemini-3.1-flash-image": 0.067,
       "gemini-3-pro-image": 0.134
-    },
-    "max_images_per_run": 1
+    }
   },
   "paths": {
     "workshop": "taller",
