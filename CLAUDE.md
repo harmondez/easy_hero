@@ -32,10 +32,10 @@ vanilla con módulos ES, sin bundler ni framework; se publica como web estática
 | Motor puro (sin DOM; el azar llega por parámetro `rng`) | `src/engine.js` (combate, mapa), `src/items.js`, `src/events.js`, `src/meta.js` (progreso permanente), `src/save.js` |
 | Presentación | `src/ui.js` (pantallas, combate de lado), `src/adventure-view.js` (visor de Zafias), `style.css`, `index.html` |
 | Controladores | `src/main.js` (descenso y arranque), `src/adventure.js` (Modo Aventura) |
-| Contenido como datos | `src/data/` (monstruos, variantes, eventos, equilibrio, zonas en `src/data/zones/`, registro de arte `art.js`) |
-| Arte | `img/sprites` (`enemigo_*`, `heroe_*`), `img/bg` (fondos), `img/zones` (mapas); en WebP. Los PNG originales y `img/entrantes/`, `img/map-divided/`, `taller/` NO se suben |
-| Herramientas | `tools/sprites.mjs` (`npm run sprites`: PNG → juego), `tools/image-generator/` (`npm run generate`: Asset Factory con Gemini), `tools/build-site.mjs` (web publicable), `tools/version.mjs` (versiones), `tools/split-map.mjs` |
-| Pruebas | `npm test` = `test:core` (motor, eventos, equipo, guardado, equilibrio, sprites) + navegador (Playwright) |
+| Contenido como datos | `src/data/` (monstruos, variantes, eventos, equilibrio, criaturas con nombre `creatures.js`, zonas en `src/data/zones/`, registro de arte `art.js`) |
+| Arte | `img/sprites` (`enemigo_*`, `heroe_*`), `img/bg` (fondos), `img/zones` (mapas); en WebP. Los PNG originales y `img/entrantes/`, `img/map-divided/`, `img/map-divided-upscaled/`, `taller/` NO se suben |
+| Herramientas | `tools/sprites.mjs` (`npm run sprites`: PNG → juego), `tools/image-generator/` (`npm run generate`: Asset Factory con Gemini), `tools/build-site.mjs` (web publicable), `tools/version.mjs` (versiones), `tools/split-map.mjs` (parte el mapa en piezas) y `tools/assemble-map.mjs` (lo recompone con las piezas HD), `tools/zone-overlay.mjs` (cuadrícula para colocar paradas) y `tools/trace-paths.mjs` (traza solos los caminos a trazos). Receta de una zona nueva: `docs/zonas.md` |
+| Pruebas | `npm test` = `test:core` (motor, eventos, equipo, guardado, equilibrio, sprites, zonas, criaturas) + navegador (Playwright) + recorrido de la aventura. Banco de equilibrio de la aventura: `npm run sim:aventura` |
 | Publicación | GitHub Actions: pruebas en cada PR y publicación en GitHub Pages al fusionar en `main`; vistas previas por PR en Cloudflare. Ver `cloud-method.md` |
 
 - Dev-dependencies solo para herramientas y pruebas (Playwright, sharp, @google/genai); el juego no carga nada de npm.

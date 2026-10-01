@@ -2,12 +2,13 @@
 // 🧭 Modo Aventura (controlador): Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
 // Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
 // =============================================
-import * as UI from './ui.js?v=1.6.0';
-import * as Engine from './engine.js?v=1.6.0';
-import * as Meta from './meta.js?v=1.6.0';
-import * as Adventure from './adventure-view.js?v=1.6.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.6.0';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.6.0';
+import * as UI from './ui.js?v=1.7.0';
+import * as Engine from './engine.js?v=1.7.0';
+import * as Meta from './meta.js?v=1.7.0';
+import * as Adventure from './adventure-view.js?v=1.7.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.7.0';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.7.0';
+import { creatureFor } from './data/creatures.js?v=1.7.0';
 
 // Lo que la aventura necesita del resto del juego (main.js se lo da al arrancar): el almacenamiento, el progreso
 // permanente y algunas piezas del descenso (el héroe base, las recompensas, La Forja, bajar a la mazmorra).
@@ -159,9 +160,11 @@ function _advRenderCombat() {
 
 function _advStartCombat(p) {
     const def = p.enemy || { type: 'monster', floor: 0 };
-    const m = Engine.createRpgMonster(def.type, def.floor, 0);
+    // Una criatura con nombre (creatures.js) trae su fuerza, su forma de pelear y su dibujo; si no, un monstruo del piso
+    const creature = creatureFor(p);
+    const m = creature ? Engine.createRpgCreature(creature) : Engine.createRpgMonster(def.type, def.floor, 0);
     // baseName: con qué nombre se busca su arte (p. sprite en los datos de la zona; si no, su nombre)
-    m.name = p.name; m.baseName = p.sprite || p.name; m.icon = '👺';
+    if (!creature) { m.name = p.name; m.baseName = p.sprite || p.name; m.icon = '👺'; }
     adv.point = p;
     adv.combat = Engine.createRpgCombat(adv.hero, m, Math.random);
     adv.combat.potions = Meta.potionCount(ctx.meta);

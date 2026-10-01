@@ -1128,7 +1128,8 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     assert('El botón «Modo aventura» abre la vista de Zafias', await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none'));
     assert('Empieza en la aldea, con su cartel', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea'
         && /aldea/i.test(await adv.$eval('.adv-plaque', el => el.textContent)));
-    assert('La aldea tiene 2 NPC y una salida', (await adv.$$('.adv-stop.is-npc')).length === 2 && (await adv.$$('.adv-stop.is-exit')).length === 1);
+    assert('La aldea tiene 2 NPC, 2 puntos de interés y 2 salidas al bosque', (await adv.$$('.adv-stop.is-npc')).length === 2
+        && (await adv.$$('.adv-stop.is-poi')).length === 2 && (await adv.$$('.adv-stop.is-exit')).length === 2);
     assert('El mapa se ve con zoom (la cámara escala el mundo)', await adv.$eval('.adv-world', el => /scale\((1\.[5-9]|2\.)/.test(el.style.transform)));
     assert('Los caminos se dibujan a trazos, como en un mapa antiguo', await adv.$eval('.adv-paths .adv-path-ink', el =>
         getComputedStyle(el).strokeDasharray !== 'none' && el.getAttribute('d').length > 10));
@@ -1151,8 +1152,10 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     await adv.click('.adv-stop[data-point="al-bosque"]', { force: true });
     await sleep(250);
     assert('La salida lleva a la escena del bosque', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'bosque');
-    assert('Los 3 goblins del bosque se ven en la escena antes de pelear (mirando a la izquierda)',
-        (await adv.$$eval('.adv-world .adv-enemy', els => els.filter(e => /goblin_left/.test(e.src)).length)) === 3);
+    const enemySrcs = await adv.$$eval('.adv-world .adv-enemy', els => els.map(e => e.src));
+    assert('En el bosque se ven sus 4 goblins (mirando a la izquierda) y 2 lobos con su dibujo',
+        enemySrcs.filter(s => /goblin_left/.test(s)).length === 4 && enemySrcs.filter(s => /enemigo_lobo-de-zafias/.test(s)).length === 2);
+    const enemiesBefore = (await adv.$$('.adv-world .adv-enemy')).length;
     await adv.click('.adv-stop[data-point="goblin-1"]', { force: true });
     await sleep(250);
     assert('Pulsar al goblin: el héroe va hasta él y el goblin le grita', /Goblin/.test(await adv.$eval('.adv-dialogue-who', el => el.textContent)));
@@ -1168,7 +1171,7 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     assert('Tras la victoria vuelves al bosque: ese goblin ya no está y su parada queda superada (✓)',
         (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'bosque'
         && !!(await adv.$('.adv-stop.is-cleared[data-point="goblin-1"]'))
-        && (await adv.$$('.adv-world .adv-enemy')).length === 2);
+        && (await adv.$$('.adv-world .adv-enemy')).length === enemiesBefore - 1);
     const saved = await adv.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
     assert('La aventura se guarda: escena, vida y enemigos vencidos', saved.scene === 'bosque' && saved.gone['goblin-1'] === true && saved.hp > 0);
     assert('La barra de la aventura muestra vida, oro y pociones', /❤️ \d+\/\d+ · 🪙 \d+ · 🧪 \d+/.test(await adv.$eval('.adv-hud', el => el.textContent)));
@@ -1184,6 +1187,19 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     const slept = await adv.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
     assert('Dormir en la posada cura del todo y hace volver a los goblins', slept.hp === null && Object.keys(slept.gone).length === 0
         && slept.flags['defeated:goblin-1'] === true);
+    // Un punto de interés se mira como se habla, y su hallazgo se da una sola vez
+    const goldOf = async () => Number((await adv.$eval('.adv-hud', el => el.textContent)).match(/🪙 (\d+)/)[1]);
+    const goldBefore = await goldOf();
+    await adv.click('.adv-stop[data-point="pozo"]', { force: true });
+    await sleep(200);
+    const pozoWho = await adv.$eval('.adv-dialogue-who', el => el.textContent);
+    await talkAll();
+    const goldAfter = await goldOf();
+    await adv.click('.adv-stop[data-point="pozo"]', { force: true });
+    await sleep(200);
+    await talkAll();
+    assert('El pozo (punto de interés) abre su texto y da 10 de oro una sola vez',
+        /pozo/i.test(pozoWho) && goldAfter === goldBefore + 10 && (await goldOf()) === goldAfter);
     await adv.click('.adv-stop[data-point="tienda"]', { force: true });
     await sleep(250);
     assert('La tienda de la aldea abre La Forja (con las pociones)', await adv.$eval('#rpgShopView', el => getComputedStyle(el).display !== 'none')

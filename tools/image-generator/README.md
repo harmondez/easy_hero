@@ -30,9 +30,15 @@ Opciones: `--dry-run`, `--force` (rehacer; lo anterior se aparta con fecha), `--
 `enemigo_orco`); en la aventura, el campo `sprite` de la parada en `src/data/zones/*.js` (Grask → `sprite: 'grask'`).
 Si el nombre del asset no coincide, entrégalo con `--game-id`: `npm run generate -- boss grask --game-id grask`.
 
+**Los nombres propios NO van al prompt.** El nombre (y `--details`) dicen QUÉ es y cómo es: especie, tamaño,
+armadura, cicatrices… El nombre propio del jefe solo va en `--game-id`. El modelo no sabe quién es «Grask».
+
+**Las criaturas con nombre** (`src/data/creatures.js`) buscan su dibujo por su nombre:
+«Gnoll Berserker» → `enemigo_gnoll-berserker`, así que `--game-id` es ese nombre en minúsculas y con guiones.
+
 **Ejemplo completo (goblin jefe para Grask):**
 ```bash
-npm run generate -- boss grask --game-id grask --details "a huge goblin chieftain, bone crown, jagged cleaver, red war cloak"
+npm run generate -- boss "goblin chieftain" --game-id grask --details "a huge goblin, bone crown, jagged cleaver, red war cloak"
 ```
 Genera, quita el fondo, valida, crea `img/sprites/enemigo_grask.webp`, lo registra en `src/data/art.js` y Grask
 lo usa al momento en el mapa del campamento y en su combate (más grande por ser sub-jefe).

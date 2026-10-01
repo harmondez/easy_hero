@@ -503,3 +503,66 @@ cofres solo dan objetos · legendarios máx. 1 igual, sin límite total · equip
   el goblin teñido. Héroe: la primera `heroe_*` por orden alfabético, si hay; si no, `hero_right.png`.
 - Pruebas: `tests/sprites-sim.mjs` (en `test:core`, con imágenes generadas al vuelo) y una sección en el navegador que
   sirve un manifiesto de prueba.
+
+## 2026-10-01 · Mapa de Zafias en alta resolución
+- El director devolvió 11 de las 12 piezas de la cuadrícula reescaladas (≈×5) en `img/map-divided-upscaled/` (no se
+  sube). Se identificaron comparándolas con los trozos originales a 64×64 y se renombraron `cuadricula_fX_cY_hd.jpg`.
+- `tools/assemble-map.mjs`: coloca cada pieza en su recuadro del índice de `split-map.mjs` × 3 y funde las costuras
+  en la franja de solape. Pieza que falta → el original ampliado. Pieza **redibujada** (diferencia > 35 con su
+  original) → cede en el solape (peso⁴) para que no se vean dos dibujos superpuestos.
+- Resultado: `img/zones/zafias.webp` a 4302×3291 (2,7 MB). Las coordenadas del juego no cambian (la imagen se estira
+  al tamaño lógico 1434×1097); se quitó `image-rendering: pixelated` porque ahora la imagen se reduce, no se amplía.
+  Las piezas HD vienen además sin los marcadores pintados (cofres, muñecos), que el juego ya dibuja por su cuenta.
+- Pendiente: f1_c1 (no llegó) y f1_c3 (llegó redibujada, con el río en otro sitio). Ver planning.
+
+## 2026-10-01 · Caminos que siguen el mapa HD y más paradas en Zafias
+- Con el mapa HD los caminos pintados se ven mucho más marcados. Se trazaron de nuevo todas las líneas a trazos
+  siguiendo la tierra (máscara de color marrón claro sobre una cuadrícula de coordenadas lógicas): ahora van por el
+  camino y no a través de los árboles. Herramienta: `tools/zone-overlay.mjs` (con `--tierra` resalta los caminos).
+- Paradas de 11 a 24. Tipo nuevo **`poi`** (punto de interés, 🔍 dorado): se mira como se habla con un NPC y puede dar
+  un hallazgo una sola vez (marca `visto:<id>`). Aldea: pozo (+10 🪙), mercado, y una segunda salida al bosque por el
+  sendero del sur. Bosque: senda del santuario, poste de los cruces, ruinas del vigía (+1 🧪), camino del norte, un
+  fardo en la orilla (+25 🪙); enemigos nuevos: goblin explorador, goblin del puente y el **Orco del puente** (opcional,
+  con su dibujo). Campamento: estandartes, goblin centinela, escalinata del castillo, goblin rezagado y el botín de
+  Grask (+40 🪙 +1 🧪, solo tras vencerle). La misión no cambia: siguen contando los tres goblins de siempre.
+- La cueva del sur no tiene camino pintado desde la aldea: su línea baja por los escalones viejos, monte a través.
+- Prueba nueva `tests/zones-sim.mjs` (en `test:core`): caminos que unen paradas reales, todo alcanzable, dentro del
+  encuadre, salidas con destino real, diálogos escritos y hallazgos de una sola vez.
+
+## 2026-10-01 · Trazado automático de los caminos (`tools/trace-paths.mjs`)
+- Objetivo: que montar una zona nueva (p. ej. una de nieve) no exija leer coordenadas a ojo. Ahora los caminos se
+  escriben sin recodos (`['poste', 'goblin-puente']`) y la herramienta los traza en ~10 s.
+- Cómo: el color del camino se **aprende** de la zona (histograma de colores alrededor de paradas y cruces frente al
+  del mapa entero: vale para tierra, nieve o piedra) → coste por píxel (camino barato, bosque caro, agua carísima) →
+  ruta más barata con A* dentro del encuadre → suavizado → «tirar de la cuerda» (ir recto solo si ningún punto de la
+  recta pisa terreno peor que la ruta) → Ramer-Douglas-Peucker. Resultado en `src/data/zones/zafias-paths.js`.
+- Lecciones: sin suavizar, la cuadrícula da líneas en escalera; con el «tirar de la cuerda» por coste medio, todo
+  salía recto atajando por los árboles (hizo falta exigir que ningún punto fuera peor que la ruta).
+- Comparado con lo trazado a mano: la mayoría a 1-9 px. Se quedan a mano 4 caminos donde no mejora: la cueva (sin
+  camino pintado), el claro rojizo de Grask (dos) y el poste→puente. Los recodos a mano siempre mandan.
+- Receta completa de una zona en `docs/zonas.md`. `tests/zones-sim.mjs` avisa si un camino queda sin trazar.
+
+## 2026-10-01 · Criaturas con nombre en la recámara (lobos, gnolls, orcos)
+- `src/data/creatures.js`: enemigos fijos del Modo Aventura con su ficha (tipo, piso de referencia, patrón,
+  multiplicadores y reglas). Una parada los usa con `enemy: { creature: 'gnoll-berserker' }`; el motor los crea con
+  `createRpgCreature` (siempre iguales, sin variantes al azar) y el mapa y el combate buscan su dibujo por su nombre.
+- Nueve: Lobo de Zafias · Feronius el Feroz (lobo alfa, sub-jefe, furia) · Gnoll de Zafias · Gnoll Berserker (×1,4
+  daño, ×0,7 vida) · Gnarok, el Jefe Gnoll (sub-jefe, sed de sangre) · Orco de Zafias · Orco Guerrero (armadura
+  negra = 30 % de resistencia física) · Orco Chamán (×1,25 daño y vida, quema) · Guul, el Rey Orco (jefe).
+- Dibujos con la Asset Factory, uno a uno (9 imágenes, ~0,30 $): todos de perfil mirando a la izquierda a la primera.
+  Regla del director: **los nombres propios no van al prompt**, solo qué es y cómo es; el nombre va en `--game-id`.
+- Aún no están colocados en ninguna zona. Prueba: `tests/creatures-sim.mjs`.
+
+## 2026-10-01 · Feronius, jefe de Zafias, y el primer banco de la aventura
+- Zafias solo tiene goblins y lobos (gnolls y orcos quedan para el bosque amarillo). Escena nueva **la guarida del
+  lobo** (sureste, tras el campamento; se abre al vencer a Grask): un lobo de guardia, unos huesos roídos (pista) y
+  **Feronius el Feroz** como jefe de la zona (tipo jefe, se ve más grande, `once`). El Orco del puente se fue.
+- `tests/adventure-sim.mjs` (`npm run sim:aventura`): un bot juega Zafias miles de veces sobre el grafo real (salidas,
+  bloqueos, marcas) con el motor de combate; si cae, entrena con los enemigos fáciles que reaparecen al dormir.
+- **Hallazgo:** un héroe nuevo necesitaba nivel 11 y ~250 combates de entrenamiento para vencer a Grask, porque en
+  la aventura no hay equipo (ATK 1) y los enemigos venían de pisos 2-3. Se bajaron los pisos de Zafias (Grask:
+  sub-jefe de piso 1) y Feronius quedó como jefe de piso 1 con ×0,8 daño y ×0,85 vida: ahora ~16 combates de
+  entrenamiento antes de Grask, y Feronius a la primera hacia el nivel 4 perdiendo dos tercios de la vida. Jugar bien
+  cuenta: el bot que solo ataca necesita 55 combates y cae 5 veces (2 el que se defiende y bebe).
+- `tests/adventure-flow.test.mjs` (en `npm test`): el final de Zafias jugado en el navegador, del campamento a
+  Maela pasando por Grask, el botín, la guarida y Feronius.

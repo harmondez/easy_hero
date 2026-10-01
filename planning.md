@@ -7,14 +7,28 @@
 
 ## 📍 Estado (2026-10-01)
 
-- **Publicado:** la **1.6.0** (https://harmondez.github.io/easy_hero/): descenso sin fin, La Forja, combate de lado
-  estilo DragonFable con panel de pergamino y pociones, enemigos sin intenciones visibles (telegrafiado de golpes
-  fuertes), el **Modo Aventura en Zafias** (aldea, bosque, campamento; misión de Maela y Grask; posada, tienda,
-  cueva al descenso; mapa con caminos a trazos y paradas 1-1, 1-2…) y los primeros enemigos con arte propio de la
-  **Asset Factory** (Orco y Grask).
-- Herramientas: taller de sprites (`npm run sprites`) y Asset Factory (`npm run generate`).
+- **Publicado:** la **1.7.0** (https://harmondez.github.io/easy_hero/): descenso sin fin, La Forja, combate de lado
+  estilo DragonFable, y el **Modo Aventura en Zafias** con mapa HD, 4 escenas (aldea, bosque, campamento y la
+  guarida del lobo), 28 paradas con puntos de interés, goblins y lobos, la misión de Maela y Grask, y **Feronius**
+  como jefe de la zona. Criaturas con nombre en la recámara (gnolls y orcos con sus jefes, ya dibujados).
+- Herramientas: taller de sprites, Asset Factory, montaje de zonas (`docs/zonas.md`) y banco de la aventura
+  (`npm run sim:aventura`).
 
 ## 🔥 Siguiente, en este orden
+
+0. **Lo que dijo el banco de la aventura** (`npm run sim:aventura`, 2026-10-01). Antes del bosque amarillo:
+   - **El héroe de la aventura no tiene progresión de equipo.** Pelea con la espada básica (ATK 1) y solo mejora con
+     los puntos de nivel y La Forja: en el descenso la fuerza viene del botín, aquí no hay botín. Para Zafias basta
+     (se bajaron los pisos de sus enemigos), pero la segunda zona necesitará armas en la tienda de la aldea, botín
+     de los jefes o equipo que se traiga del descenso. Es una decisión de diseño para el director.
+   - **Combates largos y repetidos:** los goblins de piso 2 (guardia, centinela, rezagado) duran ~20 turnos con el
+     ritmo carga-golpe y defenderse. Y casi no hay azar: todas las partidas del bot salen idénticas.
+   - **Curva de Zafias hoy:** se acaba hacia el nivel 4; ~16 combates de entrenamiento antes de Grask jugando bien
+     (55 si solo atacas); Feronius se vence a la primera perdiendo ~65 % de la vida; ~60 de oro al final.
+   - Las fichas de gnolls y orcos (`creatures.js`) usan pisos 2-6 de la escala vieja: recalibrarlas con el banco
+     cuando se coloquen.
+   - Tras la misión, el objetivo dice «Misión cumplida» y no apunta a Feronius: añadir una pista («algo aúlla al
+     sureste del campamento»).
 
 1. **Arte con la Asset Factory** (`tools/image-generator`, ~0,034 $ por imagen):
    - **Fondos de combate por zona**: el combate usa siempre `img/bg/forest.webp`; debe usar el fondo de su zona
@@ -23,14 +37,21 @@
      héroe. Guardar una escala por monstruo y aplicarla en el combate.
    - **Comprobar la orientación** automáticamente (el modelo a veces dibuja mirando al lado contrario; hoy se
      arregla a mano con `fix --flip`).
+   - **Colocar las criaturas de la recámara** (`src/data/creatures.js`: lobos, gnolls, orcos y sus tres jefes, ya con
+     dibujo y ficha) en zonas o misiones: `enemy: { creature: id }` en la parada.
    - Lotes de enemigos por familia (los 90 monstruos comparten ~15-20 familias): empezar por Zafias y los primeros
      pisos.
-2. **Mapa de Zafias en alta**: las piezas para rehacer están en `img/map-divided/` (ver su `LEEME.md`). Cuando el
-   director las devuelva, el juego usará la pieza nítida al entrar en cada escena.
+2. **Mapa de Zafias en alta: casi hecho.** Ya se juega con el mapa HD recompuesto (`node tools/assemble-map.mjs`).
+   Faltan dos piezas: **f1_c1** (santuario de piedras, arriba a la izquierda; hoy va el original ampliado) y rehacer
+   **f1_c3** fiel al original (la que llegó está redibujada: el río y la cascada cambian de sitio y cede en las
+   costuras). Ojo: los caminos del norte del bosque (ruinas, camino del norte, puente del orco) ya están trazados
+   sobre la redibujada; si se cambia, basta con volver a ejecutar `node tools/trace-paths.mjs`. Quizá compense quedarse con ella.
+   Dejarlas en `img/map-divided-upscaled/` como `cuadricula_fX_cY_hd.jpg` y volver a ejecutar la herramienta.
 3. **Encargos de la nube pendientes** (GitHub Issues): **#4 editor de zonas** (`?editor`) y después **#5 misiones
    como datos**. Lanzarlos según [cloud-method.md](cloud-method.md).
-4. **Más Zafias**: misión 2 (santuario de piedras), misión 3 (Bram y el hierro de las cuevas), arco del castillo.
-   Mejor después de #5 (misiones como datos).
+4. **Más Zafias**: el mapa ya tiene los ganchos puestos como puntos de interés: la senda del santuario (misión 2),
+   el camino del norte y la escalinata (arco del castillo), Bram y el hierro de las cuevas (misión 3). Mejor después
+   de #5 (misiones como datos). Receta de zonas y caminos: [docs/zonas.md](docs/zonas.md).
 5. **Publicar** la siguiente versión cuando haya novedades jugables en `main`.
 
 ## 📌 Decisiones vigentes

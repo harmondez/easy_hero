@@ -1,9 +1,9 @@
-import { RPG_BALANCE } from './data/balance.js?v=1.6.0';
-import { pickMonsterDef } from './data/monsters.js?v=1.6.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.6.0';
-import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.6.0';
-import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.6.0';
-import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.6.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.7.0';
+import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.7.0';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.7.0';
+import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.7.0';
+import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.7.0';
+import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.7.0';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)
@@ -385,6 +385,21 @@ export function applyMonsterVariants(monster, ids) {
     monster.variants = { adj: adj ? adj.id : null, lin: lin ? lin.id : null };
     monster.name = [monster.baseName, adj && adj.name, lin && lin.name].filter(Boolean).join(' ');
     return monster;
+}
+
+/**
+ * Una criatura con nombre propio (src/data/creatures.js): la fuerza de su piso y su tipo, con su patrón,
+ * sus multiplicadores y sus reglas. Siempre sale igual: no tiene variantes al azar.
+ */
+export function createRpgCreature(c, tier = 0) {
+    const m = createRpgMonster(c.type || 'monster', c.floor || 0, tier);
+    m.name = m.baseName = c.name;
+    if (c.icon) m.icon = c.icon;
+    if (c.pattern && PATTERNS[c.pattern]) m.pattern = PATTERNS[c.pattern];
+    m.atq = Math.max(1, Math.round(m.atq * (c.atkMul || 1)));
+    m.maxHp = m.hp = Math.max(1, Math.round(m.maxHp * (c.hpMul || 1)));
+    m.rules = { ...(c.rules || {}) };
+    return m;
 }
 
 // Hash estable de un texto a [0, 1). NO usa el generador de la partida a propósito: si consumiera

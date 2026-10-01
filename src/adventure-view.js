@@ -1,6 +1,7 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.6.0';
-import { ART } from './data/art.js?v=1.6.0';
-import { monsterArt } from './art.js?v=1.6.0';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.7.0';
+import { ART } from './data/art.js?v=1.7.0';
+import { monsterArt } from './art.js?v=1.7.0';
+import { creatureFor } from './data/creatures.js?v=1.7.0';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo
@@ -14,9 +15,9 @@ const HERO_RATIO = 195 / 244;   // ancho/alto de img/sprites/hero_right.png
 const WALK_SPEED = 95;          // píxeles de mapa por segundo
 const CAMERA_EASE = 0.12;       // cuánto se acerca la cámara a su objetivo en cada fotograma
 const ZOOM_MIN = 1.5;           // por debajo, el héroe se ve diminuto
-const ZOOM_MAX = 2.4;           // por encima, el mapa (1434 px) se ve borroso
+const ZOOM_MAX = 2.4;           // el mapa se pinta a 1434 px lógicos; la imagen va a ×3 para que el zoom se vea nítido
 const FACE_GAP = 20;            // ante un enemigo, el héroe se para a esta distancia (no encima de él)
-const STOP_ICONS = { npc: '💬', enemy: '⚔️', exit: '🚪', inn: '🛏️', shop: '🛒', cave: '🕳️' };
+const STOP_ICONS = { npc: '💬', enemy: '⚔️', exit: '🚪', inn: '🛏️', shop: '🛒', cave: '🕳️', poi: '🔍' };
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const zone = ZAFIAS;
@@ -177,14 +178,14 @@ const HERO_SPRITE_H = 244;   // misma escala de píxel que el héroe
 function renderActors() {
     els.world.querySelectorAll('.adv-enemy').forEach(el => el.remove());
     st.scene.points.filter(p => p.kind === 'enemy' && st.hooks.isShown(p) && !st.hooks.isCleared(p)).forEach(p => {
-        const sprite = monsterArt(ART, p.sprite || p.name) || ENEMY_SPRITE;
+        const sprite = monsterArt(ART, p.sprite || (creatureFor(p) || {}).name || p.name) || ENEMY_SPRITE;
         const img = document.createElement('img');
         img.className = 'adv-enemy';
         img.src = sprite.src;
         img.alt = '';
         img.draggable = false;
         // Los jefes de misión se ven más grandes, como en el combate
-        const h = HERO_MAP_H * (sprite.h / HERO_SPRITE_H) * ({ subboss: 1.25, boss: 1.5 }[p.enemy && p.enemy.type] || 1);
+        const h = HERO_MAP_H * (sprite.h / HERO_SPRITE_H) * ({ subboss: 1.25, boss: 1.5 }[(creatureFor(p) || p.enemy || {}).type] || 1);
         img.style.height = `${h.toFixed(1)}px`;
         img.style.width = `${(h * sprite.w / sprite.h).toFixed(1)}px`;
         // Sus pies quedan por encima del punto (y de su latido): así la parada roja se ve siempre
@@ -288,7 +289,7 @@ function arriveAt(p) {
         if (t) openDialogue(t.dialogue, t.onDone);
         return;
     }
-    if (p.kind === 'npc' && st.hooks.onTalk) {
+    if ((p.kind === 'npc' || p.kind === 'poi') && st.hooks.onTalk) {   // un punto de interés se mira como se habla
         const t = st.hooks.onTalk(p);
         if (t) openDialogue(t.dialogue, t.onDone);
         return;

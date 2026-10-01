@@ -5,6 +5,37 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.7.0] - 2026-10-01
+
+### ✨ Novedades
+- 🗺️ **Zafias en alta resolución**: el mapa entero, rehecho pieza a pieza, con los caminos mucho más marcados.
+  Se ve nítido aunque acerques la cámara.
+- 🐺 **Feronius el Feroz, el jefe de Zafias**: una escena nueva, **la guarida del lobo**, al fondo del barranco del
+  sureste. Se abre al vencer a Grask; un lobo guarda el paso y el lobo alfa espera en la boca de su cueva.
+- 🐺 **Lobos en el bosque**: el Lobo de Zafias, con su dibujo propio, ronda el sendero del oeste y la subida de las
+  ruinas.
+- 🔍 **Puntos de interés**: paradas doradas que se miran en vez de pelearse. Algunas esconden un hallazgo (oro o una
+  poción) la primera vez: el pozo de la plaza, un fardo en la orilla, las ruinas del vigía, el botín de Grask…
+- 🧭 **Zafias más grande**: de 10 a 28 paradas numeradas. Una segunda salida de la aldea al bosque (el sendero del sur), el
+  poste de los cruces, el puente viejo, el camino del norte, la escalinata del castillo y más goblins.
+- ✒️ **Caminos que siguen el mapa**: las líneas a trazos van ahora por los caminos pintados, sin atravesar árboles.
+
+### ⚖️ Equilibrio
+- **Zafias se puede terminar empezando de cero.** Antes, un héroe nuevo necesitaba unos 250 combates de
+  entrenamiento para vencer a Grask. Los enemigos de Zafias bajan de piso (es la primera zona) y Grask queda como un
+  primer muro: unos 16 combates de entrenamiento si juegas bien (defenderse de los golpes fuertes y beber a tiempo).
+  Feronius se vence hacia el nivel 4, perdiendo dos tercios de la vida.
+
+### 🔧 Cambios
+- 🐾 **Criaturas con nombre** (`src/data/creatures.js`): enemigos fijos con ficha propia. Ya están dibujados y listos
+  para el próximo mapa el **gnoll**, el **gnoll berserker**, **Gnarok, el jefe gnoll**, el **orco**, el **orco
+  guerrero** (armadura negra), el **orco chamán** y **Guul, el rey orco**.
+- 🛤️ Herramientas para montar zonas: `assemble-map` (recompone el mapa HD), `zone-overlay` (cuadrícula para colocar
+  paradas) y `trace-paths` (traza solos los caminos aprendiendo el color del camino del propio mapa). Receta en
+  `docs/zonas.md`.
+- 🧪 Pruebas nuevas: integridad de las zonas, criaturas, un recorrido completo del final de Zafias en el navegador y
+  un banco de equilibrio de la aventura (`npm run sim:aventura`).
+
 ## [1.6.0] - 2026-10-01
 
 ### ✨ Novedades

@@ -17,7 +17,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.6.0-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.7.0-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -32,7 +32,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 ## 🆕 Novedades
 
-**Versión 1.6.0** · 1 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.7.0** · 1 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **La gran actualización visual.** Easy Hero deja atrás las cartas y los emojis en combate: ahora peleas **de lado,
@@ -40,8 +40,12 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 | | Qué hay de nuevo |
 |:-:|------------------|
-| 🎨 | **Nuevo en la 1.6.0 — Enemigos con dibujo propio:** el **Orco** y **Grask, el jefe goblin**, ya no son el goblin teñido. Grask te espera en el campamento, más grande que tú |
-| 🏭 | **Nuevo en la 1.6.0 — Fábrica de arte:** el juego ya puede crear enemigos, jefes, fondos y mapas con un mismo estilo de pixel art. Pronto, cada criatura con su imagen |
+| 🐺 | **Nuevo en la 1.7.0 — Feronius el Feroz, el jefe de Zafias:** vence a Grask y se abre **la guarida del lobo**, al fondo del barranco. El lobo alfa te espera en la boca de su cueva |
+| 🗺️ | **Nuevo en la 1.7.0 — Zafias en alta resolución y mucho más grande:** el mapa rehecho y nítido, **28 paradas** en vez de 10, lobos en el bosque y una segunda salida de la aldea |
+| 🔍 | **Nuevo en la 1.7.0 — Puntos de interés:** paradas doradas que se miran en vez de pelearse. Algunas esconden oro o una poción la primera vez: el pozo, un fardo en la orilla, el botín de Grask… |
+| ⚖️ | **Nuevo en la 1.7.0 — Zafias se puede terminar empezando de cero:** Grask es un primer muro de verdad, pero ya no hace falta entrenar durante horas |
+| 🎨 | **1.6.0 — Enemigos con dibujo propio:** el **Orco** y **Grask, el jefe goblin**, ya no son el goblin teñido. Grask te espera en el campamento, más grande que tú |
+| 🏭 | **1.6.0 — Fábrica de arte:** el juego ya puede crear enemigos, jefes, fondos y mapas con un mismo estilo de pixel art. Pronto, cada criatura con su imagen |
 | 🗺️ | **Zafias como un mapa antiguo:** caminos a trazos de tinta y paradas rojas que laten, numeradas **1-1, 1-2, 1-3…**. Tu héroe anda de parada en parada; un enemigo sin vencer corta el paso y, vencido, su parada queda con ✓ |
 | 🧭 | **Modo aventura: Zafias.** Un mapa pintado que recorres escena a escena con tu héroe de siempre: una aldea con sus vecinos, un bosque lleno de goblins y un campamento con su jefe |
 | 📜 | **Tu primera misión.** Maela, la posadera, te encarga limpiar el bosque. El objetivo siempre a la vista y una recompensa al volver |
@@ -108,16 +112,25 @@ hasta allí… salvo que un enemigo le corte el paso.
 
 - 📜 **Misiones con historia.** Habla con los vecinos: Maela, la posadera, te pedirá echar a los goblins del
   bosque y acabar con **Grask**, su jefe. Lo que te toca hacer está siempre a la vista, arriba.
-- 👺 **Enemigos que ves venir.** Los goblins esperan en los caminos; pulsa uno y empieza el combate. Si los
+- 👺 **Enemigos que ves venir.** Los goblins y los lobos esperan en los caminos; pulsa uno y empieza el combate. Si los
   vences desaparecen… hasta que duermes en la posada y vuelven.
-- 🗺️ **Zonas que se abren.** El campamento goblin no aparece hasta que limpias el bosque.
+- 🗺️ **Zonas que se abren.** El campamento goblin no aparece hasta que limpias el bosque, y la guarida del lobo
+  no se abre hasta que cae Grask.
+- 🔍 **Puntos de interés.** Las paradas doradas se miran: un pozo, un poste con indicaciones, unas ruinas… y
+  algunas esconden oro o una poción la primera vez.
+- 🐺 **El jefe de la zona.** Al fondo del barranco del sureste vive **Feronius el Feroz**, el lobo alfa. Es el
+  combate más duro de Zafias: llega con pociones y aprende a defenderte de sus golpes.
 - 🏘️ **La aldea es tu base.** La **posada** te cura, la **tienda** vende pociones y mejoras, y la **cueva del
   sur** baja al descenso de siempre.
 - 🛡️ **El mismo héroe.** Tu nivel, tus estadísticas, La Forja, el oro y las pociones son los mismos en la aventura
   y en la mazmorra. Si caes, despiertas en la posada con algo menos de oro.
 
 <p align="center">
-  <img src="docs/img/bosque.jpg" alt="El bosque de los cruces, con tres goblins en los caminos y el objetivo de la misión arriba" width="680">
+  <img src="docs/img/bosque.jpg" alt="El bosque de los cruces: caminos a trazos entre goblins, un lobo y puntos de interés dorados" width="680">
+</p>
+
+<p align="center">
+  <img src="docs/img/guarida.jpg" alt="La guarida del lobo: Feronius el Feroz, el lobo alfa con collar de huesos, espera a la entrada de su cueva" width="680">
 </p>
 
 ---
@@ -296,8 +309,9 @@ Todo lo que viene está explicado, con sus motivos, en **[planning.md](planning.
 ## 🔮 Qué viene
 
 > [!TIP]
-> **Lo próximo en Zafias:** más misiones y zonas (el santuario de piedras, el castillo), retratos en los diálogos
-> y arte propio para cada monstruo, para que cada criatura deje de ser un goblin teñido.
+> **Lo próximo en la aventura:** un segundo mapa, **el bosque amarillo**, con **gnolls y orcos** (ya dibujados,
+> con sus jefes **Gnarok** y **Guul, el rey orco**); más misiones en Zafias (el santuario de piedras, el castillo) y
+> retratos en los diálogos.
 
 El descenso sigue su propio plan, en **cuatro entregas**: primero hacer el juego **ganable y claro**, y después añadir profundidad.
 
