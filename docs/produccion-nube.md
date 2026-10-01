@@ -20,6 +20,15 @@ noviembre de 2026**). Decidido con el dueño del juego el 2026-10-01.
 5. **Revisión** de Claude en local (pruebas, capturas, revisión de código).
 6. **Fusión**: la hace Claude si todo está verde y la revisión es limpia. Al fusionar en `main`, se publica sola.
 
+## Direcciones
+
+- **Web oficial** (GitHub Pages, se publica al fusionar en `main` si las pruebas pasan): https://harmondez.github.io/easy_hero/
+- **Vista previa de cada rama/PR** (Cloudflare): `https://<rama-con-guiones>-easy-hero.hernan96.workers.dev`
+  (p. ej. la rama `nube/12-editor` → `nube-12-editor-easy-hero…`). Cloudflare la deja comentada en el propio PR.
+- **Copia en Cloudflare de `main`**: https://easy-hero.hernan96.workers.dev
+
+Circuito probado de punta a punta con el PR #1 (2026-10-01): pruebas en verde, vista previa jugable, fusión.
+
 ## Reglas decididas
 
 - **Modelo mixto**: Sonnet para encargos bien cerrados; Opus para los de diseño o delicados.
