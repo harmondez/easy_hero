@@ -45,8 +45,11 @@ eres un «obrero» de la cadena descrita en `docs/produccion-nube.md`. Reglas:
 - **Pruebas antes de abrir el PR**: `npm test` si hay Chromium; si no, `npm run test:core` y dilo en el PR (el
   navegador lo pasará GitHub Actions). Añade pruebas para lo nuevo, pocas y que se entiendan.
 - **Contenido como datos**: zonas, misiones, diálogos y monstruos van en `src/data/`, no en código.
-- **Documenta**: una entrada corta en `historial.md` (qué se hizo y por qué) y, si cambia algo jugable, una línea
-  en `CHANGELOG.md` bajo `[Sin publicar]`. Saca de `planning.md` lo que el encargo deja hecho.
+- **No toques los documentos compartidos** (`CHANGELOG.md`, `historial.md`, `planning.md`, `README.md`): los
+  actualiza el integrador al fusionar, para que dos encargos a la vez no choquen. Lo que haya que anotar, ponlo
+  en la descripción del PR.
+- **Pruebas nuevas en su propio archivo** (`tests/<tema>.test.mjs` o `tests/<tema>-sim.mjs`, añadido a `npm test`),
+  no al final de `tests/browser.test.mjs`: es otro punto donde dos encargos chocan.
 - **Ante una duda de diseño, no inventes**: elige la opción más conservadora, sigue, y explícala en el PR
   («Decisiones que tomé»). Si la duda bloquea, para y pregúntalo en el PR.
 - **Respeta la dirección visual** de este archivo y escribe todo en español, como el resto del proyecto.
