@@ -1,0 +1,9 @@
+// Cloudflare (vistas previas de cada pull request): la web es estática y sale de _site/,
+// que monta `npm run build:site`. No hay código de servidor.
+{
+  "name": "easy-hero",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./_site"
+  }
+}

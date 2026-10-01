@@ -37,3 +37,5 @@ desktop.ini
 /img/*.png
 # Arte que el director deja por tandas para el taller de sprites (no se sube; se sube lo procesado)
 /img/entrantes/
+# Web montada para publicar (npm run build:site)
+/_site/
