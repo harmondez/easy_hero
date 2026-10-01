@@ -167,6 +167,7 @@ function tick(now) {
 }
 
 // Los enemigos se ven en la escena antes de pelear: su imagen va en el mundo, junto a su parada
+const ENEMY_OFFSET = { x: 5, y: 11 };   // píxeles de mapa: hacia la derecha y hacia arriba desde su parada
 const ENEMY_SPRITE = { src: 'img/sprites/goblin_left.png', ratio: 175 / 217, h: HERO_MAP_H * 217 / 244 };
 
 function renderActors() {
@@ -181,7 +182,8 @@ function renderActors() {
         const h = ENEMY_SPRITE.h * ({ subboss: 1.25, boss: 1.5 }[p.enemy && p.enemy.type] || 1);
         img.style.height = `${h.toFixed(1)}px`;
         img.style.width = `${(h * ENEMY_SPRITE.ratio).toFixed(1)}px`;
-        img.style.transform = `translate3d(${p.x + 6}px, ${p.y}px, 0) translate(-50%, -100%)`;
+        // Sus pies quedan por encima del punto (y de su latido): así la parada roja se ve siempre
+        img.style.transform = `translate3d(${p.x + ENEMY_OFFSET.x}px, ${p.y - ENEMY_OFFSET.y}px, 0) translate(-50%, -100%)`;
         els.world.insertBefore(img, els.hero);
     });
 }
@@ -198,7 +200,9 @@ function renderPaths() {
 function renderMarkers() {
     els.markers.innerHTML = st.scene.points.filter(p => st.hooks.isShown(p)).map(p => {
         const cleared = p.kind === 'enemy' && st.hooks.isCleared(p);
-        const label = p.kind === 'exit' ? `${STOP_ICONS.exit} ${esc(p.name)}` : `${cleared ? '✓' : STOP_ICONS[p.kind] || ''} ${STOP_LABELS[p.id] || ''}`;
+        const icon = p.kind === 'exit' ? STOP_ICONS.exit : cleared ? '✓' : STOP_ICONS[p.kind] || '';
+        const text = p.kind === 'exit' ? esc(p.name) : STOP_LABELS[p.id] || '';
+        const label = `<span class="adv-stop-icon">${icon}</span><span class="adv-stop-text">${text}</span>`;
         return `
         <button type="button" class="adv-stop is-${p.kind}${cleared ? ' is-cleared' : ''}" data-point="${esc(p.id)}" data-x="${p.x}" data-y="${p.y}" aria-label="${esc(`${STOP_LABELS[p.id] || ''} ${p.name}`)}">
             <span class="adv-stop-dot" aria-hidden="true"></span>

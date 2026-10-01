@@ -1549,15 +1549,20 @@ body {
 .adv-stop-label {
     position: absolute; left: 50%; top: 100%;
     transform: translateX(-50%);
+    display: flex; align-items: center; gap: 5px;
     white-space: nowrap;
-    padding: 1px 7px;
-    font: 700 0.74rem var(--font-body);
+    padding: 2px 9px 2px 7px;
+    font: 700 0.9rem var(--font-body);
     color: var(--parchment-ink);
     background: var(--parchment);
     border: 1px solid var(--parchment-edge);
     border-radius: 3px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
+/* El icono grande y el número legible a primera vista; los números, en monoespaciada como un cómputo */
+.adv-stop-icon { font-size: 1.3rem; line-height: 1; }
+.adv-stop-text { font-size: 0.95rem; letter-spacing: 0.02em; }
+.adv-stop:not(.is-exit) .adv-stop-text { font-family: ui-monospace, 'Courier New', monospace; }
 .adv-stop.is-cleared .adv-stop-label { opacity: 0.75; }
 .adv-stop-name {
     position: absolute; left: 50%; bottom: 100%;

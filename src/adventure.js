@@ -93,9 +93,10 @@ function _advPlace(p) {
         return null;
     }
     if (p.kind === 'cave') {
-        // La cueva baja al descenso de siempre: si hay una partida a medias, se retoma; si no, empieza una
+        // La cueva baja al descenso de siempre: si hay una partida a medias, se retoma; si no, empieza una.
+        // Solo si empieza una nueva desde aquí, al terminarla se vuelve a la aldea (una retomada sigue su origen)
         Adventure.close();
-        ctx.enterDescent();
+        if (ctx.enterDescent() === 'new') { adv.state.fromCave = true; _advSave(); }
         return null;
     }
     return null;
@@ -131,6 +132,24 @@ export function open() {
         isCleared: p => _advIsCleared(p)
     }, adv.state.scene);
     _advRefreshHud();
+}
+
+/** El descenso terminó (caíste o abandonaste). Si lo bajaste desde la cueva, vuelves a la aldea; devuelve si lo hizo. */
+export function returnFromDescent() {
+    if (!adv.state) adv.state = _advLoad();   // tras recargar la página en mitad del descenso
+    if (!adv.state.fromCave) return false;
+    delete adv.state.fromCave;
+    _advSave();
+    open();
+    return true;
+}
+
+/** Un descenso empezado desde el inicio no vuelve a la aldea, aunque quedara una marca vieja. */
+export function forgetDescentOrigin() {
+    if (!adv.state) adv.state = _advLoad();
+    if (!adv.state.fromCave) return;
+    delete adv.state.fromCave;
+    _advSave();
 }
 
 function _advRenderCombat() {

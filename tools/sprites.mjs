@@ -15,6 +15,10 @@ import path from 'path';
 import { pathToFileURL, fileURLToPath } from 'url';
 import sharp from 'sharp';
 
+// Sin caché de archivos: en Windows la caché de sharp deja los archivos abiertos y bloqueados, y al volver a
+// procesar una imagen con el mismo nombre se leía la versión vieja (o no se podía sobrescribir/borrar).
+sharp.cache(false);
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const MAX_SPRITE_H = 256;   // alto máximo de un enemigo o héroe (con el margen superior incluido)
 export const SPRITE_MARGIN = 2;    // px de aire a izquierda, derecha y arriba; abajo no hay: los pies tocan el borde

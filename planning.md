@@ -86,13 +86,10 @@ perdieron y hay citas de otros juegos.
 - **Aventura:** editor `?editor=zafias` para colocar puntos con el ratón; caminos como grafo en vez de recodos;
   motor puro separado (`src/adventure.js`) si la lógica crece.
 - **Móvil:** en el bosque a 390 px el héroe queda pegado al borde al llegar.
-- **Caminos a trazos (publicado en la 1.5.1):** los emojis de las etiquetas de parada se ven pequeños; el sprite del enemigo tapa un poco su punto.
-- **Aventura (de C3):** al morir o abandonar el descenso bajado desde la cueva vuelves al inicio, no a la aldea;
-  los marcadores de la aldea se ven pequeños entre tanto detalle del mapa.
+- **Aventura (de C3):** los marcadores de la aldea se ven pequeños entre tanto detalle del mapa.
 - **Aventura (de C2):** el cofre pintado del campamento aún no hace nada; el objetivo de la misión va en la
   barra de arriba como texto (merecería su propio cartel); Maela no tiene retrato.
-- **Aventura (de C1):** colocar mejor los 3 goblins (el vigía queda entre árboles); prueba de navegador de la
-  derrota en la aventura; el equipo del descenso no viaja a la aventura (hoy vas con la espada básica y tu
+- **Aventura (de C1):** colocar mejor los 3 goblins (el vigía queda entre árboles); el equipo del descenso no viaja a la aventura (hoy vas con la espada básica y tu
   nivel/primarias/Forja).
 - **Arte:** paleta única de ~32 colores y escala de píxel común para los sprites (el taller ya recorta y alinea
   los pies); nota en créditos sobre el arte hecho con IA; fondos de cueva y mazmorra. Conectar el manifiesto
