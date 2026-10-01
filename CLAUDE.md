@@ -21,15 +21,28 @@ Easy Hero usa siempre esta dirección estética. No volver al azul-índigo/Inter
   proyecto) para revisar la propuesta contra esta dirección antes de escribir CSS.
 </always_use_dungeon_fantasy_theme>
 
-## Arquitectura del proyecto (resumen; no repetir aquí lo que ya cuentan los docs)
+## Qué es y cómo está hecho
 
-- Motor puro sin DOM en `src/engine.js`, `src/items.js`, `src/events.js`, `src/meta.js`; todo el
-  azar se recibe por parámetro (`rng`). La capa de presentación vive solo en `src/ui.js`.
-- Contenido como datos en `src/data/`. Nunca vanilla JS con dependencias de build: sin bundler,
-  sin framework, sin npm en producción (solo Playwright como dev-dependency de test).
-- `planning.md` es **solo lo pendiente**; lo ya decidido o implementado va a `historial.md` (log
-  compacto). Actualiza el que corresponda al terminar un cambio de alcance.
-- Antes de comitear: `npm test` (motor, eventos, equipo, guardado, equilibrio y navegador).
+RPG por turnos para navegador, estilo DragonFable: un **descenso** de mazmorra sin fin (rutas por pisos, La
+Forja, botín) y un **Modo Aventura** (Zafias: escenas sobre un mapa pintado, NPC, misiones y combates). JavaScript
+vanilla con módulos ES, sin bundler ni framework; se publica como web estática.
+
+| Pieza | Dónde |
+|---|---|
+| Motor puro (sin DOM; el azar llega por parámetro `rng`) | `src/engine.js` (combate, mapa), `src/items.js`, `src/events.js`, `src/meta.js` (progreso permanente), `src/save.js` |
+| Presentación | `src/ui.js` (pantallas, combate de lado), `src/adventure-view.js` (visor de Zafias), `style.css`, `index.html` |
+| Controladores | `src/main.js` (descenso y arranque), `src/adventure.js` (Modo Aventura) |
+| Contenido como datos | `src/data/` (monstruos, variantes, eventos, equilibrio, zonas en `src/data/zones/`, registro de arte `art.js`) |
+| Arte | `img/sprites` (`enemigo_*`, `heroe_*`), `img/bg` (fondos), `img/zones` (mapas); en WebP. Los PNG originales y `img/entrantes/`, `img/map-divided/`, `taller/` NO se suben |
+| Herramientas | `tools/sprites.mjs` (`npm run sprites`: PNG → juego), `tools/image-generator/` (`npm run generate`: Asset Factory con Gemini), `tools/build-site.mjs` (web publicable), `tools/version.mjs` (versiones), `tools/split-map.mjs` |
+| Pruebas | `npm test` = `test:core` (motor, eventos, equipo, guardado, equilibrio, sprites) + navegador (Playwright) |
+| Publicación | GitHub Actions: pruebas en cada PR y publicación en GitHub Pages al fusionar en `main`; vistas previas por PR en Cloudflare. Ver `cloud-method.md` |
+
+- Dev-dependencies solo para herramientas y pruebas (Playwright, sharp, @google/genai); el juego no carga nada de npm.
+- La clave de Google va en `.env` (`GOOGLE_API_KEY`, ignorado por git); plantilla en `.env.example`.
+- `planning.md` es **solo lo pendiente**; lo hecho y cómo se resolvió va a `historial.md` (la bitácora). Los demás
+  documentos describen el proyecto tal como es.
+- Antes de comitear: `npm test`.
 
 ## Trabajo autónomo (sesiones en la nube y encargos)
 
