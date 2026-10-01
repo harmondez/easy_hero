@@ -5,18 +5,24 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.6.0] - 2026-10-01
+
 ### ✨ Novedades
-- 👹 **El Orco tiene por fin su propio dibujo** en combate, el primero hecho con la nueva fábrica de arte.
+- 🎨 **Los primeros enemigos con dibujo propio**: el **Orco** y **Grask, el jefe goblin**, dejan de ser el goblin
+  teñido. Grask se ve en el mapa del campamento y en su combate, más grande que tú.
+- 🏭 **Fábrica de arte** (`npm run generate`): genera enemigos, jefes, personajes, fondos de combate y mapas con
+  un mismo estilo (pixel art de fantasía oscura), les quita el fondo y los deja listos en el juego. Es lo que
+  permitirá que cada criatura tenga su propia imagen.
+- 🧭 **Aventura más legible**: iconos y números de las paradas más grandes, y los enemigos ya no tapan su punto.
+- 🕳️ **Vuelta a la aldea**: si bajas al descenso desde la cueva de Zafias y la ruta termina, regresas a la aldea.
 
 ### 🔧 Cambios
 - 🖼️ **Taller de sprites** (`npm run sprites`): los PNG de `img/entrantes/` se recortan, se alinean por los pies y
   se guardan en WebP, y quedan registrados en `src/data/art.js`.
 - ⚔️ En el combate, un monstruo con imagen propia la usa sin tinte y con su proporción real; el héroe también si
   tiene `heroe_*`. Los demás siguen siendo el goblin teñido de siempre.
-- 🧭 **Aventura más legible**: los iconos y números de las paradas (💬 ⚔️ 🛏️ 🛒 🕳️) se ven más grandes, y el goblin ya
-  no tapa su punto rojo.
-- 🕳️ **Vuelta a la aldea**: si bajas al descenso desde la cueva de Zafias y la ruta termina (caes o abandonas),
-  regresas a la aldea en el Modo Aventura. Si empezaste el descenso desde el inicio, todo sigue como antes.
+- 🛠️ Producción: pruebas automáticas en cada cambio (GitHub Actions), publicación solo si pasan, y vistas
+  previas de cada propuesta en Cloudflare.
 
 ## [1.5.1] - 2026-09-30
 

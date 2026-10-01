@@ -7,14 +7,12 @@
 
 ## 📍 Estado (2026-10-01)
 
-- **Publicado:** la **1.5.1** (https://harmondez.github.io/easy_hero/): descenso sin fin, La Forja, combate de lado
+- **Publicado:** la **1.6.0** (https://harmondez.github.io/easy_hero/): descenso sin fin, La Forja, combate de lado
   estilo DragonFable con panel de pergamino y pociones, enemigos sin intenciones visibles (telegrafiado de golpes
-  fuertes) y el **Modo Aventura en Zafias** (aldea, bosque, campamento; misión de Maela y Grask; posada, tienda,
-  cueva al descenso; mapa con caminos a trazos y paradas 1-1, 1-2…).
-- **En `main`, sin anunciar todavía** (cada fusión a `main` se publica sola si pasan las pruebas): perfilados de la
-  aventura (etiquetas legibles, vuelta a la aldea tras el descenso de la cueva), **taller de sprites**
-  (`npm run sprites`) y **Asset Factory** (`npm run generate`) con el primer arte generado: el **Orco**.
-- Falta subir versión y escribir las Novedades del README de lo anterior (lo hace el integrador).
+  fuertes), el **Modo Aventura en Zafias** (aldea, bosque, campamento; misión de Maela y Grask; posada, tienda,
+  cueva al descenso; mapa con caminos a trazos y paradas 1-1, 1-2…) y los primeros enemigos con arte propio de la
+  **Asset Factory** (Orco y Grask).
+- Herramientas: taller de sprites (`npm run sprites`) y Asset Factory (`npm run generate`).
 
 ## 🔥 Siguiente, en este orden
 
@@ -33,7 +31,7 @@
    como datos**. Lanzarlos según [cloud-method.md](cloud-method.md).
 4. **Más Zafias**: misión 2 (santuario de piedras), misión 3 (Bram y el hierro de las cuevas), arco del castillo.
    Mejor después de #5 (misiones como datos).
-5. **Publicar** la siguiente versión con lo que haya en `main`.
+5. **Publicar** la siguiente versión cuando haya novedades jugables en `main`.
 
 ## 📌 Decisiones vigentes
 

@@ -1,6 +1,6 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.5.1';
-import { ART } from './data/art.js?v=1.5.1';
-import { monsterArt } from './art.js?v=1.5.1';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.6.0';
+import { ART } from './data/art.js?v=1.6.0';
+import { monsterArt } from './art.js?v=1.6.0';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo

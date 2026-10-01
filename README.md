@@ -9,7 +9,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 <br>
 
-<img src="docs/img/combate.jpg" alt="Combate de lado: el héroe a la izquierda y un orco a la derecha, en un bosque pintado; el orco brilla en rojo porque prepara un golpe fuerte" width="760">
+<img src="docs/img/combate.jpg" alt="Combate de lado en el bosque: el héroe a la izquierda y Grask, el jefe goblin con corona de huesos, a la derecha" width="760">
 
 <br>
 
@@ -17,7 +17,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.5.1-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.6.0-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -32,7 +32,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 ## 🆕 Novedades
 
-**Versión 1.5.1** · 30 de septiembre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.6.0** · 1 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **La gran actualización visual.** Easy Hero deja atrás las cartas y los emojis en combate: ahora peleas **de lado,
@@ -40,7 +40,9 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 | | Qué hay de nuevo |
 |:-:|------------------|
-| 🗺️ | **Nuevo en la 1.5.1 — Zafias como un mapa antiguo:** caminos a trazos de tinta y paradas rojas que laten, numeradas **1-1, 1-2, 1-3…**. Tu héroe anda de parada en parada; un enemigo sin vencer corta el paso y, vencido, su parada queda con ✓ |
+| 🎨 | **Nuevo en la 1.6.0 — Enemigos con dibujo propio:** el **Orco** y **Grask, el jefe goblin**, ya no son el goblin teñido. Grask te espera en el campamento, más grande que tú |
+| 🏭 | **Nuevo en la 1.6.0 — Fábrica de arte:** el juego ya puede crear enemigos, jefes, fondos y mapas con un mismo estilo de pixel art. Pronto, cada criatura con su imagen |
+| 🗺️ | **Zafias como un mapa antiguo:** caminos a trazos de tinta y paradas rojas que laten, numeradas **1-1, 1-2, 1-3…**. Tu héroe anda de parada en parada; un enemigo sin vencer corta el paso y, vencido, su parada queda con ✓ |
 | 🧭 | **Modo aventura: Zafias.** Un mapa pintado que recorres escena a escena con tu héroe de siempre: una aldea con sus vecinos, un bosque lleno de goblins y un campamento con su jefe |
 | 📜 | **Tu primera misión.** Maela, la posadera, te encarga limpiar el bosque. El objetivo siempre a la vista y una recompensa al volver |
 | ⚔️ | **Combate de lado**, como en los clásicos del navegador: tu héroe a la izquierda, el enemigo a la derecha. Cada golpe es una **embestida** y el daño salta encima del golpeado |
