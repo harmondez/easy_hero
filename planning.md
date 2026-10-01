@@ -20,6 +20,12 @@ Aventura en Zafias** (primera misión, aldea con posada, tienda y cueva). Detall
 
 ---
 
+## 🏭 Octubre: producción con sesiones en la nube
+
+Hay 100 $ de crédito para sesiones en la nube de Claude Code hasta el 4 de noviembre. El plan completo (papeles,
+circuito issue → PR → pruebas → vista previa → fusión, oleadas y reparto) está en
+**[docs/produccion-nube.md](docs/produccion-nube.md)**. Siguiente paso: la **fase 0** (preparar el terreno en local).
+
 ## 🎭 Ruta actual: Easy Hero estilo DragonFable
 
 **Regla de esta ruta: primero que sea funcional y con contenido.** Los detalles van a **🧩 Perfilados** (abajo)
