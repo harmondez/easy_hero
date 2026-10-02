@@ -1,17 +1,17 @@
-import * as UI from './ui.js?v=1.9.0';
-import * as Engine from './engine.js?v=1.9.0';
-import * as Events from './events.js?v=1.9.0';
-import * as Save from './save.js?v=1.9.0';
-import * as Items from './items.js?v=1.9.0';
-import * as Meta from './meta.js?v=1.9.0';
-import * as AdventureMode from './adventure.js?v=1.9.0';
-import { playIntro } from './intro.js?v=1.9.0';
-import { ART } from './data/art.js?v=1.9.0';
-import { heroArt } from './art.js?v=1.9.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.9.0';
-import { tierName } from './data/monsters.js?v=1.9.0';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.9.0';
-import { GAME_VERSION } from './version.js?v=1.9.0';
+import * as UI from './ui.js?v=1.9.2';
+import * as Engine from './engine.js?v=1.9.2';
+import * as Events from './events.js?v=1.9.2';
+import * as Save from './save.js?v=1.9.2';
+import * as Items from './items.js?v=1.9.2';
+import * as Meta from './meta.js?v=1.9.2';
+import * as AdventureMode from './adventure.js?v=1.9.2';
+import { playIntro } from './intro.js?v=1.9.2';
+import { ART } from './data/art.js?v=1.9.2';
+import { heroArt } from './art.js?v=1.9.2';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.2';
+import { tierName } from './data/monsters.js?v=1.9.2';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.9.2';
+import { GAME_VERSION } from './version.js?v=1.9.2';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
@@ -630,8 +630,13 @@ function _rpgCombatAct(action, skillId) {
     if (action === 'mana_potion') { meta.manaPotions = c.manaPotions; persistMeta(); }
     if (action === 'elixir') { meta.elixirs = { ...c.elixirs }; persistMeta(); }
     res.events.forEach(ev => UI.addRpgCombatLog(ev.text, ev.actor === 'hero' ? 'player' : 'enemy'));
+    if (action === 'attack') UI.startAttackCooldown();
     _rpgRefreshCombat();
-    UI.playRpgCombatFx(res.events);
+    const fxMs = UI.playRpgCombatFx(res.events) || 0;
+    // Aturdido: el turno se pierde solo y el enemigo vuelve a actuar
+    if (!c.over && c.hero.effects && c.hero.effects.aturdido) {
+        setTimeout(() => { if (gameState.rpg.combat === c && !c.over) _rpgCombatAct('attack'); }, fxMs + 900);
+    }
     if (c.over) _rpgFinishCombat();
     persist();
 }
@@ -1008,7 +1013,10 @@ _refreshShopButton();
 refreshContinueButton();
 // ?inicio abre la pantalla de la mazmorra como antes (pruebas y depuración)
 const hadProgress = meta.runsPlayed > 0 || !!(storage && storage.getItem('easy-hero-adventure'));
+// ?vn=<clave> abre ese diálogo de Zafias al momento, sin introducción ni efectos (npm run vn: probar diálogos y retratos)
+const vnKey = new URLSearchParams(location.search).get('vn');
 if (/[?&]inicio\b/.test(location.search)) UI.toggleRpgView('rpgStartView');
+else if (vnKey) { AdventureMode.open(); AdventureMode.previewDialogue(vnKey); }
 else if (!meta.introSeen && !hadProgress) _playIntro();
 else {
     if (!meta.introSeen) { meta.introSeen = true; persistMeta(); }   // quien ya jugaba no la ve de golpe

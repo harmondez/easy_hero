@@ -118,7 +118,17 @@
       "remove_background": false,
       "game_prefix": "escena"
     },
-    "_doc": "game_prefix: con qué nombre entra al juego por el taller de sprites (enemigo_/heroe_/fondo_/escena_). null = se queda en taller/ hasta que el juego lo use."
+    "_doc": "game_prefix: con qué nombre entra al juego por el taller de sprites (enemigo_/heroe_/fondo_/escena_). null = se queda en taller/ hasta que el juego lo use.",
+    "portrait": {
+      "category": "portraits",
+      "prompt": "portrait",
+      "aspect_ratio": "3:4",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": null,
+      "deliver": "portrait",
+      "_doc": "Retrato de novela visual: se entrega a img/characters/<id>-profile.png y a img/portraits/<id>.webp (tools/portraits.mjs). Quién lo lleva: src/data/characters.js (npm run vn)."
+    }
   },
   "background_removal": {
     "_doc": "Quitar el fondo blanco en local (sin servicios externos): relleno desde los bordes (white_threshold), huecos blancos interiores grandes (hole_min_ratio) y, en una franja de edge_band px alrededor de la figura, los píxeles más claros que su contorno (edge_contrast) reciben transparencia y se les descuenta el blanco: sin halo.",

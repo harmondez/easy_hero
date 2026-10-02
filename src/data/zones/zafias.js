@@ -20,7 +20,7 @@
 //              `whenCount: { creature, n }` exige además haber vencido n criaturas de ese tipo para una misión)
 // Marcas: `defeated:<id>` al vencer a ese enemigo (permanente) y las que pongan los diálogos.
 // =============================================
-import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.9.0';
+import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.9.2';
 
 // Los goblins de Zafias pelean con cuchillos sucios: a veces envenenan (src/data/effects.js)
 const GOBLIN = { onHit: [{ id: 'veneno', power: 1, turns: 3, chance: 0.35 }] };
@@ -33,7 +33,6 @@ export const ZAFIAS = {
     image: 'img/zones/zafias.webp',
     width: 1434,
     height: 1097,
-    number: 1,                 // mundo 1: sus paradas se numeran 1-1, 1-2…
     startScene: 'aldea',
     scenes: {
         aldea: {
@@ -217,158 +216,157 @@ for (const [sid, sc] of Object.entries(ZAFIAS.scenes)) {
 
 // Diálogos: solo historia, «Siguiente» hasta el final. {heroe} = el nombre del jugador.
 // Las líneas de narración (lo que pasa, no lo que se dice) llevan como `who` el lugar: «Posada de Zafias», «La fragua»…
+// Estilo: gente de pueblo, frases llanas. Maela habla con confianza y sin rodeos; Bram, poco y seco; los goblins, a gritos.
 export const ZAFIAS_DIALOGUES = {
     // --- La posada: Maela ---
     'posadera-mision': [
-        { who: 'Maela, la posadera', text: 'Siéntate antes de que te caigas. Traes barro hasta las cejas y sangre en el pelo.' },
-        { who: 'Maela, la posadera', text: '¿De dónde sales? Por el camino del norte no baja nadie desde hace semanas.' },
-        { who: '{heroe}', text: 'Desperté en unas ruinas, en el bosque. No sé cómo llegué allí. No recuerdo nada… salvo que me llamo {heroe}.' },
-        { who: 'Maela, la posadera', text: '¿Las piedras viejas de la loma? Allí no sube nadie. Ni los cazadores, y esos no le tienen miedo a casi nada.' },
-        { who: 'Maela, la posadera', text: 'Pues, {heroe}, sin memoria y con una espada al cinto… En otro tiempo te habría puesto un plato caliente y te habría dejado en paz. Ahora no puedo permitírmelo.' },
-        { who: 'Maela, la posadera', text: 'Los goblins bajaron de los montes con las primeras lluvias. Se han quedado los cruces del bosque y ya no pasa nadie: ni los carros del castillo, ni la sal, ni las medicinas.' },
-        { who: 'Maela, la posadera', text: 'Tres de esas alimañas vigilan los caminos. Échalos y quedará libre el sendero del este, el que lleva a su campamento. Allí manda uno que se hace llamar Grask.' },
-        { who: 'Maela, la posadera', text: 'Tráeme la noticia de que Grask ya no respira y aquí tendrás cama y comida mientras quieras. Y quién sabe: puede que en el camino alguien te reconozca.' }
+        { who: 'Maela, la posadera', text: 'Siéntate, anda. Tienes mala cara y barro hasta las orejas.' },
+        { who: 'Maela, la posadera', text: '¿De dónde vienes? Por el camino del norte no baja nadie desde hace semanas.' },
+        { who: '{heroe}', text: 'Desperté en unas ruinas, en el bosque. No sé cómo llegué hasta allí. No recuerdo nada, solo que me llamo {heroe}.' },
+        { who: 'Maela, la posadera', text: '¿Las ruinas de la loma? Allí no sube nadie. Ni los cazadores.' },
+        { who: 'Maela, la posadera', text: 'Pues, {heroe}, con esa espada nos vienes bien. Los goblins bajaron de los montes con las primeras lluvias y se han quedado con los cruces del bosque. Ya no llegan carros del castillo ni sal.' },
+        { who: 'Maela, la posadera', text: 'Son tres los que vigilan los caminos. Si los echas, se abre el sendero del este, el que lleva a su campamento. Allí manda uno que se hace llamar Grask.' },
+        { who: 'Maela, la posadera', text: 'Acaba con Grask y tendrás cama y comida en mi posada todo el tiempo que quieras. Y a lo mejor por el camino alguien te reconoce.' }
     ],
     'posadera-espera': [
-        { who: 'Maela, la posadera', text: 'Sigues aquí. Los goblins también siguen allí, por si te lo preguntabas.' },
-        { who: 'Maela, la posadera', text: 'Esta mañana volvió el hijo del molinero con una flecha en el hombro. Había salido a por leña. A por leña, {heroe}.' },
-        { who: 'Maela, la posadera', text: 'Si te hieren, bebe. Si te tumban, alguien te traerá a rastras hasta esta puerta; no serías el primero. Pero no me hagas acostumbrarme.' }
+        { who: 'Maela, la posadera', text: '¿Todavía por aquí? Los goblins siguen en el bosque.' },
+        { who: 'Maela, la posadera', text: 'Esta mañana volvió el hijo del molinero con una flecha en el hombro. Había salido a por leña.' },
+        { who: 'Maela, la posadera', text: 'Si te hieren, bebe algo. Si te tumban, ya te traeremos de vuelta. Pero procura no caer.' }
     ],
     'posadera-fin': [
-        { who: 'Maela, la posadera', text: '¿Grask? ¿Muerto? ¿Lo has visto tú, con tus propios ojos?' },
-        { who: '{heroe}', text: 'Lo vi caer. No volverá a cobrar peaje en el bosque.' },
-        { who: 'Posada de Zafias', text: 'Maela se queda quieta. Luego se seca las manos en el delantal, muy despacio, como si temiera que la noticia se le escapase entre los dedos.' },
-        { who: 'Maela, la posadera', text: 'Esta noche nadie en Zafias va a echar el cerrojo. Toma: lo han juntado los vecinos, moneda a moneda. Y esta poción, que guardaba para un día malo. (+60 🪙, +1 🧪)' }
+        { who: 'Maela, la posadera', text: '¿Grask? ¿Muerto? ¿Lo has visto tú?' },
+        { who: '{heroe}', text: 'Lo he visto caer. No volverá a cobrar peaje en el bosque.' },
+        { who: 'Posada de Zafias', text: 'Maela se seca las manos en el delantal. Tarda un rato en hablar.' },
+        { who: 'Maela, la posadera', text: 'Esta noche nadie va a echar el cerrojo. Toma, lo hemos juntado entre los vecinos. Y esta poción, que la guardaba para un mal día. (+60 🪙, +1 🧪)' }
     ],
     'posadera-despues': [
-        { who: 'Maela, la posadera', text: 'El bosque respira otra vez. Han vuelto los carros, y con ellos las habladurías.' },
-        { who: 'Maela, la posadera', text: 'Los leñadores dicen que, pasado el campamento, hacia el sureste, algo aúlla por las noches. Algo más grande que un lobo. Nadie quiere ir a comprobarlo.' },
-        { who: 'Maela, la posadera', text: 'Y otra cosa, {heroe}. Ayer un buhonero preguntó si había llegado al pueblo alguien que no recordase nada. No dijo para qué. No me gustó cómo lo preguntaba.' }
+        { who: 'Maela, la posadera', text: 'El bosque está tranquilo otra vez. Han vuelto los carros, y con ellos los chismes.' },
+        { who: 'Maela, la posadera', text: 'Los leñadores dicen que pasado el campamento, hacia el sureste, aúlla algo. Más grande que un lobo. Nadie quiere ir a mirar.' },
+        { who: 'Maela, la posadera', text: 'Y otra cosa, {heroe}. Ayer un buhonero preguntó si había llegado alguien que no recordara nada. No quiso decir para qué. No me gustó cómo lo preguntaba.' }
     ],
     'posada-dormir': [
-        { who: 'Posada de Zafias', text: 'Subes a la habitación del fondo. La cama cruje, la manta huele a humo y a lavanda. Te duermes antes de quitarte las botas.' },
-        { who: 'Posada de Zafias', text: 'Sueñas con piedras azules que laten en la oscuridad, y con una voz que pronuncia tu nombre como si llevara mucho tiempo esperándote.' },
-        { who: 'Posada de Zafias', text: 'Te despierta el gallo. Tienes el cuerpo entero otra vez. Por la ventana llegan, lejanos, los cuernos de los goblins: han vuelto a los caminos.' }
+        { who: 'Posada de Zafias', text: 'Subes a la habitación del fondo. La cama cruje y la manta huele a humo. Te duermes sin quitarte las botas.' },
+        { who: 'Posada de Zafias', text: 'Sueñas con unas piedras azules que brillan en la oscuridad. Alguien dice tu nombre.' },
+        { who: 'Posada de Zafias', text: 'Te despierta el gallo. Estás como nuevo. Por la ventana se oyen los cuernos de los goblins: han vuelto a los caminos.' }
     ],
 
     // --- La fragua: Bram ---
     herrero: [
-        { who: 'Bram, el herrero', text: 'Déjame ver esa espada. … Mellada, mal templada y con una costra en la cruz que no es óxido.' },
-        { who: 'Bram, el herrero', text: 'El hierro es de fragua pobre. Pero esta empuñadura… no es de aquí. Ni de ninguna fragua que yo conozca, y conozco todas las del valle.' },
-        { who: 'Bram, el herrero', text: 'Te propongo un trato. Para templar bien el acero muelo dientes de lobo con el carbón. No me preguntes por qué funciona. Funciona.' },
-        { who: 'Bram, el herrero', text: 'Desde que hay goblins en el bosque no me los trae nadie. Consígueme cinco. Los lobos rondan el sendero del oeste y las ruinas del vigía.' },
-        { who: 'Bram, el herrero', text: 'Hazlo y te forjaré una hoja que no se doble al primer golpe.' }
+        { who: 'Bram, el herrero', text: 'A ver esa espada. … Está mellada, mal templada y tiene una costra en la cruz que no es óxido.' },
+        { who: 'Bram, el herrero', text: 'El hierro es de fragua pobre. Pero la empuñadura no es de aquí. Ni de ninguna fragua que yo conozca, y conozco todas las del valle.' },
+        { who: 'Bram, el herrero', text: 'Te propongo un trato. Para templar bien el acero muelo dientes de lobo con el carbón. No me preguntes por qué funciona.' },
+        { who: 'Bram, el herrero', text: 'Desde que hay goblins en el bosque no me los trae nadie. Tráeme cinco. Los lobos andan por el sendero del oeste y por las ruinas del vigía.' },
+        { who: 'Bram, el herrero', text: 'Y te forjo una hoja que no se doble al primer golpe.' }
     ],
     'herrero-dientes-espera': [
-        { who: 'Bram, el herrero', text: 'Cinco dientes, ni uno menos. Los lobos vuelven al bosque cada noche: duerme en la posada y por la mañana tendrás donde elegir.' }
+        { who: 'Bram, el herrero', text: 'Cinco dientes, ni uno menos. Los lobos vuelven al bosque cada noche. Duerme en la posada y mañana habrá más.' }
     ],
     'herrero-dientes-fin': [
-        { who: 'Bram, el herrero', text: '¿Cinco? Y enteros. Déjame ver… Sí. Con esto el acero va a cantar.' },
-        { who: 'La fragua', text: 'Bram trabaja toda la tarde sin decir palabra. El martillo marca el ritmo, el fuelle respira y el agua chilla cada vez que la hoja entra en el barril.' },
-        { who: 'Bram, el herrero', text: 'Aquí la tienes: la primera hoja de este temple. La llamo Espada de Zafias, porque es igual de terca que la gente de este pueblo.' },
-        { who: 'Bram, el herrero', text: 'Más larga, más filo, y el borde dentado abre heridas que tardan en cerrarse. Cuídala. Y llévate esto por los dientes. (+30 🪙, ⚔️ Espada de Zafias)' }
+        { who: 'Bram, el herrero', text: '¿Cinco? Y enteros. A ver… Sí. Con esto el acero va a cantar.' },
+        { who: 'La fragua', text: 'Bram trabaja toda la tarde sin hablar. Suena el martillo, resopla el fuelle y chilla el agua cada vez que la hoja entra en el barril.' },
+        { who: 'Bram, el herrero', text: 'Aquí la tienes. La primera hoja de este temple: la Espada de Zafias.' },
+        { who: 'Bram, el herrero', text: 'Es más larga y tiene más filo, y el borde dentado abre heridas que tardan en cerrar. Cuídala. Y toma esto por los dientes. (+30 🪙, ⚔️ Espada de Zafias)' }
     ],
     'herrero-despues': [
-        { who: 'Bram, el herrero', text: 'El acero sale mejor que nunca. Si algún día bajas a las cuevas del sur y vuelves con hierro de allí abajo, tráemelo.' },
-        { who: 'Bram, el herrero', text: 'Y si no vuelves… bueno. Ya me enteraré.' }
+        { who: 'Bram, el herrero', text: 'El acero me sale mejor que nunca. Si algún día bajas a las cuevas del sur y vuelves con hierro de allí, tráemelo.' },
+        { who: 'Bram, el herrero', text: 'Y si no vuelves, ya me enteraré.' }
     ],
 
     // --- La aldea ---
     pozo: [
-        { who: 'El pozo de la plaza', text: 'El brocal está gastado por mil cubos. Abajo, el agua es tan clara que se ven las monedas del fondo: los deseos de toda una aldea.' },
+        { who: 'El pozo de la plaza', text: 'El brocal está gastado de tanto cubo. Abajo el agua es clara y se ven las monedas del fondo: los deseos de toda la aldea.' },
         { who: 'El pozo de la plaza', text: 'Una moneda se ha quedado en el borde de piedra, a tu alcance. Miras alrededor. Nadie mira. (+10 🪙)' }
     ],
     'pozo-visto': [
-        { who: 'El pozo de la plaza', text: 'Las monedas del fondo siguen ahí, brillando bajo el agua. La del borde, ya no. Ojalá su dueño no pidiera nada importante.' }
+        { who: 'El pozo de la plaza', text: 'Las monedas del fondo siguen ahí. La del borde, ya no.' }
     ],
     cueva: [
-        { who: 'Cueva del sur', text: 'La boca de la cueva exhala un aire helado que huele a piedra mojada y a algo mucho más viejo.' },
-        { who: 'Cueva del sur', text: 'Das un paso dentro. La oscuridad no se mueve, pero tienes la certeza de que te está mirando. Se te eriza la nuca.' },
-        { who: 'Cueva del sur', text: 'Algo te dice que todavía no estás preparado para entrar aquí. Retrocedes despacio, sin darle la espalda.' }
+        { who: 'Cueva del sur', text: 'De la cueva sube un aire frío que huele a piedra mojada.' },
+        { who: 'Cueva del sur', text: 'Das un paso dentro. Está muy oscuro, y notas que hay algo al fondo.' },
+        { who: 'Cueva del sur', text: 'Algo te dice que todavía no estás preparado para entrar aquí. Retrocedes despacio.' }
     ],
     mercado: [
         { who: 'Puestos del mercado', text: 'Pan de ayer, cuerda, manojos de hierbas secas colgados de un clavo. La mitad de los puestos están vacíos.' },
-        { who: 'Puestos del mercado', text: 'Una vendedora se fija en tu espada y baja la voz: «Desde que los goblins cortan el bosque no llega nada del castillo. Ni sal, ni noticias. Ni a los que se fueron a buscarlas».' }
+        { who: 'Puestos del mercado', text: 'Una vendedora ve tu espada y baja la voz: «Desde que los goblins cortan el bosque no llega nada del castillo. Ni sal ni noticias».' }
     ],
 
     // --- El bosque de los cruces ---
     'goblin-vigia': [
-        { who: 'Goblin vigía', text: '¡Eh, eh, eh! ¡Quieto ahí, larguirucho! Este camino es de Grask.' },
-        { who: 'Goblin vigía', text: '¿Llevas monedas? ¿No? Pues pagas con sangre. Mejor. Me gusta más.' }
+        { who: 'Goblin vigía', text: '¡Eh, tú! ¡Alto ahí! Este camino es de Grask.' },
+        { who: 'Goblin vigía', text: '¿Llevas monedas? ¿No? Pues pagas con sangre.' }
     ],
     'senda-santuario': [
-        { who: 'La senda del santuario', text: 'La senda trepa entre helechos hacia unas piedras azuladas que laten con una luz suave, como brasas bajo la ceniza.' },
-        { who: 'La senda del santuario', text: 'Al acercarte, la luz se aviva. Se te eriza la piel y, durante un instante, juras haber oído tu nombre.' },
-        { who: 'La senda del santuario', text: 'Todavía no. Lo sabes sin saber por qué. Das media vuelta, y la luz se apaga a tu espalda.' }
+        { who: 'La senda del santuario', text: 'La senda sube entre helechos hasta unas piedras azuladas que brillan con una luz suave.' },
+        { who: 'La senda del santuario', text: 'Al acercarte la luz se hace más fuerte. Por un momento te parece oír tu nombre, muy bajito.' },
+        { who: 'La senda del santuario', text: 'Todavía no. No sabes por qué, pero lo sabes. Das media vuelta y la luz se apaga.' }
     ],
     poste: [
-        { who: 'El poste de los cruces', text: 'Un poste torcido con tres tablas clavadas. Al oeste: «Zafias». Al sur: «Puente viejo».' },
-        { who: 'El poste de los cruces', text: 'La tabla del este decía «Castillo». Alguien la ha tachado y ha escrito encima, con barro y peor letra: «GRASK».' }
+        { who: 'El poste de los cruces', text: 'Un poste torcido con tres tablas. Al oeste: «Zafias». Al sur: «Puente viejo».' },
+        { who: 'El poste de los cruces', text: 'La tabla del este decía «Castillo». Alguien la ha tachado y ha escrito encima con barro: «GRASK».' }
     ],
     'goblin-puente': [
-        { who: 'Goblin del puente', text: '¡Puente de pago! Una moneda por pasar, dos por volver y tres por mirarme así.' },
-        { who: 'Goblin del puente', text: '¿Que no llevas? ¡Pues te cobro en dientes!' }
+        { who: 'Goblin del puente', text: '¡Puente de pago! Una moneda por pasar y dos por volver.' },
+        { who: 'Goblin del puente', text: '¿No llevas? ¡Pues te cobro en dientes!' }
     ],
     fardo: [
         { who: 'Un fardo en la orilla', text: 'Un fardo de mercader tirado en el barro, rajado de arriba abajo. Los goblins se llevaron las telas y las especias…' },
-        { who: 'Un fardo en la orilla', text: '…pero nadie palpó el forro. Cosida por dentro, una bolsa pequeña y pesada. (+25 🪙)' }
+        { who: 'Un fardo en la orilla', text: '…pero nadie miró el forro. Cosida por dentro hay una bolsa pequeña y pesada. (+25 🪙)' }
     ],
     'fardo-visto': [
-        { who: 'Un fardo en la orilla', text: 'Solo quedan trapos empapados y un olor a canela que el río no ha conseguido llevarse.' }
+        { who: 'Un fardo en la orilla', text: 'Solo quedan trapos empapados y olor a canela.' }
     ],
     ruinas: [
-        { who: 'Las ruinas del vigía', text: 'Lo que queda de una torre de vigía, estrujada por las raíces. Dentro, un petate podrido y un frasco que alguien no tuvo tiempo de recoger.' },
-        { who: 'Las ruinas del vigía', text: 'El tapón aguanta. Huele a hierbas buenas y a aguardiente: una poción. (+1 🧪)' }
+        { who: 'Las ruinas del vigía', text: 'Una torre de vigía medio caída, con raíces por todas partes. Dentro hay un petate podrido y un frasco que alguien dejó.' },
+        { who: 'Las ruinas del vigía', text: 'El tapón aguanta. Huele a hierbas y a aguardiente: una poción. (+1 🧪)' }
     ],
     'ruinas-visto': [
         { who: 'Las ruinas del vigía', text: 'Desde lo alto de la torre se ve el castillo de Zafias. Las banderas siguen en las almenas, pero no se asoma nadie.' }
     ],
     'camino-norte': [
-        { who: 'El camino del norte', text: 'El camino sube pegado a la cascada hasta un portón de troncos, atrancado desde dentro.' },
-        { who: 'El camino del norte', text: 'Pegas la oreja a la madera. Al otro lado no hay pasos, ni voces, ni nada. Demasiado silencio para un camino real.' }
+        { who: 'El camino del norte', text: 'El camino sube junto a la cascada hasta un portón de troncos, atrancado por dentro.' },
+        { who: 'El camino del norte', text: 'Pegas la oreja a la madera. No se oye nada, ni pasos ni voces.' }
     ],
 
     // --- La guarida del lobo ---
     huesos: [
         { who: 'Huesos roídos', text: 'Huesos de ciervo, de jabalí y la hebilla de un cinturón goblin. Todos partidos a lo largo para sacarles el tuétano.' },
-        { who: 'Huesos roídos', text: 'Las marcas de los dientes son más anchas que tu mano.' },
-        { who: 'Huesos roídos', text: 'Lo que vive en esa cueva no come por hambre. Come porque puede.' }
+        { who: 'Huesos roídos', text: 'Las marcas de dientes son más anchas que tu mano. Lo que vive en esa cueva es muy grande.' }
     ],
     feronius: [
-        { who: 'Feronius el Feroz', text: 'Entre las rocas de la cascada se encienden dos ojos rojos, a una altura en la que no debería haber ojos.' },
-        { who: 'Feronius el Feroz', text: 'El lobo sale de la sombra sin prisa. Es enorme, gris como la ceniza, con un collar de huesos que tintinea a cada paso. Algunos son de goblin. Otros no.' },
-        { who: 'Feronius el Feroz', text: 'No gruñe. No avisa. Solo baja la cabeza… y salta.' }
+        { who: 'Feronius el Feroz', text: 'Entre las rocas de la cascada se encienden dos ojos rojos, demasiado altos para ser de un lobo cualquiera.' },
+        { who: 'Feronius el Feroz', text: 'Sale de la sombra sin prisa. Es enorme y gris como la ceniza, y lleva un collar de huesos que suenan al andar. Algunos son de goblin.' },
+        { who: 'Feronius el Feroz', text: 'No gruñe ni avisa. Baja la cabeza y salta.' }
     ],
 
     // --- El campamento goblin ---
     guardia: [
-        { who: 'Goblin de guardia', text: '¡Quieto! Nadie pisa el campamento sin permiso de Grask.' },
-        { who: 'Goblin de guardia', text: 'Y Grask no da permisos. Grask da palos.' }
+        { who: 'Goblin de guardia', text: '¡Alto! Nadie entra en el campamento sin permiso de Grask.' },
+        { who: 'Goblin de guardia', text: 'Y Grask no da permisos. Da palos.' }
     ],
     estandartes: [
-        { who: 'Los estandartes de Grask', text: 'Dos estandartes de tela roja, mal cosidos, y entre ellos una cadena de la que cuelgan huesos y cascabeles robados.' },
-        { who: 'Los estandartes de Grask', text: 'Más allá, en el claro, se oyen risas roncas y el tintineo de monedas: Grask reparte lo que ha robado.' }
+        { who: 'Los estandartes de Grask', text: 'Dos estandartes de tela roja mal cosidos y, entre ellos, una cadena con huesos y cascabeles colgados.' },
+        { who: 'Los estandartes de Grask', text: 'Más allá, en el claro, se oyen risas y monedas: Grask reparte lo que ha robado.' }
     ],
     centinela: [
         { who: 'Goblin centinela', text: '¡Alto! Por ahí se sube al castillo.' },
-        { who: 'Goblin centinela', text: '¡Y el castillo es cosa de Grask! Bueno… lo será. ¡Cuando Grask quiera!' }
+        { who: 'Goblin centinela', text: 'Y el castillo es cosa de Grask. Bueno, lo será. Cuando él quiera.' }
     ],
     escalinata: [
-        { who: 'La escalinata del castillo', text: 'Una escalinata de piedra blanca sube hasta las puertas del castillo de Zafias. Cada peldaño tiene el borde gastado por siglos de botas.' },
+        { who: 'La escalinata del castillo', text: 'Una escalinata de piedra blanca sube hasta las puertas del castillo de Zafias.' },
         { who: 'La escalinata del castillo', text: 'Arriba, un guardia con la armadura abollada te ve llegar y cruza la lanza delante de la puerta.' },
-        { who: 'La escalinata del castillo', text: '«Cerrado hasta nueva orden», dice, sin mirarte a los ojos. Detrás de él, alguien ha clavado tablones por dentro.' }
+        { who: 'La escalinata del castillo', text: '«Cerrado hasta nueva orden», dice sin mirarte. Detrás de él se ven tablones clavados por dentro.' }
     ],
     grask: [
-        { who: 'Grask, jefe goblin', text: '¿Así que tú eres el que anda cazando a mis chicos por el bosque?' },
-        { who: 'El campamento goblin', text: 'Grask se levanta de un trono hecho con sillas de taberna. Le saca dos cabezas a cualquier goblin y lleva una armadura de cazos martillados.' },
-        { who: 'Grask, jefe goblin', text: 'Bonita espada. Quedará mejor colgada en mi tienda… al lado de tu cabeza.' },
-        { who: 'Grask, jefe goblin', text: '¡Este bosque es de Grask! ¡Y todo lo que entra en él, también!' }
+        { who: 'Grask, jefe goblin', text: '¿Así que tú eres el que anda matando a mis chicos por el bosque?' },
+        { who: 'El campamento goblin', text: 'Grask se levanta de un trono hecho con sillas de taberna. Es dos cabezas más alto que cualquier goblin y lleva placas de armadura arrancadas a soldados muertos.' },
+        { who: 'Grask, jefe goblin', text: 'Bonita espada. Quedará mejor colgada en mi tienda, junto a tu cabeza.' },
+        { who: 'Grask, jefe goblin', text: '¡Este bosque es mío! ¡Y todo lo que entra en él también!' }
     ],
     botin: [
-        { who: 'El botín de Grask', text: 'Bajo una lona sucia se amontona lo que Grask arrancó a los mercaderes: ollas, botas desparejadas, un arpa sin cuerdas…' },
-        { who: 'El botín de Grask', text: '…y, al fondo, un cofrecillo que nadie consiguió abrir. Tú sí. (+40 🪙, +1 🧪)' }
+        { who: 'El botín de Grask', text: 'Bajo una lona sucia está lo que Grask robó a los mercaderes: ollas, botas desparejadas, un arpa sin cuerdas…' },
+        { who: 'El botín de Grask', text: '…y al fondo, un cofre pequeño que nadie consiguió abrir. Tú sí. (+40 🪙, +1 🧪)' }
     ],
     'botin-visto': [
-        { who: 'El botín de Grask', text: 'Ya solo quedan cacharros rotos y el arpa sin cuerdas, que nadie quiere ni regalada.' }
+        { who: 'El botín de Grask', text: 'Solo quedan cacharros rotos y el arpa sin cuerdas.' }
     ]
 };

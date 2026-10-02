@@ -18,7 +18,7 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.9.0-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.9.2-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -33,7 +33,7 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 
 ## 🆕 Novedades
 
-**Versión 1.9.0** · 2 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.9.2** · 2 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **Easy Hero es ya, entero, la aventura.** Los combates tienen venenos, sangrados y aturdimientos que se ven sobre
@@ -41,7 +41,16 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 > con su elemento y su efecto; y los vecinos te hablan cara a cara, como en una novela visual. Toda la historia,
 > reescrita.
 
-| | Qué hay de nuevo en la 1.9.0 |
+| | Qué hay de nuevo en la 1.9.2 |
+|:-:|------------------|
+| ⚡ | **Energía y Golpe poderoso:** una barra amarilla que se llena atacando, recibiendo golpes y, sobre todo, defendiéndote. Con 50 de energía, el **Golpe poderoso** pega el triple y puede aturdir al enemigo |
+| 💫 | **Aturdido de verdad:** si te aturden, la barra se apaga, pierdes el turno solo y el enemigo aprovecha para actuar otra vez |
+| ⏳ | **Combates con más peso:** embestidas más pausadas, golpes que hacen parpadear y temblar a quien los recibe, y una espera de 2 segundos en ¡Atacar! |
+| ✨ | **Efectos más claros:** todos duran 3 rondas, con iconos grandes sobre cada personaje y, junto a la vida, la lista de lo que llevas |
+| 🎭 | **Más caras:** Maela, los goblins y Grask (enorme) ya hablan con su retrato |
+| ✍️ | **La historia, más llana:** todo el texto reescrito en el habla de un pueblo, sin frases de adorno. Y un mapa más limpio, sin carteles ni números |
+
+| | Lo que trajo la 1.9.0 |
 |:-:|------------------|
 | ✨ | **Efectos de estado:** veneno, quemadura, sangrado, aturdido, más ATK, más PH y regeneración. Sus iconos flotan sobre quien los lleva, con las rondas que le quedan, y su daño salta en su color: verde el veneno, rojo el sangrado |
 | 🐺 | **Enemigos con mala idea:** los goblins envenenan con sus cuchillos sucios, los lobos desgarran, Grask te aturde con su golpe fuerte y Feronius hace las dos cosas |
@@ -99,7 +108,7 @@ un camino: el humo de las chimeneas del pueblo más cercano.
 </p>
 
 **Zafias** es una aldea a las puertas de un bosque que los goblins han tomado. La recorres sobre un mapa pintado, como
-los mapas antiguos: caminos **a trazos** entre paradas numeradas **1-1, 1-2, 1-3…**. Pulsa una parada y tu héroe irá
+los mapas antiguos: caminos **a trazos** entre paradas con su icono. Pulsa una parada y tu héroe irá
 andando hasta allí… salvo que un enemigo le corte el paso. Abajo, siempre a la vista: tu vida, tu maná, tu bolsa y lo
 que te toca hacer.
 
@@ -141,9 +150,9 @@ habilidades.
 
 | Acción | Qué hace |
 |--------|----------|
-| 🗡️ **¡Atacar!** | Golpeas con tu arma: tu **ATK** (Poder de Ataque) en daño, y el efecto de tu arma si lo tiene |
-| 🛡️ **Defender** | El próximo golpe que recibas hace la mitad |
-| 🔥 **Habilidades** | En su barra, a un clic. Cuestan **maná**. La **Bola de fuego** hace tu **PH** (Poder de Habilidad) en daño; el **Grito de guerra** sube tu ATK un 50 % durante 3 rondas |
+| 🗡️ **¡Atacar!** | Golpeas con tu arma: tu **ATK** (Poder de Ataque) en daño, y el efecto de tu arma si lo tiene. Después, 2 segundos de espera |
+| 🛡️ **Defender** | El próximo golpe que recibas hace la mitad, y recuperas energía |
+| 🔥 **Habilidades** | En su barra, a un clic. La **Bola de fuego** (maná) hace tu **PH** (Poder de Habilidad) en daño; el **Grito de guerra** (maná) sube tu ATK un 50 % durante 3 rondas; el **Golpe poderoso** (50 de energía) pega el triple y puede aturdir |
 | 🧪 **Pociones y elixires** | Vida, maná, fuerza, PH, regeneración… o un frasco de veneno para el enemigo. Gastan el turno |
 | 🪽 **Huir** | Sales del combate, y te golpean al irte. De los jefes no se huye |
 
@@ -154,25 +163,25 @@ habilidades.
 | ☠️ | **Veneno** | Quita vida cada ronda, y se acumula |
 | 🔥 | **Quemadura** | Quita vida cada ronda |
 | 🩸 | **Sangrado** | Quita vida cada ronda |
-| 💫 | **Aturdido** | Pierde su próximo turno |
+| 💫 | **Aturdido** | Pierde su próximo turno, y el otro aprovecha |
 | 💪 | **Más ATK** | Sus golpes pegan más |
 | 🔮 | **Más PH** | Sus habilidades pegan más |
 | 💚 | **Regeneración** | Recupera vida cada ronda |
 
-Sus iconos flotan sobre quien los lleva, con las rondas que le quedan. Al hacer efecto, el número salta en su color
-seguido de su icono.
+Todos duran **3 rondas** (el aturdimiento, un turno). Sus iconos flotan sobre quien los lleva, con las rondas que le
+quedan, y se listan junto a su vida. Al hacer efecto, el número salta en su color seguido de su icono.
 
 #### 🌬️ Aprende a leer al enemigo
 
 El enemigo **no anuncia** lo que va a hacer, como en los clásicos. Pero cada uno tiene su forma de pelear, y se le
-nota: antes de un **golpe fuerte** se tensa y brilla en rojo, y una frase te avisa (*«Los ojos de Grask se clavan en
-los tuyos. Ha dejado de parpadear.»*). Es el momento de defenderte. El **diario** del combate cuenta cada movimiento.
+nota: antes de un **golpe fuerte** se tensa y brilla en rojo, y una frase te avisa (*«Grask te mira fijo y no
+parpadea.»*). Es el momento de defenderte. El **diario** del combate cuenta cada movimiento.
 
 ---
 
 ## 🛡️ Tu héroe
 
-Empiezas con **ATK 1**, **PH 5**, **25 de vida** y **12 de maná**. Nada más. A partir de ahí depende de ti.
+Empiezas con **ATK 1**, **PH 5**, **25 de vida** y **12 de maná**; la **energía** empieza cada combate a 0. Nada más. A partir de ahí depende de ti.
 
 ### 🎒 Tus armas
 
@@ -210,7 +219,7 @@ combates, subes de nivel y **repartes tú mismo** los puntos.
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.9.0, sigue en desarrollo.** El foco es la **aventura**: Zafias se puede jugar de principio a fin, con
+> **Versión 1.9.2, sigue en desarrollo.** El foco es la **aventura**: Zafias se puede jugar de principio a fin, con
 > Grask como primer muro y Feronius como jefe. La mazmorra sin fondo de las primeras versiones está aparcada (sigue
 > en el código, pero no se puede entrar).
 
@@ -300,7 +309,7 @@ npx playwright install chromium    # solo la primera vez
 npm test                           # ejecuta todas las comprobaciones
 ```
 
-Son 959 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; las del navegador, unos minutos.
+Son 996 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; las del navegador, unos minutos.
 
 Para ver cómo está el equilibrio de la aventura: `npm run sim:aventura` juega miles de partidas con un bot.
 
@@ -314,7 +323,10 @@ Para ver cómo está el equilibrio de la aventura: `npm run sim:aventura` juega 
 ```bash
 npm run sprites   # héroes, enemigos, fondos y armas en la mano (img/entrantes → img/sprites, img/bg)
 npm run icons     # iconos, objetos, marcos de interfaz y retratos (img/icons, img/items, img/weapons, img/characters → img/ui, img/portraits)
+npm run vn        # novela visual: revisa diálogos y retratos; «nuevo» crea un NPC con su retrato y «ver» saca capturas
 ```
+
+Receta para meter un NPC con su retrato y su diálogo: [docs/novela-visual.md](docs/novela-visual.md).
 
 </details>
 
@@ -325,7 +337,7 @@ npm run icons     # iconos, objetos, marcos de interfaz y retratos (img/icons, i
 
 ```bash
 npm run release              # ¿está todo sincronizado con la versión actual?
-npm run release -- patch     # 1.9.0 → 1.9.1  (también minor o major)
+npm run release -- patch     # 1.9.2 → 1.9.3  (también minor o major)
 ```
 
 Cambia la versión en todos los sitios a la vez y prepara el registro de cambios. Los pasos completos están en [docs/versiones.md](docs/versiones.md).

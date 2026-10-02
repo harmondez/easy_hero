@@ -182,6 +182,11 @@ export const ART = {
             "w": 104,
             "h": 128
         },
+        "habilidad-golpe-poderoso": {
+            "src": "img/ui/habilidad-golpe-poderoso.webp",
+            "w": 128,
+            "h": 128
+        },
         "habilidad-grito": {
             "src": "img/ui/habilidad-grito.webp",
             "w": 128,
@@ -434,14 +439,29 @@ export const ART = {
         }
     },
     "portraits": {
+        "enemy-goblin-minion": {
+            "src": "img/portraits/enemy-goblin-minion.webp",
+            "w": 517,
+            "h": 640
+        },
+        "enemy-grask-boss": {
+            "src": "img/portraits/enemy-grask-boss.webp",
+            "w": 602,
+            "h": 640
+        },
         "hero": {
             "src": "img/portraits/hero.webp",
             "w": 618,
             "h": 640
         },
-        "tabernero": {
-            "src": "img/portraits/tabernero.webp",
+        "herrero-braum": {
+            "src": "img/portraits/herrero-braum.webp",
             "w": 348,
+            "h": 640
+        },
+        "tabernera-maela": {
+            "src": "img/portraits/tabernera-maela.webp",
+            "w": 376,
             "h": 640
         }
     }

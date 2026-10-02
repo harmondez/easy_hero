@@ -1,16 +1,16 @@
-import * as Engine from './engine.js?v=1.9.0';
-import * as Items from './items.js?v=1.9.0';
-import * as Meta from './meta.js?v=1.9.0';
-import * as Stats from './stats.js?v=1.9.0';
-import { upgradeAmountText } from './data/upgrades.js?v=1.9.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.9.0';
-import { ART } from './data/art.js?v=1.9.0';
-import { EFFECTS, ELIXIRS, FOOD } from './data/effects.js?v=1.9.0';
-import { GEAR, GEAR_FOR_SALE, STARTER_GEAR, WEAPON_UPGRADE, ELEMENTS, SLOT_ICONS } from './data/gear.js?v=1.9.0';
-import { RARITY_BY_ID } from './data/rarities.js?v=1.9.0';
-import { effectList } from './effects.js?v=1.9.0';
-import { monsterArt, heroArt } from './art.js?v=1.9.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.9.0';
+import * as Engine from './engine.js?v=1.9.2';
+import * as Items from './items.js?v=1.9.2';
+import * as Meta from './meta.js?v=1.9.2';
+import * as Stats from './stats.js?v=1.9.2';
+import { upgradeAmountText } from './data/upgrades.js?v=1.9.2';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.2';
+import { ART } from './data/art.js?v=1.9.2';
+import { EFFECTS, ELIXIRS, FOOD } from './data/effects.js?v=1.9.2';
+import { GEAR, GEAR_FOR_SALE, STARTER_GEAR, WEAPON_UPGRADE, ELEMENTS, SLOT_ICONS } from './data/gear.js?v=1.9.2';
+import { RARITY_BY_ID } from './data/rarities.js?v=1.9.2';
+import { effectList } from './effects.js?v=1.9.2';
+import { monsterArt, heroArt } from './art.js?v=1.9.2';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.9.2';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -382,7 +382,8 @@ function _rpgGauge(kind, now, max, label) {
 }
 
 function _rpgHpBar(f) {
-    return _rpgGauge('hp', f.hp, f.maxHp, 'Vida') + (f.maxMp ? _rpgGauge('mp', f.mp, f.maxMp, 'Maná') : '');
+    return _rpgGauge('hp', f.hp, f.maxHp, 'Vida') + (f.maxMp ? _rpgGauge('mp', f.mp, f.maxMp, 'Maná') : '')
+        + (f.maxEnergy ? _rpgGauge('en', f.energy || 0, f.maxEnergy, 'Energía') : '');
 }
 
 function _rpgHudSide(f, sub, status, side) {
@@ -418,6 +419,12 @@ const UI_IMG = (id, cls = 'ui-icon') => `<img class="${cls}" src="${esc(ICON(id)
 
 // Estado del enemigo: si lee tus movimientos, la acción que ha memorizado (repetirla = golpe doble).
 // Sus efectos (veneno, quemadura…) se ven como iconos sobre su dibujo
+/** Los efectos que lleva, en la carta junto a su vida: icono, nombre y rondas que le quedan (claro, sin pasar el ratón). */
+function _rpgEffectChips(unit) {
+    return effectList(unit).map(e => `<span class="rpg-fx-chip${e.bad ? ' is-bad' : ''}" style="--fx:${e.color}" title="${esc(e.desc)}">
+        <img src="${esc(ICON(e.icon))}" alt="" draggable="false">${esc(e.name)}${e.turns == null ? '' : ` <b>${e.turns}</b>`}</span>`).join('');
+}
+
 function _rpgMonsterStatus(combat) {
     const m = combat.monster;
     const parts = [];
@@ -425,12 +432,12 @@ function _rpgMonsterStatus(combat) {
         const last = RPG_ACTION_NAMES[combat.lastAction];
         parts.push(last ? `👁️ Recuerda ${last}: repítela y golpea doble` : '👁️ Lee tus movimientos');
     }
-    return parts.join(' · ');
+    return [esc(parts.join(' · ')), _rpgEffectChips(m)].filter(Boolean).join(' ');
 }
 
-// Tu estado: defensa (tus efectos se ven como iconos sobre tu dibujo)
+// Tu estado: defensa y tus efectos (también como iconos sobre tu dibujo)
 function _rpgHeroStatus(combat) {
-    return combat.defending ? '🛡️ Defendiendo' : '';
+    return [combat.defending ? '🛡️ Defendiendo' : '', _rpgEffectChips(combat.hero)].filter(Boolean).join(' ');
 }
 
 function _rpgWeaponIcon(hero) {
@@ -490,13 +497,16 @@ export function renderRpgCombat(combat, opts = {}) {
             if (!ids[i]) return '<span class="rpg-skill is-locked" title="Ranura cerrada: aún no tienes esta habilidad"></span>';
             const s = Engine.rpgSkillInfo(hero, ids[i], combat);
             const ready = Engine.rpgSkillReady(combat, s.id) && !stunned;
+            // Se paga con maná (azul) o con energía (amarillo)
+            const cost = s.energyCost ? { n: s.energyCost, what: 'energía', have: hero.energy || 0, cls: 'is-energy' }
+                : { n: s.manaCost, what: 'maná', have: hero.mp || 0, cls: 'is-mana' };
             const hint = noSkills ? 'Tu voto de silencio lo impide'
                 : stunned ? 'Estás aturdido'
-                : Engine.rpgSkillReady(combat, s.id) ? `${s.desc} Cuesta ${s.manaCost} de maná.` : `Te falta maná: cuesta ${s.manaCost} y tienes ${hero.mp || 0}`;
+                : Engine.rpgSkillReady(combat, s.id) ? `${s.desc} Cuesta ${cost.n} de ${cost.what}.` : `Te falta ${cost.what}: cuesta ${cost.n} y tienes ${cost.have}`;
             return `<button type="button" class="rpg-skill" data-rpg-action="skill" data-rpg-skill="${esc(s.id)}" ${ready ? '' : 'disabled'}
                 title="${esc(`${s.name}: ${hint}`)}" aria-label="${esc(s.name)}">
                 <img src="${esc(ICON(s.img))}" alt="" draggable="false">
-                <span class="rpg-action-badge is-mana">${s.manaCost}</span>
+                <span class="rpg-action-badge ${cost.cls}">${cost.n}</span>
             </button>`;
         }).join('');
     }
@@ -510,10 +520,8 @@ export function renderRpgCombat(combat, opts = {}) {
     }).join('');
 
     // Aturdido: este turno no puedes hacer nada; el botón grande lo dice y pasa el turno
-    if (hero.effects && hero.effects.aturdido) {
-        bar.innerHTML = _rpgActionButton('data-rpg-action="attack" data-main', '💫', 'Aturdido', 'Pierdes este turno: pulsa para seguir', false);
-        return;
-    }
+    // Aturdido: la barra de siempre, apagada; el turno se pierde solo (lo resuelve quien controla el combate)
+    const stunned = !!(hero.effects && hero.effects.aturdido);
 
     bar.innerHTML = `
         <div class="rpg-actions-side">
@@ -526,6 +534,33 @@ export function renderRpgCombat(combat, opts = {}) {
             ${elixirs}
             ${_rpgActionButton('data-rpg-action="flee"', UI_IMG('agilidad'), 'Huir', fleeHint, !canFlee)}
         </div>`;
+    bar.classList.toggle('is-stunned', stunned);
+    if (stunned) bar.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    _rpgApplyAttackCooldown(bar);
+}
+
+// ⏳ ¡Atacar! espera un poco antes de poder pulsarse otra vez (el combate no se juega a golpe de ratón).
+// En las pruebas automáticas no se espera (navigator.webdriver), salvo que se pida con window.__forceAttackCooldown.
+export const RPG_ATTACK_COOLDOWN_MS = 2000;
+let _rpgAttackReadyAt = 0;
+let _rpgCooldownTimer = 0;
+export function startAttackCooldown(ms = RPG_ATTACK_COOLDOWN_MS) {
+    if (navigator.webdriver && !window.__forceAttackCooldown) return;
+    _rpgAttackReadyAt = Date.now() + ms;
+}
+function _rpgApplyAttackCooldown(bar) {
+    const btn = bar.querySelector('[data-rpg-action="attack"]');
+    const left = _rpgAttackReadyAt - Date.now();
+    if (!btn || left <= 0 || btn.disabled) return;
+    btn.disabled = true;
+    btn.classList.add('is-cooling');
+    btn.style.setProperty('--cd', `${left}ms`);
+    clearTimeout(_rpgCooldownTimer);
+    _rpgCooldownTimer = setTimeout(() => {
+        if (!btn.isConnected) return;
+        btn.classList.remove('is-cooling');
+        if (!bar.classList.contains('is-stunned')) btn.disabled = false;
+    }, left);
 }
 
 // --- 🎭 Escenario: héroe a la izquierda mirando a la derecha, enemigo a la derecha mirando a la izquierda ---
@@ -533,9 +568,11 @@ export function renderRpgCombat(combat, opts = {}) {
 // (teñido por especie/linaje). Lo mismo el héroe: su heroe_* si existe, si no hero_right.png.
 const RPG_MONSTER_SPRITE = { src: 'img/sprites/goblin_left.png', w: 175, h: 217 };
 const RPG_HERO_SPRITE = { src: 'img/sprites/hero_right.png', w: 195, h: 244 };
-const RPG_LUNGE_MS = 460;        // ida y vuelta de la embestida
-const RPG_LUNGE_IMPACT = 0.4;    // punto de la embestida en que llega el golpe (y sale el número)
-const RPG_FX_GAP_MS = 140;       // pausa entre un golpe y el siguiente
+const RPG_LUNGE_MS = 880;        // ida y vuelta de la embestida (pausada: se ve venir el golpe)
+const RPG_LUNGE_IMPACT = 0.55;   // punto de la embestida en que llega el golpe (y sale el número)
+const RPG_FX_GAP_MS = 220;       // pausa entre un golpe y el siguiente
+const RPG_HIT_FLASH_MS = 200;    // parpadeo blanco al recibir un golpe
+const RPG_HIT_SHAKE_MS = 260;    // y su temblor
 
 function _rpgRenderStage(hero, monster) {
     const heroActor = document.getElementById('rpgActorHero');
@@ -627,10 +664,10 @@ function _rpgRenderTelegraph(combat) {
 /** Qué pinta cada suceso del combate: quién embiste, a quién y qué número sale. null = nada visible. */
 function _rpgFxStep(ev) {
     if (ev.kind === 'dodge') return { from: 'hero', to: 'monster', text: '¡Esquiva!', cls: 'is-miss' };
-    if (ev.kind === 'stunned') return { to: ev.target, text: '¡Aturdido!', cls: 'is-miss' };
+    if (ev.kind === 'stunned') return null;   // el turno perdido no se anuncia en pantalla: lo dice su icono (y el diario)
     if (ev.kind === 'effect-on') {
         const e = EFFECTS[ev.effect];
-        return e ? { to: ev.target, text: '', cls: 'is-effect-on', icon: ICON(e.icon), color: e.color } : null;
+        return e ? { to: ev.target, text: e.name, cls: 'is-effect-on', icon: ICON(e.icon), color: e.color } : null;
     }
     if (ev.kind === 'effect' && ev.amount > 0) {
         const e = EFFECTS[ev.effect];
@@ -655,10 +692,13 @@ function _rpgStageFloat(stage, actor, text, cls, icon = null, color = null) {
         img.className = 'rpg-stage-float-icon';
         img.src = icon;
         img.alt = '';
-        el.appendChild(img);
+        if (cls.includes('is-effect-on')) el.prepend(img); else el.appendChild(img);   // al ponerse: icono y luego su nombre
     }
     el.style.left = `${a.left - s.left + a.width / 2}px`;
-    el.style.top = `${a.top - s.top}px`;
+    // Los números salen por encima de su fila de efectos, para no taparla
+    const row = actor.querySelector('.rpg-effects');
+    const top = row && row.children.length ? row.getBoundingClientRect().top : a.top;
+    el.style.top = `${top - s.top}px`;
     stage.appendChild(el);
     el.addEventListener('animationend', () => el.remove());
 }
@@ -686,7 +726,7 @@ export function playRpgCombatFx(events) {
                 if (run !== _rpgFxRun) return;
                 _rpgStageFloat(stage, target, step.text, step.cls, step.icon, step.color);
                 if (!['is-miss', 'is-heal', 'is-effect-on'].includes(step.cls) && !(step.cls === 'is-effect' && step.text.startsWith('+')) && !still) {
-                    target.animate([{ filter: 'brightness(2.2) saturate(0.4)' }, { filter: 'none' }], { duration: 220, easing: 'ease-out' });
+                    _rpgHitFeedback(target);
                 }
             };
             if (!lunge) { hit(); return; }
@@ -706,6 +746,24 @@ export function playRpgCombatFx(events) {
         }, t);
         t += (lunge ? RPG_LUNGE_MS : 260) + RPG_FX_GAP_MS;
     });
+    return t;   // cuánto dura la secuencia (para esperar a que acabe antes de lo siguiente)
+}
+
+/** Recibir un golpe: un parpadeo blanco rápido (dos destellos) y, justo después, un temblor corto. */
+function _rpgHitFeedback(target) {
+    // El destello, solo en el dibujo (no en sus iconos de efecto); el temblor, en todo el personaje
+    const sprite = target.querySelector(':scope > img') || target;
+    sprite.animate([
+        { filter: 'none' },
+        { filter: 'brightness(3.4) saturate(0)', offset: 0.2 },
+        { filter: 'none', offset: 0.45 },
+        { filter: 'brightness(3.4) saturate(0)', offset: 0.65 },
+        { filter: 'none' }
+    ], { duration: RPG_HIT_FLASH_MS, easing: 'linear' });
+    target.animate([
+        { transform: 'translateX(0)' }, { transform: 'translateX(-7px)' }, { transform: 'translateX(6px)' },
+        { transform: 'translateX(-4px)' }, { transform: 'translateX(3px)' }, { transform: 'translateX(0)' }
+    ], { duration: RPG_HIT_SHAKE_MS, delay: RPG_HIT_FLASH_MS * 0.7, easing: 'ease-out', composite: 'add' });
 }
 
 export function addRpgCombatLog(msg, type = 'system') {
@@ -1366,10 +1424,10 @@ export function renderOptionsPanel(handlers = {}) {
         </div>
         <div class="panel-section panel-about">
             <h4 class="panel-section-title">Sobre Easy Hero</h4>
-            <p>Easy Hero está <b>empezando</b>: esto es una primera ronda de contenido, no el juego terminado.</p>
-            <p>La idea es seguir creciendo: más clases y afinidades, debilidades y Ruptura, combates con varios enemigos, más mazmorras y una crónica que recuerde cada partida. El plan completo está en
-                <a href="https://github.com/harmondez/easy_hero/blob/main/planning.md" target="_blank" rel="noopener" style="color:var(--primary-light)">planning.md</a>.</p>
-            <p>Gratis, sin cuentas, sin anuncios. Todo lo que ves aquí vive solo en tu navegador.</p>
+            <p><b>Easy Hero está en beta.</b> Un RPG de aventuras para jugar en el navegador, hecho para que cualquiera pueda
+                perderse un rato en un mundo lleno de caminos, monstruos y gente con algo que contarte.</p>
+            <p>Cada versión trae más: zonas nuevas, armas, enemigos y la historia de quién eres.</p>
+            <p><b>Gratis, sin cuenta y sin anuncios.</b> Tu partida se guarda en tu navegador, y en ningún sitio más.</p>
         </div>`;
     const btnWipe = document.getElementById('btnPanelWipe');
     if (btnWipe && handlers.onWipe) btnWipe.addEventListener('click', () => _renderWipeConfirm(handlers));

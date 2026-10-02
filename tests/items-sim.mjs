@@ -324,11 +324,12 @@ console.log('\n☠️ Estados: veneno y quemadura');
 
     c = fight(heroWith(fake('weapon', { stats: { atq: 1 }, rules: [{ id: 'burn_on_hit', v: 3 }] })), dummy({ pattern: [{ k: 'rest' }] }));
     act(c, 'attack');
-    assert('quemadura: 3 por ronda durante 2 rondas', c.monster.effects.quemadura && c.monster.effects.quemadura.power === 3 && c.monster.effects.quemadura.turns === 1 && c.monster.hp === 40 - 1 - 3);
+    assert('quemadura: 3 por ronda durante 3 rondas (todos los efectos duran 3)', c.monster.effects.quemadura && c.monster.effects.quemadura.power === 3 && c.monster.effects.quemadura.turns === 2 && c.monster.hp === 40 - 1 - 3);
     act(c, 'defend');
-    assert('…y se apaga al terminar las rondas (2 rondas en total: 3 + 3 = 6)', !c.monster.effects.quemadura && c.monster.hp === 40 - 1 - 3 - 3);
     act(c, 'defend');
-    assert('sin quemadura no hay más daño', c.monster.hp === 40 - 7);
+    assert('…y se apaga al terminar las rondas (3 rondas en total: 3 + 3 + 3 = 9)', !c.monster.effects.quemadura && c.monster.hp === 40 - 1 - 3 - 3 - 3);
+    act(c, 'defend');
+    assert('sin quemadura no hay más daño', c.monster.hp === 40 - 10);
 
     // Un enemigo que muere por veneno no responde
     c = fight(heroWith(fake('weapon', { stats: { atq: 1 }, rules: [{ id: 'poison_on_hit', v: 3 }] })), dummy({ hp: 4, maxHp: 4, atq: 4 }));
@@ -431,7 +432,7 @@ console.log('\n🔥 Bola de fuego y el equipo');
     assert('…desde el segundo turno ya no', rpgSkillInfo(c.hero, 'fire_strike', c).damage === 5);
     c = fight(heroWith(fake('accessory', { rules: [{ id: 'skill_burn', v: 2 }] })), dummy({ pattern: [{ k: 'rest' }] }));
     act(c, 'skill', 'fire_strike');
-    assert('la habilidad quema (2 por ronda, 2 rondas): 5 + 2 de quemadura al final de la ronda', c.monster.hp === 40 - 5 - 2 && c.monster.effects.quemadura.turns === 1 && /quema/i.test(rpgSkillInfo(c.hero, 'fire_strike').desc));
+    assert('la habilidad quema (2 por ronda, 3 rondas): 5 + 2 de quemadura al final de la ronda', c.monster.hp === 40 - 5 - 2 && c.monster.effects.quemadura.turns === 2 && /quema/i.test(rpgSkillInfo(c.hero, 'fire_strike').desc));
     c = fight(heroWith(fake('accessory', { rules: [{ id: 'pyre', v: 3, from: 'unique' }] })), dummy({ pattern: [{ k: 'rest' }] }));
     act(c, 'skill', 'fire_strike');
     assert('Pira: +2 de daño y quema 3 durante 3 rondas', c.monster.hp === 40 - 7 - 3 && c.monster.effects.quemadura.turns === 2 && c.monster.effects.quemadura.power === 3);

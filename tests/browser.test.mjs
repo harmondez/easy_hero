@@ -112,10 +112,13 @@ const labels = await page.$$eval('#rpgCombatActions .rpg-action-label', els => e
 assert('Acciones a un clic: Defender, ¡Atacar!, las dos pociones (solo su imagen) y Huir', labels.join(',') === 'Defender,¡Atacar!,Huir'
     && (await page.$$('#rpgCombatActions .rpg-action.is-image .rpg-action-img')).length === 2
     && !!(await page.$('[data-rpg-action="mana_potion"]')));
-assert('Barra de habilidades: 6 ranuras; Bola de fuego y Grito de guerra con su icono y su coste, y 4 cerradas',
-    (await page.$$('#rpgSkillBar .rpg-skill')).length === 6 && (await page.$$('#rpgSkillBar .rpg-skill.is-locked')).length === 4
+assert('Barra de habilidades: 6 ranuras; Bola de fuego, Grito de guerra y Golpe poderoso con su icono y su coste, y 3 cerradas',
+    (await page.$$('#rpgSkillBar .rpg-skill')).length === 6 && (await page.$$('#rpgSkillBar .rpg-skill.is-locked')).length === 3
+    && (await page.$eval('#rpgSkillBar [data-rpg-skill="power_strike"] .is-energy', el => el.textContent)) === '50'
+    && await page.$eval('#rpgSkillBar [data-rpg-skill="power_strike"]', el => el.disabled && /energía/.test(el.title))
     && /Bola de fuego/.test(await page.$eval('#rpgSkillBar [data-rpg-skill="fire_strike"]', el => el.title))
     && (await page.$eval('#rpgSkillBar [data-rpg-skill="fire_strike"] .is-mana', el => el.textContent)) === '5');
+assert('Y barra de energía amarilla, que empieza a 0 de 100', /^0 \/ 100$/.test(await page.$eval('#rpgCombatHero .rpg-stat.en', el => el.textContent)));
 assert('El héroe tiene barra de maná: 12 / 12 (la mitad de su vida inicial)', /12 \/ 12/.test(await page.$eval('#rpgCombatHero .rpg-stat.mp', el => el.textContent)));
 assert('¡Atacar! es el botón protagonista (el más grande)', await page.evaluate(() => {
     const [main, ...rest] = [document.querySelector('[data-rpg-action="attack"]'), ...document.querySelectorAll('.rpg-action:not([data-main])')];
@@ -148,7 +151,7 @@ assert('Bola de fuego inflige 5 de daño (6 → 1 HP)',
     /1\s*\/\s*6/.test(await page.$eval('#rpgCombatMonster .rpg-stat.hp', el => el.textContent)));
 assert('Escenario: al golpear, la imagen del héroe se lanza hacia el enemigo',
     (await page.$eval('#rpgActorHero', el => el.getAnimations().length)) > 0);
-await sleep(120);
+await sleep(450);   // la embestida es pausada: el golpe llega a mitad de camino
 assert('Escenario: el daño sale como número encima del enemigo (-5)',
     (await page.$$eval('#rpgStage .rpg-stage-float', els => els.map(e => e.textContent))).includes('-5'));
 assert('Bola de fuego gasta 5 de maná (12 → 7) y su coste está a la vista; sin recarga, sigue disponible',
@@ -1153,14 +1156,14 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     await adv.click('#btnRpgAdventure');
     await sleep(400);
     assert('El botón «Modo aventura» abre la vista de Zafias', await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none'));
-    assert('Empieza en la aldea, con su cartel', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea'
-        && /aldea/i.test(await adv.$eval('.adv-plaque', el => el.textContent)));
+    assert('Empieza en la aldea, sin cartel con el nombre encima del mapa', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea'
+        && !(await adv.$('.adv-plaque')));
     assert('La aldea tiene 2 NPC, 3 puntos de interés (con la cueva sellada) y 2 salidas al bosque', (await adv.$$('.adv-stop.is-npc')).length === 2
         && (await adv.$$('.adv-stop.is-poi')).length === 3 && (await adv.$$('.adv-stop.is-exit')).length === 2);
     assert('El mapa se ve con zoom (la cámara escala el mundo)', await adv.$eval('.adv-world', el => /scale\((1\.[5-9]|2\.)/.test(el.style.transform)));
     assert('Los caminos se dibujan a trazos, como en un mapa antiguo', await adv.$eval('.adv-paths .adv-path-ink', el =>
         getComputedStyle(el).strokeDasharray !== 'none' && el.getAttribute('d').length > 10));
-    assert('Las paradas llevan su número de mundo (1-1, 1-2…)', /1-\d/.test(await adv.$eval('.adv-stop[data-point="posadera"] .adv-stop-label', el => el.textContent)));
+    assert('Las paradas no llevan número', !/\d-\d/.test(await adv.$eval('.adv-markers', el => el.textContent)));
 
     await adv.click('.adv-stop[data-point="posadera"]');
     await sleep(250);
@@ -1179,6 +1182,9 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     await adv.click('.adv-stop[data-point="al-bosque"]', { force: true });
     await sleep(250);
     assert('La salida lleva a la escena del bosque', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'bosque');
+    assert('Los enemigos del mapa no dicen quién es: solo el punto y la espada (ni nombre al pasar el ratón)',
+        !(await adv.$('.adv-stop.is-enemy .adv-stop-name')) && (await adv.$eval('.adv-stop.is-enemy', el => el.getAttribute('aria-label'))) === 'Enemigo'
+        && !!(await adv.$('.adv-stop.is-enemy .adv-stop-img')));
     const enemySrcs = await adv.$$eval('.adv-world .adv-enemy', els => els.map(e => e.src));
     assert('En el bosque se ven sus 4 goblins (mirando a la izquierda) y 2 lobos con su dibujo',
         enemySrcs.filter(s => /goblin_left/.test(s)).length === 4 && enemySrcs.filter(s => /enemigo_lobo-de-zafias/.test(s)).length === 2);

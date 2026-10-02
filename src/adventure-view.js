@@ -1,13 +1,13 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.9.0';
-import { ART } from './data/art.js?v=1.9.0';
-import { monsterArt } from './art.js?v=1.9.0';
-import { creatureFor } from './data/creatures.js?v=1.9.0';
-import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.9.0';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.9.2';
+import { ART } from './data/art.js?v=1.9.2';
+import { monsterArt } from './art.js?v=1.9.2';
+import { creatureFor } from './data/creatures.js?v=1.9.2';
+import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.9.2';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo
 // El mapa es un «mundo» que se desplaza y escala con transform. Los caminos son líneas a trazos entre paradas
-// (puntos rojos numerados 1-1, 1-2…); el héroe solo anda por ellos, de parada en parada, y la cámara le sigue.
+// (puntos rojos con su icono); el héroe solo anda por ellos, de parada en parada, y la cámara le sigue.
 // Un enemigo sin vencer corta el paso: el héroe se para delante y pelea. Las paradas van en una capa de
 // pantalla, a tamaño fijo con cualquier zoom; los trazos, en el mundo (escalan con él, como la tinta del mapa).
 // =============================================
@@ -36,16 +36,6 @@ let els = null;
 
 const reducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-// Numeración de mundo: 1-1, 1-2… por orden de escenas y paradas (las salidas y los cruces no cuentan)
-const STOP_LABELS = (() => {
-    const labels = {};
-    let n = 0;
-    for (const sc of Object.values(zone.scenes)) {
-        for (const p of sc.points) if (p.kind !== 'exit') labels[p.id] = `${zone.number || 1}-${++n}`;
-    }
-    return labels;
-})();
 
 // --- Grafo de la escena: paradas + cruces, unidos por caminos con recodos ---
 function node(id) {
@@ -238,15 +228,14 @@ function renderMarkers() {
         // NPC: azul si tiene misión (por dar o en marcha), gris si ya la cumpliste, amarillo si solo habla
         const mark = p.kind === 'npc' ? (st.hooks.npcMark ? st.hooks.npcMark(p) : 'talk') : null;
         const icon = p.kind === 'exit' ? STOP_ICONS.exit : cleared ? '✓' : STOP_ICONS[p.kind] || '';
-        const text = p.kind === 'exit' ? esc(p.name) : STOP_LABELS[p.id] || '';
         const img = !cleared && STOP_IMAGES[p.kind];
         const iconHtml = img ? `<img class="adv-stop-img" src="${img}" alt="" draggable="false">` : icon;
-        const label = p.kind === 'exit' ? exitLabel(p) : `<span class="adv-stop-icon">${iconHtml}</span><span class="adv-stop-text">${text}</span>`;
+        const label = p.kind === 'exit' ? exitLabel(p) : `<span class="adv-stop-icon">${iconHtml}</span>`;
         return `
-        <button type="button" class="adv-stop is-${p.kind}${mark ? ` is-${mark}` : ''}${cleared || seen || mark === 'done' ? ' is-cleared' : ''}" data-point="${esc(p.id)}" data-x="${p.x}" data-y="${p.y}" aria-label="${esc(`${STOP_LABELS[p.id] || ''} ${p.name}`)}">
+        <button type="button" class="adv-stop is-${p.kind}${mark ? ` is-${mark}` : ''}${cleared || seen || mark === 'done' ? ' is-cleared' : ''}" data-point="${esc(p.id)}" data-x="${p.x}" data-y="${p.y}" aria-label="${p.kind === 'enemy' ? 'Enemigo' : esc(p.name)}">
             <span class="adv-stop-dot" aria-hidden="true"></span>
             <span class="adv-stop-label">${label}</span>
-            <span class="adv-stop-name">${esc(p.name)}</span>
+            ${p.kind === 'enemy' ? '' : `<span class="adv-stop-name">${esc(p.name)}</span>`}
         </button>`;
     }).join('');
 }
@@ -257,12 +246,6 @@ function renderScene() {
     renderMarkers();
 }
 
-function showPlaque() {
-    els.plaque.textContent = st.scene.name;
-    els.plaque.classList.remove('is-in');
-    void els.plaque.offsetWidth;   // reinicia la animación del cartel
-    els.plaque.classList.add('is-in');
-}
 
 /** Entra en una escena y pone al héroe en una parada (por defecto, la de inicio de la escena). */
 function enterScene(id, atStop) {
@@ -275,7 +258,6 @@ function enterScene(id, atStop) {
     st.path = null;
     if (st.hooks.onScene) st.hooks.onScene(id);
     renderScene();
-    showPlaque();
 }
 
 // --- Diálogo: «Siguiente» hasta el final, y listo ---
@@ -300,7 +282,13 @@ function renderDialogue() {
 
 // Novela visual: el retrato de cada lado es el de quien habla en esa conversación (el héroe, a la derecha; el otro, a la
 // izquierda). Quien habla se ve entero; el que escucha queda en penumbra. Narración (sin retrato): los dos en penumbra
-const portraitOf = who => { const id = PORTRAITS[who]; return (id && ART.portraits && ART.portraits[id]) || null; };
+// PORTRAITS[who] es el id o { id, scale }: devuelve { src, w, h, scale } o null
+const portraitOf = who => {
+    const p = PORTRAITS[who];
+    const id = p && (typeof p === 'string' ? p : p.id);
+    const art = id && ART.portraits && ART.portraits[id];
+    return art ? { ...art, scale: (p && p.scale) || 1 } : null;
+};
 function renderPortraits(lines, i) {
     const who = lines[i].who;
     const other = lines.map(l => l.who).find(w => w !== HERO_WHO && portraitOf(w));
@@ -310,6 +298,8 @@ function renderPortraits(lines, i) {
         img.hidden = !art;
         if (!art) return;
         if (img.getAttribute('src') !== art.src) img.src = art.src;
+        img.style.setProperty('--portrait-scale', art.scale);   // los grandes (Grask) se ven más grandes
+        img.classList.toggle('is-big', art.scale > 1);   // y bajan detrás del cuadro: se te echan encima
         img.classList.toggle('is-speaking', speaking);
     };
     show(els.portraitLeft, other ? portraitOf(other) : null, who === other);
@@ -394,7 +384,6 @@ function bind() {
         world: root.querySelector('.adv-world'),
         hero: root.querySelector('.adv-hero'),
         markers: root.querySelector('.adv-markers'),
-        plaque: root.querySelector('.adv-plaque'),
         dialogue: root.querySelector('.adv-dialogue'),
         dialogueWho: root.querySelector('.adv-dialogue-who'),
         dialogueText: root.querySelector('.adv-dialogue-text'),
@@ -446,7 +435,7 @@ export function open(hooks = {}, scene = null) {
     st.hooks = { ...st.hooks, ...hooks };
     closeDialogue();
     if (!st.scene) enterScene(zone.scenes[scene] ? scene : zone.startScene);
-    else { renderScene(); showPlaque(); }
+    else renderScene();
     const debug = /[?&]debug\b/.test(location.search);
     els.fps.hidden = !debug;
     st.fps = debug ? { frames: 0, since: performance.now() } : null;
@@ -516,6 +505,13 @@ export function gaugeHtml(kind, now, max, label) {
  * La barra de abajo: { name, hp, maxHp, mp, maxMp, gold, potions, manaPotions, quest }.
  * Cada dato lleva su data-hud (para leerlo sin depender del texto).
  */
+/** Abre un diálogo de la zona solo para verlo (sin onDone: ni marcas ni recompensas). Devuelve si existe. */
+export function previewDialogue(key) {
+    if (!ZAFIAS_DIALOGUES[key]) return false;
+    openDialogue(key);
+    return true;
+}
+
 export function setHud(h) {
     const el = document.querySelector('#rpgAdventureView .adv-hud');
     if (el) {

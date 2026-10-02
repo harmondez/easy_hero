@@ -16,6 +16,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import { readManifest, manifestText } from './sprites.mjs';
+import { processAllPortraits } from './portraits.mjs';
 
 sharp.cache(false);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -120,24 +121,28 @@ if (fs.existsSync(UI_DIR)) {
         if (fs.existsSync(file)) await save(file, id);
     }
 }
-// Retratos para los diálogos (novela visual): img/characters/<id>-profile.png → img/portraits/<id>.webp (recortados a su
-// contorno, ≤ 640 px de alto) en ART.portraits[id]. Quién lleva cada retrato: src/data/characters.js
-const CHAR_DIR = path.join(root, 'img/characters');
-const PORTRAIT_OUT = 'img/portraits';
-const PORTRAIT_MAX_H = 640;
-if (fs.existsSync(CHAR_DIR)) {
-    art.portraits = art.portraits || {};
-    fs.mkdirSync(path.join(root, PORTRAIT_OUT), { recursive: true });
-    for (const file of fs.readdirSync(CHAR_DIR).filter(f => /-profile\.png$/i.test(f)).sort()) {
-        const id = file.replace(/-profile\.png$/i, '').toLowerCase();
-        const outRel = `${PORTRAIT_OUT}/${id}.webp`;
-        const trimmed = await sharp(path.join(CHAR_DIR, file)).trim({ threshold: 1 }).toBuffer();
-        const info = await sharp(trimmed).resize({ height: PORTRAIT_MAX_H, withoutEnlargement: true })
-            .webp({ quality: 92, alphaQuality: 100, effort: 6 }).toFile(path.join(root, outRel));
-        art.portraits[id] = { src: outRel, w: info.width, h: info.height };
-        done.push(`img/characters/${file} → ${outRel} (${info.width}×${info.height})`);
-    }
+// Iconos compuestos: uno encima de otro, con el de fondo semitransparente (p. ej. Golpe poderoso: la espada sobre
+// una llama). { id: { back, backAlpha, front, frontScale } } con ids de ART.icons ya hechos arriba
+const COMPOSITES = {
+    'habilidad-golpe-poderoso': { back: 'fuego', backAlpha: 0.55, front: 'ranura-arma', frontScale: 0.86 }
+};
+for (const [id, c] of Object.entries(COMPOSITES)) {
+    const SIZE = 128;
+    const back = await sharp(path.join(root, art.icons[c.back].src)).resize(SIZE, SIZE, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    for (let i = 3; i < back.data.length; i += 4) back.data[i] = Math.round(back.data[i] * c.backAlpha);
+    const fs_ = Math.round(SIZE * c.frontScale);
+    const front = await sharp(path.join(root, art.icons[c.front].src)).resize(fs_, fs_, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
+    const outRel = `${OUT}/${id}.webp`;
+    const info = await sharp(back.data, { raw: back.info })
+        .composite([{ input: front, left: Math.round((SIZE - fs_) / 2), top: Math.round((SIZE - fs_) / 2) }])
+        .webp({ lossless: true, effort: 6 }).toFile(path.join(root, outRel));
+    art.icons[id] = { src: outRel, w: info.width, h: info.height };
+    done.push(`compuesto → ${outRel}`);
 }
+
+// Retratos para los diálogos (novela visual): img/characters → img/portraits (tools/portraits.mjs)
+done.push(...await processAllPortraits(root, art));
 fs.writeFileSync(manifestFile, manifestText(art), 'utf8');
 console.log(done.join('\n'));
 console.log(`\n🧪 ${done.length} icono(s) listos y registrados en src/data/art.js (ART.icons)`);

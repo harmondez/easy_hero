@@ -78,21 +78,64 @@ const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('easy-he
 assert('Beber el elixir de fuerza gasta el único que había (guardado) y su botón ya no sale',
     saved.fuerza === 0 && saved.hierbas === 1 && !(await page.$('[data-rpg-action="elixir"][data-rpg-skill="fuerza"]')));
 
-// Aturdido: si su golpe te aturde, la barra solo ofrece seguir (pierdes el turno)
+// Aturdido: no sale ningún botón ni cartel; la barra se apaga, pierdes el turno solo y el enemigo vuelve a actuar
 await page.evaluate(() => { window.gameCombat().monster.rules = { stunOnHeavy: 0.1 }; });
 let stunned = false;
 for (let i = 0; i < 6 && !stunned && !(await page.$('#btnRpgCombatContinue')); i++) {
     await page.click('[data-rpg-action="defend"]');
-    await sleep(250);
-    stunned = /Aturdido/.test(await page.$eval('#rpgCombatActions', el => el.textContent));
+    await sleep(150);
+    // En cuanto aturde, se le quitan las reglas: así no vuelve a aturdir en el turno que aprovecha
+    stunned = await page.evaluate(() => { const c = window.gameCombat(); const s = !!c.hero.effects.aturdido; if (s) c.monster.rules = {}; return s; });
 }
 hero = await effectsOn('Hero');
-assert('Aturdido: el icono sobre el héroe y un único botón «Aturdido» en la barra', stunned && hero.some(e => e.id === 'aturdido')
-    && (await page.$$('#rpgCombatActions .rpg-action')).length === 1);
-await page.click('[data-rpg-action="attack"]');
-await sleep(250);
-assert('Pulsarlo pierde el turno y se te pasa', /aturdido y pierde el turno/.test(await page.$eval('#rpgCombatLogContent', el => el.textContent))
+const roundBefore = await page.$eval('#rpgCombatTitle', el => el.textContent);
+assert('Aturdido: su icono sobre el héroe, la barra de siempre pero apagada, y ningún botón ni cartel «Aturdido»', stunned && hero.some(e => e.id === 'aturdido')
+    && await page.$eval('#rpgCombatActions', el => el.classList.contains('is-stunned') && !/Aturdido/.test(el.textContent))
+    && await page.$$eval('#rpgCombatActions button', bs => bs.length > 3 && bs.every(b => b.disabled))
+    && !(await page.$$eval('.rpg-stage-float', els => els.some(e => /Aturdido/i.test(e.textContent)))));
+await page.waitForFunction(() => /aturdido y pierde el turno/.test(document.getElementById('rpgCombatLogContent').textContent), null, { timeout: 8000 }).catch(() => {});
+await sleep(300);
+assert('Sin pulsar nada, pierdes el turno y el enemigo actúa otra vez (pasa la ronda)',
+    /aturdido y pierde el turno/.test(await page.$eval('#rpgCombatLogContent', el => el.textContent))
+    && (await page.$eval('#rpgCombatTitle', el => el.textContent)) !== roundBefore
     && !(await effectsOn('Hero')).some(e => e.id === 'aturdido'));
+assert('…y la barra vuelve a encenderse', (await page.$('#btnRpgCombatContinue')) || await page.$eval('#rpgCombatActions', el => !el.classList.contains('is-stunned')));
+
+// ⚡ Energía: defenderse la llena; Golpe poderoso la gasta con un clic
+console.log('\n⚡ Energía y Golpe poderoso en pantalla');
+await page.evaluate(() => {
+    localStorage.setItem('easy-hero-adventure', JSON.stringify({ v: 1, scene: 'bosque', hp: null, gone: {}, flags: { misionAceptada: true } }));
+});
+await page.reload({ waitUntil: 'load' });
+await sleep(500);
+for (let i = 0; i < 20 && !(await shown('.adv-dialogue')); i++) { await page.click('.adv-stop[data-point="goblin-1"]', { force: true }); await sleep(300); }
+await talkAll();
+await sleep(300);
+const energy = () => page.$eval('#rpgCombatHero .rpg-stat.en', el => Number(el.textContent.split('/')[0]));
+assert('Al empezar el combate, la energía está a 0 y Golpe poderoso apagado', (await energy()) === 0
+    && await page.$eval('[data-rpg-skill="power_strike"]', el => el.disabled));
+for (let i = 0; i < 6 && (await energy()) < 50; i++) { await page.click('[data-rpg-action="defend"]'); await sleep(250); }
+const before = await energy();
+assert('Defenderse llena la energía hasta poder usarlo, y el botón se enciende', before >= 50
+    && await page.$eval('[data-rpg-skill="power_strike"]', el => !el.disabled));
+await page.click('[data-rpg-skill="power_strike"]');
+await sleep(300);
+assert('Pulsarlo lanza el Golpe poderoso y gasta 50 de energía',
+    /golpe poderoso/i.test(await page.$eval('#rpgCombatLogContent', el => el.textContent))
+    && ((await page.$('#btnRpgCombatContinue')) || (await energy()) <= before - 50 + 10));
+
+// ⏳ ¡Atacar! espera 2 segundos antes de volver a pulsarse (en las pruebas se desactiva salvo que se pida)
+if (!(await page.$('#btnRpgCombatContinue'))) {
+    await page.evaluate(() => { window.__forceAttackCooldown = true; const c = window.gameCombat(); c.monster.hp = c.monster.maxHp = 999; c.hero.hp = c.hero.maxHp; });
+    await page.click('[data-rpg-action="defend"]');
+    await sleep(300);
+    await page.click('[data-rpg-action="attack"]');
+    await sleep(200);
+    const cooling = await page.$eval('[data-rpg-action="attack"]', el => el.disabled && el.classList.contains('is-cooling'));
+    await sleep(2200);
+    const ready = await page.$eval('[data-rpg-action="attack"]', el => !el.disabled && !el.classList.contains('is-cooling'));
+    assert('Tras atacar, ¡Atacar! se apaga 2 segundos (con la franja que se vacía) y vuelve', cooling && ready);
+}
 
 assert('Sin errores de página', errors.length === 0);
 if (errors.length) console.log(errors);

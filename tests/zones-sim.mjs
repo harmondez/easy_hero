@@ -4,6 +4,8 @@
 // recodos caen dentro del encuadre, las salidas llevan a paradas reales y cada diálogo citado está escrito.
 // =============================================
 import { ZAFIAS, ZAFIAS_DIALOGUES } from '../src/data/zones/zafias.js';
+import { PORTRAITS } from '../src/data/characters.js';
+import { ART } from '../src/data/art.js';
 
 let passed = 0, failed = 0;
 function assert(label, cond, detail = '') {
@@ -61,6 +63,12 @@ const pois = Object.values(zone.scenes).flatMap(sc => sc.points.filter(p => p.ki
 assert('Hay puntos de interés en las tres escenas', Object.values(zone.scenes).every(sc => sc.points.some(p => p.kind === 'poi')));
 assert('Los hallazgos con recompensa se marcan para darla una sola vez',
     pois.every(p => (p.talk || []).every(t => !t.reward || (t.set && p.talk.some(o => (o.when || []).includes(t.set))))));
+
+// Retratos de los diálogos (novela visual)
+const whos = new Set(Object.values(ZAFIAS_DIALOGUES).flat().map(l => l.who));
+assert('Cada retrato asignado existe en el juego (img/portraits)', Object.values(PORTRAITS).every(p => ART.portraits[typeof p === 'string' ? p : p.id]));
+assert('Cada retrato es de alguien que habla de verdad en Zafias', Object.keys(PORTRAITS).every(w => whos.has(w)));
+assert('Maela, Bram, Grask y el héroe tienen retrato', ['Maela, la posadera', 'Bram, el herrero', 'Grask, jefe goblin', '{heroe}'].every(w => PORTRAITS[w]));
 
 console.log(`\n📊 RESULTS: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

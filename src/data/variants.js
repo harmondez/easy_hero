@@ -17,7 +17,7 @@
 //   pattern(p)         devuelve el patrón de movimientos transformado
 //   rules              banderas que lee el motor durante el combate (ver engine.js)
 // =============================================
-import { atk, heal, CHARGE, GUARD, REST } from './monsters.js?v=1.9.0';
+import { atk, heal, CHARGE, GUARD, REST } from './monsters.js?v=1.9.2';
 
 // Quita de un patrón los movimientos que no son ataques (para los que «no se paran»)
 const onlyAttacks = p => {
@@ -119,7 +119,7 @@ export const MONSTER_LINEAGES = [
     {
         id: 'brasas', name: 'de las Brasas',
         goldMul: 1.3,
-        rules: { burnOnHit: { dmg: 2, turns: 2 } },
+        rules: { burnOnHit: { dmg: 2, turns: 3 } },
         desc: 'Sus ataques te dejan ardiendo.'
     },
     {

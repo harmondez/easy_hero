@@ -18,7 +18,7 @@ export const QUESTS = [
     {
         id: 'quien-soy', kind: 'main',
         title: 'Descubre quién eres',
-        desc: 'Despertaste entre las piedras de unas ruinas, con sangre seca en la frente y sin más recuerdo que tu nombre. Alguien, en algún sitio, sabe lo que te pasó.',
+        desc: 'Despertaste en unas ruinas del bosque, con sangre seca en la frente y sin recordar nada, salvo tu nombre.',
         steps: [
             { text: 'Habla con la gente de Zafias: quizá alguien te reconozca' }
         ]
@@ -26,7 +26,7 @@ export const QUESTS = [
     {
         id: 'goblins', kind: 'side', giver: 'posadera',
         title: 'Los goblins del bosque',
-        desc: 'Los goblins de Grask se han quedado con los cruces del bosque y Zafias se ahoga: no entran carros, ni sal, ni noticias. Maela, la posadera, te ha pedido que los eches.',
+        desc: 'Los goblins de Grask han tomado los cruces del bosque y a Zafias ya no llegan carros. Maela, la posadera, te ha pedido que los eches.',
         start: 'misionAceptada', done: 'misionCumplida',
         steps: [
             { text: 'Echa a los goblins del bosque', when: GOBLINS, progress: GOBLINS },
@@ -37,7 +37,7 @@ export const QUESTS = [
     {
         id: 'dientes', kind: 'side', giver: 'herrero',
         title: 'Dientes de lobo',
-        desc: 'Bram, el herrero, templa el acero con dientes de lobo molidos. Si le llevas cinco, te forjará una hoja de verdad.',
+        desc: 'Bram, el herrero, templa el acero con dientes de lobo molidos. Si le llevas cinco, te forjará una espada.',
         start: 'dientes:aceptada', done: 'dientes:cumplida',
         steps: [
             { text: 'Consigue dientes de lobo', count: { creature: 'lobo-de-zafias', n: 5 } },

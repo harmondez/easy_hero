@@ -9,7 +9,7 @@
 //     (`fresh`): «3 rondas» son 3 turnos tuyos con la mejora.
 //   · aturdido: no gasta rondas; se consume al perder el turno.
 // =============================================
-import { EFFECTS } from './data/effects.js?v=1.9.0';
+import { EFFECTS, EFFECT_TURNS } from './data/effects.js?v=1.9.2';
 
 const _fx = unit => (unit.effects = unit.effects || {});
 
@@ -22,6 +22,8 @@ export const hasEffect = (unit, id) => !!(unit && unit.effects && unit.effects[i
 export function applyEffect(unit, id, power = 1, turns = null, fresh = false) {
     const def = EFFECTS[id];
     if (!def || !unit) return null;
+    // De momento todos los efectos duran lo mismo (EFFECT_TURNS); el aturdimiento no: se gasta al perder el turno
+    if (!def.skip && EFFECT_TURNS) turns = EFFECT_TURNS;
     const fx = _fx(unit);
     const cur = fx[id];
     const longest = (a, b) => (a == null || b == null) ? null : Math.max(a, b);   // null = todo el combate

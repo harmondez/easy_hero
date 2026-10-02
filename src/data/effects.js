@@ -14,6 +14,10 @@
 //   desc    qué hace, con el efecto concreto { power, turns }
 // Duración: `turns` rondas; null = hasta que acabe el combate.
 // =============================================
+// ⏱️ De momento TODOS los efectos duran 3 rondas (lo que digan los datos de cada uno se ignora). El aturdimiento no
+// cuenta: dura hasta que se pierde el turno. Para volver a duraciones propias, poner EFFECT_TURNS = null.
+export const EFFECT_TURNS = 3;
+
 const pct = p => `${Math.round(p * 100)} %`;
 
 export const EFFECTS = {
@@ -65,7 +69,7 @@ export const ELIXIRS = {
     },
     hierbas: {
         name: 'Tónico de hierbas', img: 'ingrediente-hierba', price: 25, max: 2,
-        effect: { id: 'regeneracion', power: 2, turns: 4 },
+        effect: { id: 'regeneracion', power: 2, turns: 3 },
         desc: 'Cierra tus heridas poco a poco, ronda tras ronda.'
     },
     veneno: {

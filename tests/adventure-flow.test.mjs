@@ -110,7 +110,7 @@ assert('…y la segunda vez ya no da nada', (await gold()) === g1);
 
 await page.click('.adv-stop[data-point="a-la-guarida"]', { force: true });
 await sleep(300);
-assert('El sendero del sureste lleva a la guarida del lobo', (await scene()) === 'guarida' && /guarida/i.test(await page.$eval('.adv-plaque', el => el.textContent)));
+assert('El sendero del sureste lleva a la guarida del lobo', (await scene()) === 'guarida');
 assert('En la guarida se ven el lobo de guardia y Feronius, cada uno con su dibujo', await page.$$eval('.adv-world .adv-enemy', els =>
     els.some(e => /enemigo_lobo-de-zafias/.test(e.src)) && els.some(e => /enemigo_feronius-el-feroz/.test(e.src))));
 const sizes = await page.$$eval('.adv-world .adv-enemy', els => Object.fromEntries(els.map(e => [/feronius/.test(e.src) ? 'jefe' : 'lobo', parseFloat(e.style.height)])));
@@ -146,7 +146,7 @@ await page.click('.adv-stop[data-point="posadera"]', { force: true });
 await sleep(250);
 const after = await page.$$eval('.adv-dialogue-text', els => els.map(e => e.textContent).join(' '));
 await playOut();
-assert('…y después solo da conversación (ni oro ni poción otra vez)', (await gold()) === g2 + 60 && /bosque respira/.test(after));
+assert('…y después solo da conversación (ni oro ni poción otra vez)', (await gold()) === g2 + 60 && /bosque está tranquilo/.test(after));
 
 assert('Sin errores de página en todo el recorrido', errors.length === 0);
 if (errors.length) console.log(errors);

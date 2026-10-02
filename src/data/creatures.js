@@ -18,21 +18,21 @@
 //   scale     tamaño en pantalla respecto a su dibujo (los dibujos se normalizan a la altura del héroe: un lobo a
 //             cuatro patas saldría tan alto como él). Se multiplica por el ×1,25 / ×1,5 de los jefes
 // =============================================
-import { PATTERNS } from './monsters.js?v=1.9.0';
+import { PATTERNS } from './monsters.js?v=1.9.2';
 
 export const CREATURES = {
     // --- Lobos ---
     'lobo-de-zafias': {
         name: 'Lobo de Zafias', icon: '🐺', type: 'monster', floor: 1, pattern: 'rapido',
         scale: 0.55,   // a media altura del torso del héroe
-        rules: { onHit: [{ id: 'sangrado', power: 1, turns: 2, chance: 0.4 }] },
-        desc: 'Flaco, gris y siempre en grupo. Muerde, desgarra y se aparta: a veces te deja sangrando.'
+        rules: { onHit: [{ id: 'sangrado', power: 1, turns: 3, chance: 0.4 }] },
+        desc: 'Un lobo flaco y gris que va en grupo. Muerde y se aparta: a veces te deja sangrando.'
     },
     feronius: {
         name: 'Feronius el Feroz', icon: '🐺', type: 'boss', tag: 'Jefe de Zafias', floor: 1, pattern: 'agresivo',
         atkMul: 0.8, hpMul: 0.85, scale: 0.55,   // con el ×1,5 de jefe: grande, pero sin llenar la pantalla
-        rules: { rageBelow: 0.3, rageAtkMul: 1.5, onHit: [{ id: 'sangrado', power: 2, turns: 2, chance: 0.5 }], stunOnHeavy: 1.5 },
-        desc: 'El lobo alfa de Zafias, del tamaño de un caballo. Lleva al cuello los huesos de quienes lo buscaron. Su zarpazo aturde, su mordisco sangra y, herido, pierde la cabeza.'
+        rules: { rageBelow: 0.3, rageAtkMul: 1.5, onHit: [{ id: 'sangrado', power: 2, turns: 3, chance: 0.5 }], stunOnHeavy: 1.5 },
+        desc: 'El lobo alfa de Zafias. Su zarpazo aturde, su mordisco hace sangrar y, cuando está herido, se vuelve loco.'
     },
     // --- Gnolls ---
     'gnoll-de-zafias': {
@@ -41,12 +41,12 @@ export const CREATURES = {
     'gnoll-berserker': {
         name: 'Gnoll Berserker', icon: '🪓', type: 'monster', floor: 3, pattern: 'hostigador',
         atkMul: 1.4, hpMul: 0.7,
-        desc: 'Se arranca la armadura antes de pelear para notar más el dolor. Aguanta poco, pero pega como un ariete: o cae rápido o te tumba.'
+        desc: 'Menos vida y mucho más daño: o cae rápido o te tumba.'
     },
     gnarok: {
         name: 'Gnarok, el Jefe Gnoll', icon: '🐾', type: 'subboss', floor: 5, pattern: 'acosador',
         atkMul: 1.25, rules: { bloodlust: 0.5 },
-        desc: 'El jefe de la manada gnoll. Huele la sangre, incluso la suya: cuanto más herido está, más fuerte pega.'
+        desc: 'El jefe de la manada gnoll. Cuanto más herido está, más fuerte pega.'
     },
     // --- Orcos ---
     'orco-de-zafias': {
@@ -55,17 +55,17 @@ export const CREATURES = {
     'orco-guerrero': {
         name: 'Orco Guerrero', icon: '🛡️', type: 'monster', floor: 4, pattern: 'defensor',
         hpMul: 1.15, rules: { physResist: 0.3 },
-        desc: 'Placas de hierro negro remachadas sobre la piel. El filo resbala: el daño físico le hace mucho menos.'
+        desc: 'Armadura negra: el daño físico le hace mucho menos.'
     },
     'orco-chaman': {
         name: 'Orco Chamán', icon: '🔥', type: 'monster', floor: 4, pattern: 'sanador',
-        atkMul: 1.25, hpMul: 1.25, rules: { burnOnHit: { dmg: 2, turns: 2 } },
-        desc: 'Huesos en las trenzas y brasas en las palmas. Su fuego quema, y entre golpe y golpe se cierra las heridas.'
+        atkMul: 1.25, hpMul: 1.25, rules: { burnOnHit: { dmg: 2, turns: 3 } },
+        desc: 'Más daño y más vida que un orco normal. Su fuego quema y se cura entre conjuros.'
     },
     guul: {
         name: 'Guul, el Rey Orco', icon: '👑', type: 'boss', floor: 6, pattern: 'implacable',
         hpMul: 1.3, rules: { physResist: 0.15 },
-        desc: 'El rey de los orcos, coronado con el yelmo de un caballero muerto. Se cubre, golpea fuerte y vuelve a golpear, sin prisa.'
+        desc: 'El rey de los orcos. Se cubre, golpea fuerte y vuelve a golpear.'
     }
 };
 

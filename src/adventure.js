@@ -2,24 +2,27 @@
 // 🧭 Modo Aventura (controlador): Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
 // Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
 // =============================================
-import * as UI from './ui.js?v=1.9.0';
-import * as Engine from './engine.js?v=1.9.0';
-import * as Meta from './meta.js?v=1.9.0';
-import * as Adventure from './adventure-view.js?v=1.9.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.9.0';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.9.0';
-import { creatureFor } from './data/creatures.js?v=1.9.0';
-import { QUESTS } from './data/quests.js?v=1.9.0';
-import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.9.0';
-import { ELIXIRS, FOOD } from './data/effects.js?v=1.9.0';
-import { ART } from './data/art.js?v=1.9.0';
-import * as Items from './items.js?v=1.9.0';
-import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.9.0';
+import * as UI from './ui.js?v=1.9.2';
+import * as Engine from './engine.js?v=1.9.2';
+import * as Meta from './meta.js?v=1.9.2';
+import * as Adventure from './adventure-view.js?v=1.9.2';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.2';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.9.2';
+import { creatureFor } from './data/creatures.js?v=1.9.2';
+import { QUESTS } from './data/quests.js?v=1.9.2';
+import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.9.2';
+import { ELIXIRS, FOOD } from './data/effects.js?v=1.9.2';
+import { ART } from './data/art.js?v=1.9.2';
+import * as Items from './items.js?v=1.9.2';
+import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.9.2';
 
 // Lo que la aventura necesita del resto del juego (main.js se lo da al arrancar): el almacenamiento, el progreso
 // permanente y algunas piezas del descenso (el héroe base, las recompensas, La Forja, bajar a la mazmorra).
 let ctx = null;
 export function init(context) { ctx = context; }
+
+/** Abre un diálogo solo para verlo (?vn=<clave>): no da recompensas ni pone marcas. */
+export const previewDialogue = key => Adventure.previewDialogue(key);
 
 /** El combate de la aventura en curso (para pruebas y depuración). */
 export const currentCombat = () => adv.combat;
@@ -28,7 +31,8 @@ export const currentCombat = () => adv.combat;
 export const inCombat = () => !!adv.combat;
 
 const ADV_KEY = 'easy-hero-adventure';
-const ADV_DEFEAT_GOLD_LOSS = 0.1;   // caer en la aventura cuesta el 10 % del oro que llevas
+const ADV_DEFEAT_GOLD_LOSS = 0.1;
+const STUN_PAUSE_MS = 900;   // aturdido: lo que se espera, tras la animación, antes de que el enemigo vuelva a actuar   // caer en la aventura cuesta el 10 % del oro que llevas
 const adv = { state: null, hero: null, combat: null, point: null };
 
 function _advLoad() {
@@ -284,7 +288,7 @@ function _advStartCombat(p) {
     UI.toggleRpgView('rpgCombatView');
     UI.hideRpgCombatResult();
     UI.clearRpgCombatLog();
-    UI.addRpgCombatLog(`👺 ${m.name} te cierra el paso. No hay forma de rodearlo.`, 'system');
+    UI.addRpgCombatLog(`👺 ${m.name} te cierra el paso.`, 'system');
     adv.combat.intro.forEach(ev => UI.addRpgCombatLog(ev.text, 'player'));
     adv.combat.intro = [];
     _advRenderCombat();
@@ -299,8 +303,13 @@ export function combatAct(action, skillId) {
     if (action === 'mana_potion') { ctx.meta.manaPotions = c.manaPotions; ctx.persistMeta(); }
     if (action === 'elixir') { ctx.meta.elixirs = { ...c.elixirs }; ctx.persistMeta(); }
     res.events.forEach(ev => UI.addRpgCombatLog(ev.text, ev.actor === 'hero' ? 'player' : 'enemy'));
+    if (action === 'attack') UI.startAttackCooldown();
     _advRenderCombat();
-    UI.playRpgCombatFx(res.events);
+    const fxMs = UI.playRpgCombatFx(res.events) || 0;
+    // Aturdido: pierdes el turno solo, sin pulsar nada, y el enemigo aprovecha para actuar otra vez
+    if (!c.over && c.hero.effects && c.hero.effects.aturdido) {
+        setTimeout(() => { if (adv.combat === c && !c.over) combatAct('attack'); }, fxMs + STUN_PAUSE_MS);
+    }
     adv.state.hp = adv.hero.hp;
     adv.state.mp = adv.hero.mp;   // el maná se conserva entre combates, como la vida
     _advSave();
@@ -326,7 +335,7 @@ function _advFinishCombat() {
         UI.showRpgCombatResult({ result: 'victory', title: '¡Victoria!', button: 'SEGUIR EXPLORANDO',
             detail: `+${gold} 🪙 · +${xp} XP${lvl.levelsGained > 0 ? ` · ¡Subes a nivel ${lvl.newLevel}!` : ''}` });
     } else if (c.result === 'fled') {
-        UI.showRpgCombatResult({ result: 'fled', title: 'Has huido', detail: `Corres sin mirar atrás. ${m.name} se queda en el camino, esperando a que vuelvas.`, button: 'VOLVER' });
+        UI.showRpgCombatResult({ result: 'fled', title: 'Has huido', detail: `${m.name} sigue en el camino.`, button: 'VOLVER' });
     } else {
         const lost = Math.floor(ctx.meta.gold * ADV_DEFEAT_GOLD_LOSS);
         Meta.recordGold(ctx.meta, -lost);
@@ -336,7 +345,7 @@ function _advFinishCombat() {
         adv.state.scene = ZAFIAS.startScene;
         _advSave();
         UI.showRpgCombatResult({ result: 'defeat', title: 'Has caído', button: 'DESPERTAR EN LA POSADA',
-            detail: `Todo se vuelve negro. Despiertas en una cama de la posada de Zafias, con vendas limpias y la bolsa más ligera${lost > 0 ? ` (−${lost} 🪙)` : ''}. Alguien te trajo a rastras.` });
+            detail: `Caes. Despiertas en la posada de Zafias, con vendas limpias${lost > 0 ? ` y ${lost} 🪙 menos` : ''}. Alguien te trajo hasta aquí.` });
     }
 }
 

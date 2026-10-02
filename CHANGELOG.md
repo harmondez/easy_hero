@@ -5,6 +5,30 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.9.2] - 2026-10-02
+
+### ✨ Novedades
+- ⚡ **Energía** (barra amarilla, 0 a 100): empieza cada combate vacía y se llena peleando: +5 al atacar, +5 al
+  recibir daño y +10 al defenderte (que además encaja el golpe: defenderse es la forma más rápida de cargarla).
+- 💥 **Golpe poderoso**, tercera ranura de la barra de habilidades: triple de daño y un 50 % de aturdir al enemigo
+  1 turno, por 50 de energía.
+- 💫 **Aturdido, sin carteles**: si te aturden, la barra se apaga, pierdes el turno solo y el enemigo aprovecha para
+  actuar otra vez.
+- ✨ **Efectos de estado más claros**: todos duran 3 rondas (el aturdimiento, 1 turno). Iconos más grandes sobre cada
+  personaje, su nombre al ponerse y, junto a la vida, la lista de lo que llevas con las rondas que quedan.
+- ⏳ **Combates con más peso**: ¡Atacar! espera 2 segundos antes de volver a pulsarse (con una franja que se vacía),
+  las embestidas son más pausadas y quien recibe un golpe parpadea en blanco y tiembla.
+- ❤️ **Barras de vida, maná y energía rehechas**: el marco ya no se deforma al estirarse y el relleno tiene brillo y
+  sombra de pixel art. Las habilidades, justo bajo las acciones; en el móvil caben las seis.
+- 🎭 **Más retratos en los diálogos**: Maela, los goblins esbirros y Grask, que se te echa encima más grande que nadie.
+- 🗺️ **Mapa más limpio**: sin el cartel con el nombre de la escena y sin números en las paradas. Los enemigos solo
+  llevan el punto rojo y la espada: no dicen quién te espera.
+- ✍️ **Toda la historia, más llana**: introducción, diálogos, misiones y bestiario reescritos línea a línea en el
+  habla de un pueblo, sin frases de adorno.
+- 📜 **«Sobre Easy Hero»**, en Opciones, contado de nuevo: un juego en beta, gratis, sin cuenta y sin anuncios.
+- 🏭 **Novela visual rápida** (para quien hace el juego): `npm run vn` crea NPC con retrato y diálogo, los revisa y saca
+  capturas línea a línea; la fábrica de arte genera retratos (`portrait`); `?vn=<diálogo>` abre cualquier diálogo.
+
 ## [1.9.0] - 2026-10-02
 
 ### ✨ Novedades

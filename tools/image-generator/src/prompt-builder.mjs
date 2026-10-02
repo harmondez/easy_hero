@@ -19,6 +19,7 @@ export class PromptBuilder {
             character: readJson(path.join(dir, 'prompts', 'character.json')),
             boss: readJson(path.join(dir, 'prompts', 'boss.json')),
             npc: readJson(path.join(dir, 'prompts', 'npc.json')),
+            portrait: readJson(path.join(dir, 'prompts', 'portrait.json')),
             prop: objects.prop, obstacle: objects.obstacle, structure: objects.structure,
             ambient: objects.ambient, terrain: objects.terrain,
             background: scenario.background, map: scenario.map
@@ -48,7 +49,7 @@ export class PromptBuilder {
         const subject = tpl.subject.replace('{name}', human).replace('{details}', details ? `, ${details}` : '');
         // Familia de estilo: sprites (personajes y objetos sueltos), fondos de combate o mapas
         const isCreature = ['character', 'enemy', 'boss', 'npc'].includes(tpl.kind);
-        const family = tpl.kind === 'background' ? 'background' : (tpl.kind === 'map' || tpl.kind === 'terrain') ? 'map' : 'sprite';
+        const family = tpl.kind === 'portrait' ? 'portrait' : tpl.kind === 'background' ? 'background' : (tpl.kind === 'map' || tpl.kind === 'terrain') ? 'map' : 'sprite';
         const st = s.styles[family];
         const perspective = s.perspective[family === 'sprite' && !isCreature ? 'object' : family];
         const mandatory = [...(tpl.uses_sprite_rules ? this.spriteRules : []), ...(tpl.mandatory || []), ...s.common.rules];
@@ -62,7 +63,7 @@ export class PromptBuilder {
             `LIGHTING: ${s.common.lighting}${st.lighting_extra ? ` ${st.lighting_extra}` : ''}`,
             `PERSPECTIVE: ${perspective}`
         ];
-        if (isCreature && st.proportions) lines.push(`PROPORTIONS: ${st.proportions}`);
+        if ((isCreature || family === 'portrait') && st.proportions) lines.push(`PROPORTIONS: ${st.proportions}`);
         lines.push(`DETAIL: ${s.detail_level}`);
         if (st.avoid) lines.push(`AVOID: ${st.avoid}`);
         if (layout && layout.length) {

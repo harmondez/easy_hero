@@ -18,7 +18,8 @@ import { removeWhiteBackground } from './remove-bg.mjs';
 import { validateImage, validateSprite } from './validate.mjs';
 import { cutMap, verifyCuts } from './map-cutter.mjs';
 import { FactoryManifest, writeMeta, slug, fingerprint } from './manifest.mjs';
-import { processSprites } from '../../sprites.mjs';
+import { processSprites, readManifest, manifestText } from '../../sprites.mjs';
+import { processPortrait, PORTRAIT_SRC } from '../../portraits.mjs';
 
 const readJson = f => JSON.parse(fs.readFileSync(f, 'utf8'));
 
@@ -102,6 +103,8 @@ export class AssetFactory {
 
     /** Entrega un PNG final al juego por el taller de sprites (WebP + registro en src/data/art.js). */
     async _toGame(plan, pngFile) {
+        // Retrato de novela visual: a img/characters/<id>-profile.png (el original) y a img/portraits/<id>.webp
+        if (plan.typeConfig.deliver === 'portrait') return this._toPortrait(plan, pngFile);
         const prefix = plan.typeConfig.game_prefix;
         if (!prefix) return null;
         const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fabrica-'));
@@ -115,6 +118,20 @@ export class AssetFactory {
         } finally {
             fs.rmSync(tmp, { recursive: true, force: true });
         }
+    }
+
+    /** Retrato de novela visual: copia el PNG a img/characters y lo convierte en retrato del juego (ART.portraits). */
+    async _toPortrait(plan, pngFile) {
+        const id = slug(plan.gameId || plan.id);
+        const srcRel = `${PORTRAIT_SRC}/${id}-profile.png`;
+        fs.mkdirSync(path.join(this.root, PORTRAIT_SRC), { recursive: true });
+        fs.copyFileSync(pngFile, path.join(this.root, srcRel));
+        const manifestFile = path.join(this.root, 'src', 'data', 'art.js');
+        const art = await readManifest(manifestFile);
+        const p = await processPortrait(this.root, path.join(this.root, srcRel), id, art);
+        fs.writeFileSync(manifestFile, manifestText(art), 'utf8');
+        this.log.info(`🎭 Retrato listo: ${p.src} (${p.w}×${p.h}). Asígnalo a quien hable: npm run vn -- nuevo …`);
+        return { intake: srcRel, result: [p.src] };
     }
 
     // ---------- AssetGenerator: personajes, enemigos, NPC, jefes, props… ----------

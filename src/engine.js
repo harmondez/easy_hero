@@ -1,11 +1,11 @@
-import { RPG_BALANCE } from './data/balance.js?v=1.9.0';
-import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.9.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.9.0';
-import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.9.0';
-import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.9.0';
-import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.9.0';
-import { ELIXIRS } from './data/effects.js?v=1.9.0';
-import { applyEffect, effectStatMul, tickEffects, consumeStun, effectAppliedEvent } from './effects.js?v=1.9.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.2';
+import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.9.2';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.9.2';
+import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.9.2';
+import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.9.2';
+import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.9.2';
+import { ELIXIRS } from './data/effects.js?v=1.9.2';
+import { applyEffect, effectStatMul, tickEffects, consumeStun, effectAppliedEvent } from './effects.js?v=1.9.2';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)
@@ -331,6 +331,13 @@ export const RPG_SKILLS = {
         manaCost: 4, effect: { id: 'mas-ataque', power: 0.5, turns: 3 },
         desc: '+50 % de ATK durante 3 rondas.',
         describe: s => `+${Math.round(s.effect.power * 100)} % de ATK durante ${s.effect.turns} rondas.`
+    },
+    // energyCost: se paga con energía en vez de maná · atkMul: multiplica tu golpe básico (ATK) · stun: probabilidad de aturdir
+    power_strike: {
+        id: 'power_strike', name: 'Golpe poderoso', short: 'Golpe', icon: '💥', img: 'habilidad-golpe-poderoso',
+        energyCost: 50, atkMul: 3, stun: 0.5,
+        desc: 'Triple de daño y un 50 % de aturdir 1 turno.',
+        describe: s => `Golpe de ${s.damage} de daño (tu ATK ×${s.atkMul}) y un ${Math.round(s.stun * 100)} % de aturdir al enemigo 1 turno.`
     }
 };
 
@@ -354,8 +361,10 @@ export function rpgSkillInfo(hero, skillId, combat = null) {
         if (combat && combat.turn === 1) bonus += ruleSum(hero, 'first_turn_focus');
     }
     // Lo que antes reducía la recarga («Recarga», el Lector) ahora abarata el maná: −1 de recarga = −1 de maná
-    const damage = skill.ph ? Math.max(1, Math.round(rpgHeroPh(hero) * skill.ph)) + bonus : 0;
-    const info = { ...skill, damage, manaCost: Math.max(1, skill.manaCost + (mods.cooldown || 0)), burn: _skillBurn(hero, skillId) };
+    const damage = skill.ph ? Math.max(1, Math.round(rpgHeroPh(hero) * skill.ph)) + bonus
+        : skill.atkMul ? Math.max(1, Math.round(rpgAtk(hero) * skill.atkMul)) : 0;
+    const manaCost = skill.manaCost ? Math.max(1, skill.manaCost + (mods.cooldown || 0)) : 0;
+    const info = { ...skill, damage, manaCost, energyCost: skill.energyCost || 0, burn: _skillBurn(hero, skillId) };
     info.desc = skill.describe ? skill.describe(info) : skill.desc;
     return info;
 }
@@ -530,8 +539,10 @@ export function createRpgCombat(hero, monster, rng = Math.random) {
         result: null // 'victory' | 'defeat' | 'fled'
     };
     monster.step = monster.step || 0;
-    // Efectos de estado (src/effects.js): cada combate empieza limpio
+    // Efectos de estado (src/effects.js): cada combate empieza limpio. La energía, también: se gana peleando
     hero.effects = {};
+    hero.maxEnergy = RPG_BALANCE.energy.max;
+    hero.energy = 0;
     monster.effects = {};
     monster.intent = _rpgPickIntent(monster, rng);
     const heal = _healHero(hero, ruleSum(hero, 'combat_start_heal'));
@@ -572,7 +583,13 @@ export function rpgTelegraph(combat) {
 
 export function rpgSkillReady(combat, skillId) {
     if (!RPG_SKILLS[skillId] || !combat || combat.hero.vows?.noSkills) return false;
-    return (combat.hero.mp || 0) >= rpgSkillInfo(combat.hero, skillId, combat).manaCost;
+    const info = rpgSkillInfo(combat.hero, skillId, combat);
+    return (combat.hero.mp || 0) >= info.manaCost && (combat.hero.energy || 0) >= info.energyCost;
+}
+
+/** ⚡ Suma energía al héroe (sin pasar del máximo). */
+function _gainEnergy(hero, n) {
+    hero.energy = Math.min(hero.maxEnergy || RPG_BALANCE.energy.max, (hero.energy || 0) + n);
 }
 
 export function rpgCanFlee(combat) {
@@ -820,18 +837,27 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
                     text: `🌵 Las púas de ${monster.name} te hieren: ${back} de daño.` });
             }
         });
+        _gainEnergy(hero, RPG_BALANCE.energy.onAttack);
     } else if (action === 'skill') {
         const skill = RPG_SKILLS[skillId];
         if (!skill) return { ok: false, error: 'Habilidad desconocida.', events: [], over: false, result: null };
         if (hero.vows?.noSkills) return { ok: false, error: 'Tu voto de silencio te impide usar habilidades.', events: [], over: false, result: null };
         const info = rpgSkillInfo(hero, skillId, combat);
         if (!rpgSkillReady(combat, skillId)) {
-            return { ok: false, error: `No te queda maná para ${skill.name} (cuesta ${info.manaCost}).`, events: [], over: false, result: null };
+            return { ok: false, error: info.energyCost ? `Te falta energía para ${skill.name} (cuesta ${info.energyCost}).`
+                : `No te queda maná para ${skill.name} (cuesta ${info.manaCost}).`, events: [], over: false, result: null };
         }
         hero.mp -= info.manaCost;
+        hero.energy = (hero.energy || 0) - info.energyCost;
         usedSkill = skillId;
         combat.state.frenzy = 0;
-        if (info.ph) {
+        if (info.atkMul) {
+            // Golpe poderoso: tu golpe básico multiplicado (físico: le afectan la protección y la armadura del enemigo)
+            const { dmg, crit } = _rpgRollCrit(combat, _rpgGuarded(combat, _rpgMonsterResist(combat, info.damage, false)));
+            monster.hp = Math.max(0, monster.hp - dmg);
+            events.push({ actor: 'hero', target: 'monster', kind: 'skill', amount: dmg, text: `${skill.icon} ${hero.name} descarga un ${skill.name.toLowerCase()}: ${dmg} de daño${crit ? ' 💥 ¡CRÍTICO!' : ''}${guardNote}.` });
+            if (monster.hp > 0 && info.stun && combat.rng() < info.stun) applyEffect(monster, 'aturdido', 1, 1);
+        } else if (info.ph) {
             const { dmg, crit } = _rpgRollCrit(combat, _rpgGuarded(combat, _rpgMonsterResist(combat, info.damage, true)));
             monster.hp = Math.max(0, monster.hp - dmg);
             events.push({ actor: 'hero', target: 'monster', kind: 'skill', amount: dmg, text: `${skill.icon} ${hero.name} usa ${skill.name}: ${dmg} de daño de fuego${crit ? ' 💥 ¡CRÍTICO!' : ''}${guardNote}.` });
@@ -857,6 +883,7 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
     } else if (action === 'defend') {
         combat.defending = true;
         combat.state.frenzy = 0;
+        _gainEnergy(hero, RPG_BALANCE.energy.onDefend);   // te defiendes y recuperas el aliento
         events.push({ actor: 'hero', target: 'hero', kind: 'defend', amount: 0, text: `🛡️ ${hero.name} se defiende: el golpe de esta ronda hará la mitad${hero.guard ? ` y ${hero.guard} menos` : ''}.` });
         const healed = _healHero(hero, ruleSum(hero, 'defend_heal'));
         if (healed) events.push({ actor: 'hero', target: 'hero', kind: 'heal', amount: healed, text: `💚 ${hero.name} recupera ${healed} de vida al defenderse.` });
@@ -937,6 +964,7 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
             if (hero.physResist > 0) dmg = Math.max(0, Math.round(dmg * (1 - hero.physResist))); // resistencia física (VIT)
         }
         dmg = _rpgHeroTakesHit(combat, dmg, events);
+        if (dmg > 0) _gainEnergy(hero, RPG_BALANCE.energy.onHit);   // el dolor también llena la energía
         const pierced = combat.defending && mRules.pierceGuard;
         events.push({ actor: 'monster', target: 'hero', kind: 'attack', amount: dmg,
             text: dodged ? `💨 ${hero.name} esquiva el golpe de ${monster.name}.`

@@ -7,10 +7,10 @@
 
 ## 📍 Estado (2026-10-02)
 
-- **Publicado:** la **1.9.0** (https://harmondez.github.io/easy_hero/): Easy Hero es solo la aventura (la mazmorra,
+- **Publicado:** la **1.9.2** (https://harmondez.github.io/easy_hero/): Easy Hero es solo la aventura (la mazmorra,
   aparcada tras la cueva sellada). Zafias con introducción, 4 escenas, 28 paradas, misiones y diario, Grask y
   **Feronius**; combate de lado con **efectos de estado**, **maná**, **PH** y barra de habilidades; 10 armas con rareza,
-  elemento y efecto; tienda con elixires y cristales; inventario estilo DragonFable; diálogos de novela visual; toda la
+  elemento y efecto; energía y Golpe poderoso; aturdido que da turno al enemigo; tienda con elixires y cristales; inventario estilo DragonFable; diálogos de novela visual; toda la
   interfaz con arte del director. Criaturas con nombre en la recámara (gnolls y orcos con sus jefes, ya dibujados).
 - Herramientas: taller de sprites, Asset Factory, montaje de zonas (`docs/zonas.md`) y banco de la aventura
   (`npm run sim:aventura`).

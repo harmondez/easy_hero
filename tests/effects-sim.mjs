@@ -1,5 +1,5 @@
 // Efectos de estado: el motor (src/effects.js), su uso en el combate, el PH, los elixires y quién los pone en Zafias
-import { createRpgHero, createRpgCombat, rpgCombatAction, rpgSkillInfo, rpgHeroPh, rpgAttackPreview } from '../src/engine.js';
+import { createRpgHero, createRpgCombat, rpgCombatAction, rpgSkillInfo, rpgHeroPh, rpgAttackPreview, rpgSkillReady } from '../src/engine.js';
 import { applyEffect, tickEffects, effectStatMul, effectList } from '../src/effects.js';
 import { EFFECTS, ELIXIRS } from '../src/data/effects.js';
 import { CREATURES } from '../src/data/creatures.js';
@@ -30,14 +30,14 @@ console.log('\n✨ El motor de efectos');
     assert('el veneno se acumula (1 + 2) y se queda con las rondas más largas', u.effects.veneno.power === 3 && u.effects.veneno.turns === 3);
     applyEffect(u, 'sangrado', 2, 2);
     applyEffect(u, 'sangrado', 1, 4);
-    assert('el sangrado se queda con el mayor (2) y las rondas más largas (4)', u.effects.sangrado.power === 2 && u.effects.sangrado.turns === 4);
+    assert('el sangrado se queda con el mayor (2); todos los efectos duran 3 rondas, pidan lo que pidan', u.effects.sangrado.power === 2 && u.effects.sangrado.turns === 3);
     const ev = tickEffects(u, 'hero');
     assert('al cerrar el turno, cada efecto hace su daño (3 + 2) y gasta una ronda', u.hp === 15 && u.effects.veneno.turns === 2
         && ev.filter(e => e.kind === 'effect').length === 2 && ev.every(e => e.effect && e.target === 'hero'));
     const r = { name: 'Regen', hp: 10, maxHp: 12, effects: {} };
     applyEffect(r, 'regeneracion', 5, 1);
-    const ev2 = tickEffects(r, 'hero');
-    assert('la regeneración cura sin pasar del máximo (+2) y avisa al acabarse', r.hp === 12 && ev2.some(e => e.kind === 'effect' && e.heal && e.amount === 2)
+    const ev2 = [...tickEffects(r, 'hero'), ...tickEffects(r, 'hero'), ...tickEffects(r, 'hero')];
+    assert('la regeneración cura sin pasar del máximo (+2) y avisa al acabarse, a las 3 rondas', r.hp === 12 && ev2.some(e => e.kind === 'effect' && e.heal && e.amount === 2)
         && ev2.some(e => e.kind === 'effect-off') && !r.effects.regeneracion);
     const b = { name: 'B', hp: 5, maxHp: 5 };
     applyEffect(b, 'mas-ataque', 0.5, 3);
@@ -56,7 +56,7 @@ console.log('\n🩸 Efectos que pone el enemigo');
     const on = r.events.find(e => e.kind === 'effect-on');
     const tick = r.events.find(e => e.kind === 'effect');
     assert('al acertar te pone el sangrado (suceso con su efecto, para su icono)', on && on.effect === 'sangrado' && on.target === 'hero');
-    assert('…y al final de la ronda sangras 1 (el número sale con su efecto)', tick && tick.effect === 'sangrado' && tick.amount === 1 && c.hero.effects.sangrado.turns === 1
+    assert('…y al final de la ronda sangras 1 (el número sale con su efecto)', tick && tick.effect === 'sangrado' && tick.amount === 1 && c.hero.effects.sangrado.turns === 2
         && c.hero.hp === hp0 - 1 - 1);
     assert('el orden: golpe, efecto puesto, daño del efecto', kinds(r).indexOf('attack') < kinds(r).indexOf('effect-on') && kinds(r).indexOf('effect-on') < kinds(r).indexOf('effect'));
     // Con probabilidad 0 nunca
@@ -66,7 +66,7 @@ console.log('\n🩸 Efectos que pone el enemigo');
     // Las variantes de siempre («de la Plaga»: veneno todo el combate) usan el mismo motor
     const cp = fight(dummy({ pattern: [{ k: 'attack', m: 1 }], rules: { poisonOnHit: 1 } }));
     act(cp, 'defend');
-    assert('el veneno de las variantes dura todo el combate', cp.hero.effects.veneno.power === 1 && cp.hero.effects.veneno.turns === null);
+    assert('el veneno de las variantes también dura 3 rondas (antes, todo el combate)', cp.hero.effects.veneno.power === 1 && cp.hero.effects.veneno.turns === 2);
 }
 
 console.log('\n💫 Aturdido');
@@ -104,6 +104,47 @@ console.log('\n🔮 PH (Poder de Habilidad) y Grito de guerra');
     let buffed = 0;
     for (let i = 0; i < 5; i++) { if (rpgAttackPreview(g) === 6) buffed++; act(g, 'attack'); }
     assert('la mejora dura 3 turnos tuyos completos (no gasta la ronda en que la pones)', buffed === 3 && !g.hero.effects['mas-ataque']);
+}
+
+console.log('\n⚡ Energía y Golpe poderoso');
+{
+    const E = RPG_BALANCE.energy;
+    const c = fight(dummy({ atq: 2, hp: 400, maxHp: 400, pattern: [{ k: 'rest' }] }));
+    assert('la energía empieza cada combate a 0, sobre 100', c.hero.energy === 0 && c.hero.maxEnergy === 100);
+    act(c, 'attack');
+    assert(`atacar da ${E.onAttack} de energía`, c.hero.energy === E.onAttack);
+    act(c, 'defend');
+    assert(`defenderse (sin recibir daño) da ${E.onDefend}`, c.hero.energy === E.onAttack + E.onDefend);
+    const h = fight(dummy({ atq: 4, hp: 400, maxHp: 400, pattern: [{ k: 'attack', m: 1 }] }));
+    act(h, 'defend');
+    assert(`defenderse y encajar el golpe: ${E.onDefend} por descansar + ${E.onHit} por recibir daño`, h.hero.energy === E.onDefend + E.onHit);
+    h.hero.energy = 98;
+    act(h, 'attack');
+    assert('la energía no pasa de 100', h.hero.energy === 100);
+
+    const p = fight(dummy({ hp: 400, maxHp: 400, pattern: [{ k: 'rest' }] }));
+    p.hero.atq = 4;
+    p.hero.energy = 49;
+    assert('Golpe poderoso cuesta 50 de energía (con 49 no se puede)', !rpgSkillReady(p, 'power_strike') && !act(p, 'skill', 'power_strike').ok);
+    p.hero.energy = 60;
+    p.rng = () => 0;   // el dado del aturdimiento sale a favor
+    const hp0 = p.monster.hp;
+    const rp = act(p, 'skill', 'power_strike');
+    assert('Golpe poderoso: triple de daño (ATK 4 → 12), gasta 50 de energía y no toca el maná',
+        p.monster.hp === hp0 - 12 && p.hero.energy === 10 && p.hero.mp === p.hero.maxMp);
+    assert('…y con el dado a favor aturde al enemigo (su icono sale y pierde el turno)', rp.events.some(e => e.kind === 'effect-on' && e.effect === 'aturdido') && rp.events.some(e => e.kind === 'stunned'));
+    const q = fight(dummy({ hp: 400, maxHp: 400, atq: 3, pattern: [{ k: 'attack', m: 1 }] }));
+    q.hero.energy = 50;
+    q.rng = () => 0;
+    const heroHp = q.hero.hp;
+    const r = act(q, 'skill', 'power_strike');
+    assert('el enemigo aturdido pierde su golpe esa misma ronda', q.hero.hp === heroHp && r.events.some(e => e.kind === 'stunned' && e.target === 'monster'));
+    const n = fight(dummy({ hp: 400, maxHp: 400, pattern: [{ k: 'rest' }] }));
+    n.hero.energy = 50;
+    n.rng = () => 0.99;
+    const rn = act(n, 'skill', 'power_strike');
+    assert('con el dado en contra, no aturde (50 %)', !rn.events.some(e => e.effect === 'aturdido'));
+    assert('su icono existe (espada sobre llama)', !!ART.icons['habilidad-golpe-poderoso']);
 }
 
 console.log('\n🧪 Elixires');

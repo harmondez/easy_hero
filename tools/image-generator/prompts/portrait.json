@@ -1,0 +1,16 @@
+{
+  "_doc": "Retrato de novela visual para los diálogos (src/data/characters.js): de medio cuerpo para arriba, mirando al frente, sobre blanco para recortarlo. Se entrega a img/characters/<id>-profile.png y de ahí a img/portraits/<id>.webp. Referencias: los retratos que ya tiene el juego, para que todos parezcan del mismo pincel.",
+  "kind": "portrait",
+  "uses_sprite_rules": false,
+  "references": "portrait",
+  "subject": "a visual novel dialogue portrait of {name}, a character from a medieval fantasy village{details}",
+  "pose": "standing, facing the viewer with a slight three-quarter turn, arms relaxed, neutral expression with a hint of personality, framed from the head down to mid-thigh",
+  "mandatory": [
+    "Framed from the top of the head down to mid-thigh; the head is fully visible with a small empty margin above it.",
+    "The lower edge of the image cuts the legs at mid-thigh, straight across.",
+    "Centered in the image.",
+    "Pure flat white background (#FFFFFF), perfectly uniform.",
+    "No scenery, no ground, no cast shadow, no extra objects or characters.",
+    "Single subject only."
+  ]
+}

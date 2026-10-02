@@ -52,6 +52,10 @@ globalThis.__RPG_BALANCE__ = globalThis.__RPG_BALANCE__ || {
     manaFromHp: 0.5,
     manaPotion: { restore: 0.5, max: 3, price: 25 },
 
+    // ⚡ Energía (barra amarilla): empieza cada combate a 0 y se llena peleando. La gastan las técnicas (Golpe poderoso).
+    //   onAttack: al atacar · onHit: al recibir daño · onDefend: al defenderte (además de lo que ganes si te golpean)
+    energy: { max: 100, onAttack: 5, onHit: 5, onDefend: 10 },
+
     // Ranuras de la barra de habilidades del combate (las que no tienen habilidad salen cerradas)
     skillSlots: 6,
 

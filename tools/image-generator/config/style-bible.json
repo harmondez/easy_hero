@@ -30,13 +30,21 @@
       "art_style": "Highly detailed handcrafted pixel art, classic fantasy JRPG world map aesthetic, dense environmental detail, crisp pixel clusters, rich textures and strong depth. Atmospheric lighting, subtle fog at distant edges, layered vegetation and architecture integrated naturally into the landscape.",
       "palette": "Vibrant but natural colours.",
       "avoid": "No UI, no icons, no markers, no text, no labels, no grid, no interface elements. Not a collage, not separate scenes."
+    },
+    "portrait": {
+      "_doc": "Retratos de los diálogos (novela visual). Mismo pixel art que los sprites, pero de frente y más grandes: se ven a media pantalla.",
+      "art_style": "Detailed handcrafted 2D dark fantasy RPG pixel art character portrait for a visual novel: crisp pixels, strong dark outline, discrete pixel shading, expressive readable face, highly detailed clothing textures.",
+      "palette": "Gritty medieval fantasy aesthetic: muted earthy colors, brown leather and cloth tones, desaturated palette, strong contrast, subtle warm highlights.",
+      "proportions": "Semi-realistic proportions (no chibi): humans about 6.5 heads tall; goblins about 4.5 heads, hunched; orcs bulkier and taller than humans. Weapons and gear sized realistically to the body.",
+      "avoid": "No anime, no chibi, no cartoon, no smooth digital painting, no 3D render, no gradients, no speech bubbles."
     }
   },
   "perspective": {
     "sprite": "Strict side view (profile), camera at the character's chest height, no foreshortening, no three-quarter angle.",
     "object": "Elevated top-down 3/4 view, the same angle as the world map.",
     "background": "Side-view composition (side-scrolling stage): a walkable ground band across the lower third where the fighters stand, depth layers behind.",
-    "map": "Elevated isometric / top-down perspective of the whole region, consistent across the entire map."
+    "map": "Elevated isometric / top-down perspective of the whole region, consistent across the entire map.",
+    "portrait": "Front view at eye level, slight three-quarter turn, no strong foreshortening."
   },
   "detail_level": "Readable silhouette first, detail second: clear shapes at small size, then texture in pixel clusters. No tiny noise that turns to mush when scaled down.",
   "references": {
@@ -55,6 +63,10 @@
     ],
     "map": [
       "img/zones/zafias.webp"
+    ],
+    "portrait": [
+      "img/portraits/herrero-braum.webp",
+      "img/portraits/tabernera-maela.webp"
     ]
   }
 }

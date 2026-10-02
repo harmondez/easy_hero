@@ -42,49 +42,49 @@ export const GEAR = {
         name: 'Espada de Zafias', slot: 'weapon', rarity: 'poco_comun', element: 'neutro', atq: 2,
         desc: 'Forjada por Bram con acero templado en dientes de lobo molidos. Más larga y con más filo que una espada de hierro.',
         from: 'Recompensa de Bram: «Dientes de lobo»',
-        onHit: [{ id: 'sangrado', power: 1, turns: 2, chance: 0.3 }],   // el filo dentado hace sangrar
+        onHit: [{ id: 'sangrado', power: 1, turns: 3, chance: 0.3 }],   // el filo dentado hace sangrar
         sprite: 'arma_espada-de-zafias'
     },
     // --- Lo que vende el mercader de Zafias ---
     aguijon: {
         name: 'Aguijón', slot: 'weapon', rarity: 'poco_comun', element: 'veneno', atq: 2, price: 300,
-        desc: 'Una hoja verde envuelta en zarzas. Lo que corta, se pudre.',
+        desc: 'Una hoja verde envuelta en zarzas. Lo que corta se pudre.',
         from: 'El mercader de Zafias',
         onHit: [{ id: 'veneno', power: 1, turns: 3, chance: 0.5 }]
     },
     'espada-imperial': {
         name: 'Espada imperial', slot: 'weapon', rarity: 'rara', element: 'neutro', atq: 3, price: 650,
-        desc: 'Acero del castillo, con el zafiro de la guardia en la cruz. Empuñarla da coraje.',
+        desc: 'Acero del castillo, con un zafiro en la cruz. Da coraje a quien la empuña.',
         from: 'El mercader de Zafias',
-        onStart: [{ id: 'mas-ataque', power: 0.3, turns: 2 }]
+        onStart: [{ id: 'mas-ataque', power: 0.3, turns: 3 }]
     },
     'espada-negra': {
         name: 'Espada negra', slot: 'weapon', rarity: 'rara', element: 'sombra', atq: 3, price: 750,
-        desc: 'Hierro oscuro, sin brillo. Sus muescas desgarran.',
+        desc: 'Hierro oscuro, sin brillo. Sus muescas desgarran la carne.',
         from: 'El mercader de Zafias',
-        onHit: [{ id: 'sangrado', power: 2, turns: 2, chance: 0.35 }]
+        onHit: [{ id: 'sangrado', power: 2, turns: 3, chance: 0.35 }]
     },
     cryovain: {
         name: 'Cryovain', slot: 'weapon', rarity: 'rara', element: 'hielo', atq: 3, price: 900,
-        desc: 'Hielo que no se funde. Un buen tajo deja al enemigo helado, sin poder moverse.',
+        desc: 'Una hoja de hielo que no se funde. A veces deja al enemigo helado, sin poder moverse.',
         from: 'El mercader de Zafias',
         onHit: [{ id: 'aturdido', power: 1, turns: 1, chance: 0.2 }]
     },
     mirmulnir: {
         name: 'Mirmulnir', slot: 'weapon', rarity: 'epica', element: 'fuego', atq: 4, price: 1300,
-        desc: 'Lleva el nombre de un dragón y arde como él. Sus heridas siguen quemando.',
+        desc: 'Una hoja que arde. Sus heridas siguen quemando.',
         from: 'El mercader de Zafias',
-        onHit: [{ id: 'quemadura', power: 2, turns: 2, chance: 0.5 }]
+        onHit: [{ id: 'quemadura', power: 2, turns: 3, chance: 0.5 }]
     },
     sanguine: {
         name: 'Sanguine', slot: 'weapon', rarity: 'epica', element: 'sangre', atq: 4, price: 1300,
-        desc: 'Roja hasta la empuñadura. Dicen que tiene sed.',
+        desc: 'Una hoja roja hasta la empuñadura. Sus heridas sangran mucho.',
         from: 'El mercader de Zafias',
         onHit: [{ id: 'sangrado', power: 2, turns: 3, chance: 0.5 }]
     },
     shadowvain: {
         name: 'Shadowvain', slot: 'weapon', rarity: 'epica', element: 'sombra', atq: 3, price: 1400,
-        desc: 'Cristal violeta que susurra. Al desenvainarla, tus habilidades despiertan.',
+        desc: 'Una hoja de cristal violeta. Al desenvainarla, tus habilidades pegan más.',
         from: 'El mercader de Zafias',
         onStart: [{ id: 'mas-ph', power: 0.5, turns: 3 }]
     },
@@ -93,7 +93,7 @@ export const GEAR = {
         desc: 'Una hoja dorada con un sol en la cruz. Cierra tus heridas y quema lo que toca.',
         from: 'El mercader de Zafias',
         onStart: [{ id: 'regeneracion', power: 2, turns: 3 }],
-        onHit: [{ id: 'quemadura', power: 1, turns: 2, chance: 0.3 }]
+        onHit: [{ id: 'quemadura', power: 1, turns: 3, chance: 0.3 }]
     }
 };
 

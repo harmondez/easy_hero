@@ -1510,7 +1510,7 @@ body {
 .adv-path-halo { fill: none; stroke: rgba(250, 236, 205, 0.7); stroke-width: 4.6; stroke-linecap: round; stroke-linejoin: round; }
 .adv-path-ink { fill: none; stroke: #5a1d0c; stroke-width: 2.2; stroke-dasharray: 7 6; stroke-linecap: round; stroke-linejoin: round; }
 
-/* Paradas: puntos rojos que laten, con su número de mundo (1-1, 1-2…) debajo */
+/* Paradas: puntos rojos que laten, con su icono en una etiqueta debajo */
 .adv-markers { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 .adv-stop {
     --stop: #c8321e;
@@ -1605,25 +1605,6 @@ body {
     .adv-stop-dot, .adv-stop-dot::after, .adv-stop.is-exit .adv-stop-label { animation: none; }
 }
 
-/* Cartel de escena: una placa grabada que aparece al llegar */
-.adv-plaque {
-    position: absolute;
-    left: 16px; top: 14px;
-    z-index: 4;
-    padding: 6px 14px 7px;
-    font-family: var(--font-display);
-    font-size: clamp(0.95rem, 2.4vw, 1.25rem);
-    font-weight: 800;
-    color: var(--gold);
-    background: linear-gradient(180deg, var(--bg-card-elevated), var(--bg-card));
-    border: 1px solid var(--border-strong);
-    border-left: 3px solid var(--primary);
-    border-radius: 3px;
-    box-shadow: var(--shadow-elevated);
-    pointer-events: none;
-}
-.adv-plaque.is-in { animation: advPlaque 0.6s cubic-bezier(.2, .7, .3, 1); }
-@keyframes advPlaque { from { opacity: 0; transform: translateX(-14px); } }
 
 .adv-fps {
     position: absolute; right: 10px; top: 10px; z-index: 4;
@@ -1675,7 +1656,7 @@ body {
     .adv-viewport { aspect-ratio: 3 / 4; }
 }
 @media (prefers-reduced-motion: reduce) {
-    .adv-hero.is-walking, .adv-plaque.is-in, .adv-dialogue-box { animation: none; }
+    .adv-hero.is-walking, .adv-dialogue-box { animation: none; }
 }
 
 /* =============================================
@@ -2183,3 +2164,96 @@ body.is-intro { overflow: hidden; }
 .adv-portrait.is-left.is-speaking { transform: translateY(0); }
 .adv-portrait.is-right.is-speaking { transform: scaleX(-1) translateY(0); }
 @media (prefers-reduced-motion: reduce) { .adv-portrait { transition: none; } }
+/* Retratos más grandes que el resto (Grask): --portrait-scale lo pone src/data/characters.js */
+.adv-portrait { height: calc(78% * var(--portrait-scale, 1)); max-width: calc(42% * var(--portrait-scale, 1)); }
+.adv-portrait.is-big { bottom: 0; }
+
+/* =============================================
+   ❤️💧⚡ Medidores de vida, maná y energía (v2): el marco (barra-vacia) en 9 trozos con border-image, para que los
+   remaches de las esquinas no se deformen al estirarse; solo se estira el tramo recto. El relleno es un degradado
+   con bandas de pixel art (brillo arriba, sombra abajo), dentro del marco.
+   Medidas del arte: 355×126; esquinas 48×30 → a la altura H, bordes de 30·H/126 arriba/abajo y 48·H/126 a los lados.
+   ============================================= */
+.ui-gauge {
+    --h: 26px;
+    box-sizing: border-box; height: var(--h); padding: 0;
+    border-style: solid; border-color: transparent;
+    border-width: calc(var(--h) * 0.238) calc(var(--h) * 0.381);
+    border-image: url('img/ui/barra-vacia.webp') 30 48 fill / calc(var(--h) * 0.238) calc(var(--h) * 0.381) stretch;
+    background: none; border-radius: 0; box-shadow: none; overflow: visible;
+}
+.ui-gauge-fill {
+    position: absolute; top: 0; bottom: 0; left: 0; right: auto;
+    width: var(--pct, 100%); clip-path: none;
+    background: linear-gradient(180deg, var(--g-hi) 0 24%, var(--g-mid) 24% 68%, var(--g-lo) 68% 100%);
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.35);
+    transition: width 0.45s ease-out;
+}
+.ui-gauge.is-hp { --g-hi: #f07a63; --g-mid: #cf3329; --g-lo: #8e1c16; }
+.ui-gauge.is-mp { --g-hi: #7fa8f5; --g-mid: #3566d6; --g-lo: #1f3d8f; }
+.ui-gauge.is-en { --g-hi: #ffe88a; --g-mid: #eab42a; --g-lo: #a6730f; }
+.ui-gauge .ui-gauge-fill { background-image: linear-gradient(180deg, var(--g-hi) 0 24%, var(--g-mid) 24% 68%, var(--g-lo) 68% 100%); }
+.rpg-hud-card.is-monster .ui-gauge-fill { left: auto; right: 0; clip-path: none; box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.35); }
+.ui-gauge-text {
+    position: absolute; inset: 0; z-index: 1; display: grid; place-items: center;
+    font: 700 calc(var(--h) * 0.42) / 1 ui-monospace, 'Courier New', monospace; color: #fff; letter-spacing: 0.02em;
+    text-shadow: 0 1px 0 #000, 0 0 3px rgba(0, 0, 0, 0.9);
+}
+/* Tamaños: vida grande; maná y energía, más finas debajo */
+.rpg-hud-card .ui-gauge { --h: 26px; margin: 0; }
+.rpg-hud-card .ui-gauge.is-mp, .rpg-hud-card .ui-gauge.is-en { --h: 20px; height: var(--h); margin-top: 3px; }
+.rpg-hud-card .ui-gauge.is-mp .ui-gauge-text, .rpg-hud-card .ui-gauge.is-en .ui-gauge-text { font-size: calc(var(--h) * 0.44); }
+.adv-bar-gauges .ui-gauge { --h: 22px; }
+/* El coste en energía de una habilidad, en amarillo */
+.rpg-action-badge.is-energy { background: #e0a91c; color: #2a1d12; }
+/* (las reglas antiguas pintaban el arte estirado como relleno: aquí manda el degradado) */
+.ui-gauge.is-hp .ui-gauge-fill, .ui-gauge.is-mp .ui-gauge-fill, .ui-gauge.is-en .ui-gauge-fill {
+    background-image: linear-gradient(180deg, var(--g-hi) 0 24%, var(--g-mid) 24% 68%, var(--g-lo) 68% 100%);
+}
+.ui-gauge-text { text-shadow: 1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000, 0 0 4px rgba(0, 0, 0, 0.8); }
+/* Las habilidades, justo debajo de las acciones (el héroe y el enemigo ocupan las dos filas a los lados) */
+@media (min-width: 761px) {
+    .rpg-hud { grid-template-areas: "hero actions monster" "hero skills monster"; align-items: center; row-gap: 8px; }
+    .rpg-hud .rpg-actions { align-self: end; }
+    .rpg-hud .rpg-skillbar { align-self: start; margin-top: 0; }
+}
+.rpg-skill { width: 58px; height: 58px; padding: 11px; }
+@media (max-width: 760px) {
+    .rpg-skillbar { flex-wrap: wrap; gap: 4px; }
+    .rpg-skill { width: 42px; height: 42px; padding: 8px; }
+    .rpg-skill .rpg-action-badge { min-width: 18px; height: 18px; font-size: 0.66rem; }
+}
+
+/* ⏳ ¡Atacar! recargando: una franja oscura que se vacía en lo que dura la espera (--cd) */
+.rpg-action.is-cooling { position: relative; overflow: hidden; }
+.rpg-action.is-cooling::after {
+    content: ''; position: absolute; inset: 0; transform-origin: right center;
+    background: rgba(21, 16, 12, 0.55);
+    animation: rpgCooldown var(--cd, 2000ms) linear forwards;
+    pointer-events: none;
+}
+@keyframes rpgCooldown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+/* Aturdido: la barra apagada mientras el enemigo aprovecha */
+.rpg-actions.is-stunned { filter: grayscale(0.6) brightness(0.8); transition: filter 0.2s; }
+
+/* ✨ Efectos de estado, bien visibles (v2) */
+/* Sobre cada personaje: iconos más grandes, con su color y las rondas en grande */
+.rpg-effect { width: 44px; height: 44px; border-width: 2px; border-radius: 6px; background: rgba(21, 16, 12, 0.82);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--fx) 60%, transparent), 0 2px 4px rgba(0, 0, 0, 0.6); }
+.rpg-actor .rpg-effect img { width: 34px; height: 34px; }
+.rpg-effect-turns { min-width: 18px; padding: 0 4px; right: -7px; bottom: -8px; font-size: 0.74rem; line-height: 16px; border-width: 2px; }
+.rpg-effects { gap: 6px; bottom: calc(100% + 10px); }
+/* Al ponerse: su icono grande y su nombre, en su color */
+.rpg-stage-float.is-effect-on { display: flex; align-items: center; gap: 6px; font-size: clamp(1rem, 2.6vw, 1.45rem); }
+.rpg-stage-float.is-effect-on .rpg-stage-float-icon { height: clamp(36px, 5vw, 52px); }
+/* En la carta, junto a la vida: cada efecto con su icono, su nombre y sus rondas */
+.rpg-hud-status { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 22px; }
+.rpg-hud-card.is-monster .rpg-hud-status { justify-content: flex-end; }
+.rpg-fx-chip {
+    display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px 1px 2px;
+    font: 700 0.72rem var(--font-body); color: #2a1d12;
+    background: color-mix(in srgb, var(--fx) 28%, var(--parchment));
+    border: 1px solid color-mix(in srgb, var(--fx) 70%, #000); border-radius: 10px;
+}
+.rpg-fx-chip img { width: 18px; height: 18px; object-fit: contain; image-rendering: pixelated; }
+.rpg-fx-chip b { font-family: ui-monospace, 'Courier New', monospace; }

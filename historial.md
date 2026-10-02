@@ -682,3 +682,52 @@ cofres solo dan objetos · legendarios máx. 1 igual, sin límite total · equip
   `src/data/characters.js` (clave = el `who` de la línea). El héroe a la derecha, volteado; el otro a la izquierda; quien
   habla en luz y el que escucha en penumbra; la etiqueta del nombre, del lado de quien habla. «tabernero» es Bram (decisión
   del director); Maela aún no tiene retrato.
+
+## 2026-10-02 · Retratos de Maela, los goblins y Grask
+- Retratos nuevos del director (img/characters → img/portraits): tabernera-maela, enemy-goblin-minion (lo comparten
+  los cuatro goblins que hablan), enemy-grask-boss y herrero-braum (sustituye a «tabernero»).
+- `PORTRAITS` admite `{ id, scale }`: Grask a ×1,25 y bajado detrás del cuadro (`.is-big`), para que se vea enorme sin
+  cortarle la cabeza. La armadura de su diálogo pasa a ser de placas, como en el retrato.
+- Prueba en zones-sim: cada retrato existe y es de alguien que habla en Zafias.
+
+## 2026-10-02 · Energía, Golpe poderoso y medidores en 9 trozos
+- `RPG_BALANCE.energy` { max 100, onAttack 5, onHit 5, onDefend 10 }; `hero.energy`/`maxEnergy` se ponen a 0/100 al crear
+  cada combate. Las habilidades pueden costar `energyCost` en vez de maná (`rpgSkillReady` mira las dos). `power_strike`:
+  `atkMul: 3` (golpe físico: protección y armadura del enemigo cuentan), `stun: 0.5` con `combat.rng`.
+- Icono compuesto en tools/icons.mjs (`COMPOSITES`): llama al 55 % de opacidad + la espada.
+- `.ui-gauge` v2: border-image de barra-vacia en 9 trozos (30/48 px del arte, escalados con --h) y relleno en degradado
+  por bandas (--g-hi/mid/lo). La rejilla del combate pone las habilidades bajo las acciones; en móvil, ranuras de 42 px.
+- Pruebas: 11 en effects-sim (energía y Golpe poderoso), 4 en effects.test (pantalla), ranuras en browser.test.
+
+## 2026-10-02 · Texto de la aventura, línea a línea con anti-slop-writing
+- Guía clonada en research/anti-slop-writing (no se sube: /research/ ya está en .gitignore). Se aplicó, más la pauta del
+  director, a toda la narrativa: introducción, 80 diálogos de Zafias, misiones, avisos de golpe fuerte, bestiario, mensajes de
+  huir/caer y descripciones de armas. Criterio: habla llana de pueblo, nada de frases de poema, concreto antes que
+  abstracto, y quitar lo que no existía en el material (se eliminaron detalles inventados: yelmo de caballero muerto,
+  huesos en las trenzas del chamán, «Mirmulnir lleva nombre de dragón»…).
+- Se conservan las tres pistas del pasado del héroe de la 1.9 (empuñadura de Bram, buhonero, piedras azules): siguen
+  pendientes de que el director las confirme.
+
+## 2026-10-02 · Paradas sin número y enemigos sin nombre
+- Eliminada la numeración de mundo (`STOP_LABELS`, `zone.number`). Los enemigos no muestran su nombre al pasar el ratón y su
+  aria-label es «Enemigo»; el resto de paradas conserva su nombre al pasar el ratón. Prueba nueva en browser.test.
+
+## 2026-10-02 · Herramienta de novela visual rápida
+- `tools/portraits.mjs`: procesado de retratos (lo usan `npm run icons`, la fábrica y `npm run vn`).
+- Fábrica: tipo `portrait` (prompts/portrait.json, estilo `portrait` en la STYLE_BIBLE con los retratos del juego como
+  referencia, 3:4, sin las reglas de cuerpo entero) que entrega a img/characters + img/portraits (`deliver: portrait`).
+- `tools/vn.mjs` (`npm run vn`): revisar (`checkVN`, también en tests/vn-sim.mjs), lista, nuevo (diálogo de plantilla +
+  retrato en characters.js) y ver (capturas por línea en taller/vn/). `?vn=<clave>` en el juego abre un diálogo sin
+  recompensas ni marcas (`Adventure.previewDialogue`). Receta: docs/novela-visual.md. Pruebas: vn-sim (8) y vn.test (8).
+
+## 2026-10-02 · 1.9.2: aturdido sin carteles, ritmo del combate y efectos claros
+- Sin cartel de escena (.adv-plaque) en el mapa. El título del combate («Combate · escena · Ronda») se mantiene.
+- Aturdido: sin botón ni texto flotante. La barra se apaga (`.is-stunned`) y el controlador (adventure.js/main.js) lanza
+  solo la acción perdida tras la animación (`playRpgCombatFx` devuelve su duración) + 900 ms: el enemigo vuelve a actuar.
+- ¡Atacar! con 2 s de espera (`UI.startAttackCooldown`, franja `.is-cooling`); no se aplica con navigator.webdriver salvo
+  `window.__forceAttackCooldown`. Embestida 880 ms (golpe al 55 %). Golpe recibido: dos destellos blancos solo en el dibujo
+  y un temblor corto (`_rpgHitFeedback`). Los números salen por encima de la fila de efectos.
+- `EFFECT_TURNS = 3` en src/data/effects.js: `applyEffect` impone 3 rondas a todo menos el aturdimiento. Datos ajustados a 3.
+  Efectos en la carta junto a la vida (`.rpg-fx-chip`: icono, nombre, rondas) y nombre al ponerse.
+- «Sobre Easy Hero» reescrito (beta, gratis, sin cuenta ni anuncios). Pruebas: aturdido automático y espera de ¡Atacar!
+  en effects.test; duraciones en items-sim y effects-sim.
