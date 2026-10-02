@@ -1,12 +1,12 @@
-import * as Engine from './engine.js?v=1.7.1';
-import * as Items from './items.js?v=1.7.1';
-import * as Meta from './meta.js?v=1.7.1';
-import * as Stats from './stats.js?v=1.7.1';
-import { upgradeAmountText } from './data/upgrades.js?v=1.7.1';
-import { RPG_BALANCE } from './data/balance.js?v=1.7.1';
-import { ART } from './data/art.js?v=1.7.1';
-import { monsterArt, heroArt } from './art.js?v=1.7.1';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.7.1';
+import * as Engine from './engine.js?v=1.8.0';
+import * as Items from './items.js?v=1.8.0';
+import * as Meta from './meta.js?v=1.8.0';
+import * as Stats from './stats.js?v=1.8.0';
+import { upgradeAmountText } from './data/upgrades.js?v=1.8.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.8.0';
+import { ART } from './data/art.js?v=1.8.0';
+import { monsterArt, heroArt } from './art.js?v=1.8.0';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.8.0';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -444,7 +444,8 @@ function _rpgRenderStage(hero, monster) {
     const img = monActor.querySelector('img');
     const own = monsterArt(ART, monster.baseName || monster.name);
     const sprite = own || RPG_MONSTER_SPRITE;
-    const heroSprite = heroArt(ART) || RPG_HERO_SPRITE;
+    // El héroe con su arma de la aventura (hero.sprite), si tiene dibujo propio; si no, el de siempre
+    const heroSprite = hero.sprite || heroArt(ART) || RPG_HERO_SPRITE;
     _rpgSetSprite(heroActor.querySelector('img'), heroSprite);
     _rpgSetSprite(img, sprite);
     // Misma escala de píxel para los dos: la altura del enemigo es relativa a la del héroe (y crece si es jefe)
@@ -977,6 +978,70 @@ const _progressBar = (done, total, label) => `
 const _panelHeader = (icon, title, sub) => `
     <div class="panel-header"><span class="panel-icon">${icon}</span><div><h3 class="panel-title">${esc(title)}</h3>${sub ? `<p class="panel-sub">${esc(sub)}</p>` : ''}</div></div>`;
 
+/**
+ * 🎒 Inventario de la aventura, como en DragonFable: la lista a la izquierda y la ficha del objeto a la derecha
+ * (con el héroe tal como se verá con él). opts: { items: [{ id, name, icon, rarity, atq, desc, from, equipped, preview }],
+ * selected, gold, onEquip(id) }
+ */
+export function renderInventoryPanel(opts) {
+    const el = document.getElementById('panelBody');
+    if (!el) return;
+    let selected = opts.selected;
+    const draw = () => {
+        const it = opts.items.find(i => i.id === selected) || opts.items[0];
+        const rows = opts.items.map((i, n) => `
+            <li><button type="button" class="inv-row${i.id === it.id ? ' is-selected' : ''}" data-inv-item="${esc(i.id)}">
+                <span class="inv-num">${n + 1}</span><span class="inv-icon" aria-hidden="true">${i.icon}</span>
+                <span class="inv-name">${esc(i.name)}</span>${i.equipped ? '<span class="inv-equipped">Equipada</span>' : ''}
+            </button></li>`).join('');
+        const preview = it.preview || RPG_HERO_SPRITE;
+        el.innerHTML = `<div class="inv">
+            <section class="inv-page inv-list" aria-label="Inventario">
+                <h3 class="inv-title">Inventario</h3>
+                <ol class="inv-rows">${rows}</ol>
+                <p class="inv-gold">🪙 ${opts.gold} de oro</p>
+            </section>
+            <section class="inv-page inv-detail" aria-label="Detalle del objeto">
+                <h3 class="inv-title">Detalle</h3>
+                <h4 class="inv-item-name">${it.icon} ${esc(it.name)}</h4>
+                <p class="inv-item-kind">Arma · ${esc(it.rarity)}</p>
+                <img class="inv-preview" src="${esc(preview.src)}" alt="Tu héroe con ${esc(it.name)}" draggable="false">
+                <p class="inv-item-desc">${esc(it.desc)}</p>
+                <dl class="inv-stats"><dt>Ataque</dt><dd>ATK ${it.atq}</dd><dt>Origen</dt><dd>${esc(it.from || '')}</dd></dl>
+                <button type="button" class="btn-forge inv-equip" data-inv-equip="${esc(it.id)}"${it.equipped ? ' disabled' : ''}>${it.equipped ? 'Equipada' : 'Equipar'}</button>
+            </section>
+        </div>`;
+        el.querySelectorAll('[data-inv-item]').forEach(b => b.addEventListener('click', () => { selected = b.dataset.invItem; draw(); }));
+        const eq = el.querySelector('[data-inv-equip]');
+        if (eq && !it.equipped) eq.addEventListener('click', () => opts.onEquip(it.id));
+    };
+    draw();
+}
+
+/**
+ * 📜 Diario de misiones: la principal arriba, las secundarias debajo. Las cumplidas, tachadas (como en Skyrim).
+ * log: [{ quest, status: 'active' | 'done', steps: [{ text, done, progress }] }]
+ */
+export function renderQuestPanel(log) {
+    const el = document.getElementById('panelBody');
+    if (!el) return;
+    const quest = ({ quest: q, status, steps }) => {
+        const current = steps.find(s => !s.done);
+        const lines = steps.filter(s => s.done || s === current).map(s => `
+            <li class="quest-step${s.done ? ' is-done' : ''}">${esc(s.text)}${s.progress ? ` <span class="quest-progress">${s.progress.have}/${s.progress.need}</span>` : ''}</li>`).join('');
+        return `<article class="quest is-${status}">
+            <h4 class="quest-title">${esc(q.title)}</h4>
+            <p class="quest-desc">${esc(q.desc)}</p>
+            <ul class="quest-steps">${lines}</ul>
+        </article>`;
+    };
+    const main = log.filter(x => x.quest.kind === 'main');
+    const side = log.filter(x => x.quest.kind !== 'main').sort((a, b) => (a.status === 'done') - (b.status === 'done'));
+    el.innerHTML = _panelHeader('📜', 'Misiones', '')
+        + `<div class="panel-section"><h4 class="panel-section-title">Misión principal</h4>${main.map(quest).join('') || '<p class="panel-field-hint">Ninguna por ahora.</p>'}</div>`
+        + `<div class="panel-section"><h4 class="panel-section-title">Misiones secundarias</h4>${side.map(quest).join('') || '<p class="panel-field-hint">Habla con la gente de Zafias: los que tienen un encargo salen en azul en el mapa.</p>'}</div>`;
+}
+
 /** 📖 Bestiario: todo lo que puede cruzarse en tu camino, revelado a medida que lo ves y lo vences. */
 export function renderBestiaryPanel(meta) {
     const el = document.getElementById('panelBody');
@@ -1054,6 +1119,26 @@ export function renderAchievementsPanel(meta) {
         + `<div class="panel-list">${rows}</div>`;
 }
 
+/** La advertencia antes de borrar: qué se pierde, y dos salidas claras. */
+function _renderWipeConfirm(handlers) {
+    const el = document.getElementById('panelBody');
+    if (!el) return;
+    el.innerHTML = `<div class="wipe-confirm" role="alertdialog" aria-labelledby="wipeTitle" aria-describedby="wipeText">
+            <div class="wipe-confirm-icon" aria-hidden="true">⚠️</div>
+            <h3 class="wipe-confirm-title" id="wipeTitle">¿Borrar todo tu progreso?</h3>
+            <p class="wipe-confirm-text" id="wipeText">Se pierden tu héroe y su nombre, el nivel, el oro, las pociones, La Forja, la aventura en Zafias,
+                la ruta de la mazmorra, el bestiario, la colección y los logros. <b>No se puede deshacer.</b></p>
+            <p class="wipe-confirm-text">Si quieres guardarlo, usa antes «Exportar tu progreso».</p>
+            <div class="wipe-confirm-actions">
+                <button type="button" id="btnWipeCancel" class="btn-secondary">Cancelar</button>
+                <button type="button" id="btnWipeConfirm" class="btn-danger">BORRAR</button>
+            </div>
+        </div>`;
+    document.getElementById('btnWipeCancel').addEventListener('click', () => renderOptionsPanel(handlers));
+    document.getElementById('btnWipeConfirm').addEventListener('click', () => handlers.onWipe());
+    document.getElementById('btnWipeCancel').focus();
+}
+
 /**
  * ⚙️ Opciones: semilla de la partida en curso, importar/exportar el progreso y quiénes somos.
  * handlers: { onExport, onImport(text) → {ok, error?}, seedCode }
@@ -1069,6 +1154,11 @@ export function renderOptionsPanel(handlers = {}) {
                 : `<div class="panel-field-hint">No hay ninguna ruta en marcha. La semilla se elige al pulsar «Entrar en la mazmorra».</div>`}
         </div>
         <div class="panel-section">
+            <h4 class="panel-section-title">La introducción</h4>
+            <p class="panel-field-hint" style="margin-bottom:8px;">El despertar en las ruinas, otra vez. Puedes cambiar el nombre de tu héroe.</p>
+            <div class="panel-actions-row"><button type="button" id="btnPanelIntro" class="btn-secondary">🌅 Ver la introducción</button></div>
+        </div>
+        <div class="panel-section">
             <h4 class="panel-section-title">Exportar tu progreso</h4>
             <p class="panel-field-hint" style="margin-bottom:8px;">Copia este texto y guárdalo. Incluye tu ruta en curso (si hay una) y todo lo descubierto (bestiario, colección, logros).</p>
             <div class="panel-field"><textarea id="panelExportText" rows="3" readonly onclick="this.select()"></textarea></div>
@@ -1081,6 +1171,11 @@ export function renderOptionsPanel(handlers = {}) {
             <div class="panel-actions-row"><button type="button" id="btnPanelImport" class="btn-forge">📥 Importar</button></div>
             <p class="panel-field-hint" id="panelImportStatus"></p>
         </div>
+        <div class="panel-section panel-danger">
+            <h4 class="panel-section-title">Borrar progreso</h4>
+            <p class="panel-field-hint" style="margin-bottom:8px;">Empieza de cero, como la primera vez: con la introducción.</p>
+            <div class="panel-actions-row"><button type="button" id="btnPanelWipe" class="btn-danger">🗑️ Borrar progreso</button></div>
+        </div>
         <div class="panel-section panel-about">
             <h4 class="panel-section-title">Sobre Easy Hero</h4>
             <p>Easy Hero está <b>empezando</b>: esto es una primera ronda de contenido, no el juego terminado.</p>
@@ -1088,6 +1183,10 @@ export function renderOptionsPanel(handlers = {}) {
                 <a href="https://github.com/harmondez/easy_hero/blob/main/planning.md" target="_blank" rel="noopener" style="color:var(--primary-light)">planning.md</a>.</p>
             <p>Gratis, sin cuentas, sin anuncios. Todo lo que ves aquí vive solo en tu navegador.</p>
         </div>`;
+    const btnWipe = document.getElementById('btnPanelWipe');
+    if (btnWipe && handlers.onWipe) btnWipe.addEventListener('click', () => _renderWipeConfirm(handlers));
+    const btnIntro = document.getElementById('btnPanelIntro');
+    if (btnIntro && handlers.onReplayIntro) btnIntro.addEventListener('click', handlers.onReplayIntro);
     const btnExport = document.getElementById('btnPanelExport');
     if (btnExport) btnExport.addEventListener('click', () => {
         const text = handlers.onExport ? handlers.onExport() : '';

@@ -11,7 +11,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.join(root, '_site');
 const PARTS = ['index.html', 'style.css', 'src', 'img'];
 // Los originales del director (PNG grandes en img/ y la carpeta de entrada) no se publican
-const SKIP = new Set([path.join(root, 'img', 'entrantes')]);
+// Material de trabajo que no se sube (ver .gitignore): piezas del mapa y originales de las armas
+const SKIP = new Set(['entrantes', 'map-divided', 'map-divided-upscaled', 'weapons'].map(d => path.join(root, 'img', d)));
 const isRootOriginal = p => path.dirname(p) === path.join(root, 'img') && p.toLowerCase().endsWith('.png');
 
 fs.rmSync(out, { recursive: true, force: true });

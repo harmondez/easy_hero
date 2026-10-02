@@ -2,13 +2,18 @@
 // 🧭 Modo Aventura (controlador): Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
 // Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
 // =============================================
-import * as UI from './ui.js?v=1.7.1';
-import * as Engine from './engine.js?v=1.7.1';
-import * as Meta from './meta.js?v=1.7.1';
-import * as Adventure from './adventure-view.js?v=1.7.1';
-import { RPG_BALANCE } from './data/balance.js?v=1.7.1';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.7.1';
-import { creatureFor } from './data/creatures.js?v=1.7.1';
+import * as UI from './ui.js?v=1.8.0';
+import * as Engine from './engine.js?v=1.8.0';
+import * as Meta from './meta.js?v=1.8.0';
+import * as Adventure from './adventure-view.js?v=1.8.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.8.0';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.8.0';
+import { creatureFor } from './data/creatures.js?v=1.8.0';
+import { QUESTS } from './data/quests.js?v=1.8.0';
+import { GEAR, STARTER_GEAR } from './data/gear.js?v=1.8.0';
+import { ART } from './data/art.js?v=1.8.0';
+import * as Items from './items.js?v=1.8.0';
+import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.8.0';
 
 // Lo que la aventura necesita del resto del juego (main.js se lo da al arrancar): el almacenamiento, el progreso
 // permanente y algunas piezas del descenso (el héroe base, las recompensas, La Forja, bajar a la mazmorra).
@@ -25,17 +30,63 @@ const adv = { state: null, hero: null, combat: null, point: null };
 function _advLoad() {
     try {
         const d = JSON.parse((ctx.storage && ctx.storage.getItem(ADV_KEY)) || 'null');
-        if (d && d.v === 1) return { gone: {}, flags: {}, ...d };
+        if (d && d.v === 1) return { gone: {}, flags: {}, counts: {}, ...d };
     } catch { /* guardado dañado: se empieza de cero */ }
     // gone: vencidos que vuelven al dormir · flags: marcas de la historia (permanentes)
-    return { v: 1, scene: ZAFIAS.startScene, hp: null, gone: {}, flags: {} };
+    return { v: 1, scene: ZAFIAS.startScene, hp: null, gone: {}, flags: {}, counts: {} };
 }
 function _advSave() {
     try { if (ctx.storage) ctx.storage.setItem(ADV_KEY, JSON.stringify(adv.state)); } catch { /* sin almacenamiento */ }
 }
 
+// --- 🎒 El equipo de la aventura (src/data/gear.js): permanente y aparte del botín del descenso ---
+const _advOwned = () => (ctx.meta.advGear && ctx.meta.advGear.length ? ctx.meta.advGear : [STARTER_GEAR]);
+const _advWeaponId = () => (GEAR[ctx.meta.advWeapon] && _advOwned().includes(ctx.meta.advWeapon) ? ctx.meta.advWeapon : STARTER_GEAR);
+
+/** El arma equipada como objeto del motor (la espada inicial, con el nombre, el ATK y el dibujo de la ficha). */
+function _advWeaponItem(id) {
+    const g = GEAR[id];
+    const item = Items.createStarterItem();
+    return { ...item, id: `aventura-${id}`, name: g.name, icon: g.icon, desc: g.desc, stats: { ...item.stats, atq: g.atq } };
+}
+
+/** El dibujo del héroe según su arma (null = el de siempre). */
+const _advHeroSprite = () => { const g = GEAR[_advWeaponId()]; return (g.sprite && ART.sprites[g.sprite]) || null; };
+
+function _advGiveItem(id) {
+    if (!GEAR[id]) return;
+    ctx.meta.advGear = _advOwned().includes(id) ? _advOwned() : [..._advOwned(), id];
+    ctx.persistMeta();
+    Adventure.inventoryNotice(`🎁 Nuevo objeto: ${GEAR[id].name}`);
+}
+
+function _advEquip(id) {
+    if (!GEAR[id] || !_advOwned().includes(id)) return;
+    ctx.meta.advWeapon = id;
+    ctx.persistMeta();
+    adv.hero = _advHero();
+    Adventure.setHeroSprite(_advHeroSprite());
+    _advRefreshHud();
+    _advOpenInventory(id);
+}
+
+function _advOpenInventory(selected) {
+    UI.openPanel();
+    UI.renderInventoryPanel({
+        items: _advOwned().map(id => ({ id, ...GEAR[id], equipped: id === _advWeaponId(),
+            preview: (GEAR[id].sprite && ART.sprites[GEAR[id].sprite]) || null })),
+        selected: selected || _advWeaponId(),
+        gold: ctx.meta.gold,
+        heroAtq: adv.hero ? adv.hero.atq : null,
+        onEquip: id => _advEquip(id)
+    });
+}
+
 function _advHero() {
     const hero = ctx.rpgPreviewHero();
+    // El arma de la aventura sustituye a la espada inicial (los puntos de nivel y La Forja se mantienen)
+    if (_advWeaponId() !== STARTER_GEAR) { Items.equipItem(hero, _advWeaponItem(_advWeaponId())); Engine.refreshPrimaryStats(hero); }
+    hero.sprite = _advHeroSprite();
     if (adv.state.hp != null) hero.hp = Math.max(1, Math.min(hero.maxHp, adv.state.hp));
     return hero;
 }
@@ -50,9 +101,18 @@ const _advIsShown = p => _advHas(p.requires);
 const _advIsCleared = p => p.kind === 'enemy' && (!!adv.state.gone[p.id] || !!(p.once && adv.state.flags[`defeated:${p.id}`]));
 
 // Lo que dice un NPC: la primera entrada de su `talk` cuyas marcas se cumplen. Al terminar, marca y recompensa.
+// Un punto de interés ya mirado queda «visto» (su parada se pone gris, como un enemigo vencido)
+const _advIsSeen = p => p.kind === 'poi' && !!adv.state.flags[`visto:${p.id}`];
+function _advMarkSeen(p) {
+    if (p.kind !== 'poi' || adv.state.flags[`visto:${p.id}`]) return;
+    adv.state.flags[`visto:${p.id}`] = true;
+    _advSave();
+    Adventure.refresh();
+}
+
 function _advTalk(p) {
-    if (!p.talk) return p.dialogue ? { dialogue: p.dialogue } : null;
-    const entry = p.talk.find(t => _advHas(t.when));
+    if (!p.talk) return p.dialogue ? { dialogue: p.dialogue, onDone: () => _advMarkSeen(p) } : null;
+    const entry = p.talk.find(t => _advHas(t.when) && (!t.whenCount || ((adv.state.counts || {})[t.whenCount.creature] || 0) >= t.whenCount.n));
     if (!entry) return null;
     return {
         dialogue: entry.dialogue,
@@ -63,13 +123,28 @@ function _advTalk(p) {
                     if (entry.reward.gold) Meta.recordGold(ctx.meta, entry.reward.gold);
                     if (entry.reward.potions) ctx.meta.potions = Math.min(RPG_BALANCE.potion.max, Meta.potionCount(ctx.meta) + entry.reward.potions);
                     ctx.persistMeta();
+                    if (entry.reward.item) _advGiveItem(entry.reward.item);
                 }
                 _advSave();
                 Adventure.refresh();
                 _advRefreshHud();
+                _advQuestNotice(entry.set);
             }
         }
     };
+}
+
+// Una misión que empieza o se cumple con esta marca: aviso y el botón del diario se ilumina
+function _advQuestNotice(flag) {
+    const started = QUESTS.find(q => q.start === flag);
+    const finished = QUESTS.find(q => q.done === flag);
+    if (started) Adventure.questNotice(`📜 Nueva misión: ${started.title}`);
+    else if (finished) Adventure.questNotice(`✔️ Misión cumplida: ${finished.title}`);
+}
+
+function _advOpenQuests() {
+    UI.openPanel();
+    UI.renderQuestPanel(questLog(adv.state));
 }
 
 // Los lugares de la aldea
@@ -130,10 +205,16 @@ export function open() {
         onEnemy: p => _advStartCombat(p),
         onTalk: p => _advTalk(p),
         onPlace: p => _advPlace(p),
+        heroName: () => ctx.meta.heroName || 'Héroe',
         onScene: id => { adv.state.scene = id; _advSave(); },
         isShown: p => _advIsShown(p),
-        isCleared: p => _advIsCleared(p)
+        isCleared: p => _advIsCleared(p),
+        isSeen: p => _advIsSeen(p),
+        npcMark: p => npcQuestMark(p.id, adv.state),
+        onQuests: () => _advOpenQuests(),
+        onInventory: () => _advOpenInventory()
     }, adv.state.scene);
+    Adventure.setHeroSprite(_advHeroSprite());
     _advRefreshHud();
 }
 
@@ -203,6 +284,12 @@ function _advFinishCombat() {
         ctx.persistMeta();
         adv.state.gone[adv.point.id] = true;   // no vuelve hasta que duermas en la posada
         adv.state.flags[`defeated:${adv.point.id}`] = true;   // pero la historia recuerda que lo venciste
+        // Si alguna misión en marcha cuenta este tipo de criatura (p. ej. dientes de lobo), suma uno
+        const kind = adv.point.enemy && adv.point.enemy.creature;
+        if (kind && countingCreatures(adv.state).has(kind)) {
+            adv.state.counts = adv.state.counts || {};
+            adv.state.counts[kind] = (adv.state.counts[kind] || 0) + 1;
+        }
         _advSave();
         UI.showRpgCombatResult({ result: 'victory', title: '¡Victoria!', button: 'SEGUIR EXPLORANDO',
             detail: `+${gold} 🪙 · +${xp} XP${lvl.levelsGained > 0 ? ` · ¡Subes a nivel ${lvl.newLevel}!` : ''}` });

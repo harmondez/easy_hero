@@ -5,10 +5,10 @@
 > [cloud-method.md](cloud-method.md) (sesiones en la nube) y [tools/image-generator/README.md](tools/image-generator/README.md)
 > (fábrica de arte).
 
-## 📍 Estado (2026-10-01)
+## 📍 Estado (2026-10-02)
 
-- **Publicado:** la **1.7.0** (https://harmondez.github.io/easy_hero/): descenso sin fin, La Forja, combate de lado
-  estilo DragonFable, y el **Modo Aventura en Zafias** con mapa HD, 4 escenas (aldea, bosque, campamento y la
+- **Publicado:** la **1.8.0** (https://harmondez.github.io/easy_hero/): descenso sin fin, La Forja, combate de lado
+  estilo DragonFable, una **introducción** (despertar en las ruinas) que lleva directo a la aventura, y el **Modo Aventura en Zafias** con mapa HD, 4 escenas (aldea, bosque, campamento y la
   guarida del lobo), 28 paradas con puntos de interés, goblins y lobos, la misión de Maela y Grask, y **Feronius**
   como jefe de la zona. Criaturas con nombre en la recámara (gnolls y orcos con sus jefes, ya dibujados).
 - Herramientas: taller de sprites, Asset Factory, montaje de zonas (`docs/zonas.md`) y banco de la aventura
@@ -16,11 +16,13 @@
 
 ## 🔥 Siguiente, en este orden
 
-0. **Lo que dijo el banco de la aventura** (`npm run sim:aventura`, 2026-10-01). Antes del bosque amarillo:
-   - **El héroe de la aventura no tiene progresión de equipo.** Pelea con la espada básica (ATK 1) y solo mejora con
-     los puntos de nivel y La Forja: en el descenso la fuerza viene del botín, aquí no hay botín. Para Zafias basta
-     (se bajaron los pisos de sus enemigos), pero la segunda zona necesitará armas en la tienda de la aldea, botín
-     de los jefes o equipo que se traiga del descenso. Es una decisión de diseño para el director.
+0. **Equilibrio de la aventura, con los informes de la nube** (#8 builds y atributos, #9 progresión; #10 variedad de
+   combate, sin lanzar). Antes del bosque amarillo:
+   - **Progresión del héroe:** decidido el camino —equipo propio de la aventura, por misiones y jefes (la Espada de
+     Zafias es el primero)—. Falta la curva: cuántas armas, de qué ATK y dónde, con el informe del #9.
+   - **Recalibrar Zafias:** el bot que la calibró no usaba el Golpe de Fuego, ni compraba ATK en la tienda, ni
+     llevaba la Espada de Zafias (ATK 2). Con eso el jugador real la tendrá más fácil de lo medido: ajustar con
+     `npm run sim:aventura` ampliado.
    - **Combates largos y repetidos:** los goblins de piso 2 (guardia, centinela, rezagado) duran ~20 turnos con el
      ritmo carga-golpe y defenderse. Y casi no hay azar: todas las partidas del bot salen idénticas.
    - **Curva de Zafias hoy:** se acaba hacia el nivel 4; ~16 combates de entrenamiento antes de Grask jugando bien
@@ -45,8 +47,10 @@
    costuras). Ojo: los caminos del norte del bosque (ruinas, camino del norte, puente del orco) ya están trazados
    sobre la redibujada; si se cambia, basta con volver a ejecutar `node tools/trace-paths.mjs`. Quizá compense quedarse con ella.
    Dejarlas en `img/map-divided-upscaled/` como `cuadricula_fX_cY_hd.jpg` y volver a ejecutar la herramienta.
-3. **Encargos de la nube pendientes** (GitHub Issues): **#4 editor de zonas** (`?editor`) y después **#5 misiones
-   como datos**. Lanzarlos según [cloud-method.md](cloud-method.md).
+3. **Encargos de la nube pendientes** (GitHub Issues): **#4 editor de zonas** (`?editor`). El **#5 misiones como
+   datos** quedó casi hecho en local (`src/data/quests.js`): solo falta que la barra de objetivo salga de los datos
+   (hoy `_advQuestText()` escrito a mano) — reescribir el issue o hacerlo aquí. Lanzar según
+   [cloud-method.md](cloud-method.md).
 4. **Más Zafias**: el mapa ya tiene los ganchos puestos como puntos de interés: la senda del santuario (misión 2),
    el camino del norte y la escalinata (arco del castillo), Bram y el hierro de las cuevas (misión 3). Mejor después
    de #5 (misiones como datos). Receta de zonas y caminos: [docs/zonas.md](docs/zonas.md).
@@ -56,6 +60,8 @@
 
 | Tema | Decisión |
 |---|---|
+| Foco | **El Modo Aventura** (2026-10-02). El roguelike (descenso) y su botín quedan aparcados: siguen en el juego (cueva del sur, «La mazmorra») pero sin trabajo nuevo |
+| Equipo de la aventura | Propio y permanente (`src/data/gear.js`), por misiones y jefes; cada arma con su dibujo del héroe (`img/weapons/<Nombre>.png` → `arma_<id>`) |
 | Plataforma | Web estática (GitHub Pages + vistas previas en Cloudflare), JavaScript vanilla sin bundler. Godot/Flutter descartados. **Escritorio primero**; en móvil basta con que funcione |
 | Combate | De lado: héroe SIEMPRE a la izquierda mirando a la derecha, enemigo SIEMPRE a la derecha mirando a la izquierda; único movimiento la embestida + número de daño. Panel de pergamino con ¡Atacar! y el resto a un clic |
 | Enemigos | Sin intenciones visibles (patrones ocultos que se aprenden); los golpes fuertes se telegrafían con una frase y brillo rojo |
@@ -75,8 +81,6 @@
 - **Combate:** debilidades elementales ×0,5/×1,5 con los 6 tipos de daño; entrada del combate como momento.
 - **Equilibrio:** los bots del banco siguen «viendo» la intención; revisar la tasa de victoria real.
 - **Móvil:** en el bosque a 390 px el héroe queda pegado al borde al llegar.
-- **Pruebas intermitentes:** «Descansar cura el 30 %», «Hay hogueras 🔥 en el mapa y en la leyenda» y «Tras usar el salto se vuelve a avanzar de piso en piso» (falló en GitHub con la 1.7.1) fallan de vez
-  en cuando (pasan al repetir); probablemente dependen del mapa al azar.
 - **CI:** subir `upload-artifact`, `configure-pages` y `deploy-pages` cuando saquen versión sin Node 20.
 - **Créditos:** nota sobre el arte hecho con IA (precaución, no verificado que sea obligatoria).
 

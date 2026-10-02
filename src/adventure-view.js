@@ -1,7 +1,7 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.7.1';
-import { ART } from './data/art.js?v=1.7.1';
-import { monsterArt } from './art.js?v=1.7.1';
-import { creatureFor } from './data/creatures.js?v=1.7.1';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.8.0';
+import { ART } from './data/art.js?v=1.8.0';
+import { monsterArt } from './art.js?v=1.8.0';
+import { creatureFor } from './data/creatures.js?v=1.8.0';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo
@@ -229,11 +229,14 @@ function exitLabel(p) {
 function renderMarkers() {
     els.markers.innerHTML = st.scene.points.filter(p => st.hooks.isShown(p)).map(p => {
         const cleared = p.kind === 'enemy' && st.hooks.isCleared(p);
+        const seen = p.kind === 'poi' && !!(st.hooks.isSeen && st.hooks.isSeen(p));   // punto de interés ya mirado
+        // NPC: azul si tiene misión (por dar o en marcha), gris si ya la cumpliste, amarillo si solo habla
+        const mark = p.kind === 'npc' ? (st.hooks.npcMark ? st.hooks.npcMark(p) : 'talk') : null;
         const icon = p.kind === 'exit' ? STOP_ICONS.exit : cleared ? '✓' : STOP_ICONS[p.kind] || '';
         const text = p.kind === 'exit' ? esc(p.name) : STOP_LABELS[p.id] || '';
         const label = p.kind === 'exit' ? exitLabel(p) : `<span class="adv-stop-icon">${icon}</span><span class="adv-stop-text">${text}</span>`;
         return `
-        <button type="button" class="adv-stop is-${p.kind}${cleared ? ' is-cleared' : ''}" data-point="${esc(p.id)}" data-x="${p.x}" data-y="${p.y}" aria-label="${esc(`${STOP_LABELS[p.id] || ''} ${p.name}`)}">
+        <button type="button" class="adv-stop is-${p.kind}${mark ? ` is-${mark}` : ''}${cleared || seen || mark === 'done' ? ' is-cleared' : ''}" data-point="${esc(p.id)}" data-x="${p.x}" data-y="${p.y}" aria-label="${esc(`${STOP_LABELS[p.id] || ''} ${p.name}`)}">
             <span class="adv-stop-dot" aria-hidden="true"></span>
             <span class="adv-stop-label">${label}</span>
             <span class="adv-stop-name">${esc(p.name)}</span>
@@ -280,8 +283,9 @@ function openDialogue(key, onDone = null) {
 
 function renderDialogue() {
     const { lines, i } = st.dialogue;
-    els.dialogueWho.textContent = lines[i].who;
-    els.dialogueText.textContent = lines[i].text;
+    const name = (st.hooks.heroName && st.hooks.heroName()) || 'Héroe';
+    els.dialogueWho.textContent = lines[i].who.replace(/\{heroe\}/g, name);
+    els.dialogueText.textContent = lines[i].text.replace(/\{heroe\}/g, name);
     els.dialogueNext.textContent = i < lines.length - 1 ? 'Siguiente' : 'Cerrar';
 }
 
@@ -386,6 +390,14 @@ function bind() {
     // Pulsar en cualquier parte del pergamino (o su botón, que burbujea hasta aquí) pasa a la siguiente línea
     els.dialogue.addEventListener('click', advanceDialogue);
     root.querySelector('.adv-back').addEventListener('click', () => { close(); if (st.hooks.onExit) st.hooks.onExit(); });
+    root.querySelector('.adv-inventory').addEventListener('click', () => {
+        root.querySelector('.adv-inventory').classList.remove('is-new');
+        if (st.hooks.onInventory) st.hooks.onInventory();
+    });
+    root.querySelector('.adv-quests').addEventListener('click', () => {
+        root.querySelector('.adv-quests').classList.remove('is-new');
+        if (st.hooks.onQuests) st.hooks.onQuests();
+    });
     document.addEventListener('keydown', e => {
         if (!st.raf || !st.dialogue) return;
         if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); advanceDialogue(); }
@@ -430,6 +442,39 @@ export function goTo(sceneId) {
 }
 
 /** Lo que dice la barra de la aventura (vida, oro, pociones). */
+/** Aviso de misión (nueva o cumplida): un cartel unos segundos y el botón del diario iluminado hasta abrirlo. */
+export function questNotice(text) {
+    const root = document.getElementById('rpgAdventureView');
+    if (!root) return;
+    const btn = root.querySelector('.adv-quests');
+    if (btn) btn.classList.add('is-new');
+    const toast = root.querySelector('.adv-toast');
+    if (!toast) return;
+    toast.textContent = text;
+    toast.hidden = false;
+    toast.classList.remove('is-in'); void toast.offsetWidth; toast.classList.add('is-in');
+    clearTimeout(questNotice.t);
+    questNotice.t = setTimeout(() => { toast.hidden = true; }, 3500);
+}
+
+/** Objeto nuevo: un cartel y el botón del inventario iluminado hasta abrirlo. */
+export function inventoryNotice(text) {
+    questNotice(text);
+    const root = document.getElementById('rpgAdventureView');
+    if (!root) return;
+    root.querySelector('.adv-quests').classList.remove('is-new');
+    root.querySelector('.adv-inventory').classList.add('is-new');
+}
+
+/** El dibujo del héroe en el mapa (cambia con el arma). sprite: { src, w, h } o null para el de siempre. */
+export function setHeroSprite(sprite) {
+    if (!els && !bind()) return;
+    const s = sprite || { src: 'img/sprites/hero_right.png', w: 195, h: 244 };
+    if (els.hero.getAttribute('src') !== s.src) els.hero.src = s.src;
+    // Misma altura de cuerpo; el ancho, el de su imagen (una espada larga la ensancha)
+    els.hero.style.width = `${(HERO_MAP_H * s.w / s.h).toFixed(1)}px`;
+}
+
 export function setHud(text) {
     const el = document.querySelector('#rpgAdventureView .adv-hud');
     if (el) el.textContent = text;

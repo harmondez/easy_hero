@@ -2,14 +2,14 @@
 
 # 🗡️ Easy Hero
 
-### Explora Zafias. Pelea de tú a tú. Baja hasta donde te atrevas.
+### Despierta sin memoria. Explora Zafias. Pelea de tú a tú.
 
 *Un RPG por turnos que se juega en el navegador, con el alma de los clásicos como DragonFable:
-una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
+una aldea con encargos, combates de lado, armas que cambian a tu héroe… y una mazmorra sin fondo para los valientes.*
 
 <br>
 
-<img src="docs/img/combate.jpg" alt="Combate de lado en el bosque: el héroe a la izquierda y Grask, el jefe goblin con corona de huesos, a la derecha" width="760">
+<img src="docs/img/combate-espada.jpg" alt="Combate de lado en el bosque: Aldric, con la Espada de Zafias, frente a un goblin vigía" width="760">
 
 <br>
 
@@ -17,7 +17,7 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.7.1-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.8.0-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -32,19 +32,23 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 
 ## 🆕 Novedades
 
-**Versión 1.7.1** · 1 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.8.0** · 2 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 > [!IMPORTANT]
-> **La gran actualización visual.** Easy Hero deja atrás las cartas y los emojis en combate: ahora peleas **de lado,
-> cara a cara**, sobre escenarios pintados, y tienes **un mundo que explorar** por encima de la mazmorra.
+> **La aventura es ahora el corazón de Easy Hero.** Entras directamente en ella: despiertas sin memoria en unas
+> ruinas, caminas hasta Zafias y allí empieza todo — misiones, un diario para seguirlas y tu primera espada de
+> verdad. La mazmorra sin fondo sigue ahí, a un clic, para cuando quieras bajar.
 
 | | Qué hay de nuevo |
 |:-:|------------------|
-| 🚪 | **Nuevo en la 1.7.1 — Salidas que se encuentran y criaturas a su tamaño:** carteles dorados con flecha hacia cada salida (si no se ve, te espera en el borde de la pantalla), lobos a media altura de tu héroe y un Feronius grande que ya no llena la pantalla |
-| 🐺 | **Nuevo en la 1.7.0 — Feronius el Feroz, el jefe de Zafias:** vence a Grask y se abre **la guarida del lobo**, al fondo del barranco. El lobo alfa te espera en la boca de su cueva |
-| 🗺️ | **Nuevo en la 1.7.0 — Zafias en alta resolución y mucho más grande:** el mapa rehecho y nítido, **28 paradas** en vez de 10, lobos en el bosque y una segunda salida de la aldea |
-| 🔍 | **Nuevo en la 1.7.0 — Puntos de interés:** paradas doradas que se miran en vez de pelearse. Algunas esconden oro o una poción la primera vez: el pozo, un fardo en la orilla, el botín de Grask… |
-| ⚖️ | **Nuevo en la 1.7.0 — Zafias se puede terminar empezando de cero:** Grask es un primer muro de verdad, pero ya no hace falta entrenar durante horas |
+| 🌅 | **Nuevo en la 1.8.0 — Una introducción y entrada directa a la aventura:** despiertas sin memoria en unas ruinas del bosque, recuerdas tu nombre, encuentras tu espada de hierro y caminas hasta Zafias. Desde entonces, el juego te lleva directo a la aventura |
+| ⚔️ | **Nuevo en la 1.8.0 — Tu primer objeto: la Espada de Zafias.** Tráele a Bram cinco dientes de lobo y te forjará una espada con el doble de ataque. Cada espada cambia el dibujo de tu héroe, y todo lo guardas en un **inventario** al estilo DragonFable |
+| 📜 | **Nuevo en la 1.8.0 — Diario de misiones:** la misión principal y las secundarias, con su progreso; las cumplidas, tachadas. Los NPC con un encargo salen en azul, y Bram te pide cinco dientes de lobo |
+| 🚪 | **1.7.1 — Salidas que se encuentran y criaturas a su tamaño:** carteles dorados con flecha hacia cada salida (si no se ve, te espera en el borde de la pantalla), lobos a media altura de tu héroe y un Feronius grande que ya no llena la pantalla |
+| 🐺 | **1.7.0 — Feronius el Feroz, el jefe de Zafias:** vence a Grask y se abre **la guarida del lobo**, al fondo del barranco. El lobo alfa te espera en la boca de su cueva |
+| 🗺️ | **1.7.0 — Zafias en alta resolución y mucho más grande:** el mapa rehecho y nítido, **28 paradas** en vez de 10, lobos en el bosque y una segunda salida de la aldea |
+| 🔍 | **1.7.0 — Puntos de interés:** paradas doradas que se miran en vez de pelearse. Algunas esconden oro o una poción la primera vez: el pozo, un fardo en la orilla, el botín de Grask… |
+| ⚖️ | **1.7.0 — Zafias se puede terminar empezando de cero:** Grask es un primer muro de verdad, pero ya no hace falta entrenar durante horas |
 | 🎨 | **1.6.0 — Enemigos con dibujo propio:** el **Orco** y **Grask, el jefe goblin**, ya no son el goblin teñido. Grask te espera en el campamento, más grande que tú |
 | 🏭 | **1.6.0 — Fábrica de arte:** el juego ya puede crear enemigos, jefes, fondos y mapas con un mismo estilo de pixel art. Pronto, cada criatura con su imagen |
 | 🗺️ | **Zafias como un mapa antiguo:** caminos a trazos de tinta y paradas rojas que laten, numeradas **1-1, 1-2, 1-3…**. Tu héroe anda de parada en parada; un enemigo sin vencer corta el paso y, vencido, su parada queda con ✓ |
@@ -88,21 +92,30 @@ una aldea con encargos, combates de lado y una mazmorra que no tiene fondo.*
 ## ✨ La idea
 
 > [!IMPORTANT]
-> **Todos empiezan con el mismo héroe.** No eliges clase al principio: **la descubres por las decisiones que tomas.**
+> **Un héroe sin pasado y un mundo por descubrir.** Despiertas en unas ruinas con una espada de hierro y tu nombre.
+> Todo lo demás —quién eres, qué arma llevas, en qué te conviertes— lo vas ganando en el camino.
 
-Recorres un **mapa que se ramifica** y en cada paso eliges a dónde ir: un combate, un cofre, un evento o un peligro mayor.
-Cada combate es por turnos, como en los grandes JRPG. Lo que decides por el camino convierte a tu héroe en guerrero,
-pícaro o elementalista.
+Recorres Zafias **escena a escena** sobre un mapa pintado: hablas con sus vecinos, aceptas encargos, peleas **por
+turnos y de lado**, como en DragonFable, y cada misión cumplida te da algo que se queda contigo: oro, pociones o un
+arma nueva que cambia el aspecto de tu héroe. Cuando quieras otra cosa, la **cueva del sur** baja a una mazmorra sin
+fondo, distinta en cada partida.
 
-| ⏱️ Una partida | 🗺️ El mapa | ⚔️ El combate | 🌱 Tu héroe |
+| 🌅 El comienzo | 🗺️ El mundo | ⚔️ El combate | 🎒 Tu héroe |
 |:---:|:---:|:---:|:---:|
-| Dura hasta que caes | Nuevo en cada tramo | Por turnos, de lado | Más fuerte en cada partida |
+| Despiertas sin memoria | Zafias, escena a escena | Por turnos, de lado | Armas que se ven, nivel que no se pierde |
 
 ---
 
 ## 🧭 Modo aventura: Zafias
 
-Por encima de la mazmorra hay un mundo. **Zafias** es una aldea a las puertas de un bosque que los goblins han
+Despiertas sin memoria en unas ruinas del bosque, con una espada de hierro y poco más, y caminas hasta el pueblo
+más cercano.
+
+<p align="center">
+  <img src="docs/img/intro.jpg" alt="La introducción: el héroe, recién despierto en unas ruinas del bosque al amanecer, encuentra su espada de hierro" width="680">
+</p>
+
+**Zafias** es una aldea a las puertas de un bosque que los goblins han
 tomado, y la recorres **escena a escena** sobre un mapa pintado, como en los mapas antiguos: los caminos van
 **a trazos** entre paradas numeradas **1-1, 1-2, 1-3…**. Pulsa una parada y tu héroe irá andando por el camino
 hasta allí… salvo que un enemigo le corte el paso.
@@ -111,8 +124,12 @@ hasta allí… salvo que un enemigo le corte el paso.
   <img src="docs/img/aventura.jpg" alt="La aldea de Zafias: Maela, la posadera, te cuenta que tres goblins vigilan los cruces del bosque" width="680">
 </p>
 
-- 📜 **Misiones con historia.** Habla con los vecinos: Maela, la posadera, te pedirá echar a los goblins del
-  bosque y acabar con **Grask**, su jefe. Lo que te toca hacer está siempre a la vista, arriba.
+- 📜 **Misiones con historia.** Habla con los vecinos: los que tienen un encargo salen **en azul**. Maela, la
+  posadera, te pedirá echar a los goblins del bosque y acabar con **Grask**; Bram, el herrero, quiere cinco
+  dientes de lobo. Todo queda en tu **diario de misiones**, y las cumplidas se tachan.
+- ⚔️ **Armas que se ven.** La recompensa de Bram es la **Espada de Zafias**: el doble de ataque y tu héroe la
+  lleva, en el mapa y en el combate. Cada arma nueva cambia su aspecto. Lo guardas todo en un **inventario** al
+  estilo DragonFable.
 - 👺 **Enemigos que ves venir.** Los goblins y los lobos esperan en los caminos; pulsa uno y empieza el combate. Si los
   vences desaparecen… hasta que duermes en la posada y vuelven.
 - 🗺️ **Zonas que se abren.** El campamento goblin no aparece hasta que limpias el bosque, y la guarida del lobo
@@ -123,11 +140,15 @@ hasta allí… salvo que un enemigo le corte el paso.
   combate más duro de Zafias: llega con pociones y aprende a defenderte de sus golpes.
 - 🏘️ **La aldea es tu base.** La **posada** te cura, la **tienda** vende pociones y mejoras, y la **cueva del
   sur** baja al descenso de siempre.
-- 🛡️ **El mismo héroe.** Tu nivel, tus estadísticas, La Forja, el oro y las pociones son los mismos en la aventura
-  y en la mazmorra. Si caes, despiertas en la posada con algo menos de oro.
+- 🛡️ **Tu héroe, con nombre.** Lo escribes al despertar y los vecinos te llaman por él. Tu nivel, el oro y las
+  pociones te acompañan siempre; si caes, despiertas en la posada con algo menos de oro.
 
 <p align="center">
   <img src="docs/img/bosque.jpg" alt="El bosque de los cruces: caminos a trazos entre goblins, un lobo y puntos de interés dorados" width="680">
+</p>
+
+<p align="center">
+  <img src="docs/img/inventario.jpg" alt="El inventario: la lista de armas a la izquierda y la ficha de la Espada de Zafias, con el héroe que la lleva, a la derecha" width="560">
 </p>
 
 <p align="center">
@@ -269,12 +290,16 @@ En el camino te esperan **situaciones con dos decisiones**. Cada una cuesta algo
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.5.0, sigue en desarrollo.** El equilibrio del descenso está ajustado para que un jugador medio **venza al primer jefe unas 2 de cada 5 partidas**, porque ese jefe ya no es el final: es la puerta al descenso sin fondo
-> (todo el detalle, medido con miles de partidas simuladas, está en [docs/equilibrio.md](docs/equilibrio.md)). Cambiará a medida que se añadan cosas.
+> **Versión 1.8.0, sigue en desarrollo.** El foco es el **Modo Aventura**: Zafias se puede terminar empezando de
+> cero, con Grask como primer muro y Feronius como jefe (medido con miles de partidas de un bot). El descenso queda
+> como está, con su propio equilibrio ([docs/equilibrio.md](docs/equilibrio.md)).
 
 ### ✅ Ya se puede jugar
 
-- 🧭 **Modo aventura en Zafias**: aldea, bosque y campamento goblin, con la primera misión, posada, tienda y la cueva al descenso
+- 🌅 **Una introducción**: despiertas sin memoria en unas ruinas, eliges tu nombre y caminas hasta Zafias
+- 🧭 **Modo aventura en Zafias**: aldea, bosque, campamento goblin y la guarida del lobo; 28 paradas, goblins, lobos y dos jefes
+- 📜 **Misiones y diario**: la principal y las secundarias, con su progreso; los NPC con encargo, en azul
+- ⚔️ **Equipo de la aventura**: la Espada de Zafias, un inventario al estilo DragonFable y un héroe que cambia con su arma
 - ⚔️ **Combate de lado** con embestidas, números de daño y un panel de pergamino con ¡Atacar! y el resto a un clic
 - 🌬️ **Enemigos que se aprenden**: sin intenciones a la vista, pero los golpes fuertes se ven venir
 - 🧪 **Pociones** que curan el 40 % y se guardan entre partidas
@@ -311,10 +336,10 @@ Todo lo que viene está explicado, con sus motivos, en **[planning.md](planning.
 
 > [!TIP]
 > **Lo próximo en la aventura:** un segundo mapa, **el bosque amarillo**, con **gnolls y orcos** (ya dibujados,
-> con sus jefes **Gnarok** y **Guul, el rey orco**); más misiones en Zafias (el santuario de piedras, el castillo) y
-> retratos en los diálogos.
+> con sus jefes **Gnarok** y **Guul, el rey orco**); más armas con su propio aspecto del héroe; avanzar la misión
+> principal —¿quién eres?—, más misiones en Zafias (el santuario de piedras, el castillo) y retratos en los diálogos.
 
-El descenso sigue su propio plan, en **cuatro entregas**: primero hacer el juego **ganable y claro**, y después añadir profundidad.
+El descenso (aparcado por ahora: el foco es la aventura) tenía su propio plan, en **cuatro entregas**: primero hacer el juego **ganable y claro**, y después añadir profundidad.
 
 | Entrega | Nombre | Qué trae |
 |:-------:|--------|----------|

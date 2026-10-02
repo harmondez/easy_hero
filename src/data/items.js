@@ -36,7 +36,7 @@ export const ITEM_BASES = [
 
     // ════════════════════════════ ⚔️ ARMAS PRIMARIAS (24) — 4 por tipo de daño ════════════════════════════
     // ---- Filo (4) ----
-    { id: 'espada_sendero', name: 'Espada del sendero', icon: '🗡️', slot: 'weapon', damaged: 'filo', main: { atq: 1 },
+    { id: 'espada_sendero', name: 'Espada de hierro', icon: '🗡️', slot: 'weapon', damaged: 'filo', main: { atq: 1 },
       desc: 'La hoja con la que empieza toda ruta. Confiable y sin pretensiones.', fam: 'guerrero' },
     { id: 'gladio_corto', name: 'Gladio corto', icon: '🗡️', slot: 'weapon', damaged: 'filo', main: { atq: 2 },
       desc: 'Un filo recto, equilibrado y sin secretos.', fam: 'guerrero' },

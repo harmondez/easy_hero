@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=1.7.1">
+    <link rel="stylesheet" href="style.css?v=1.8.0">
 </head>
 <body>
     <header class="game-header">
@@ -19,7 +19,7 @@
             <button type="button" class="game-nav-btn" data-panel="achievements" title="Logros"><span aria-hidden="true">🏆</span><span class="game-nav-label">Logros</span></button>
             <button type="button" class="game-nav-btn" data-panel="options" title="Opciones"><span aria-hidden="true">⚙️</span><span class="game-nav-label">Opciones</span></button>
         </nav>
-        <span class="game-version">v1.7.1 · en desarrollo</span>
+        <span class="game-version">v1.8.0 · en desarrollo</span>
     </header>
 
     <!-- Paneles superpuestos: consultables en cualquier momento, sin abandonar la ruta en curso -->
@@ -30,10 +30,31 @@
         </div>
     </div>
 
+    <!-- La introducción: solo la primera vez (src/intro.js, guion en src/data/intro.js) -->
+    <div id="introView" class="intro" hidden>
+        <img class="intro-scene" src="img/bg/ruinas.webp" alt="Unas ruinas cubiertas de musgo en mitad del bosque, al amanecer" draggable="false">
+        <div class="intro-lids" aria-hidden="true"></div>
+        <img class="intro-hero" src="img/sprites/hero_right.png" alt="Tu héroe" draggable="false">
+        <p class="intro-thought" aria-live="polite"></p>
+        <p class="intro-hint" aria-hidden="true">Pulsa para continuar</p>
+        <div class="intro-box" hidden aria-live="polite">
+            <div class="intro-who"></div>
+            <p class="intro-text"></p>
+            <div class="intro-item" hidden></div>
+            <form class="intro-name" hidden>
+                <label class="intro-name-label" for="introNameInput">Tu nombre</label>
+                <input id="introNameInput" type="text" autocomplete="off" spellcheck="false" placeholder="Héroe">
+                <button type="submit" class="btn-forge intro-name-ok">Recordar</button>
+            </form>
+            <button type="button" class="intro-next">Siguiente</button>
+        </div>
+        <button type="button" class="intro-skip">Saltar introducción</button>
+    </div>
+
     <main class="main-content">
         <section class="section-container full-width" id="section-rpg">
             <!-- Vista 1: la Carta de Héroe -->
-            <div id="rpgStartView" class="rpg-view">
+            <div id="rpgStartView" class="rpg-view" style="display:none;">
                 <div class="rpg-start">
                     <p class="rpg-start-kicker">Una mazmorra de 16 pisos · una ruta distinta cada vez</p>
                     <div id="rpgHeroCard" class="rpg-hero-card"></div>
@@ -43,7 +64,7 @@
                         <li><span aria-hidden="true">🔥</span> Hogueras para respirar</li>
                         <li><span aria-hidden="true">🐉</span> Un jefe al final del descenso</li>
                     </ul>
-                    <p class="rpg-start-note">Empiezas casi sin nada: una espada básica y 25 de vida. Lo que encuentres por el camino —armas, hogueras, decisiones— decide en qué te conviertes.</p>
+                    <p class="rpg-start-note">Empiezas casi sin nada: una espada de hierro y 25 de vida. Lo que encuentres por el camino —armas, hogueras, decisiones— decide en qué te conviertes.</p>
                     <p id="rpgStartNotice" class="rpg-start-note is-notice" style="display:none;"></p>
                     <button type="button" id="btnRpgContinue" class="btn-forge is-continue" style="display:none;"></button>
                     <button type="button" id="btnRpgStart" class="btn-forge">🗡️ Entrar en la mazmorra</button>
@@ -123,7 +144,9 @@
             <div id="rpgAdventureView" class="rpg-view" style="display:none;">
                 <div class="rpg-topbar">
                     <div class="rpg-topbar-actions">
-                        <button type="button" class="btn-secondary adv-back">↩️ Volver al inicio</button>
+                        <button type="button" class="btn-secondary adv-back">🗡️ La mazmorra</button>
+                        <button type="button" class="btn-secondary adv-inventory">🎒 Inventario</button>
+                        <button type="button" class="btn-secondary adv-quests">📜 Misiones</button>
                         <span class="adv-hud" aria-live="polite"></span>
                     </div>
                 </div>
@@ -134,6 +157,7 @@
                     </div>
                     <div class="adv-markers"></div>
                     <div class="adv-plaque" aria-live="polite"></div>
+                    <div class="adv-toast" role="status" hidden></div>
                     <div class="adv-fps" hidden></div>
                     <div class="adv-dialogue" hidden>
                         <div class="adv-dialogue-box" role="dialog" aria-live="polite">
@@ -169,6 +193,6 @@
         </section>
     </main>
 
-    <script type="module" src="src/main.js?v=1.7.1"></script>
+    <script type="module" src="src/main.js?v=1.8.0"></script>
 </body>
 </html>

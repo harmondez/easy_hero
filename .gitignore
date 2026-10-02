@@ -46,3 +46,4 @@ desktop.ini
 !.env.example
 # Taller de la fábrica de assets: crudos, mapas maestros, regiones y metadatos (zona de trabajo, no se sube)
 /taller/
+/img/weapons/

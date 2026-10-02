@@ -6,6 +6,11 @@
 // =============================================
 export const ART = {
     "sprites": {
+        "arma_espada-de-zafias": {
+            "src": "img/sprites/arma_espada-de-zafias.webp",
+            "w": 289,
+            "h": 256
+        },
         "enemigo_feronius-el-feroz": {
             "src": "img/sprites/enemigo_feronius-el-feroz.webp",
             "w": 398,
@@ -62,6 +67,12 @@ export const ART = {
             "h": 256
         }
     },
-    "bg": {},
+    "bg": {
+        "ruinas": {
+            "src": "img/bg/ruinas.webp",
+            "w": 1376,
+            "h": 768
+        }
+    },
     "zones": {}
 };

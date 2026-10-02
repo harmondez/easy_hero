@@ -29,6 +29,7 @@
 
     --gold: #f0b03c;
     --gold-glow: rgba(240, 176, 60, 0.4);
+    --quest: #4f8fdc;            /* azul de misión: los NPC con un encargo (color funcional, como el de una rareza) */
 
     --danger: #d6432f;
     --danger-hover: #b53523;
@@ -1521,6 +1522,8 @@ body {
 }
 .adv-stop.is-exit { --stop: #9a7432; }
 .adv-stop.is-poi { --stop: var(--gold); }
+.adv-stop.is-npc.is-talk { --stop: var(--gold); }   /* solo habla: amarillo, como un punto de interés */
+.adv-stop.is-npc.is-quest { --stop: var(--quest); } /* tiene misión: azul */
 .adv-stop.is-cleared { --stop: #6d6258; }
 .adv-stop-dot {
     position: absolute; left: 50%; top: 50%;
@@ -1673,3 +1676,261 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .adv-hero.is-walking, .adv-plaque.is-in, .adv-dialogue-box { animation: none; }
 }
+
+/* =============================================
+   🌅 Introducción: el despertar en las ruinas (src/intro.js)
+   Lo memorable es UN momento: los ojos que se abren (dos franjas que se retiran mientras la escena se enfoca).
+   Todo lo demás, quieto: frases sobre negro, el pergamino de siempre, el héroe que se incorpora una vez.
+   ============================================= */
+body.is-intro { overflow: hidden; }
+.intro {
+    position: fixed; inset: 0; z-index: 100;
+    overflow: hidden;
+    background: var(--bg-main);
+    color: var(--parchment);
+    cursor: pointer;
+}
+.intro[hidden] { display: none; }
+.intro-scene {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    filter: blur(14px) brightness(0.55) saturate(0.7);
+    transform: scale(1.06);
+    transition: opacity 1.6s ease, filter 2.4s ease, transform 2.6s ease;
+    user-select: none;
+}
+/* Los párpados: dos franjas del color del fondo que se retiran al despertar */
+.intro-lids::before, .intro-lids::after {
+    content: '';
+    position: absolute; left: 0; right: 0; height: 50%;
+    background: var(--bg-main);
+    transition: transform 2.2s cubic-bezier(0.6, 0, 0.2, 1);
+}
+.intro-lids::before { top: 0; }
+.intro-lids::after { bottom: 0; }
+.intro.is-awake .intro-scene { opacity: 1; filter: none; transform: none; }
+.intro.is-awake .intro-lids::before { transform: translateY(-100%); }
+.intro.is-awake .intro-lids::after { transform: translateY(100%); }
+/* Un velo cálido abajo para que el pergamino y el héroe se lean sobre la escena */
+.intro::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 55%, color-mix(in srgb, var(--bg-main) 70%, transparent));
+    opacity: 0; transition: opacity 1.6s ease;
+    pointer-events: none;
+}
+.intro.is-awake::after { opacity: 1; }
+.intro.is-leaving .intro-scene, .intro.is-awake.is-leaving .intro-hero, .intro.is-leaving::after { opacity: 0; transition: opacity 1.4s ease; }
+
+/* El héroe: tendido en la hierba hasta que se incorpora */
+.intro-hero {
+    position: absolute; left: 20%; bottom: 25%; z-index: 2;   /* sobre la hierba de la imagen, por encima del pergamino */
+    height: min(34vh, 280px); width: auto;
+    image-rendering: pixelated;
+    transform-origin: 50% 100%;
+    transform: translateY(-38%) rotate(-90deg);   /* tendido en la hierba, la cabeza hacia la izquierda */
+    filter: brightness(0.7);
+    opacity: 0;
+    transition: opacity 1.4s ease 0.6s, transform 1s cubic-bezier(0.3, 0, 0.2, 1), filter 1s ease;
+    pointer-events: none;
+}
+.intro.is-awake .intro-hero { opacity: 1; }
+.intro.is-standing .intro-hero { transform: none; filter: none; }
+
+/* Pensamientos sobre negro: grabados, centrados, que aparecen de un desenfoque (como volver en sí) */
+.intro-thought {
+    position: absolute; left: 50%; top: 50%; z-index: 3;
+    transform: translate(-50%, -50%);
+    width: min(88vw, 34ch);
+    margin: 0;
+    text-align: center;
+    font-family: var(--font-display); font-weight: 600;
+    font-size: clamp(1.25rem, 3.6vw, 2rem); line-height: 1.4; letter-spacing: 0.02em;
+    color: var(--parchment);
+}
+.intro-thought.is-in { animation: introThought 1.4s ease-out both; }
+@keyframes introThought { from { opacity: 0; filter: blur(8px); } }
+.intro-thought.is-title { font-weight: 800; font-size: clamp(2.2rem, 7vw, 4rem); letter-spacing: 0.08em; color: var(--gold); }
+
+/* El pergamino: el mismo cuadro de diálogo de la aventura */
+.intro-box {
+    position: absolute; left: 50%; bottom: max(24px, 4vh); z-index: 3;
+    transform: translateX(-50%);
+    width: min(calc(100% - 32px), 640px);
+    padding: 14px 18px 12px;
+    color: var(--parchment-ink);
+    background:
+        radial-gradient(ellipse at 20% 10%, rgba(255, 255, 255, 0.35), transparent 60%),
+        linear-gradient(180deg, var(--parchment), color-mix(in srgb, var(--parchment) 82%, var(--parchment-edge)));
+    border: 2px solid var(--parchment-edge);
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), var(--shadow-elevated);
+    cursor: default;
+}
+.intro-box[hidden] { display: none; }
+.intro-who { font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: #7a3514; }
+.intro-text { margin: 6px 0 10px; font-size: clamp(0.95rem, 2.4vw, 1.05rem); line-height: 1.5; }
+.intro-next {
+    display: block; margin-left: auto;
+    padding: 6px 16px;
+    font: 700 0.85rem var(--font-body);
+    color: var(--parchment); background: var(--parchment-ink);
+    border: 0; border-radius: 3px; cursor: pointer;
+}
+.intro-next[hidden] { display: none; }
+.intro-next:focus-visible, .intro-skip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* Recordar el nombre: una línea de tinta sobre el pergamino */
+.intro-name { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin: 0 0 4px; }
+.intro-name[hidden] { display: none; }
+.intro-name-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.intro-name input {
+    flex: 1 1 200px;
+    padding: 4px 2px;
+    font: 700 1.25rem var(--font-display);
+    color: var(--parchment-ink);
+    background: transparent;
+    border: 0; border-bottom: 2px solid var(--parchment-edge);
+    border-radius: 0;
+}
+.intro-name input:focus { outline: none; border-bottom-color: var(--primary); }
+.intro-name input::placeholder { color: color-mix(in srgb, var(--parchment-ink) 35%, transparent); }
+.intro-name-ok { padding: 7px 18px; }
+
+/* La espada: lo único que lleva, a la vista */
+.intro-item {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 0 10px; padding: 8px 12px;
+    background: color-mix(in srgb, var(--parchment-ink) 8%, transparent);
+    border-left: 3px solid var(--parchment-edge);
+}
+.intro-item[hidden] { display: none; }
+.intro-item-icon { font-size: 1.8rem; line-height: 1; }
+.intro-item-name { font-weight: 700; }
+.intro-item-detail { margin-left: auto; font-family: ui-monospace, 'Courier New', monospace; font-weight: 700; }
+
+.intro-skip {
+    position: absolute; right: 16px; top: 14px; z-index: 4;
+    padding: 6px 12px;
+    font: 600 0.82rem var(--font-body);
+    color: color-mix(in srgb, var(--parchment) 70%, transparent);
+    background: color-mix(in srgb, var(--bg-main) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--parchment) 25%, transparent);
+    border-radius: 3px; cursor: pointer;
+}
+.intro-skip:hover { color: var(--parchment); }
+
+@media (max-width: 640px) {
+    .intro-hero { left: 14%; bottom: 34%; height: 24vh; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .intro-scene, .intro-lids::before, .intro-lids::after, .intro-hero, .intro::after { transition: none; }
+    .intro-thought.is-in { animation: none; }
+}
+
+/* Borrar progreso: el botón peligroso y su advertencia (en el panel de Opciones) */
+.btn-danger {
+    padding: 8px 16px;
+    font: 700 0.9rem var(--font-body);
+    color: #fff;
+    background: linear-gradient(180deg, #e0553b, var(--danger) 55%, var(--danger-hover));
+    border: 1px solid var(--danger-hover); border-radius: 4px;
+    cursor: pointer;
+}
+.btn-danger:hover { filter: brightness(1.1); }
+.btn-danger:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.panel-danger { border-top: 1px solid color-mix(in srgb, var(--danger) 35%, transparent); }
+.wipe-confirm { padding: 18px 6px 8px; text-align: center; }
+.wipe-confirm-icon { font-size: 2.4rem; line-height: 1; }
+.wipe-confirm-title { margin: 10px 0 8px; font-family: var(--font-display); font-size: 1.3rem; color: var(--danger); }
+.wipe-confirm-text { margin: 0 auto 10px; max-width: 46ch; font-size: 0.92rem; line-height: 1.55; color: var(--text-light); }
+.wipe-confirm-actions { display: flex; justify-content: center; gap: 12px; margin-top: 16px; }
+
+/* 📜 Misiones: el botón del diario (se ilumina con una misión nueva), el aviso y el diario */
+.adv-quests.is-new { border-color: var(--quest); box-shadow: 0 0 0 2px color-mix(in srgb, var(--quest) 45%, transparent); animation: advQuestGlow 1.6s ease-in-out infinite; }
+@keyframes advQuestGlow { 50% { box-shadow: 0 0 14px 3px color-mix(in srgb, var(--quest) 55%, transparent); } }
+.adv-toast {
+    position: absolute; left: 50%; top: 16px; z-index: 6;
+    transform: translateX(-50%);
+    padding: 8px 18px;
+    font: 700 0.95rem var(--font-body);
+    color: var(--parchment-ink);
+    background: var(--parchment);
+    border: 2px solid var(--quest);
+    border-radius: 4px;
+    box-shadow: var(--shadow-elevated);
+    pointer-events: none;
+}
+.adv-toast[hidden] { display: none; }
+.adv-toast.is-in { animation: advDialogueIn 0.25s ease-out; }
+.quest { padding: 12px 14px; margin-bottom: 10px; border-left: 3px solid var(--quest); background: color-mix(in srgb, var(--quest) 7%, transparent); }
+.quest-title { margin: 0 0 4px; font-family: var(--font-display); font-size: 1.05rem; color: var(--text-main); }
+.quest-desc { margin: 0 0 8px; font-size: 0.88rem; line-height: 1.5; color: var(--text-light); }
+.quest-steps { margin: 0; padding-left: 18px; font-size: 0.9rem; line-height: 1.6; }
+.quest-step.is-done { color: var(--text-dim); text-decoration: line-through; }
+.quest-progress { font-family: ui-monospace, 'Courier New', monospace; font-weight: 700; color: var(--quest); }
+/* Cumplida: tachada entera y en gris, como en Skyrim */
+.quest.is-done { border-left-color: var(--text-dim); background: none; }
+.quest.is-done .quest-title, .quest.is-done .quest-desc { color: var(--text-dim); text-decoration: line-through; }
+@media (prefers-reduced-motion: reduce) { .adv-quests.is-new, .adv-toast.is-in { animation: none; } }
+
+/* 🎒 Inventario de la aventura, como el de DragonFable: dos páginas de pergamino, la lista y la ficha */
+.inv { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.inv-page {
+    padding: 12px 14px 14px;
+    color: var(--parchment-ink);
+    background:
+        radial-gradient(ellipse at 30% 0%, rgba(255, 255, 255, 0.35), transparent 60%),
+        linear-gradient(180deg, var(--parchment), color-mix(in srgb, var(--parchment) 80%, var(--parchment-edge)));
+    border: 2px solid var(--parchment-edge);
+    border-radius: 4px;
+    box-shadow: inset 0 0 18px color-mix(in srgb, var(--parchment-edge) 45%, transparent);
+}
+.inv-title { margin: 0 0 10px; text-align: center; font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #7a3514; }
+.inv-rows { list-style: none; margin: 0; padding: 0; border: 1px solid var(--parchment-edge); }
+.inv-row {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 6px 8px;
+    font: 600 0.92rem var(--font-body); color: var(--parchment-ink); text-align: left;
+    background: color-mix(in srgb, var(--parchment) 70%, #fff);
+    border: 0; border-bottom: 1px solid color-mix(in srgb, var(--parchment-edge) 45%, transparent);
+    cursor: pointer;
+}
+.inv-rows li:nth-child(even) .inv-row { background: color-mix(in srgb, var(--parchment) 88%, var(--parchment-edge)); }
+.inv-row:hover { filter: brightness(1.05); }
+.inv-row.is-selected, .inv-rows li .inv-row.is-selected { background: color-mix(in srgb, var(--quest) 30%, var(--parchment)); box-shadow: inset 3px 0 0 var(--quest); }
+.inv-row:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.inv-num { width: 1.6em; font-family: ui-monospace, 'Courier New', monospace; color: color-mix(in srgb, var(--parchment-ink) 60%, transparent); }
+.inv-icon { font-size: 1.15rem; }
+.inv-name { flex: 1; }
+.inv-equipped { padding: 1px 6px; font-size: 0.72rem; font-weight: 700; color: var(--parchment); background: var(--parchment-ink); border-radius: 3px; }
+.inv-gold { margin: 10px 0 0; text-align: center; font-weight: 700; }
+.inv-item-name { margin: 0; font-family: var(--font-display); font-size: 1.1rem; color: var(--parchment-ink); }
+.inv-item-kind { margin: 2px 0 8px; font-size: 0.82rem; font-weight: 600; color: #7a3514; }
+.inv-preview { display: block; height: 150px; width: auto; max-width: 100%; margin: 4px auto 8px; object-fit: contain; image-rendering: pixelated; }
+.inv-item-desc { margin: 0 0 8px; font-size: 0.9rem; line-height: 1.5; }
+.inv-stats { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 12px; font-size: 0.86rem; }
+.inv-stats dt { font-weight: 700; }
+.inv-stats dd { margin: 0; }
+.inv-stats dd:first-of-type { font-family: ui-monospace, 'Courier New', monospace; font-weight: 700; }
+.inv-equip { display: block; width: 100%; }
+.inv-equip:disabled { opacity: 0.6; cursor: default; }
+.adv-inventory.is-new { border-color: var(--gold); animation: advInvGlow 1.6s ease-in-out infinite; }
+@keyframes advInvGlow { 50% { box-shadow: 0 0 14px 3px var(--gold-glow); } }
+@media (max-width: 640px) { .inv { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .adv-inventory.is-new { animation: none; } }
+
+/* Sobre negro, una pista discreta de que se avanza pulsando (aparece tarde, para no tapar el momento) */
+.intro-hint {
+    position: absolute; left: 50%; bottom: 8vh; z-index: 3;
+    transform: translateX(-50%);
+    margin: 0;
+    font: 500 0.85rem var(--font-body); letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--parchment) 45%, transparent);
+    opacity: 0; pointer-events: none;
+}
+.intro[data-step="thought"] .intro-hint, .intro[data-step="title"] .intro-hint { animation: introHint 0.8s ease 2.2s forwards; }
+@keyframes introHint { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .intro[data-step="thought"] .intro-hint, .intro[data-step="title"] .intro-hint { animation: none; opacity: 1; } }

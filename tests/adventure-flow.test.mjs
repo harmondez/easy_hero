@@ -18,7 +18,8 @@ const server = http.createServer((req, res) => {
     catch { res.writeHead(404); res.end('not found'); }
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
-const url = `http://127.0.0.1:${server.address().port}/index.html`;
+// ?inicio: la pantalla de la mazmorra como antes (sin introducción ni entrada directa a la aventura)
+const url = `http://127.0.0.1:${server.address().port}/index.html?inicio`;
 
 let passed = 0, failed = 0;
 function assert(label, cond) {

@@ -25,7 +25,8 @@ const server = http.createServer((req, res) => {
     }
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
-const url = `http://127.0.0.1:${server.address().port}/index.html`;
+// ?inicio: la pantalla de la mazmorra como antes (sin introducción ni entrada directa a la aventura)
+const url = `http://127.0.0.1:${server.address().port}/index.html?inicio`;
 
 let passed = 0;
 let failed = 0;
@@ -76,8 +77,9 @@ assert('El mapa es largo y denso: 16 pisos y al menos 40 nodos',
 assert('Hay nodos de evento 🎲 en el mapa y en la leyenda',
     (await page.$$eval('#rpgMap .rpg-node.type-event', els => els.length)) >= 6
     && (await page.$eval('#rpgLegend', el => el.textContent)).includes('Evento'));
+// El mapa sale al azar: lo garantizado es un mínimo de hogueras por ruta (antes se pedían 5 y 1 de cada ~500 mapas trae 4)
 assert('Hay hogueras 🔥 en el mapa y en la leyenda',
-    (await page.$$eval('#rpgMap .rpg-node.type-campfire', els => els.length)) >= 5
+    (await page.$$eval('#rpgMap .rpg-node.type-campfire', els => els.length)) >= await page.evaluate(() => window.Engine.RPG_MIN_CAMPFIRES_PER_ROUTE)
     && (await page.$eval('#rpgLegend', el => el.textContent)).includes('Hoguera'));
 assert('Los sub-jefes son minoría en el mapa (menos del 15 % de los nodos)',
     (await page.$$eval('#rpgMap .rpg-node.type-subboss', els => els.length)) < 0.15 * (await page.$$eval('#rpgMap .rpg-node', els => els.length)));
@@ -158,10 +160,11 @@ for (let i = 0; i < 30 && !(await page.$('#btnRpgCombatContinue')); i++) {
 assert('Ganar muestra el panel de victoria', (await page.$eval('#rpgCombatResult', el => el.textContent)).includes('Victoria'));
 await page.click('#btnRpgCombatContinue');
 await sleep(300);
-await takeLoot();   // un combate normal puede soltar botín (1 de cada 4): se resuelve antes de mirar el mapa
-assert('Tras ganar, el nodo pasa a ser tu posición', (await page.$$('#rpgMap .rpg-node.is-current')).length === 1);
+// Antes de recoger el botín: un arma del botín (1 de cada 4 combates) sí subiría el ATK, pero eso es el equipo, no ganar
 assert('Ganar ya no da fuerza (viene del equipo); solo sube el nivel', await page.evaluate(() =>
     window.gameState.rpg.hero.atq === 1 && window.gameState.rpg.hero.level === 2));
+await takeLoot();   // un combate normal puede soltar botín (1 de cada 4): se resuelve antes de mirar el mapa
+assert('Tras ganar, el nodo pasa a ser tu posición', (await page.$$('#rpgMap .rpg-node.is-current')).length === 1);
 
 // ---------------------------------------------
 console.log('\n🎲 Eventos en el navegador');
@@ -324,6 +327,12 @@ assert('El puente aguanta: el siguiente paso salta un piso', skipCheck.skipNext 
 assert('En pantalla solo se pueden pisar nodos dos pisos por delante',
     (await page.$$eval('#rpgMap .rpg-node.is-available', els => els.length)) === skipCheck.avail.length);
 await stepNode(await page.$('#rpgMap .rpg-node.is-available'));
+// El nodo de destino es al azar: un evento puede acabar en combate o en botín. Se termina el paso antes de comprobar
+for (let i = 0; i < 6 && !(await visible('#rpgMapView')); i++) {
+    if (await visible('#rpgCombatView')) await finishCombat();
+    else if (await visible('#rpgEventView')) await resolveEventFirstOptions();
+    await takeLoot();
+}
 assert('Tras usar el salto se vuelve a avanzar de piso en piso', await page.evaluate(() => window.gameState.rpg.skipNext === false));
 
 // -- El Lector: 3 preguntas, dos respuestas cada una
@@ -404,7 +413,8 @@ async function walkTo(type) {
 console.log('\n🔥 Hoguera');
 {
     const camp = await walkTo('campfire');
-    await page.evaluate(() => { const h = window.gameState.rpg.hero; h.hp = 50; h.maxHp = 100; });
+    // Sin armadura ni accesorio: el equipo al azar podría llevar «Calidez» y curar más del 30 %
+    await page.evaluate(() => { const h = window.gameState.rpg.hero; h.hp = 50; h.maxHp = 100; h.equipment.armor = null; h.equipment.accessory = null; });
     await camp.click();
     await sleep(150);
     assert('Pisar una hoguera abre la vista de descanso con 2 decisiones', await visible('#rpgEventView')
@@ -451,7 +461,7 @@ console.log('\n🧍 Personaje: equipo, inventario y oro');
     await page.click('.char-doll-slot[data-char-slot="weapon"]');
     await sleep(150);
     assert('Pulsar la ranura del arma (con la espada inicial) muestra su detalle y ofrece guardar/descartar',
-        /Espada del sendero/.test(await page.$eval('#charDetail', el => el.textContent))
+        /Espada de hierro/.test(await page.$eval('#charDetail', el => el.textContent))
         && !!(await page.$('[data-char-action="store"]')) && !!(await page.$('[data-char-action="discard"]')));
     await page.click('.char-doll-slot[data-char-slot="weapon"]');
     await sleep(100);
@@ -1140,7 +1150,7 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     assert('Pulsar un NPC: el héroe camina hasta él y se abre el diálogo', !(await adv.$eval('.adv-dialogue', el => el.hidden))
         && /Maela/.test(await adv.$eval('.adv-dialogue-who', el => el.textContent)));
     const pages = [];
-    for (let i = 0; i < 5 && !(await adv.$eval('.adv-dialogue', el => el.hidden)); i++) {
+    for (let i = 0; i < 10 && !(await adv.$eval('.adv-dialogue', el => el.hidden)); i++) {
         pages.push(await adv.$eval('.adv-dialogue-next', el => el.textContent));
         await adv.click('.adv-dialogue-next');
         await sleep(60);
@@ -1200,6 +1210,11 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     await talkAll();
     assert('El pozo (punto de interés) abre su texto y da 10 de oro una sola vez',
         /pozo/i.test(pozoWho) && goldAfter === goldBefore + 10 && (await goldOf()) === goldAfter);
+    await adv.click('.adv-stop[data-point="mercado"]', { force: true });
+    await sleep(200);
+    await talkAll();
+    assert('Un punto de interés ya mirado se pone gris, como un enemigo vencido (pozo y mercado)',
+        !!(await adv.$('.adv-stop.is-cleared[data-point="pozo"]')) && !!(await adv.$('.adv-stop.is-cleared[data-point="mercado"]')));
     await adv.click('.adv-stop[data-point="tienda"]', { force: true });
     await sleep(250);
     assert('La tienda de la aldea abre La Forja (con las pociones)', await adv.$eval('#rpgShopView', el => getComputedStyle(el).display !== 'none')

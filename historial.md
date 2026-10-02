@@ -576,3 +576,34 @@ cofres solo dan objetos · legendarios máx. 1 igual, sin límite total · equip
   salidas son ahora un cartel dorado que brilla, con una flecha hacia donde llevan y el nombre de la escena de
   destino; si la salida no se ve, su cartel espera pegado al borde apuntando hacia ella (y se puede pulsar). Tras
   vencer a Grask, el objetivo añade «Algo aúlla al sureste del campamento».
+
+## 2026-10-02 · Onboarding: la introducción y la aventura como puerta de entrada
+- Decisión del director: el jugador nuevo entra **directo al Modo Aventura**, nunca al menú de la mazmorra. La primera
+  vez, una introducción; después, directo a donde dejó la aventura (la mazmorra queda a un clic: «La mazmorra» y la
+  cueva del sur). `?inicio` abre la pantalla antigua (lo usan las pruebas).
+- La introducción (`src/intro.js`, guion como datos en `src/data/intro.js`): pensamientos sobre negro → «los
+  párpados» se abren sobre unas ruinas al amanecer (fondo nuevo `img/bg/ruinas.webp`, Asset Factory; el primer
+  prompt lo bloqueó el filtro de seguridad de Google por «a lonely place to wake up») → el héroe tendido se incorpora →
+  escribe su nombre → la espada de hierro → fundido → «Zafias» → la aldea. Clic, Intro o Espacio para seguir;
+  Escape o «Saltar» la terminan; Opciones → «Ver la introducción».
+- Nombre del héroe en `meta.heroName` (y `introSeen`). Los diálogos aceptan `{heroe}`; Maela lo usa, y el héroe le
+  cuenta que despertó en las ruinas. La espada inicial pasa a llamarse «Espada de hierro».
+- Quien ya tenía partida (descenso o aventura) no ve la introducción de golpe: entra directo a la aventura.
+- Misiones como datos (`src/data/quests.js`, reglas puras en `src/quests.js`): principal «Descubre quién eres»
+  (sin final todavía), «Los goblins del bosque» (Maela, la de siempre) y «Dientes de lobo» (Bram: vencer 5 lobos
+  con la misión en marcha; cuentas en `counts` del guardado; `whenCount` en los diálogos). Botón «Misiones» con
+  el diario (cumplidas tachadas, al estilo Skyrim) y aviso al recibir o cumplir. NPC: azul con misión, amarillo si
+  solo habla, gris cumplida; puntos de interés grises una vez vistos. Cubre buena parte del encargo #5: la barra
+  de objetivo sigue escrita a mano en `_advQuestText()`.
+- **Decisión del director: el roguelike (descenso) queda aparcado, con su botín. El Modo Aventura es el foco**:
+  es lo que el jugador jugará las primeras horas.
+- Equipo propio de la aventura (`src/data/gear.js`, permanente, en `meta.advGear` / `meta.advWeapon`), aparte del
+  botín del descenso. Primer objeto: la **Espada de Zafias** (ATK 2), recompensa de Bram (`reward.item`). Cada arma
+  trae el dibujo del héroe con ella (`sprite`: `arma_<id>`, original en `img/weapons/`, no se sube; tipo `arma_`
+  nuevo en `npm run sprites`); el héroe la lleva en el mapa y en el combate. Inventario «DragonFable»: lista y
+  ficha en pergamino, con la vista previa del héroe y «Equipar».
+- Opciones → «Borrar progreso»: advertencia (qué se pierde, «Cancelar» / «BORRAR»); borra todas las claves
+  `easy-hero-*` y recarga sin parámetros, así que vuelve a salir la introducción.
+- Pruebas intermitentes arregladas (todas por el azar del mapa de la prueba): hogueras (se pedían 5; el mínimo
+  garantizado es 2), el salto de piso (el destino podía abrir un combate), descansar (equipo con «Calidez») y
+  «ganar no da fuerza» (un arma del botín). 8 vueltas seguidas del navegador sin un fallo.

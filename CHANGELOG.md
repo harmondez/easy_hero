@@ -5,6 +5,33 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.8.0] - 2026-10-02
+
+### ✨ Novedades
+- 🌅 **Una introducción para empezar**: la primera vez que entras despiertas a oscuras, sin recordar nada, en unas
+  ruinas del bosque. Recuerdas tu nombre (lo escribes tú), encuentras tu espada de hierro y te pones en marcha hacia
+  el pueblo más cercano: Zafias. Se puede saltar, y verla otra vez desde Opciones.
+- 🧭 **Entras directo en la aventura**: el juego ya no abre con el menú de la mazmorra. La primera vez, la
+  introducción; las siguientes, apareces donde dejaste la aventura. La mazmorra sigue a un clic (botón «La mazmorra»
+  y la cueva del sur).
+- ✍️ **Tu héroe tiene nombre**: Maela te llama por él, y aparece en la carta del héroe y en la mazmorra.
+- 📜 **Diario de misiones** (botón «Misiones» de la aventura): la misión principal, «Descubre quién eres», y las
+  secundarias con su progreso. Las cumplidas salen tachadas. Al recibir o cumplir una, aparece un aviso.
+- 🔵 **Los NPC por colores**: azul si tiene una misión para ti, amarillo si solo habla, gris cuando ya cumpliste su
+  encargo. Los puntos de interés también se ponen grises una vez vistos.
+- 🐺 **Misión nueva: Dientes de lobo.** Bram, el herrero, te pide cinco; cada lobo vencido con la misión en marcha
+  suma uno. La recompensa: el primer objeto de la aventura.
+- ⚔️ **La Espada de Zafias** (ATK 2, el doble que la de hierro), forjada por Bram. **Cada espada tiene su propio
+  dibujo del héroe**: al equiparla, tu héroe la lleva en el mapa y en el combate.
+- 🎒 **Inventario de la aventura**, al estilo DragonFable: la lista a la izquierda y la ficha del objeto a la
+  derecha, con tu héroe tal como se verá con él. Es permanente: no se pierde al caer.
+- 🗑️ **Borrar progreso** (Opciones): con una advertencia antes; al confirmar, el juego vuelve a empezar desde la
+  introducción.
+
+### 🔧 Cambios
+- La espada inicial se llama ahora **Espada de hierro**.
+- Arreglo de cuatro pruebas que fallaban de vez en cuando por el azar del mapa (no eran fallos del juego).
+
 ## [1.7.1] - 2026-10-01
 
 ### ✨ Novedades

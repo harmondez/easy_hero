@@ -1,14 +1,17 @@
-import * as UI from './ui.js?v=1.7.1';
-import * as Engine from './engine.js?v=1.7.1';
-import * as Events from './events.js?v=1.7.1';
-import * as Save from './save.js?v=1.7.1';
-import * as Items from './items.js?v=1.7.1';
-import * as Meta from './meta.js?v=1.7.1';
-import * as AdventureMode from './adventure.js?v=1.7.1';
-import { RPG_BALANCE } from './data/balance.js?v=1.7.1';
-import { tierName } from './data/monsters.js?v=1.7.1';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.7.1';
-import { GAME_VERSION } from './version.js?v=1.7.1';
+import * as UI from './ui.js?v=1.8.0';
+import * as Engine from './engine.js?v=1.8.0';
+import * as Events from './events.js?v=1.8.0';
+import * as Save from './save.js?v=1.8.0';
+import * as Items from './items.js?v=1.8.0';
+import * as Meta from './meta.js?v=1.8.0';
+import * as AdventureMode from './adventure.js?v=1.8.0';
+import { playIntro } from './intro.js?v=1.8.0';
+import { ART } from './data/art.js?v=1.8.0';
+import { heroArt } from './art.js?v=1.8.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.8.0';
+import { tierName } from './data/monsters.js?v=1.8.0';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.8.0';
+import { GAME_VERSION } from './version.js?v=1.8.0';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
@@ -180,6 +183,7 @@ function _rpgStartRun(seed) {
     r.rng = createRng(r.seed);
     r.tier = 0;
     r.hero = Engine.createRpgHero();
+    r.hero.name = meta.heroName || r.hero.name;
     r.hero.trophy = meta.trophyItem ? { ...meta.trophyItem } : null; // una copia: nunca se pierde, esté equipado o no
     for (const k of Meta.PRIMARY_KEYS) r.hero.primary[k] += meta.primary[k] || 0; // puntos de nivel YA invertidos, permanentes
     _rpgApplyForgeUpgrades(r.hero, r.seed);
@@ -202,6 +206,7 @@ function _rpgStartRun(seed) {
 /** El héroe con el que empezarías AHORA (con lo comprado y los puntos de nivel): la carta del inicio. */
 function _rpgPreviewHero() {
     const hero = Engine.createRpgHero();
+    hero.name = meta.heroName || hero.name;   // el nombre que recordó al despertar
     for (const k of Meta.PRIMARY_KEYS) hero.primary[k] += meta.primary[k] || 0;
     _rpgApplyForgeUpgrades(hero, 0);
     Engine.refreshPrimaryStats(hero);
@@ -915,11 +920,21 @@ function _openPanel(kind) {
         UI.renderOptionsPanel({
             seedCode: r.seed != null ? seedToCode(r.seed) : null,
             onExport: _exportProgress,
-            onImport: _importProgress
+            onImport: _importProgress,
+            onReplayIntro: () => { UI.closePanel(); _playIntro(); },
+            onWipe: _wipeProgress
         });
     }
 }
 window.openPanel = _openPanel; // para pruebas y depuración
+
+/** Borra todo lo guardado (claves easy-hero-*) y vuelve a empezar: sin progreso, se abre la introducción. */
+function _wipeProgress() {
+    try {
+        if (storage) for (const k of Object.keys(storage)) if (k.startsWith('easy-hero-')) storage.removeItem(k);
+    } catch { /* sin almacenamiento: no había nada guardado */ }
+    window.location.href = window.location.pathname;   // sin ?inicio ni nada: entrada de jugador nuevo
+}
 
 // --- 💾 Importar / exportar: tu ruta en curso (si hay) + todo lo descubierto, en un solo texto ---
 const EXPORT_PREFIX = 'EH1:';
@@ -967,10 +982,32 @@ AdventureMode.init({
         return 'new';
     }
 });
-UI.toggleRpgView('rpgStartView');
+// --- La puerta de entrada: la aventura. La primera vez, la introducción; después, directo a Zafias ---
+/** Reproduce la introducción y, al terminar, entra en la aventura (en la aldea si es la primera vez). */
+function _playIntro() {
+    const sprite = heroArt(ART);
+    playIntro({
+        heroSrc: sprite ? sprite.src : 'img/sprites/hero_right.png',
+        name: meta.heroName,
+        onDone: name => {
+            meta.heroName = name;
+            meta.introSeen = true;
+            persistMeta();
+            AdventureMode.open();
+        }
+    });
+}
 UI.renderRpgHeroCard(_rpgPreviewHero());
 _refreshShopButton();
 refreshContinueButton();
+// ?inicio abre la pantalla de la mazmorra como antes (pruebas y depuración)
+const hadProgress = meta.runsPlayed > 0 || !!(storage && storage.getItem('easy-hero-adventure'));
+if (/[?&]inicio\b/.test(location.search)) UI.toggleRpgView('rpgStartView');
+else if (!meta.introSeen && !hadProgress) _playIntro();
+else {
+    if (!meta.introSeen) { meta.introSeen = true; persistMeta(); }   // quien ya jugaba no la ve de golpe
+    AdventureMode.open();
+}
 if (expedition.gold > 0) {
     startNotice(`⛏️ Tu expedición ha traído ${expedition.gold} 🪙 mientras no estabas`
         + `${expedition.capped ? ' (el tope son 8 horas)' : ''}. Gástalo en La Forja.`);

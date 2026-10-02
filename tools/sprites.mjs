@@ -5,6 +5,7 @@
 // Convención de nombres (id en minúsculas, sin tildes, con guiones):
 //   enemigo_<id>.png  mira a la izquierda → recorta al contorno, pies abajo, ≤ 256 px de alto → img/sprites/enemigo_<id>.webp
 //   heroe_<id>.png    mira a la derecha   → igual que el enemigo                              → img/sprites/heroe_<id>.webp
+//   arma_<id>.png     el héroe con esa arma equipada (img/weapons/<Nombre>.png) → igual       → img/sprites/arma_<id>.webp
 //   fondo_<id>.png    fondo de combate    → sin recortar                                      → img/bg/<id>.webp
 //   escena_<id>.png   mapa de una zona    → sin recortar                                      → img/zones/<id>.webp
 // Cada imagen queda registrada (ruta, ancho, alto) en src/data/art.js, que el juego lee para saber qué arte hay.
@@ -29,6 +30,7 @@ const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const KINDS = {
     enemigo: { dir: 'img/sprites', group: 'sprites', keep: true, crop: true },
     heroe:   { dir: 'img/sprites', group: 'sprites', keep: true, crop: true },
+    arma:    { dir: 'img/sprites', group: 'sprites', keep: true, crop: true },   // el héroe con esa arma (mira a la derecha)
     fondo:   { dir: 'img/bg',      group: 'bg',      keep: false, crop: false },
     escena:  { dir: 'img/zones',   group: 'zones',   keep: false, crop: false }
 };
@@ -97,7 +99,7 @@ export async function processSprites({ root = ROOT, inDir = path.join(root, 'img
         if (!/\.png$/i.test(file)) continue;
         const m = /^([a-z]+)_(.+)\.png$/.exec(file);
         const kind = m && KINDS[m[1]];
-        if (!kind) { skipped.push({ file, why: 'el nombre debe ser enemigo_/heroe_/fondo_/escena_<id>.png' }); continue; }
+        if (!kind) { skipped.push({ file, why: 'el nombre debe ser enemigo_/heroe_/arma_/fondo_/escena_<id>.png' }); continue; }
         if (!ID.test(m[2])) { skipped.push({ file, why: `el id «${m[2]}» debe ir en minúsculas, sin tildes ni espacios, con guiones` }); continue; }
         try {
             const outName = kind.keep ? `${m[1]}_${m[2]}.webp` : `${m[2]}.webp`;

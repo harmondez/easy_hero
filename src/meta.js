@@ -1,9 +1,9 @@
-import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.7.1';
-import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.7.1';
-import { DAMAGE_TYPES } from './items.js?v=1.7.1';
-import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.7.1';
-import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax } from './data/upgrades.js?v=1.7.1';
-import { RPG_BALANCE } from './data/balance.js?v=1.7.1';
+import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.8.0';
+import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.8.0';
+import { DAMAGE_TYPES } from './items.js?v=1.8.0';
+import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.8.0';
+import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax } from './data/upgrades.js?v=1.8.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.8.0';
 export { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext };
 export { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax };
 
@@ -49,6 +49,10 @@ const emptyMeta = () => ({
     // --- Nivel de personaje: PERMANENTE, sobrevive a la muerte y a todas las rutas (decisión explícita del
     // usuario: reabre a propósito la meta-progresión «solo horizontal» — ver historial.md) ---
     charLevel: 1, xp: 0, statPoints: 0,
+    heroName: '',               // el nombre que el jugador escribe al despertar en la introducción ('' = «Héroe»)
+    introSeen: false,           // ya vio la introducción: al entrar, directo a la aventura
+    advGear: ['espada-de-hierro'],   // el inventario de la aventura (ids de src/data/gear.js): permanente
+    advWeapon: 'espada-de-hierro',   // el arma equipada en la aventura
     primary: { str: 0, dex: 0, int: 0, vit: 0 }   // puntos YA INVERTIDOS, por encima de la base (5/5/5/5)
 });
 

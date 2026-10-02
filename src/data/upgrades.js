@@ -40,7 +40,7 @@ export const UPGRADES = [
     },
     {
         id: 'herencia', icon: '🗡️', name: 'Herencia',
-        desc: 'Empiezas con un arma poco común en vez de la espada básica.',
+        desc: 'Empiezas con un arma poco común en vez de la espada de hierro.',
         effect: 'startWeapon', perLevel: 1,
         cost: 200, max: 1
     },

@@ -14,10 +14,12 @@
 //   `sprite`   (enemigos) con qué id se busca su imagen en src/data/art.js (enemigo_<sprite>); si no, por su nombre
 //   `requires` marcas de la historia que hacen falta para que el punto aparezca (todas)
 //   `talk`     lo que dice un NPC según la historia: gana la primera entrada cuyas marcas `when` se cumplen
-//              (`set` pone una marca al terminar de hablar; `reward` da oro y pociones una sola vez)
+//              (`set` pone una marca al terminar de hablar; `reward` da oro y pociones una sola vez;
+//              `reward.item` da un objeto del equipo de la aventura, src/data/gear.js;
+//              `whenCount: { creature, n }` exige además haber vencido n criaturas de ese tipo para una misión)
 // Marcas: `defeated:<id>` al vencer a ese enemigo (permanente) y las que pongan los diálogos.
 // =============================================
-import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.7.1';
+import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.8.0';
 
 const GOBLINS_DEL_BOSQUE = ['defeated:goblin-1', 'defeated:goblin-2', 'defeated:goblin-3'];
 
@@ -53,7 +55,13 @@ export const ZAFIAS = {
                     { dialogue: 'pozo', set: 'visto:pozo', reward: { gold: 10 } }
                 ] },
                 { id: 'tienda', kind: 'shop', name: 'Tienda y forja', x: 236, y: 525 },
-                { id: 'herrero', kind: 'npc', name: 'Bram, el herrero', x: 268, y: 556, dialogue: 'herrero' },
+                { id: 'herrero', kind: 'npc', name: 'Bram, el herrero', x: 268, y: 556, talk: [
+                    { when: ['dientes:cumplida'], dialogue: 'herrero-despues' },
+                    { when: ['dientes:aceptada'], whenCount: { creature: 'lobo-de-zafias', n: 5 }, dialogue: 'herrero-dientes-fin',
+                        set: 'dientes:cumplida', reward: { gold: 30, item: 'espada-de-zafias' } },
+                    { when: ['dientes:aceptada'], dialogue: 'herrero-dientes-espera' },
+                    { dialogue: 'herrero', set: 'dientes:aceptada' }
+                ] },
                 { id: 'mercado', kind: 'poi', name: 'Puestos del mercado', x: 268, y: 612, dialogue: 'mercado' },
                 { id: 'cueva', kind: 'cave', name: 'Cueva del sur: bajar al descenso', x: 258, y: 806 },
                 // Dos salidas al bosque: el camino real por el norte y el sendero del sur, junto a los escalones
@@ -207,6 +215,8 @@ for (const [sid, sc] of Object.entries(ZAFIAS.scenes)) {
 export const ZAFIAS_DIALOGUES = {
     'posadera-mision': [
         { who: 'Maela, la posadera', text: 'Otro que llega por el camino del norte… Tienes cara de no haber dormido en días.' },
+        { who: '{heroe}', text: 'Desperté en unas ruinas, en el bosque. No recuerdo nada… salvo mi nombre: {heroe}.' },
+        { who: 'Maela, la posadera', text: 'Pues, {heroe}, aquí nos vendría bien alguien con una espada. Aunque sea de hierro.' },
         { who: 'Maela, la posadera', text: 'Desde que los goblins bajaron al bosque, nadie cruza hasta el castillo. Ni los mercaderes.' },
         { who: 'Maela, la posadera', text: 'Tres de ellos vigilan los cruces. Si los echas, el sendero del este te llevará hasta su campamento.' },
         { who: 'Maela, la posadera', text: 'Su jefe se hace llamar Grask. Acaba con él y esta posada te deberá algo más que una cama.' }
@@ -229,7 +239,19 @@ export const ZAFIAS_DIALOGUES = {
     ],
     herrero: [
         { who: 'Bram, el herrero', text: '¿Esa espada? Ha visto días mejores. Y peores, a juzgar por las mellas.' },
-        { who: 'Bram, el herrero', text: 'Tráeme hierro de las cuevas y te forjo algo que merezca la pena.' }
+        { who: 'Bram, el herrero', text: 'Te propongo algo: para templar bien el acero uso dientes de lobo molidos. Y últimamente no me llegan.' },
+        { who: 'Bram, el herrero', text: 'Tráeme cinco. Los lobos rondan el sendero del oeste y las ruinas. Te pagaré bien.' }
+    ],
+    'herrero-dientes-espera': [
+        { who: 'Bram, el herrero', text: '¿Los dientes? Cinco, ni uno menos. Los lobos vuelven a los caminos cada noche, no te faltarán.' }
+    ],
+    'herrero-dientes-fin': [
+        { who: 'Bram, el herrero', text: '¡Cinco dientes, y bien afilados! Con esto el acero cantará.' },
+        { who: 'Bram, el herrero', text: 'Y esto también es para ti: la primera hoja que sale de este temple. La Espada de Zafias.' },
+        { who: 'Bram, el herrero', text: 'Más larga y con más filo que ese hierro mellado. Cuídala. (+30 🪙, ⚔️ Espada de Zafias)' }
+    ],
+    'herrero-despues': [
+        { who: 'Bram, el herrero', text: 'El acero sale mejor que nunca. Si alguna vez encuentras hierro de las cuevas, ya sabes dónde estoy.' }
     ],
     pozo: [
         { who: 'El pozo de la plaza', text: 'El agua está tan clara que se ven monedas en el fondo. Alguien pidió muchos deseos.' },
