@@ -19,9 +19,9 @@ export const AFFIX_NUMBERS = [
     { id: 'hp',            name: 'Vigor',          icon: '❤️', kind: 'number', stat: 'maxHp', v: 6,
       desc: '+{v} HP máx' },
     { id: 'skill_dmg',     name: 'Pirotécnica',    icon: '🔥', kind: 'number', stat: 'skillMods.fire_strike.damage', v: 3,
-      desc: 'Golpe de Fuego hace +{v} de daño' },
-    { id: 'skill_cd',      name: 'Recarga',        icon: '⏱️', kind: 'number', stat: 'skillMods.fire_strike.cooldown', v: -1,
-      desc: 'Golpe de Fuego se enfría 1 ronda antes' },
+      desc: 'La Bola de fuego hace +{v} de daño' },
+    { id: 'skill_cd',      name: 'Ahorro',         icon: '💧', kind: 'number', stat: 'skillMods.fire_strike.cooldown', v: -1,
+      desc: 'La Bola de fuego cuesta 1 de maná menos' },
     { id: 'guard',         name: 'Templado',       icon: '🛡️', kind: 'number', stat: 'guard', v: 1, slots: ['secondary'],
       desc: 'Defender reduce 1 punto más' },
     { id: 'campfire_heal', name: 'Calidez',        icon: '🔥', kind: 'number', stat: 'campfireHealPct', v: 0.05, slots: ['armor', 'accessory'],
@@ -53,7 +53,7 @@ export const AFFIX_RULES = [
     { id: 'reader_shield',       name: 'Mente en blanco',  icon: '👁️', kind: 'rule', hook: 'global', v: 1,
       desc: 'El Lector no castiga que repitas tu acción' },
     { id: 'first_turn_focus',    name: 'Chispa inicial',   icon: '🔮', kind: 'rule', hook: 'onCombatStart', v: 4,
-      desc: 'En tu primer turno, Golpe de Fuego hace +{v}' }
+      desc: 'En tu primer turno, la Bola de fuego hace +{v}' }
 ];
 
 // --- Rasgos únicos de legendaria (6): solo en legendarias, 1 por objeto ---
@@ -65,7 +65,7 @@ export const AFFIX_UNIQUES = [
     { id: 'frenzy',           name: 'Frenesí',       icon: '🤯', rarity: 'legendaria', kind: 'rule', hook: 'onAttack', v: 1,
       desc: 'Cada ataque seguido hace +{v} más que el anterior (se reinicia si haces otra cosa)' },
     { id: 'pyre',             name: 'Pira',          icon: '🔥', rarity: 'legendaria', kind: 'rule', hook: 'onSkill', v: 3,
-      desc: 'Golpe de Fuego hace +2 y quema {v} por ronda durante 3 rondas' },
+      desc: 'La Bola de fuego hace +2 y quema {v} por ronda durante 3 rondas' },
     { id: 'determination',    name: 'Determinación', icon: '💞', rarity: 'legendaria', kind: 'rule', hook: 'onDamaged', v: 8,
       desc: 'Al bajar a la mitad de vida en un combate, curas {v} (una vez)' },
     { id: 'treasure_heal',    name: 'Corazón de ladrón', icon: '🧰', rarity: 'legendaria', kind: 'rule', hook: 'global', v: 10,

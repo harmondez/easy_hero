@@ -1,9 +1,11 @@
-import { RPG_BALANCE } from './data/balance.js?v=1.8.0';
-import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.8.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.8.0';
-import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.8.0';
-import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.8.0';
-import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.8.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.0';
+import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.9.0';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.9.0';
+import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.9.0';
+import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.9.0';
+import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.9.0';
+import { ELIXIRS } from './data/effects.js?v=1.9.0';
+import { applyEffect, effectStatMul, tickEffects, consumeStun, effectAppliedEvent } from './effects.js?v=1.9.0';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)
@@ -16,8 +18,20 @@ import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.8.0';
 // se especializa en guerrero, pícaro o elementalista).
 export const RPG_HERO_BASE = {
     name: 'Héroe', icon: '🗡️', color: '#fbbf24',
-    atq: 0, hp: 25   // el ATK inicial (1) lo pone la espada básica
+    atq: 0, hp: 25,  // el ATK inicial (1) lo pone la espada básica
+    ph: 5            // PH, Poder de Habilidad: lo que pegan las habilidades (la Bola de fuego hace su PH en daño)
 };
+
+/** El PH del héroe ahora mismo, con sus mejoras («Más PH») aplicadas. */
+export function rpgHeroPh(hero) {
+    const base = hero && hero.ph != null ? hero.ph : RPG_HERO_BASE.ph;
+    return Math.max(1, Math.round(base * effectStatMul(hero, 'ph')));
+}
+
+/** El ATK con sus mejoras («Más ATK») aplicadas: lo que de verdad pega un golpe básico. */
+export function rpgAtk(unit) {
+    return Math.max(1, Math.round(unit.atq * effectStatMul(unit, 'atq')));
+}
 
 // vows: renuncias permanentes (noFlee, noSkills) · skillMods: mejoras de habilidades · affinity: hacia dónde se inclina el build
 // equipment: { weapon, secondary, armor, accessory } · guard: cuánto más reduce Defender (lo suman los escudos)
@@ -25,6 +39,8 @@ export const RPG_HERO_BASE = {
 export function createRpgHero() {
     const hero = {
         ...RPG_HERO_BASE, maxHp: RPG_HERO_BASE.hp, level: 1, guard: 0,
+        // Maná: la mitad de la vida con la que empieza (25 → 12). Lo gastan las habilidades
+        maxMp: Math.floor(RPG_HERO_BASE.hp * RPG_BALANCE.manaFromHp), mp: Math.floor(RPG_HERO_BASE.hp * RPG_BALANCE.manaFromHp),
         vows: {}, skillMods: {}, affinity: { guerrero: 0, picaro: 0, elementalista: 0 },
         equipment: { weapon: null, secondary: null, armor: null, accessory: null },
         inventory: [],   // hasta 10 objetos guardados sin equipar; se reinicia cada ruta
@@ -302,15 +318,23 @@ export function rpgAvailableNodes(map, currentId, skip = false) {
 export const RPG_COMBAT_TYPES = ['monster', 'subboss', 'boss'];
 
 export const RPG_SKILLS = {
+    // ph: cuánto de tu PH hace en daño (1 = todo) · effect: el efecto que te pone (id, power, turns)
+    // img: su icono en la barra de habilidades (ART.icons). El orden de aquí es el de sus ranuras
     fire_strike: {
-        id: 'fire_strike', name: 'Golpe de Fuego', icon: '🔥', element: 'Fuego',
-        damage: 5, cooldown: 3,
-        desc: 'Inflige 5 de daño de fuego.',
+        id: 'fire_strike', name: 'Bola de fuego', short: 'Fuego', icon: '🔥', img: 'fuego', element: 'Fuego',
+        ph: 1, manaCost: 5,   // sin recarga: se lanza siempre que quede maná
+        desc: 'Inflige tu PH en daño de fuego.',
         describe: s => `Inflige ${s.damage} de daño de fuego.${s.burn ? ` Quema ${s.burn.dmg} por ronda durante ${s.burn.turns} rondas.` : ''}`
+    },
+    war_cry: {
+        id: 'war_cry', name: 'Grito de guerra', short: 'Grito', icon: '📯', img: 'habilidad-grito',
+        manaCost: 4, effect: { id: 'mas-ataque', power: 0.5, turns: 3 },
+        desc: '+50 % de ATK durante 3 rondas.',
+        describe: s => `+${Math.round(s.effect.power * 100)} % de ATK durante ${s.effect.turns} rondas.`
     }
 };
 
-// Quemadura del Golpe de Fuego: la dan los rasgos «skill_burn» (rondas que suman) y la legendaria «pyre»
+// Quemadura de la Bola de fuego: la dan los rasgos «skill_burn» (rondas que suman) y la legendaria «pyre»
 function _skillBurn(hero, skillId) {
     if (skillId !== 'fire_strike') return null;
     const turns = ruleSum(hero, 'skill_burn');
@@ -329,7 +353,9 @@ export function rpgSkillInfo(hero, skillId, combat = null) {
         if (hasRule(hero, 'pyre')) bonus += 2;
         if (combat && combat.turn === 1) bonus += ruleSum(hero, 'first_turn_focus');
     }
-    const info = { ...skill, damage: skill.damage + bonus, cooldown: Math.max(1, skill.cooldown + (mods.cooldown || 0)), burn: _skillBurn(hero, skillId) };
+    // Lo que antes reducía la recarga («Recarga», el Lector) ahora abarata el maná: −1 de recarga = −1 de maná
+    const damage = skill.ph ? Math.max(1, Math.round(rpgHeroPh(hero) * skill.ph)) + bonus : 0;
+    const info = { ...skill, damage, manaCost: Math.max(1, skill.manaCost + (mods.cooldown || 0)), burn: _skillBurn(hero, skillId) };
     info.desc = skill.describe ? skill.describe(info) : skill.desc;
     return info;
 }
@@ -472,7 +498,7 @@ function _rpgPickIntent(monster, rng) {
     }
     if (move.k === 'attack') {
         const m = move.m == null ? 1 : move.m;
-        return { k: 'attack', m, dmg: Math.max(1, Math.round(monster.atq * m * _rpgMonsterRage(monster))) };
+        return { k: 'attack', m, dmg: Math.max(1, Math.round(monster.atq * effectStatMul(monster, 'atq') * m * _rpgMonsterRage(monster))) };
     }
     if (move.k === 'heal') return { k: 'heal', p: move.p == null ? 0.1 : move.p };
     return { k: move.k };
@@ -496,17 +522,24 @@ export function createRpgCombat(hero, monster, rng = Math.random) {
         cooldowns: Object.fromEntries(Object.keys(RPG_SKILLS).map(id => [id, 0])),
         lastAction: null, // para enemigos con IA que leen tus movimientos
         state: _newCombatState(),
-        heroStatus: { burn: null, poison: 0 }, // lo que te hacen las variantes «de la Plaga» y «de las Brasas»
+        elixirs: {},      // los elixires que llevas encima ({ fuerza: 1, … }), igual que las pociones
         potions: 0,       // las que llevas encima; quien crea el combate las pone y recoge las que sobren
+        manaPotions: 0,   // igual, las de maná
         intro: [],        // lo que ocurre al empezar (el equipo puede curarte): la interfaz lo cuenta en el diario
         over: false,
         result: null // 'victory' | 'defeat' | 'fled'
     };
     monster.step = monster.step || 0;
-    monster.status = { burn: null, poison: 0 };
+    // Efectos de estado (src/effects.js): cada combate empieza limpio
+    hero.effects = {};
+    monster.effects = {};
     monster.intent = _rpgPickIntent(monster, rng);
     const heal = _healHero(hero, ruleSum(hero, 'combat_start_heal'));
     if (heal) combat.intro.push({ actor: 'hero', target: 'hero', kind: 'heal', amount: heal, text: `✨ ${hero.name} recupera ${heal} de vida al empezar.` });
+    // Equipo de la aventura con efecto al empezar (p. ej. Regeneración unas rondas)
+    for (const f of (hero.gearEffects && hero.gearEffects.onStart) || []) {
+        if (applyEffect(hero, f.id, f.power, f.turns)) combat.intro.push(effectAppliedEvent(hero, 'hero', 'hero', f.id));
+    }
     return combat;
 }
 
@@ -538,7 +571,8 @@ export function rpgTelegraph(combat) {
 }
 
 export function rpgSkillReady(combat, skillId) {
-    return !!RPG_SKILLS[skillId] && !!combat && combat.cooldowns[skillId] === 0 && !combat.hero.vows?.noSkills;
+    if (!RPG_SKILLS[skillId] || !combat || combat.hero.vows?.noSkills) return false;
+    return (combat.hero.mp || 0) >= rpgSkillInfo(combat.hero, skillId, combat).manaCost;
 }
 
 export function rpgCanFlee(combat) {
@@ -546,7 +580,7 @@ export function rpgCanFlee(combat) {
 }
 
 function _rpgHit(attacker) {
-    return Math.max(1, attacker.atq);
+    return rpgAtk(attacker);
 }
 
 // Si el monstruo se protege esta ronda, el daño del héroe se reduce a la mitad (redondeando hacia arriba)
@@ -644,17 +678,36 @@ function _rpgWeaponIcon(hero) {
 }
 
 function _applyBurn(monster, dmg, turns) {
-    const cur = monster.status.burn;
-    monster.status.burn = { dmg: Math.max(dmg, cur ? cur.dmg : 0), turns: Math.max(turns, cur ? cur.turns : 0) };
+    applyEffect(monster, 'quemadura', dmg, turns);
 }
 
-// Efectos de «al golpear»: veneno, quemadura y robo de vida
+// Una lista de efectos «al golpear» ({ id, power, turns, chance? }): con `chance`, tira el dado (sin ella, siempre)
+function _rpgApplyOnHit(combat, target, list) {
+    for (const f of list || []) {
+        if (f.chance != null && f.chance < 1 && !(combat.rng() < f.chance)) continue;
+        applyEffect(target, f.id, f.power == null ? 1 : f.power, f.turns == null ? null : f.turns);
+    }
+}
+
+// Qué efectos ha recibido (o reforzado) alguien desde la foto `before`: un suceso por cada uno
+const _fxSnap = unit => JSON.stringify(unit.effects || {});
+function _rpgEffectsGained(unit, who, by, before, events) {
+    const old = JSON.parse(before);
+    for (const [id, e] of Object.entries(unit.effects || {})) {
+        const o = old[id];
+        const longer = o && (e.turns == null ? o.turns != null : o.turns != null && e.turns > o.turns);
+        if (!o || e.power > o.power || longer) events.push(effectAppliedEvent(unit, who, by, id));
+    }
+}
+
+// Efectos de «al golpear»: veneno, quemadura, los del equipo de la aventura y robo de vida
 function _rpgOnHit(combat, dmg, events) {
     const { hero, monster } = combat;
     const poison = ruleSum(hero, 'poison_on_hit');
-    if (poison) monster.status.poison += poison;
+    if (poison) applyEffect(monster, 'veneno', poison, null);
     const burn = ruleSum(hero, 'burn_on_hit');
     if (burn) _applyBurn(monster, burn, 2);
+    _rpgApplyOnHit(combat, monster, hero.gearEffects && hero.gearEffects.onHit);
     const steal = ruleSum(hero, 'lifesteal');
     if (steal) {
         const healed = _healHero(hero, Math.max(1, Math.round(dmg * steal)));
@@ -662,8 +715,10 @@ function _rpgOnHit(combat, dmg, events) {
     }
 }
 
-// Efectos de las variantes cuando el MONSTRUO acierta: robo de vida y estados sobre el héroe.
-function _rpgMonsterOnHit(combat, dmg, events) {
+// Efectos cuando el MONSTRUO acierta: robo de vida y estados sobre el héroe (variantes y criaturas).
+//   poisonOnHit: n · burnOnHit: { dmg, turns } · onHit: [{ id, power, turns, chance }] · stunOnHeavy: m (aturde
+//   con los golpes de ×m o más)
+function _rpgMonsterOnHit(combat, dmg, events, intent) {
     const { hero, monster } = combat;
     const r = monster.rules;
     if (!r) return;
@@ -675,65 +730,10 @@ function _rpgMonsterOnHit(combat, dmg, events) {
                 text: `🩸 ${monster.name} se alimenta y recupera ${healed} de vida.` });
         }
     }
-    if (r.poisonOnHit) {
-        combat.heroStatus.poison += r.poisonOnHit;
-        events.push({ actor: 'monster', target: 'hero', kind: 'status', amount: 0,
-            text: `☠️ ${hero.name} queda envenenado (${combat.heroStatus.poison} por ronda).` });
-    }
-    if (r.burnOnHit) {
-        const cur = combat.heroStatus.burn;
-        combat.heroStatus.burn = {
-            dmg: Math.max(r.burnOnHit.dmg, cur ? cur.dmg : 0),
-            turns: Math.max(r.burnOnHit.turns, cur ? cur.turns : 0)
-        };
-        events.push({ actor: 'monster', target: 'hero', kind: 'status', amount: 0,
-            text: `🔥 ${hero.name} arde (${combat.heroStatus.burn.dmg} por ronda, ${combat.heroStatus.burn.turns} rondas).` });
-    }
-}
-
-// Veneno y quemadura SOBRE EL HÉROE (variantes «de la Plaga» y «de las Brasas»), al cerrar la ronda
-function _rpgTickHeroStatuses(combat, events) {
-    const { hero } = combat;
-    const s = combat.heroStatus;
-    if (!s) return;
-    if (s.burn) {
-        const dmg = Math.min(hero.hp, s.burn.dmg);
-        hero.hp -= dmg;
-        s.burn.turns--;
-        if (s.burn.turns <= 0) s.burn = null;
-        if (dmg > 0) events.push({ actor: 'monster', target: 'hero', kind: 'burn', amount: dmg, text: `🔥 ${hero.name} sufre ${dmg} de quemadura.` });
-    }
-    if (s.poison > 0 && hero.hp > 0) {
-        const dmg = Math.min(hero.hp, s.poison);
-        hero.hp -= dmg;
-        events.push({ actor: 'monster', target: 'hero', kind: 'poison', amount: dmg, text: `☠️ ${hero.name} sufre ${dmg} de veneno.` });
-    }
-}
-
-function _rpgStatusSummary(monster, events, poisonBefore, burnBefore) {
-    const s = monster.status;
-    if (s.poison > poisonBefore) events.push({ actor: 'hero', target: 'monster', kind: 'status', amount: 0, text: `☠️ ${monster.name} está envenenado (${s.poison} por ronda).` });
-    if (s.burn && (!burnBefore || s.burn.turns > burnBefore.turns || s.burn.dmg > burnBefore.dmg)) {
-        events.push({ actor: 'hero', target: 'monster', kind: 'status', amount: 0, text: `🔥 ${monster.name} arde (${s.burn.dmg} por ronda, ${s.burn.turns} rondas).` });
-    }
-}
-
-// Al final de la acción del héroe, veneno y quemadura hacen su daño (el enemigo no responde si cae)
-function _rpgTickStatuses(combat, events) {
-    const m = combat.monster;
-    const s = m.status;
-    if (s.burn) {
-        const dmg = Math.min(m.hp, s.burn.dmg);
-        m.hp -= dmg;
-        s.burn.turns--;
-        if (s.burn.turns <= 0) s.burn = null;
-        if (dmg > 0) events.push({ actor: 'hero', target: 'monster', kind: 'burn', amount: dmg, text: `🔥 ${m.name} sufre ${dmg} de quemadura.` });
-    }
-    if (s.poison > 0 && m.hp > 0) {
-        const dmg = Math.min(m.hp, s.poison);
-        m.hp -= dmg;
-        events.push({ actor: 'hero', target: 'monster', kind: 'poison', amount: dmg, text: `☠️ ${m.name} sufre ${dmg} de veneno.` });
-    }
+    if (r.poisonOnHit) applyEffect(hero, 'veneno', r.poisonOnHit, null);
+    if (r.burnOnHit) applyEffect(hero, 'quemadura', r.burnOnHit.dmg, r.burnOnHit.turns);
+    _rpgApplyOnHit(combat, hero, r.onHit);
+    if (r.stunOnHeavy && intent && intent.m >= r.stunOnHeavy) applyEffect(hero, 'aturdido', 1, 1);
 }
 
 function _rpgVictory(combat, events) {
@@ -789,10 +789,15 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
     let usedSkill = null;
     const guarded = monster.intent && monster.intent.k === 'guard';
     const guardNote = guarded ? ' (se protege: la mitad)' : '';
-    const poisonBefore = monster.status.poison;
-    const burnBefore = monster.status.burn && { ...monster.status.burn };
+    const monsterFx = _fxSnap(monster);
+    const heroFx = _fxSnap(hero);
+    // Aturdido: pierdes este turno, elijas lo que elijas (y se te pasa)
+    const stunned = consumeStun(hero);
 
-    if (action === 'attack') {
+    if (stunned) {
+        combat.state.frenzy = 0;
+        events.push({ actor: 'hero', target: 'hero', kind: 'stunned', amount: 0, text: `💫 ${hero.name} está aturdido y pierde el turno.` });
+    } else if (action === 'attack') {
         const icon = _rpgWeaponIcon(hero);
         const mRules = monster.rules || {};
         const hits = _rpgAttackHits(combat, true).map(dmg => _rpgRollCrit(combat, dmg));
@@ -815,23 +820,40 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
                     text: `🌵 Las púas de ${monster.name} te hieren: ${back} de daño.` });
             }
         });
-        _rpgStatusSummary(monster, events, poisonBefore, burnBefore);
     } else if (action === 'skill') {
         const skill = RPG_SKILLS[skillId];
         if (!skill) return { ok: false, error: 'Habilidad desconocida.', events: [], over: false, result: null };
         if (hero.vows?.noSkills) return { ok: false, error: 'Tu voto de silencio te impide usar habilidades.', events: [], over: false, result: null };
-        if (!rpgSkillReady(combat, skillId)) {
-            return { ok: false, error: `${skill.name} se está enfriando (${combat.cooldowns[skillId]}).`, events: [], over: false, result: null };
-        }
         const info = rpgSkillInfo(hero, skillId, combat);
-        const { dmg, crit } = _rpgRollCrit(combat, _rpgGuarded(combat, _rpgMonsterResist(combat, info.damage, true)));
-        monster.hp = Math.max(0, monster.hp - dmg);
-        combat.cooldowns[skillId] = info.cooldown;
+        if (!rpgSkillReady(combat, skillId)) {
+            return { ok: false, error: `No te queda maná para ${skill.name} (cuesta ${info.manaCost}).`, events: [], over: false, result: null };
+        }
+        hero.mp -= info.manaCost;
         usedSkill = skillId;
         combat.state.frenzy = 0;
-        events.push({ actor: 'hero', target: 'monster', kind: 'skill', amount: dmg, text: `${skill.icon} ${hero.name} usa ${skill.name}: ${dmg} de daño de fuego${crit ? ' 💥 ¡CRÍTICO!' : ''}${guardNote}.` });
+        if (info.ph) {
+            const { dmg, crit } = _rpgRollCrit(combat, _rpgGuarded(combat, _rpgMonsterResist(combat, info.damage, true)));
+            monster.hp = Math.max(0, monster.hp - dmg);
+            events.push({ actor: 'hero', target: 'monster', kind: 'skill', amount: dmg, text: `${skill.icon} ${hero.name} usa ${skill.name}: ${dmg} de daño de fuego${crit ? ' 💥 ¡CRÍTICO!' : ''}${guardNote}.` });
+        } else {
+            events.push({ actor: 'hero', target: 'hero', kind: 'skill-self', amount: 0, text: `${skill.icon} ${hero.name} usa ${skill.name}.` });
+        }
+        if (info.effect) applyEffect(hero, info.effect.id, info.effect.power, info.effect.turns, true);
         if (info.burn) _applyBurn(monster, info.burn.dmg, info.burn.turns);
-        _rpgStatusSummary(monster, events, poisonBefore, burnBefore);
+    } else if (action === 'elixir') {
+        const id = skillId;
+        const ex = ELIXIRS[id];
+        if (!ex) return { ok: false, error: 'Elixir desconocido.', events: [], over: false, result: null };
+        if (!((combat.elixirs || {})[id] > 0)) return { ok: false, error: `No te quedan: ${ex.name}.`, events: [], over: false, result: null };
+        combat.elixirs[id]--;
+        combat.state.frenzy = 0;
+        if (ex.target === 'enemy') {   // se lanza: el efecto es para el enemigo
+            events.push({ actor: 'hero', target: 'monster', kind: 'elixir', amount: 0, text: `🧪 ${hero.name} lanza un ${ex.name.toLowerCase()} a ${monster.name}.` });
+            applyEffect(monster, ex.effect.id, ex.effect.power, ex.effect.turns);
+        } else {
+            events.push({ actor: 'hero', target: 'hero', kind: 'elixir', amount: 0, text: `🧪 ${hero.name} bebe: ${ex.name}.` });
+            applyEffect(hero, ex.effect.id, ex.effect.power, ex.effect.turns, true);
+        }
     } else if (action === 'defend') {
         combat.defending = true;
         combat.state.frenzy = 0;
@@ -855,6 +877,14 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
         events.push({ actor: 'hero', target: 'hero', kind: combat.result === 'fled' ? 'flee' : 'defeat', amount: 0,
             text: combat.result === 'fled' ? `🏃 ${hero.name} huye del combate.` : `💀 ${hero.name} cae al huir.` });
         return { ok: true, events, over: true, result: combat.result };
+    } else if (action === 'mana_potion') {
+        if (!(combat.manaPotions > 0)) return { ok: false, error: 'No te quedan pociones de maná.', events: [], over: false, result: null };
+        if ((hero.mp || 0) >= (hero.maxMp || 0)) return { ok: false, error: 'Ya tienes el maná al máximo.', events: [], over: false, result: null };
+        combat.manaPotions--;
+        combat.state.frenzy = 0;
+        const before = hero.mp || 0;
+        hero.mp = Math.min(hero.maxMp, before + Math.max(1, Math.round(hero.maxMp * RPG_BALANCE.manaPotion.restore)));
+        events.push({ actor: 'hero', target: 'hero', kind: 'mana', amount: hero.mp - before, text: `💧 ${hero.name} bebe una poción de maná: recupera ${hero.mp - before} de maná.` });
     } else if (action === 'potion') {
         if (!(combat.potions > 0)) return { ok: false, error: 'No te quedan pociones.', events: [], over: false, result: null };
         if (hero.hp >= hero.maxHp) return { ok: false, error: 'Ya tienes la vida al máximo.', events: [], over: false, result: null };
@@ -866,11 +896,15 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
         return { ok: false, error: 'Acción desconocida.', events: [], over: false, result: null };
     }
 
+    // Los efectos que tu acción ha puesto (al enemigo o a ti), con su icono sobre cada uno
+    _rpgEffectsGained(monster, 'monster', 'hero', monsterFx, events);
+    _rpgEffectsGained(hero, 'hero', 'hero', heroFx, events);
     if (monster.hp <= 0) return _rpgVictory(combat, events);
 
-    // Veneno y quemadura: si el enemigo cae, no llega a responder
-    _rpgTickStatuses(combat, events);
+    // Cierra el turno del enemigo: veneno, quemadura, sangrado… Si cae, no llega a responder
+    tickEffects(monster, 'monster', events);
     if (monster.hp <= 0) return _rpgVictory(combat, events);
+    const heroFxBefore = _fxSnap(hero);
 
     // Enemigo que lee tus movimientos: si repites la acción, su golpe hace el doble
     const repeated = monster.ai === 'reader' && combat.lastAction === action && !hasRule(hero, 'reader_shield');
@@ -878,7 +912,9 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
 
     // Respuesta del monstruo: ejecuta EXACTAMENTE la intención que se veía
     const intent = monster.intent || { k: 'attack', m: 1, dmg: _rpgHit(monster) };
-    if (intent.k === 'attack') {
+    if (consumeStun(monster)) {
+        events.push({ actor: 'monster', target: 'monster', kind: 'stunned', amount: 0, text: `💫 ${monster.name} está aturdido y pierde el turno.` });
+    } else if (intent.k === 'attack') {
         let dmg = intent.dmg;
         if (repeated) {
             dmg *= 2;
@@ -905,7 +941,7 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
         events.push({ actor: 'monster', target: 'hero', kind: 'attack', amount: dmg,
             text: dodged ? `💨 ${hero.name} esquiva el golpe de ${monster.name}.`
                 : `${monster.icon} ${monster.name} golpea a ${hero.name}: ${dmg} de daño${halved ? ' (reducido al defender)' : ''}${pierced ? ' (¡atraviesa tu defensa!)' : ''}.` });
-        if (!dodged && dmg > 0) _rpgMonsterOnHit(combat, dmg, events);
+        if (!dodged && dmg > 0) _rpgMonsterOnHit(combat, dmg, events, intent);
         // Espinas: mientras defiendes, quien te golpea recibe daño
         const thorns = (!dodged && halved) ? ruleSum(hero, 'thorns') : 0;
         if (thorns && hero.hp > 0) {
@@ -925,7 +961,9 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
         events.push({ actor: 'monster', target: 'monster', kind: 'rest', amount: 0, text: `💤 ${monster.name} descansa.` });
     }
     combat.defending = false;
-    _rpgTickHeroStatuses(combat, events);
+    _rpgEffectsGained(hero, 'hero', 'monster', heroFxBefore, events);
+    // Cierra tu turno: tus efectos hacen lo suyo y gastan una ronda
+    tickEffects(hero, 'hero', events);
 
     if (hero.hp <= 0) {
         combat.over = true;
@@ -935,10 +973,6 @@ export function rpgCombatAction(combat, action, skillId = 'fire_strike') {
     }
     if (monster.hp <= 0) return _rpgVictory(combat, events);   // las espinas pueden rematarlo
 
-    // Fin de ronda: enfriar habilidades (la usada esta ronda empieza a enfriarse en la siguiente)
-    for (const id of Object.keys(combat.cooldowns)) {
-        if (id !== usedSkill && combat.cooldowns[id] > 0) combat.cooldowns[id]--;
-    }
     combat.turn++;
     monster.intent = _rpgPickIntent(monster, combat.rng || Math.random); // la siguiente intención, visible desde ya
     return { ok: true, events, over: false, result: null };

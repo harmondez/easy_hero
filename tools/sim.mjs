@@ -20,8 +20,8 @@ const clone = o => JSON.parse(JSON.stringify(o));
 
 // ---------- Combate ----------
 function cloneCombat(c) {
-    const { hero, monster, turn, defending, cooldowns, lastAction, over, result, state, heroStatus } = c;
-    return { ...clone({ hero, monster, turn, defending, cooldowns, lastAction, over, result, state, heroStatus }), intro: [], rng: STUB_RNG };
+    const { hero, monster, turn, defending, cooldowns, lastAction, over, result, state } = c;
+    return { ...clone({ hero, monster, turn, defending, cooldowns, lastAction, over, result, state }), intro: [], rng: STUB_RNG };
 }
 
 /** Cambia la acción si repetirla activaría la lectura del Lector. */
@@ -80,6 +80,7 @@ const POLICIES = {
 
 /** Juega un combate entero con la política dada. Devuelve 'victory' | 'defeat' | 'fled' | null. */
 export function fightWith(policyName, hero, monster, rng) {
+    hero.mp = hero.maxMp;   // en el descenso cada combate empieza con el maná lleno (como main.js)
     const c = createRpgCombat(hero, monster, rng);
     const policy = POLICIES[policyName];
     let guard = 400;

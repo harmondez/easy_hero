@@ -48,6 +48,15 @@ globalThis.__RPG_BALANCE__ = globalThis.__RPG_BALANCE__ || {
     // Pociones: curan una parte de la vida máxima y gastan el turno (el enemigo responde). Son tuyas entre
     // partidas, con un tope, y se compran con oro a precio fijo en La Forja (en la aldea, cuando exista).
     potion: { heal: 0.4, max: 3, price: 40 },
+    // Maná: el héroe empieza con la mitad de su vida inicial (25 → 12). La poción de maná menor devuelve la mitad
+    manaFromHp: 0.5,
+    manaPotion: { restore: 0.5, max: 3, price: 25 },
+
+    // Ranuras de la barra de habilidades del combate (las que no tienen habilidad salen cerradas)
+    skillSlots: 6,
+
+    // 🧪 Modo pruebas: true = la tienda lo da todo gratis (para probar armas y efectos en local). Publicado: false
+    freeShop: false,
 
     // Variantes de monstruo (data/variants.js): un adjetivo y/o un linaje sobre el nombre base.
     // La probabilidad crece con el tramo: `base + porTramo × tramo`, con tope.

@@ -1,7 +1,8 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.8.0';
-import { ART } from './data/art.js?v=1.8.0';
-import { monsterArt } from './art.js?v=1.8.0';
-import { creatureFor } from './data/creatures.js?v=1.8.0';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.9.0';
+import { ART } from './data/art.js?v=1.9.0';
+import { monsterArt } from './art.js?v=1.9.0';
+import { creatureFor } from './data/creatures.js?v=1.9.0';
+import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.9.0';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo
@@ -18,6 +19,9 @@ const ZOOM_MIN = 1.5;           // por debajo, el héroe se ve diminuto
 const ZOOM_MAX = 2.4;           // el mapa se pinta a 1434 px lógicos; la imagen va a ×3 para que el zoom se vea nítido
 const FACE_GAP = 20;            // ante un enemigo, el héroe se para a esta distancia (no encima de él)
 const STOP_ICONS = { npc: '💬', enemy: '⚔️', exit: '🚪', inn: '🛏️', shop: '🛒', cave: '🕳️', poi: '🔍' };
+// Las paradas que ya tienen arte propio (img/ui): el resto, su emoticono hasta que llegue el suyo
+const STOP_IMAGES = { enemy: 'img/ui/ranura-arma.webp', shop: 'img/ui/bolsa-oro.webp', npc: 'img/ui/parada-hablar.webp',
+    inn: 'img/ui/parada-posada.webp', poi: 'img/ui/parada-mirar.webp' };
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const EXIT_EDGE = { x: 110, top: 70, bottom: 70 };   // margen (px de pantalla) de las salidas pegadas al borde
 
@@ -26,7 +30,7 @@ const st = {
     scene: null, sceneId: null, at: null, hero: { x: 0, y: 0, facing: 1 }, path: null, onArrive: null,
     cam: { x: 0, y: 0, z: 2 }, dialogue: null, raf: 0, last: 0, fps: null,
     // Quien controla la aventura (main.js): salir, pelear, hablar, guardar la escena, qué se ve y qué está vencido
-    hooks: { onExit: null, onEnemy: null, onTalk: null, onPlace: null, onScene: null, isShown: () => true, isCleared: () => false }
+    hooks: { onEnemy: null, onTalk: null, onPlace: null, onScene: null, isShown: () => true, isCleared: () => false }
 };
 let els = null;
 
@@ -222,7 +226,8 @@ function exitLabel(p) {
     const b = st.scene.box;
     const deg = Math.atan2(p.y - (b.y + b.h / 2), p.x - (b.x + b.w / 2)) * 180 / Math.PI;
     const dest = zone.scenes[p.to];
-    return `<span class="adv-exit-arrow" data-deg="${deg.toFixed(0)}" style="transform: rotate(${deg.toFixed(0)}deg)" aria-hidden="true">➜</span>`
+    return `<img class="adv-stop-img adv-exit-door" src="img/ui/parada-salida.webp" alt="" draggable="false">`
+        + `<span class="adv-exit-arrow" data-deg="${deg.toFixed(0)}" style="transform: rotate(${deg.toFixed(0)}deg)" aria-hidden="true">➜</span>`
         + `<span class="adv-stop-text">${esc(p.name)}${dest ? `<small>${esc(dest.name)}</small>` : ''}</span>`;
 }
 
@@ -234,7 +239,9 @@ function renderMarkers() {
         const mark = p.kind === 'npc' ? (st.hooks.npcMark ? st.hooks.npcMark(p) : 'talk') : null;
         const icon = p.kind === 'exit' ? STOP_ICONS.exit : cleared ? '✓' : STOP_ICONS[p.kind] || '';
         const text = p.kind === 'exit' ? esc(p.name) : STOP_LABELS[p.id] || '';
-        const label = p.kind === 'exit' ? exitLabel(p) : `<span class="adv-stop-icon">${icon}</span><span class="adv-stop-text">${text}</span>`;
+        const img = !cleared && STOP_IMAGES[p.kind];
+        const iconHtml = img ? `<img class="adv-stop-img" src="${img}" alt="" draggable="false">` : icon;
+        const label = p.kind === 'exit' ? exitLabel(p) : `<span class="adv-stop-icon">${iconHtml}</span><span class="adv-stop-text">${text}</span>`;
         return `
         <button type="button" class="adv-stop is-${p.kind}${mark ? ` is-${mark}` : ''}${cleared || seen || mark === 'done' ? ' is-cleared' : ''}" data-point="${esc(p.id)}" data-x="${p.x}" data-y="${p.y}" aria-label="${esc(`${STOP_LABELS[p.id] || ''} ${p.name}`)}">
             <span class="adv-stop-dot" aria-hidden="true"></span>
@@ -287,6 +294,28 @@ function renderDialogue() {
     els.dialogueWho.textContent = lines[i].who.replace(/\{heroe\}/g, name);
     els.dialogueText.textContent = lines[i].text.replace(/\{heroe\}/g, name);
     els.dialogueNext.textContent = i < lines.length - 1 ? 'Siguiente' : 'Cerrar';
+    els.dialogueWho.classList.toggle('is-hero', lines[i].who === HERO_WHO);   // la etiqueta del nombre, del lado de quien habla
+    renderPortraits(lines, i);
+}
+
+// Novela visual: el retrato de cada lado es el de quien habla en esa conversación (el héroe, a la derecha; el otro, a la
+// izquierda). Quien habla se ve entero; el que escucha queda en penumbra. Narración (sin retrato): los dos en penumbra
+const portraitOf = who => { const id = PORTRAITS[who]; return (id && ART.portraits && ART.portraits[id]) || null; };
+function renderPortraits(lines, i) {
+    const who = lines[i].who;
+    const other = lines.map(l => l.who).find(w => w !== HERO_WHO && portraitOf(w));
+    const heroSpeaks = lines.some(l => l.who === HERO_WHO);
+    const show = (img, art, speaking) => {
+        if (!img) return;
+        img.hidden = !art;
+        if (!art) return;
+        if (img.getAttribute('src') !== art.src) img.src = art.src;
+        img.classList.toggle('is-speaking', speaking);
+    };
+    show(els.portraitLeft, other ? portraitOf(other) : null, who === other);
+    show(els.portraitRight, heroSpeaks ? portraitOf(HERO_WHO) : null, who === HERO_WHO);
+    els.dialogue.classList.toggle('has-left', !!other);
+    els.dialogue.classList.toggle('has-right', heroSpeaks && !!portraitOf(HERO_WHO));
 }
 
 function advanceDialogue() {
@@ -310,8 +339,8 @@ function closeDialogue() {
 function arriveAt(p) {
     if (p.kind === 'exit') { enterScene(p.to, p.arriveAt); return; }
     if (p.kind === 'enemy' && st.hooks.isCleared(p)) return;   // ya vencido: solo se pasa por aquí
-    // Lugares de la aldea (posada, tienda, cueva) y vecinos: lo que pasa lo decide quien controla la aventura
-    if (['inn', 'shop', 'cave'].includes(p.kind) && st.hooks.onPlace) {
+    // Lugares de la aldea (posada, tienda) y vecinos: lo que pasa lo decide quien controla la aventura
+    if (['inn', 'shop'].includes(p.kind) && st.hooks.onPlace) {
         const t = st.hooks.onPlace(p);
         if (t) openDialogue(t.dialogue, t.onDone);
         return;
@@ -370,6 +399,8 @@ function bind() {
         dialogueWho: root.querySelector('.adv-dialogue-who'),
         dialogueText: root.querySelector('.adv-dialogue-text'),
         dialogueNext: root.querySelector('.adv-dialogue-next'),
+        portraitLeft: root.querySelector('.adv-portrait.is-left'),
+        portraitRight: root.querySelector('.adv-portrait.is-right'),
         fps: root.querySelector('.adv-fps')
     };
     els.world.querySelector('img').src = zone.image;
@@ -389,7 +420,6 @@ function bind() {
     });
     // Pulsar en cualquier parte del pergamino (o su botón, que burbujea hasta aquí) pasa a la siguiente línea
     els.dialogue.addEventListener('click', advanceDialogue);
-    root.querySelector('.adv-back').addEventListener('click', () => { close(); if (st.hooks.onExit) st.hooks.onExit(); });
     root.querySelector('.adv-inventory').addEventListener('click', () => {
         root.querySelector('.adv-inventory').classList.remove('is-new');
         if (st.hooks.onInventory) st.hooks.onInventory();
@@ -407,7 +437,7 @@ function bind() {
 }
 
 /**
- * Abre el Modo Aventura. hooks: { onExit, onEnemy(point), onTalk(point) → { dialogue, onDone }, onPlace(point),
+ * Abre el Modo Aventura. hooks: { onEnemy(point), onTalk(point) → { dialogue, onDone }, onPlace(point),
  * onScene(id), isShown(point), isCleared(point) }.
  * scene: la escena guardada (si no hay, la de inicio de la zona). Si ya estaba abierta, sigue donde estaba.
  */
@@ -475,9 +505,32 @@ export function setHeroSprite(sprite) {
     els.hero.style.width = `${(HERO_MAP_H * s.w / s.h).toFixed(1)}px`;
 }
 
-export function setHud(text) {
+/** Medidor con el arte de la interfaz (barra-vida / barra-mana sobre barra-vacia): `kind` = 'hp' | 'mp'. */
+export function gaugeHtml(kind, now, max, label) {
+    const pct = Math.max(0, Math.min(100, max > 0 ? (now / max) * 100 : 0));
+    return `<div class="ui-gauge is-${kind}" data-hud="${kind}" role="img" aria-label="${label} ${now} de ${max}" style="--pct:${pct.toFixed(1)}%">
+        <span class="ui-gauge-fill"></span><span class="ui-gauge-text">${now}/${max}</span></div>`;
+}
+
+/**
+ * La barra de abajo: { name, hp, maxHp, mp, maxMp, gold, potions, manaPotions, quest }.
+ * Cada dato lleva su data-hud (para leerlo sin depender del texto).
+ */
+export function setHud(h) {
     const el = document.querySelector('#rpgAdventureView .adv-hud');
-    if (el) el.textContent = text;
+    if (el) {
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        el.innerHTML = `
+            <span class="adv-bar-name" data-hud="name">${esc(h.name)}</span>
+            <div class="adv-bar-gauges">${gaugeHtml('hp', h.hp, h.maxHp, 'Vida')}${gaugeHtml('mp', h.mp, h.maxMp, 'Maná')}</div>
+            <div class="adv-bar-purse">
+                <span title="Oro"><img src="img/ui/moneda.webp" alt="Oro"><b data-hud="gold">${h.gold}</b></span>
+                <span title="Pociones de vida"><img src="img/ui/pocion-vida.webp" alt="Pociones de vida"><b data-hud="potions">${h.potions}</b></span>
+                <span title="Pociones de maná"><img src="img/ui/pocion-mana.webp" alt="Pociones de maná"><b data-hud="mana-potions">${h.manaPotions}</b></span>
+            </div>`;
+    }
+    const q = document.querySelector('#rpgAdventureView .adv-objective');
+    if (q) q.textContent = h.quest || '';
 }
 
 export function close() {

@@ -30,6 +30,7 @@
     --gold: #f0b03c;
     --gold-glow: rgba(240, 176, 60, 0.4);
     --quest: #4f8fdc;            /* azul de misión: los NPC con un encargo (color funcional, como el de una rareza) */
+    --mana: #3a73d6;             /* azul de maná: la barra y los costes (color funcional) */
 
     --danger: #d6432f;
     --danger-hover: #b53523;
@@ -672,7 +673,7 @@ body {
 .rpg-hud {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    grid-template-areas: "hero actions monster";
+    grid-template-areas: "hero actions monster" ". skills .";
     align-items: center;
     gap: clamp(10px, 2vw, 22px);
     max-width: 960px;
@@ -819,7 +820,7 @@ body {
 .rpg-combat-log .rpg-log-content { margin-top: 8px; }
 
 @media (max-width: 760px) {
-    .rpg-hud { grid-template-columns: 1fr 1fr; grid-template-areas: "hero monster" "actions actions"; }
+    .rpg-hud { grid-template-columns: 1fr 1fr; grid-template-areas: "hero monster" "actions actions" "skills skills"; }
     .rpg-hud .rpg-actions { justify-content: center; flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1934,3 +1935,251 @@ body.is-intro { overflow: hidden; }
 .intro[data-step="thought"] .intro-hint, .intro[data-step="title"] .intro-hint { animation: introHint 0.8s ease 2.2s forwards; }
 @keyframes introHint { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .intro[data-step="thought"] .intro-hint, .intro[data-step="title"] .intro-hint { animation: none; opacity: 1; } }
+
+/* 💧 Maná: barra azul bajo la vida del héroe; el coste del Golpe de Fuego, en azul */
+.rpg-hud-mp {
+    position: relative; height: 12px; margin-top: 4px;
+    background: color-mix(in srgb, var(--mana) 18%, #1b120b);
+    border: 1px solid #22160c; border-radius: 3px; overflow: hidden;
+}
+.rpg-hud-mpfill { height: 100%; background: linear-gradient(90deg, var(--mana), color-mix(in srgb, var(--mana) 70%, #fff)); transition: width 0.4s ease-out; }
+.rpg-hud-mp .rpg-stat.mp {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-family: ui-monospace, 'Courier New', monospace; font-size: 0.66rem; font-weight: 700; color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+.rpg-action-badge.is-mana { background: var(--mana); color: #fff; }
+/* Pociones: solo su imagen */
+.rpg-action.is-image { padding: 3px; }
+.rpg-action-img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); pointer-events: none; }
+.shop-icon-img { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; }
+.rpg-action.is-image:disabled { filter: saturate(0.75); opacity: 0.55; }   /* desactivada se atenúa, pero se distingue cuál es cuál */
+
+/* ✨ Efectos de estado: fila de iconos sobre cada personaje, con las rondas que quedan */
+.rpg-effects {
+    position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%);
+    display: flex; gap: 4px; pointer-events: auto; z-index: 3;
+}
+.rpg-effects:empty { display: none; }
+.rpg-effect {
+    position: relative; width: 36px; height: 36px; display: grid; place-items: center;
+    background: rgba(21, 16, 12, 0.72); border: 1px solid var(--fx); border-radius: 5px;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--fx) 45%, transparent);
+}
+.rpg-actor .rpg-effect img { width: 28px; height: 28px; object-fit: contain; image-rendering: pixelated; }
+.rpg-effect-turns {
+    position: absolute; right: -5px; bottom: -6px; min-width: 15px; padding: 0 3px; border-radius: 8px;
+    background: #15100c; border: 1px solid var(--fx); color: #fff;
+    font: 700 0.62rem/13px ui-monospace, 'Courier New', monospace; text-align: center;
+}
+/* El daño de un efecto, en su color y seguido de su icono; al ponerse un efecto, su icono grande */
+.rpg-stage-float.is-effect { display: flex; align-items: center; gap: 4px; font-size: clamp(1.1rem, 3.2vw, 1.7rem); }
+.rpg-stage-float-icon { height: 0.95em; width: auto; image-rendering: pixelated; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.7)); }
+.rpg-stage-float.is-effect-on .rpg-stage-float-icon { height: clamp(40px, 6vw, 60px); }
+.rpg-stat.ph { color: #b48cff; }
+
+/* 🎒 Inventario estilo DragonFable: el icono del tipo sobre el color de su elemento, la rareza en el nombre */
+.inv-group { margin: 10px 0 4px; font: 700 0.74rem var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: #7a3514; }
+.inv-chip {
+    position: relative; flex: none; width: 30px; height: 30px; display: grid; place-items: center;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--el, #8c7b66) 55%, #fff), var(--el, #8c7b66) 70%);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.inv-chip img { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.5)); }
+.inv-chip .inv-chip-el { position: absolute; right: -4px; bottom: -4px; width: 14px; height: 14px; }
+.inv-chip.is-item { background: none; box-shadow: none; }
+.inv-chip.is-item img { width: 26px; height: 26px; }
+.inv-val { font: 700 0.78rem ui-monospace, 'Courier New', monospace; color: color-mix(in srgb, var(--parchment-ink) 70%, transparent); }
+.inv-check {
+    display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; border-radius: 50%;
+    background: #2f8a3b; color: #fff; font-size: 0.78rem; font-weight: 800;
+}
+.inv-row.is-equipped { box-shadow: inset 3px 0 0 #2f8a3b; }
+.inv-tabs { display: flex; gap: 4px; margin: -4px 0 8px; }
+.inv-tab {
+    flex: 1; padding: 4px 8px; font: 700 0.8rem var(--font-body); color: #7a3514; cursor: pointer;
+    background: color-mix(in srgb, var(--parchment) 75%, var(--parchment-edge)); border: 1px solid var(--parchment-edge); border-radius: 4px 4px 0 0;
+}
+.inv-tab.is-on { background: var(--parchment); color: var(--parchment-ink); border-bottom-color: transparent; }
+.inv-preview.is-piece { height: 190px; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35)); }
+.inv-preview.is-item { height: 96px; }
+.inv-preview.is-empty { display: grid; place-items: center; height: 150px; }
+.inv-preview.is-empty .inv-chip { transform: scale(2.4); }
+/* Tienda por secciones */
+.shop-section { margin: 18px 0 8px; font-family: var(--font-display); font-size: 1.05rem; color: var(--gold); letter-spacing: 0.04em; }
+.shop-note.shop-free { color: var(--gold); }
+
+/* 🎒 Inventario con las piezas de la hoja de interfaz (img/ui/marco-*.webp, de img/icons/buttons-ui con `npm run icons`) */
+/* El icono de cada fila: la ranura pequeña de piedra, con el color de su elemento dentro */
+.inv-chip {
+    width: 34px; height: 34px; border-radius: 0; box-shadow: none;
+    /* el color del elemento ENCIMA del interior oscuro del marco (y debajo del icono) */
+    background:
+        radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--el, #8c7b66) 60%, #fff), var(--el, #8c7b66) 70%, color-mix(in srgb, var(--el, #8c7b66) 70%, #000)) center / 64% 64% no-repeat,
+        url('img/ui/marco-mini.webp') center / 100% 100% no-repeat;
+}
+.inv-chip img { position: relative; width: 20px; height: 20px; }
+.inv-row.is-selected .inv-chip:not(.is-item) { background-image: radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--el, #8c7b66) 60%, #fff), var(--el, #8c7b66) 70%, color-mix(in srgb, var(--el, #8c7b66) 70%, #000)), url('img/ui/marco-mini-luz.webp'); }
+.inv-chip.is-item { background: url('img/ui/marco-mini.webp') center / 100% 100% no-repeat; }
+.inv-chip.is-item img { width: 22px; height: 22px; }
+/* La ficha: la pieza dentro de la ranura grande; épica con brillo violeta, legendaria con brillo dorado */
+.inv-frame {
+    display: grid; place-items: center; width: 220px; max-width: 100%; aspect-ratio: 1; margin: 4px auto 10px; padding: 26px;
+    background: url('img/ui/marco-ranura.webp') center / 100% 100% no-repeat;
+}
+.inv-frame[data-rarity="epica"] { background-image: url('img/ui/marco-ranura-epica.webp'); }
+.inv-frame[data-rarity="legendaria"] { background-image: url('img/ui/marco-ranura-luz.webp'); }
+.inv-frame .inv-preview { height: 100%; max-height: 168px; margin: 0; }
+.inv-frame .inv-preview.is-piece { height: 100%; }
+/* Botones de piedra: normal, con brillo al pasar y oscuro si no se puede */
+.inv-equip, .inv-tab {
+    border: 12px solid transparent; border-radius: 0; box-shadow: none;
+    border-image: url('img/ui/marco-boton.webp') 32 fill / 12px stretch;
+    background: none; color: var(--parchment-ink); font-family: var(--font-body); font-weight: 800; letter-spacing: 0.03em;
+}
+.inv-equip { padding: 2px 10px; font-size: 0.95rem; }
+.inv-tab { padding: 0 6px; font-size: 0.78rem; }
+.inv-equip:not(:disabled):hover, .inv-tab:hover, .inv-tab.is-on { border-image-source: url('img/ui/marco-boton-luz.webp'); }
+.inv-equip:disabled { border-image-source: url('img/ui/marco-boton-oscuro.webp'); color: #e9dcc4; opacity: 1; }
+.shop-icon-img.is-piece { width: 48px; height: 96px; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.6)); }
+
+/* 🔥 Barra de habilidades del combate: ranuras de piedra (img/ui/marco-ranura*.webp); las vacías, con candado */
+.rpg-hud .rpg-skillbar { grid-area: skills; }
+.rpg-skillbar { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
+.rpg-skillbar:empty { display: none; }
+.rpg-skill {
+    position: relative; width: 54px; height: 54px; padding: 12px; display: grid; place-items: center;
+    background: url('img/ui/marco-ranura.webp') center / 100% 100% no-repeat; border: 0; cursor: pointer;
+    transition: transform 0.12s ease-out, filter 0.12s;
+}
+.rpg-skill img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6)); }
+.rpg-skill:not(:disabled):hover { transform: translateY(-2px); background-image: url('img/ui/marco-ranura-luz.webp'); }
+.rpg-skill:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.rpg-skill:disabled { cursor: default; filter: grayscale(0.85) brightness(0.75); }
+.rpg-skill .rpg-action-badge { top: -4px; right: -4px; }
+.rpg-skill.is-locked { cursor: default; background-image: url('img/ui/marco-ranura-bloqueada.webp'); }
+.rpg-skill { box-sizing: border-box; flex: none; }
+
+/* =============================================
+   🖼️ Repaso de iconografía: arte de verdad (img/ui) en vez de emoticonos, y botones de piedra
+   ============================================= */
+/* Medidores de vida y maná: la barra llena (barra-vida / barra-mana) se recorta sobre la vacía */
+.ui-gauge {
+    position: relative; width: 100%; height: 22px;
+    background: url('img/ui/barra-vacia.webp') center / 100% 100% no-repeat;
+    border: 0; border-radius: 0; box-shadow: none; overflow: visible;
+}
+.ui-gauge-fill {
+    position: absolute; inset: 0;
+    background: url('img/ui/barra-vida.webp') center / 100% 100% no-repeat;
+    clip-path: inset(0 calc(100% - var(--pct, 100%)) 0 0);
+    transition: clip-path 0.4s ease-out;
+}
+.ui-gauge.is-mp .ui-gauge-fill { background-image: url('img/ui/barra-mana.webp'); }
+.rpg-hud-card.is-monster .ui-gauge-fill { clip-path: inset(0 0 0 calc(100% - var(--pct, 100%))); }   /* la del enemigo se vacía hacia fuera */
+.ui-gauge-text {
+    position: absolute; inset: 0; display: grid; place-items: center; z-index: 1;
+    font: 700 0.74rem ui-monospace, 'Courier New', monospace; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95);
+}
+.rpg-hud-card .ui-gauge.is-mp { height: 16px; margin-top: 2px; }
+.rpg-hud-card .ui-gauge.is-mp .ui-gauge-text { font-size: 0.64rem; }
+
+/* La barra de abajo de la aventura, como en DragonFable */
+.adv-bar {
+    box-sizing: border-box; max-width: 1100px; margin: 0 auto; padding: 10px 16px;
+    display: grid; grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 1fr); align-items: center; gap: 18px;
+    color: var(--parchment-ink);
+    background:
+        radial-gradient(ellipse at 18% 0%, rgba(255, 255, 255, 0.3), transparent 55%),
+        linear-gradient(180deg, var(--parchment), color-mix(in srgb, var(--parchment) 80%, var(--parchment-edge)));
+    border: 2px solid var(--parchment-edge); border-top-width: 3px; border-radius: 0 0 6px 6px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), var(--shadow-elevated);
+}
+.adv-bar .adv-hud { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; gap: 4px 12px; align-items: center; margin: 0; font: inherit; color: inherit; }
+.adv-bar-name { grid-row: 1 / 3; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: #7a3514; }
+.adv-bar-gauges { display: grid; gap: 3px; min-width: 0; }
+.adv-bar-purse { grid-column: 2; display: flex; gap: 14px; font: 700 0.85rem ui-monospace, 'Courier New', monospace; }
+.adv-bar-purse span { display: inline-flex; align-items: center; gap: 4px; }
+.adv-bar-purse img { width: 20px; height: 20px; object-fit: contain; image-rendering: pixelated; }
+.adv-bar-buttons { display: flex; gap: 10px; }
+.adv-bar-btn {
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 4px 10px; background: none; border: 0; cursor: pointer;
+    font: 700 0.78rem var(--font-body); color: var(--parchment-ink);
+    transition: transform 0.12s ease-out;
+}
+.adv-bar-btn img { width: 48px; height: 48px; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.4)); }
+.adv-bar-btn:hover { transform: translateY(-2px); }
+.adv-bar-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.adv-bar-btn.is-new::after {
+    content: '!'; position: absolute; top: 0; right: 4px; width: 18px; height: 18px; display: grid; place-items: center;
+    background: var(--gold); color: #2a1d12; border-radius: 50%; font-weight: 800; font-size: 0.78rem;
+    animation: advBtnPulse 1.4s ease-in-out infinite;
+}
+@keyframes advBtnPulse { 50% { transform: scale(1.2); } }
+.adv-objective {
+    margin: 0; padding-left: 30px; min-height: 24px; font-weight: 700; font-size: 0.86rem; line-height: 1.35;
+    background: url('img/ui/mapa.webp') left center / 24px auto no-repeat;
+}
+@media (max-width: 760px) {
+    .adv-bar { grid-template-columns: 1fr auto; }
+    .adv-objective { grid-column: 1 / -1; }
+}
+
+/* Iconos de arte donde antes había emoticonos */
+.ui-icon { width: 1.25em; height: 1.25em; object-fit: contain; vertical-align: -0.25em; image-rendering: pixelated; }
+.rpg-action-icon .ui-icon { width: 30px; height: 30px; vertical-align: middle; filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.5)); }
+.rpg-action[data-main] .rpg-action-icon .ui-icon { width: 34px; height: 34px; }
+.adv-stop-img { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; vertical-align: middle; }
+.shop-section .ui-icon { width: 26px; height: 26px; }
+.shop-purse .ui-icon { width: 22px; height: 22px; }
+
+/* Botones de piedra (marco-boton*): los secundarios de toda la página y los de comprar */
+.btn-secondary, .shop-buy {
+    border: 10px solid transparent; border-radius: 0; box-shadow: none;
+    border-image: url('img/ui/marco-boton.webp') 32 fill / 10px stretch;
+    background: none; color: #2a1d12; font-weight: 800; letter-spacing: 0.03em;
+    padding: 2px 16px;
+}
+.btn-secondary:hover:not(:disabled), .shop-buy:hover:not(:disabled) { background: none; border-image-source: url('img/ui/marco-boton-luz.webp'); }
+.btn-secondary:disabled, .shop-buy:disabled { filter: none; opacity: 1; border-image-source: url('img/ui/marco-boton-oscuro.webp'); color: #b9a98f; }
+/* Iconos nuevos del director: menú, paneles, carteles de fin de combate y salidas del mapa */
+.game-nav-img { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)); }
+.panel-icon .ui-icon { width: 44px; height: 44px; }
+.rpg-result-img { display: block; width: 72px; height: 72px; margin: 0 auto 6px; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6)); }
+.adv-exit-door { width: 20px; height: 20px; margin-right: 2px; }
+.rpg-end-ach-title .ui-icon, .rpg-end-achievements .ui-icon { width: 20px; height: 20px; }
+.intro-item-icon img { width: 1.6em; height: 1.6em; object-fit: contain; image-rendering: pixelated; vertical-align: middle; }
+.shop-level { white-space: nowrap; }
+
+/* 🎭 Diálogos estilo novela visual: el que habla, de cuerpo entero, sobre el cuadro de texto; el que escucha, en penumbra */
+.adv-dialogue { align-items: flex-end; padding: 0; background: linear-gradient(180deg, transparent 30%, rgba(21, 16, 12, 0.7)); }
+.adv-dialogue-box {
+    width: 100%; max-width: none; box-sizing: border-box; z-index: 2;
+    margin: 0 10px 10px; padding: 26px 22px 12px; min-height: 120px;
+    border-radius: 6px;
+}
+.adv-dialogue-who {
+    position: absolute; top: -17px; left: 14px; padding: 4px 18px 4px 14px;
+    font-size: 1.02rem; color: #2a1d12;
+    background: linear-gradient(180deg, var(--gold), color-mix(in srgb, var(--gold) 70%, var(--primary)));
+    border: 2px solid var(--parchment-edge); border-radius: 4px 14px 0 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+.adv-dialogue-who.is-hero { left: auto; right: 14px; border-radius: 14px 4px 0 0; }
+.adv-dialogue-text { max-width: none; font-size: clamp(0.98rem, 2.4vw, 1.1rem); line-height: 1.55; }
+.adv-portrait {
+    position: absolute; bottom: 70px; z-index: 1;
+    height: 78%; width: auto; max-width: 42%; object-fit: contain; object-position: bottom;
+    image-rendering: pixelated; pointer-events: none;
+    filter: brightness(0.45) saturate(0.7) drop-shadow(0 0 6px rgba(0, 0, 0, 0.6));
+    transition: filter 0.2s ease-out, transform 0.2s ease-out;
+}
+.adv-portrait[hidden] { display: none; }
+.adv-portrait.is-left { left: 2%; transform: translateY(6px); }
+.adv-portrait.is-right { right: 2%; transform: scaleX(-1) translateY(6px); }   /* el héroe mira hacia dentro */
+.adv-portrait.is-speaking { filter: drop-shadow(0 0 2px #c2410c) drop-shadow(0 0 10px rgba(0, 0, 0, 0.7)); }
+.adv-portrait.is-left.is-speaking { transform: translateY(0); }
+.adv-portrait.is-right.is-speaking { transform: scaleX(-1) translateY(0); }
+@media (prefers-reduced-motion: reduce) { .adv-portrait { transition: none; } }

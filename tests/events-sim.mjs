@@ -238,8 +238,8 @@ console.log('\n✨ Los 5 especiales');
     assert('14A. vía del acero: +2 ATK, +6 HP máx y afinidad Guerrero 2', r.hero.atq === 5 && r.hero.maxHp === 31 && r.hero.affinity.guerrero === 2);
     r = play('maestro_errante', [1]);
     const fire = rpgSkillInfo(r.hero, 'fire_strike');
-    assert('14B. vía de la llama: Golpe de Fuego 8 de daño y 2 rondas, afinidad Elementalista 2', fire.damage === 8 && fire.cooldown === 2 && r.hero.affinity.elementalista === 2 && r.hero.atq === 3);
-    assert('14. sin la lección, Golpe de Fuego sigue en 5 de daño y 3 rondas', (() => { const f = rpgSkillInfo(createRpgHero(), 'fire_strike'); return f.damage === 5 && f.cooldown === 3; })());
+    assert('14B. vía de la llama: Bola de fuego 8 de daño y cuesta 4 de maná, afinidad Elementalista 2', fire.damage === 8 && fire.manaCost === 4 && r.hero.affinity.elementalista === 2 && r.hero.atq === 3);
+    assert('14. sin la lección, Bola de fuego sigue en 5 de daño y 5 de maná', (() => { const f = rpgSkillInfo(createRpgHero(), 'fire_strike'); return f.damage === 5 && f.manaCost === 5; })());
     assert('14. la descripción de la habilidad refleja la mejora', rpgSkillInfo(r.hero, 'fire_strike').desc.includes('8'));
 }
 
@@ -363,10 +363,8 @@ console.log('\n🤞 Votos y mejoras en combate');
     const c4 = createRpgCombat(hero, { ...createRpgMonster('monster', 8), pattern: [{ k: 'attack', m: 1 }] }); // golpea siempre
     const hp8 = c4.monster.hp;
     rpgCombatAction(c4, 'skill', 'fire_strike');
-    assert('Golpe de Fuego mejorado: 8 de daño', c4.monster.hp === hp8 - 8);
-    assert('Golpe de Fuego mejorado: enfriamiento de 2 rondas', c4.cooldowns.fire_strike === 2);
-    rpgCombatAction(c4, 'attack'); rpgCombatAction(c4, 'attack');
-    assert('Golpe de Fuego mejorado: vuelve a estar listo tras 2 rondas', rpgSkillReady(c4, 'fire_strike'));
+    assert('Bola de fuego mejorado: 8 de daño', c4.monster.hp === hp8 - 8);
+    assert('Bola de fuego mejorado: cuesta 4 de maná en vez de 5 (12 → 8)', c4.hero.mp === 8 && rpgSkillReady(c4, 'fire_strike'));
 }
 
 // ---------------------------------------------

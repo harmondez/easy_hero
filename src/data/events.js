@@ -19,8 +19,8 @@
 // El daño de un evento nunca mata: deja al héroe como mínimo en 1 HP.
 // =============================================
 
-import { RPG_BALANCE } from './balance.js?v=1.8.0';
-import { atk, CHARGE } from './monsters.js?v=1.8.0';
+import { RPG_BALANCE } from './balance.js?v=1.9.0';
+import { atk, CHARGE } from './monsters.js?v=1.9.0';
 
 // `pattern` = los movimientos que repite en ciclo (ver data/monsters.js); el jugador ve el siguiente antes de actuar.
 export const EVENT_MONSTERS = {
@@ -299,7 +299,7 @@ export const RPG_EVENTS = [
                 fx: { atq: 2, maxHp: 6, affinity: { guerrero: 2 } }
             } },
             { label: 'La vía de la llama', outcome: {
-                text: 'Aprendes a canalizar el fuego con precisión.',
+                text: 'Aprendes a canalizar el fuego con precisión: más daño por menos maná.',
                 fx: { skillMods: { fire_strike: { damage: 3, cooldown: -1 } }, affinity: { elementalista: 2 } }
             } }
         ]

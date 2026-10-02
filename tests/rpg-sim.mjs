@@ -34,10 +34,11 @@ assert('el héroe empieza con ATK 1 / HP 25', hero.atq === 1 && hero.hp === 25);
 assert('maxHp = HP inicial y nivel 1', hero.maxHp === 25 && hero.level === 1);
 assert('createRpgHero devuelve una copia (no muta la base)', (hero.atq = 99, RPG_HERO_BASE.atq === 0));
 hero.atq = 1;
-assert('el héroe solo tiene ATK, HP y guardia como atributos (sin DEF) más equipo, inventario, primarias, votos, mejoras y afinidades', (() => {
+assert('el héroe solo tiene ATK, HP, PH, maná y guardia como atributos (sin DEF) más equipo, inventario, primarias, votos, mejoras y afinidades', (() => {
     const h = createRpgHero();
     const keys = Object.keys(h).sort().join(',');
-    return keys === '_primaryBonus,affinity,atq,color,critChance,critMult,dodgeChance,elemDmgBonus,elemResist,equipment,guard,hp,icon,inventory,level,maxHp,name,physResist,primary,skillMods,trophy,vows'
+    return keys === '_primaryBonus,affinity,atq,color,critChance,critMult,dodgeChance,elemDmgBonus,elemResist,equipment,guard,hp,icon,inventory,level,maxHp,maxMp,mp,name,ph,physResist,primary,skillMods,trophy,vows'
+        && h.maxMp === 12 && h.mp === 12 && h.ph === 5   // la mitad de la vida inicial (25)
         && h.guard === 0 && h.inventory.length === 0 && h.trophy === null
         && JSON.stringify(h.primary) === JSON.stringify({ str: 5, dex: 5, int: 5, vit: 5 })
         && h.critChance === 0 && h.dodgeChance === 0 && h.physResist === 0 && h.elemResist === 0 && h.elemDmgBonus === 0
@@ -99,24 +100,28 @@ console.log('\n⚔️ Combate por turnos');
     rpgCombatAction(c, 'defend');
     assert('defender contra un golpe de 1 no lo anula (redondeo hacia arriba)', c.hero.hp === 24);
 
-    // Habilidad: 5 de fuego + enfriamiento de 3 rondas
+    // Habilidad: 5 de fuego por 5 de maná, sin recarga (12 de maná = dos lanzamientos)
     c = fresh('monster', 4);
     const hp4 = c.monster.hp;
     r = rpgCombatAction(c, 'skill', 'fire_strike');
-    assert('Golpe de Fuego inflige 5 de daño', c.monster.hp === hp4 - 5);
+    assert('Bola de fuego inflige 5 de daño', c.monster.hp === hp4 - 5);
     assert('el héroe no tiene DEF: el monstruo golpea con todo su ATK', (() => {
         const cc = freshPlain(4, 60);
         rpgCombatAction(cc, 'attack');
         return cc.hero.hp === 25 - 4 && !('def' in cc.hero) && !('def' in cc.monster);
     })());
-    assert('la habilidad queda enfriándose (3)', c.cooldowns.fire_strike === 3 && !rpgSkillReady(c, 'fire_strike'));
+    assert('gasta 5 de maná (12 → 7) y sigue lista: no hay recarga', c.hero.mp === 7 && rpgSkillReady(c, 'fire_strike'));
+    rpgCombatAction(c, 'skill', 'fire_strike');
+    assert('la segunda la deja con 2 de maná: ya no llega para otra', c.hero.mp === 2 && !rpgSkillReady(c, 'fire_strike'));
+    const hpBefore = c.monster.hp;
     r = rpgCombatAction(c, 'skill');
-    assert('no se puede usar mientras se enfría', r.ok === false && c.monster.hp === hp4 - 5);
-    rpgCombatAction(c, 'attack'); // 3 -> 2
-    rpgCombatAction(c, 'attack'); // 2 -> 1
-    assert('sigue enfriándose 2 rondas después', c.cooldowns.fire_strike === 1 && !rpgSkillReady(c, 'fire_strike'));
-    rpgCombatAction(c, 'attack'); // 1 -> 0
-    assert('vuelve a estar lista tras 3 rondas de espera', rpgSkillReady(c, 'fire_strike'));
+    assert('sin maná no se puede lanzar (y no hace daño)', r.ok === false && /maná/.test(r.error) && c.monster.hp === hpBefore);
+    c.manaPotions = 1;
+    rpgCombatAction(c, 'mana_potion');
+    assert('la poción de maná menor devuelve la mitad del maná máximo (2 + 6 = 8) y vuelve a estar lista',
+        c.hero.mp === 8 && c.manaPotions === 0 && rpgSkillReady(c, 'fire_strike'));
+    r = rpgCombatAction(c, 'mana_potion');
+    assert('sin pociones de maná no se puede beber', r.ok === false);
 
     // Huir: solo de monstruos normales, cuesta un golpe, no avanza el mapa
     c = fresh();

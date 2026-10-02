@@ -1,9 +1,11 @@
-import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.8.0';
-import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.8.0';
-import { DAMAGE_TYPES } from './items.js?v=1.8.0';
-import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.8.0';
-import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax } from './data/upgrades.js?v=1.8.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.8.0';
+import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.9.0';
+import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.9.0';
+import { DAMAGE_TYPES } from './items.js?v=1.9.0';
+import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.9.0';
+import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax } from './data/upgrades.js?v=1.9.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.0';
+import { ELIXIRS, FOOD } from './data/effects.js?v=1.9.0';
+import { GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.9.0';
 export { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext };
 export { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax };
 
@@ -42,6 +44,8 @@ const emptyMeta = () => ({
     trophyItem: null,           // el objeto legendario del jefe final: una vez ganado, para siempre
     upgrades: {},               // id de La Forja -> nivel comprado (permanente)
     potions: 0,                 // pociones que llevas encima: son tuyas entre partidas (tope en RPG_BALANCE.potion.max)
+    manaPotions: 0,             // pociones de maná menor, igual (tope en RPG_BALANCE.manaPotion.max)
+    elixirs: {},                // elixires que llevas encima ({ fuerza: 1, … }; src/data/effects.js, cada uno con su tope)
     bestDepth: 0,               // profundidad absoluta máxima alcanzada (el récord del descenso)
     bestTier: 0,                // tramo más hondo al que se ha llegado
     variantsSeen: {},           // nombre base -> { adj: {id: true}, lin: {id: true} }: medallas del bestiario
@@ -53,6 +57,8 @@ const emptyMeta = () => ({
     introSeen: false,           // ya vio la introducción: al entrar, directo a la aventura
     advGear: ['espada-de-hierro'],   // el inventario de la aventura (ids de src/data/gear.js): permanente
     advWeapon: 'espada-de-hierro',   // el arma equipada en la aventura
+    advUpgrades: {},            // cristales de mejora puestos en cada arma de la aventura ({ id: n }, +1 ATK cada uno)
+    food: {},                   // comida que llevas ({ pan: 2 }), src/data/effects.js FOOD: se come desde el inventario
     primary: { str: 0, dex: 0, int: 0, vit: 0 }   // puntos YA INVERTIDOS, por encima de la base (5/5/5/5)
 });
 
@@ -102,9 +108,59 @@ export function recordVariantSeen(meta, baseName, variants) {
 export const upgradeLevel = (meta, id) => (meta.upgrades && meta.upgrades[id]) || 0;
 
 /** Lo que cuesta la SIGUIENTE compra de esa mejora (Infinity si ya está al máximo). */
+// --- 🪙 Precios de la tienda: en modo pruebas (RPG_BALANCE.freeShop) todo sale gratis ---
+export const shopPrice = n => (RPG_BALANCE.freeShop ? 0 : n);
+
 export function nextUpgradeCost(meta, id) {
     const def = UPGRADES_BY_ID[id];
-    return def ? upgradeCost(def, upgradeLevel(meta, id)) : Infinity;
+    const cost = def ? upgradeCost(def, upgradeLevel(meta, id)) : Infinity;
+    return Number.isFinite(cost) ? shopPrice(cost) : cost;
+}
+
+// --- ⚔️ El mercader de la aventura: armas (src/data/gear.js) y cristales de mejora ---
+export const ownsGear = (meta, id) => (meta.advGear || []).includes(id);
+export function canBuyGear(meta, id) {
+    const g = GEAR[id];
+    return !!g && g.price != null && !ownsGear(meta, id) && meta.gold >= shopPrice(g.price);
+}
+export function buyGear(meta, id) {
+    const cost = GEAR[id] ? shopPrice(GEAR[id].price) : 0;
+    if (!canBuyGear(meta, id)) return { ok: false, cost };
+    meta.gold -= cost;
+    meta.advGear = [...(meta.advGear || []), id];
+    return { ok: true, cost };
+}
+export const weaponUpgradeLevel = (meta, id) => Math.max(0, ((meta.advUpgrades || {})[id]) | 0);
+export function canBuyWeaponUpgrade(meta, id) {
+    return !!GEAR[id] && weaponUpgradeLevel(meta, id) < WEAPON_UPGRADE.max && meta.gold >= shopPrice(WEAPON_UPGRADE.price);
+}
+/** Un cristal de mejora para el arma `id` (la equipada): +1 ATK para siempre, hasta WEAPON_UPGRADE.max. */
+export function buyWeaponUpgrade(meta, id) {
+    const cost = shopPrice(WEAPON_UPGRADE.price);
+    if (!canBuyWeaponUpgrade(meta, id)) return { ok: false, cost };
+    meta.gold -= cost;
+    meta.advUpgrades = { ...(meta.advUpgrades || {}), [id]: weaponUpgradeLevel(meta, id) + 1 };
+    return { ok: true, cost, level: meta.advUpgrades[id] };
+}
+
+// --- 🍞 Comida (src/data/effects.js FOOD) ---
+export const foodCount = (meta, id) => Math.max(0, ((meta.food || {})[id]) | 0);
+export function canBuyFood(meta, id) {
+    const F = FOOD[id];
+    return !!F && foodCount(meta, id) < F.max && meta.gold >= shopPrice(F.price);
+}
+export function buyFood(meta, id) {
+    const cost = FOOD[id] ? shopPrice(FOOD[id].price) : 0;
+    if (!canBuyFood(meta, id)) return { ok: false, cost };
+    meta.gold -= cost;
+    meta.food = { ...(meta.food || {}), [id]: foodCount(meta, id) + 1 };
+    return { ok: true, cost, count: meta.food[id] };
+}
+/** Gasta una de comida (si queda). Devuelve true si se la comió. */
+export function eatFood(meta, id) {
+    if (foodCount(meta, id) <= 0) return false;
+    meta.food = { ...(meta.food || {}), [id]: foodCount(meta, id) - 1 };
+    return true;
 }
 
 export function canBuyUpgrade(meta, id) {
@@ -121,17 +177,48 @@ export function buyUpgrade(meta, id) {
     return { ok: true, cost, level: meta.upgrades[id] };
 }
 
+// --- 🧪 Elixires (src/data/effects.js): se compran y se llevan encima; en combate dan un efecto ---
+export const elixirCount = (meta, id) => Math.max(0, ((meta.elixirs || {})[id]) | 0);
+export function canBuyElixir(meta, id) {
+    const E = ELIXIRS[id];
+    return !!E && elixirCount(meta, id) < E.max && meta.gold >= shopPrice(E.price);
+}
+export function buyElixir(meta, id) {
+    const E = ELIXIRS[id];
+    const cost = E ? shopPrice(E.price) : 0;
+    if (!canBuyElixir(meta, id)) return { ok: false, cost, count: elixirCount(meta, id) };
+    meta.gold -= cost;
+    meta.elixirs = { ...(meta.elixirs || {}), [id]: elixirCount(meta, id) + 1 };
+    return { ok: true, cost, count: meta.elixirs[id] };
+}
+/** Los elixires para un combate (una copia: el combate los gasta y quien lo creó recoge los que sobren). */
+export const elixirsForCombat = meta => Object.fromEntries(Object.keys(ELIXIRS).map(id => [id, elixirCount(meta, id)]));
+
+// --- 💧 Pociones de maná menor: igual que las de vida, con su propio tope y precio ---
+export const manaPotionCount = meta => Math.max(0, meta.manaPotions | 0);
+export function canBuyManaPotion(meta) {
+    const P = RPG_BALANCE.manaPotion;
+    return manaPotionCount(meta) < P.max && meta.gold >= shopPrice(P.price);
+}
+export function buyManaPotion(meta) {
+    const cost = shopPrice(RPG_BALANCE.manaPotion.price);
+    if (!canBuyManaPotion(meta)) return { ok: false, cost, count: manaPotionCount(meta) };
+    meta.gold -= cost;
+    meta.manaPotions = manaPotionCount(meta) + 1;
+    return { ok: true, cost, count: meta.manaPotions };
+}
+
 // --- 🧪 Pociones: se compran con oro a precio fijo y se llevan encima entre partidas ---
 export const potionCount = meta => Math.max(0, meta.potions | 0);
 
 export function canBuyPotion(meta) {
     const P = RPG_BALANCE.potion;
-    return potionCount(meta) < P.max && meta.gold >= P.price;
+    return potionCount(meta) < P.max && meta.gold >= shopPrice(P.price);
 }
 
 /** Compra una poción. Devuelve { ok, cost, count }; `ok: false` si no llega el oro o ya llevas el máximo. */
 export function buyPotion(meta) {
-    const cost = RPG_BALANCE.potion.price;
+    const cost = shopPrice(RPG_BALANCE.potion.price);
     if (!canBuyPotion(meta)) return { ok: false, cost, count: potionCount(meta) };
     meta.gold -= cost;
     meta.potions = potionCount(meta) + 1;

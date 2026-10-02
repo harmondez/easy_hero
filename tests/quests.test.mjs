@@ -118,16 +118,21 @@ assert('Bram da la Espada de Zafias: entra en el inventario y el botón se ilumi
 await page.click('.adv-inventory');
 await sleep(200);
 assert('El inventario lista la espada de hierro (equipada) y la Espada de Zafias',
-    (await page.$$('[data-inv-item]')).length === 2 && /Equipada/.test(await page.$eval('[data-inv-item="espada-de-hierro"]', el => el.textContent)));
+    (await page.$$('.inv-rows:first-of-type [data-inv-item]')).length === 2
+    && /is-equipped/.test(await page.$eval('[data-inv-item="espada-de-hierro"]', el => el.className)) && !!(await page.$('[data-inv-item="espada-de-hierro"] .inv-check')));
 await page.click('[data-inv-item="espada-de-zafias"]');
 await sleep(150);
-assert('Su ficha muestra ATK 2, de dónde sale y al héroe con ella', /ATK 2/.test(await page.$eval('.inv-detail', el => el.textContent))
-    && /arma_espada-de-zafias/.test(await page.$eval('.inv-preview', el => el.src)));
+assert('Su ficha muestra ATK 2, de dónde sale y la espada tal cual es', /ATK 2/.test(await page.$eval('.inv-detail', el => el.textContent))
+    && /objeto-espada-de-zafias/.test(await page.$eval('.inv-preview', el => el.src)));
+await page.click('[data-inv-tab="preview"]');
+await sleep(100);
+assert('…y en «Vista previa», al héroe con ella', /arma_espada-de-zafias/.test(await page.$eval('.inv-preview', el => el.src)));
 await page.click('[data-inv-equip="espada-de-zafias"]');
 await sleep(200);
 mm = await advMeta();
 assert('Equiparla la guarda y la marca como equipada', mm.advWeapon === 'espada-de-zafias'
-    && /Equipada/.test(await page.$eval('[data-inv-item="espada-de-zafias"]', el => el.textContent)));
+    && /is-equipped/.test(await page.$eval('[data-inv-item="espada-de-zafias"]', el => el.className))
+    && !/is-equipped/.test(await page.$eval('[data-inv-item="espada-de-hierro"]', el => el.className)));
 await page.click('#btnPanelClose');
 await sleep(150);
 assert('En el mapa, el héroe cambia de dibujo: lleva la Espada de Zafias', /arma_espada-de-zafias/.test(await page.$eval('.adv-hero', el => el.src)));

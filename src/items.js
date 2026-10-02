@@ -1,6 +1,6 @@
-import { RARITIES, RARITY_BY_ID, RARITY_MIN, RARITY_BIAS, rollRarity, discardHeal } from './data/rarities.js?v=1.8.0';
-import { ITEM_BASES, ITEM_BASE_BY_ID, ITEM_SLOTS, DAMAGE_TYPES, BASIC_WEAPON_ID, basesBySlot } from './data/items.js?v=1.8.0';
-import { AFFIX_POOL, AFFIX_UNIQUES, affixText } from './data/affixes.js?v=1.8.0';
+import { RARITIES, RARITY_BY_ID, RARITY_MIN, RARITY_BIAS, rollRarity, discardHeal } from './data/rarities.js?v=1.9.0';
+import { ITEM_BASES, ITEM_BASE_BY_ID, ITEM_SLOTS, DAMAGE_TYPES, BASIC_WEAPON_ID, basesBySlot } from './data/items.js?v=1.9.0';
+import { AFFIX_POOL, AFFIX_UNIQUES, affixText } from './data/affixes.js?v=1.9.0';
 
 // =============================================
 // 🎒 RPG-pack — equipo (puro, sin DOM)
@@ -290,16 +290,16 @@ const TRAIT_TEXT = {
     victory_heal: 'Al vencer un combate, curas {v}',
     extra_strike: 'Golpeas una vez más en tu primer turno de cada combate',
     poison_on_hit: 'Envenenas al golpear ({v} por golpe, se acumula)',
-    skill_dmg: 'Golpe de Fuego hace +{v} de daño',
-    skill_cd: 'Golpe de Fuego se enfría 1 ronda antes',
-    skill_burn: 'Golpe de Fuego quema al enemigo {v} rondas',
+    skill_dmg: 'La Bola de fuego hace +{v} de daño',
+    skill_cd: 'La Bola de fuego cuesta 1 de maná menos',
+    skill_burn: 'La Bola de fuego quema al enemigo {v} rondas',
     damage_type_bonus: 'Tus ataques de {type} hacen +{v} de daño',
     discard_heal: 'Al descartar un objeto, curas {v} más',
     flee_safe: 'Al huir de un combate, no recibes daño',
     thorns: 'Devuelves {v} de daño a quien te golpea mientras defiendes',
     burn_on_hit: 'Quemas al enemigo al golpear ({v} por ronda, 2 rondas)',
     reader_shield: 'El Lector no castiga que repitas tu acción',
-    first_turn_focus: 'En tu primer turno, Golpe de Fuego hace +{v}'
+    first_turn_focus: 'En tu primer turno, la Bola de fuego hace +{v}'
 };
 
 export function traitText(trait) {

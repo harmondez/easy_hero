@@ -142,15 +142,15 @@ export const ITEM_BASES = [
 
     // ---- Focos (10): potencian habilidades ----
     { id: 'grimorio_brasas', name: 'Grimorio de brasas', icon: '📖', slot: 'secondary', trait: { k: 'skill_dmg', v: 3 },
-      desc: 'Golpe de Fuego hace +3 de daño.', fam: 'elementalista' },
+      desc: 'La Bola de fuego hace +3 de daño.', fam: 'elementalista' },
     { id: 'grimorio_hex', name: 'Grimorio del hex', icon: '📖', slot: 'secondary', trait: { k: 'skill_cd', v: -1 },
-      desc: 'Tus habilidades se enfrían 1 ronda antes.', fam: 'elementalista' },
+      desc: 'Tus habilidades cuestan 1 de maná menos.', fam: 'elementalista' },
     { id: 'orbe_fugaz', name: 'Orbe fugaz', icon: '🔮', slot: 'secondary', trait: { k: 'first_turn_focus', v: 3 },
-      desc: 'En tu primer turno, Golpe de Fuego hace +3.', fam: 'elementalista' },
+      desc: 'En tu primer turno, la Bola de fuego hace +3.', fam: 'elementalista' },
     { id: 'varita_guardiana', name: 'Varita guardiana', icon: '🪄', slot: 'secondary', trait: { k: 'skill_dmg', v: 2 },
       desc: 'Vigila tus manos durante todo el ritual.', fam: 'elementalista' },
     { id: 'libro_cenizas', name: 'Libro de cenizas', icon: '📖', slot: 'secondary', trait: { k: 'skill_burn', v: 2 },
-      desc: 'Golpe de Fuego quema al enemigo 2 rondas.', fam: 'elementalista' },
+      desc: 'La Bola de fuego quema al enemigo 2 rondas.', fam: 'elementalista' },
     { id: 'cristal_enfoque', name: 'Cristal de enfoque', icon: '🔮', slot: 'secondary', trait: { k: 'skill_dmg', v: 2 },
       desc: 'Reúne la luz dispersa y la convierte en llama.', fam: 'elementalista' },
     { id: 'vela_precisa', name: 'Vela precisa', icon: '🕯️', slot: 'secondary', trait: { k: 'first_turn_focus', v: 4 },
@@ -160,7 +160,7 @@ export const ITEM_BASES = [
     { id: 'gema_eco', name: 'Gema del eco', icon: '💎', slot: 'secondary', trait: { k: 'skill_dmg', v: 3 },
       desc: 'Guarda un recuerdo ardiente de cada lanzamiento.', fam: 'elementalista' },
     { id: 'sosten_ardiente', name: 'Sostén ardiente', icon: '🔥', slot: 'secondary', trait: { k: 'skill_burn', v: 1 },
-      desc: 'Golpe de Fuego quema al enemigo 1 ronda.', fam: 'elementalista' },
+      desc: 'La Bola de fuego quema al enemigo 1 ronda.', fam: 'elementalista' },
 
     // ════════════════════════════ 🧥 ARMADURA (34) — HP máx + un rasgo (sin DEF) ════════════════════════════
     { id: 'cota_caminante', name: 'Cota de la caminante', icon: '🧥', slot: 'armor', main: { hp: 6 }, trait: { k: 'defend_heal', v: 2 },
@@ -241,7 +241,7 @@ export const ITEM_BASES = [
     { id: 'colgante_veneno', name: 'Colgante del veneno', icon: '💍', slot: 'accessory', trait: { k: 'poison_on_hit', v: 1 },
       desc: 'Envenenas al golpear (1 por ronda, se acumula).', fam: 'picaro' },
     { id: 'pendulo_llama', name: 'Péndulo de la llama', icon: '💍', slot: 'accessory', trait: { k: 'skill_burn', v: 2 },
-      desc: 'Golpe de Fuego quema al enemigo 2 rondas.', fam: 'elementalista' },
+      desc: 'La Bola de fuego quema al enemigo 2 rondas.', fam: 'elementalista' },
     { id: 'pluma_viento', name: 'Pluma de viento', icon: '💍', slot: 'accessory', trait: { k: 'flee_safe', v: 1 },
       desc: 'Al huir de un combate, no recibes daño.', fam: 'picaro' },
 
@@ -279,7 +279,7 @@ export const ITEM_BASES = [
       desc: 'Envenenas al golpear (1 por ronda, se acumula).', fam: 'picaro' },
 
     { id: 'cadena_brasa', name: 'Cadena de brasa', icon: '⛓️', slot: 'accessory', trait: { k: 'skill_burn', v: 1 },
-      desc: 'Golpe de Fuego quema al enemigo 1 ronda.', fam: 'elementalista' },
+      desc: 'La Bola de fuego quema al enemigo 1 ronda.', fam: 'elementalista' },
     { id: 'carbonculo', name: 'Carbúnculo', icon: '🔥', slot: 'accessory', trait: { k: 'skill_burn', v: 1 },
       desc: 'Un guijarro que arde mientras le miras.', fam: 'elementalista' },
 

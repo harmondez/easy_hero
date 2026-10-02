@@ -7,10 +7,11 @@
 
 ## 📍 Estado (2026-10-02)
 
-- **Publicado:** la **1.8.0** (https://harmondez.github.io/easy_hero/): descenso sin fin, La Forja, combate de lado
-  estilo DragonFable, una **introducción** (despertar en las ruinas) que lleva directo a la aventura, y el **Modo Aventura en Zafias** con mapa HD, 4 escenas (aldea, bosque, campamento y la
-  guarida del lobo), 28 paradas con puntos de interés, goblins y lobos, la misión de Maela y Grask, y **Feronius**
-  como jefe de la zona. Criaturas con nombre en la recámara (gnolls y orcos con sus jefes, ya dibujados).
+- **Publicado:** la **1.9.0** (https://harmondez.github.io/easy_hero/): Easy Hero es solo la aventura (la mazmorra,
+  aparcada tras la cueva sellada). Zafias con introducción, 4 escenas, 28 paradas, misiones y diario, Grask y
+  **Feronius**; combate de lado con **efectos de estado**, **maná**, **PH** y barra de habilidades; 10 armas con rareza,
+  elemento y efecto; tienda con elixires y cristales; inventario estilo DragonFable; diálogos de novela visual; toda la
+  interfaz con arte del director. Criaturas con nombre en la recámara (gnolls y orcos con sus jefes, ya dibujados).
 - Herramientas: taller de sprites, Asset Factory, montaje de zonas (`docs/zonas.md`) y banco de la aventura
   (`npm run sim:aventura`).
 
@@ -20,9 +21,11 @@
    combate, sin lanzar). Antes del bosque amarillo:
    - **Progresión del héroe:** decidido el camino —equipo propio de la aventura, por misiones y jefes (la Espada de
      Zafias es el primero)—. Falta la curva: cuántas armas, de qué ATK y dónde, con el informe del #9.
-   - **Recalibrar Zafias:** el bot que la calibró no usaba el Golpe de Fuego, ni compraba ATK en la tienda, ni
-     llevaba la Espada de Zafias (ATK 2). Con eso el jugador real la tendrá más fácil de lo medido: ajustar con
-     `npm run sim:aventura` ampliado.
+   - **Recalibrar Zafias:** el bot no usa la Bola de fuego con maná, ni el Grito de guerra, ni elixires, ni las armas
+     de la tienda (300-2000 de oro, ATK 2-5 con efecto), ni sufre bien los efectos de estado (veneno de goblins,
+     sangrado de lobos, aturdir de Grask y Feronius). Enseñárselo y ajustar con `npm run sim:aventura`.
+   - **Precios y oro:** las armas cuestan 300-2000 y Zafias da ~60 de oro al final: hoy solo se compran entrenando
+     mucho. Decidir cuánto oro da la zona (o si las mejores armas salen de jefes).
    - **Combates largos y repetidos:** los goblins de piso 2 (guardia, centinela, rezagado) duran ~20 turnos con el
      ritmo carga-golpe y defenderse. Y casi no hay azar: todas las partidas del bot salen idénticas.
    - **Curva de Zafias hoy:** se acaba hacia el nivel 4; ~16 combates de entrenamiento antes de Grask jugando bien
@@ -60,12 +63,17 @@
 
 | Tema | Decisión |
 |---|---|
-| Foco | **El Modo Aventura** (2026-10-02). El roguelike (descenso) y su botín quedan aparcados: siguen en el juego (cueva del sur, «La mazmorra») pero sin trabajo nuevo |
+| Foco | **Easy Hero es la aventura** (2026-10-02). El descenso y su botín, aparcados: el código sigue (se entra con `?inicio`, lo usan las pruebas) pero no hay acceso en el juego; la cueva del sur está sellada («todavía no estás preparado») |
+| Vocabulario | **PH** (Poder de Habilidad) para todo lo «mágico» (nunca «magia»); **ATK** (Poder de Ataque) para el golpe básico |
+| Maná y habilidades | Maná = la mitad de la vida inicial (12); las habilidades cuestan maná, sin recarga; barra de 6 ranuras en combate. Bola de fuego = PH en daño; Grito de guerra = +50 % ATK 3 rondas |
+| Efectos de estado | Motor genérico (`src/effects.js`, datos en `src/data/effects.js`): 7 efectos, iconos sobre cada personaje, número en su color + icono |
+| Tienda | Armas del mercader 300-2000 de oro; `freeShop` (balance.js) = modo pruebas, apagado al publicar |
+| Diálogos | Novela visual: retrato de quien habla (`src/data/characters.js`); el héroe a la derecha. El retrato «tabernero» es Bram |
 | Equipo de la aventura | Propio y permanente (`src/data/gear.js`), por misiones y jefes; cada arma con su dibujo del héroe (`img/weapons/<Nombre>.png` → `arma_<id>`) |
 | Plataforma | Web estática (GitHub Pages + vistas previas en Cloudflare), JavaScript vanilla sin bundler. Godot/Flutter descartados. **Escritorio primero**; en móvil basta con que funcione |
 | Combate | De lado: héroe SIEMPRE a la izquierda mirando a la derecha, enemigo SIEMPRE a la derecha mirando a la izquierda; único movimiento la embestida + número de daño. Panel de pergamino con ¡Atacar! y el resto a un clic |
 | Enemigos | Sin intenciones visibles (patrones ocultos que se aprenden); los golpes fuertes se telegrafían con una frase y brillo rojo |
-| Pociones | 40 % de vida, gastan turno, máx. 3, 40 de oro, se conservan entre partidas |
+| Pociones | Vida: 40 %, máx. 3, 40 de oro. Maná menor: 50 % del maná, máx. 3, 25 de oro. Gastan turno y se conservan |
 | Aventura | Mismo héroe que el descenso; derrota → posada, vida llena, −10 % de oro; enemigos visibles que vuelven al dormir; zonas que se abren por historia; dificultad fija por zona; movimiento por caminos a trazos entre paradas |
 | Arte | Pixel art de fantasía oscura (STYLE_BIBLE en `tools/image-generator/config/style-bible.json`). Arte generado con Gemini (`gemini-3.1-flash-lite-image`); sin arte propio, el goblin teñido por especie/linaje |
 | Método | Funcional primero; el pulido va a Perfilados. Nube para encargos grandes y cerrados; diseño y ajustes visuales en local |
@@ -76,8 +84,13 @@
 - **Telegrafiado:** frases por tipo de enemigo; ¿avisar también de curarse o protegerse?
 - **Aventura:** colocar mejor los goblins del bosque (el vigía queda entre árboles); los puntos rojos se ven pequeños
   en la aldea; el cofre pintado del campamento no hace nada; el objetivo de misión merecería su propio cartel;
-  retratos en los diálogos; si caes en un descenso de la cueva y eliges «nueva ruta», esa ruta también vuelve a la
-  aldea; el equipo del descenso no viaja a la aventura (vas con espada básica + nivel/primarias/Forja).
+  retratos que faltan (Maela, Grask, Feronius, goblins); las armas de la tienda sin dibujo del héroe que las lleva
+  (`arma_<id>`) usan el sprite de siempre; el resto del equipo (armadura, casco, guantes, botas, cinturón, collar,
+  anillo) ya tiene icono pero no existe en el juego; ranuras de habilidad cerradas a la espera de habilidades nuevas.
+- **Historia:** confirmar o cambiar las pistas sembradas en la 1.9 (la empuñadura que Bram no reconoce, el buhonero
+  que pregunta por alguien sin memoria, las piedras azules que dicen tu nombre).
+- **Interfaz:** quedan emoticonos dentro del texto (diario de combate, avisos, recompensas de los diálogos); la
+  introducción podría llevar el retrato del héroe en sus frases.
 - **Combate:** debilidades elementales ×0,5/×1,5 con los 6 tipos de daño; entrada del combate como momento.
 - **Equilibrio:** los bots del banco siguen «viendo» la intención; revisar la tasa de victoria real.
 - **Móvil:** en el bosque a 390 px el héroe queda pegado al borde al llegar.
@@ -95,7 +108,8 @@
 - **Niveles de riesgo** tras la primera victoria.
 - **Descenso:** segunda moneda para mejoras caras, prestigio sobre La Forja, sub-jefes y eventos propios por tramo,
   6 variantes de monstruo ya diseñadas sin construir; el banco de equilibrio no simula el descenso.
-- **Primarias:** velocidad de ataque, daño contra tipos de criatura, sangrado, maná (MP), resistencia elemental útil.
+- **Primarias:** velocidad de ataque, daño contra tipos de criatura, resistencia elemental útil; que la Inteligencia
+  sume PH.
 
 ## ⚠️ Riesgos vivos
 

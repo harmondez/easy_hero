@@ -1,12 +1,16 @@
-import * as Engine from './engine.js?v=1.8.0';
-import * as Items from './items.js?v=1.8.0';
-import * as Meta from './meta.js?v=1.8.0';
-import * as Stats from './stats.js?v=1.8.0';
-import { upgradeAmountText } from './data/upgrades.js?v=1.8.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.8.0';
-import { ART } from './data/art.js?v=1.8.0';
-import { monsterArt, heroArt } from './art.js?v=1.8.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.8.0';
+import * as Engine from './engine.js?v=1.9.0';
+import * as Items from './items.js?v=1.9.0';
+import * as Meta from './meta.js?v=1.9.0';
+import * as Stats from './stats.js?v=1.9.0';
+import { upgradeAmountText } from './data/upgrades.js?v=1.9.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.0';
+import { ART } from './data/art.js?v=1.9.0';
+import { EFFECTS, ELIXIRS, FOOD } from './data/effects.js?v=1.9.0';
+import { GEAR, GEAR_FOR_SALE, STARTER_GEAR, WEAPON_UPGRADE, ELEMENTS, SLOT_ICONS } from './data/gear.js?v=1.9.0';
+import { RARITY_BY_ID } from './data/rarities.js?v=1.9.0';
+import { effectList } from './effects.js?v=1.9.0';
+import { monsterArt, heroArt } from './art.js?v=1.9.0';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.9.0';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -42,6 +46,7 @@ export function renderRpgHeroCard(hero) {
         <div class="rpg-hero-card-sub">Nivel ${hero.level}</div>
         <div class="rpg-hero-card-stats">
             <div class="rpg-stat atk"><b>ATK</b> ${hero.atq}</div>
+            <div class="rpg-stat ph"><b>PH</b> ${Engine.rpgHeroPh(hero)}</div>
             <div class="rpg-stat hp"><b>HP</b> ${hero.hp}</div>
         </div>`;
 }
@@ -103,7 +108,7 @@ export function renderRpgHeroPanel(hero, progressText, meta) {
         </div>
         <div class="rpg-hero-hp"><div class="rpg-hero-hp-fill" style="width:${hpPct}%"></div><span><b>HP</b> ${hero.hp} / ${hero.maxHp}</span></div>
         <div class="rpg-hero-stats">
-            <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
+            <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span> <span class="rpg-stat ph"><b>PH</b> ${Engine.rpgHeroPh(hero)}</span>
             ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
             ${meta ? `<span class="rpg-stat gold">🪙 ${meta.gold}</span>` : ''}
         </div>
@@ -242,54 +247,111 @@ export function renderRpgTierGate(info) {
             <div class="rpg-tier-stat"><span>Oro acumulado</span><b>🪙 ${info.gold}</b></div>
             <div class="rpg-tier-stat"><span>Siguiente piso</span><b>${info.nextDepth}</b></div>
         </div>
-        ${achievements ? `<div class="rpg-end-ach-title">🏆 Logros desbloqueados</div><ul class="rpg-end-achievements">${achievements}</ul>` : ''}
+        ${achievements ? `<div class="rpg-end-ach-title">${UI_IMG('menu-logros')} Logros desbloqueados</div><ul class="rpg-end-achievements">${achievements}</ul>` : ''}
         <button type="button" id="btnRpgDescend" class="btn-forge">🕳️ SEGUIR BAJANDO</button>`;
 }
 
-/** La Forja: mejoras permanentes que se compran con el oro que nunca se pierde. */
-export function renderShop(meta) {
+// Mejoras de La Forja que ya tienen arte (las demás, su emoticono hasta que llegue el suyo)
+const UPGRADE_IMG = { constitucion: 'vida', buen_ojo: 'moneda', zurron: 'inventario', filo: 'forja-filo', estudio: 'forja-estudio',
+    herencia: 'forja-herencia', linterna: 'forja-linterna', suerte: 'forja-suerte' };
+
+/** Una carta de la tienda. price ya con el modo pruebas aplicado (0 = «GRATIS»); state: 'ok' | 'full' | 'owned' | 'maxed'. */
+function _shopCard({ buy, img, icon, name, tag, desc, extra = '', price, state, gold, color }) {
+    const blocked = state !== 'ok';
+    const affordable = !blocked && gold >= price;
+    const label = state === 'full' ? 'LLENO' : state === 'owned' ? 'TUYA' : state === 'maxed' ? 'COMPRADA' : price === 0 ? 'GRATIS' : `🪙 ${price}`;
+    return `
+        <article class="shop-card ${blocked ? 'is-maxed' : affordable ? 'is-affordable' : 'is-locked'}">
+            <div class="shop-icon">${img ? `<img class="shop-icon-img${img.startsWith('objeto-') ? ' is-piece' : ''}" src="${esc(ICON(img))}" alt="">` : icon}</div>
+            <div class="shop-info">
+                <div class="shop-name"${color ? ` style="color:${esc(color)}"` : ''}>${esc(name)} ${tag ? `<span class="shop-level">${esc(tag)}</span>` : ''}</div>
+                <div class="shop-desc">${esc(desc)}</div>${extra}
+            </div>
+            <button type="button" class="shop-buy" data-shop-buy="${esc(buy)}" ${blocked || !affordable ? 'disabled' : ''}>${label}</button>
+        </article>`;
+}
+
+/** Lo que hace un arma de la aventura, en una línea («Al golpear: Sangrado 1×2 · 30 %»). */
+export function gearEffectsText(g) {
+    const parts = [];
+    for (const f of g.onHit || []) parts.push(`Al golpear: ${EFFECTS[f.id].name} ${f.power}×${f.turns}${f.chance != null && f.chance < 1 ? ` · ${Math.round(f.chance * 100)} %` : ''}`);
+    for (const f of g.onStart || []) parts.push(`Al empezar: ${EFFECTS[f.id].desc(f)} durante ${f.turns} rondas`);
+    return parts.join(' · ');
+}
+
+/**
+ * La tienda: armas del mercader y cristales de mejora (en la aventura), consumibles y las mejoras de La Forja.
+ * opts.from: desde dónde se abrió ('adventure' enseña también las armas).
+ */
+export function renderShop(meta, opts = {}) {
     const el = document.getElementById('shopBody');
     if (!el || !meta) return;
-    const cards = Meta.UPGRADES.map(def => {
+    const gold = meta.gold;
+    const price = Meta.shopPrice;
+    const section = (title, cards) => cards ? `<h3 class="shop-section">${title}</h3><div class="shop-grid">${cards}</div>` : '';
+
+    // ⚔️ Armas del mercader (solo en la aventura: es su equipo)
+    let weapons = '';
+    if (opts.from === 'adventure') {
+        weapons = GEAR_FOR_SALE.map(id => {
+            const g = GEAR[id];
+            const rar = RARITY_BY_ID[g.rarity] || RARITY_BY_ID.comun;
+            const fx = gearEffectsText(g);
+            return _shopCard({ buy: `gear:${id}`, img: `objeto-${id}`, name: g.name, tag: `${rar.name} · ATK ${g.atq}`, color: rar.color,
+                desc: g.desc, extra: fx ? `<span class="shop-have">${esc(fx)}</span>` : '',
+                price: price(g.price), state: Meta.ownsGear(meta, id) ? 'owned' : 'ok', gold });
+        }).join('');
+        const w = GEAR[meta.advWeapon] || GEAR[STARTER_GEAR];
+        const lvl = Meta.weaponUpgradeLevel(meta, meta.advWeapon);
+        weapons += _shopCard({ buy: 'weapon_upgrade', img: WEAPON_UPGRADE.img, name: WEAPON_UPGRADE.name,
+            tag: `${w.name} +${lvl} de ${WEAPON_UPGRADE.max}`,
+            desc: `+${WEAPON_UPGRADE.atq} de ATK para siempre a tu arma equipada.`,
+            price: price(WEAPON_UPGRADE.price), state: lvl >= WEAPON_UPGRADE.max ? 'maxed' : 'ok', gold });
+    }
+
+    // 🧪 Consumibles: pociones, elixires y comida, con tope
+    const P = RPG_BALANCE.potion;
+    const MP = RPG_BALANCE.manaPotion;
+    const potions = Meta.potionCount(meta);
+    const manas = Meta.manaPotionCount(meta);
+    let consumables = _shopCard({ buy: 'potion', img: 'pocion-vida', name: 'Poción de vida', tag: `llevas ${potions} de ${P.max}`,
+        desc: `En combate cura el ${Math.round(P.heal * 100)} % de tu vida máxima, a cambio de tu turno. Las que no gastes se quedan contigo.`,
+        price: price(P.price), state: potions >= P.max ? 'full' : 'ok', gold });
+    consumables += _shopCard({ buy: 'mana_potion', img: 'pocion-mana', name: 'Poción de maná menor', tag: `llevas ${manas} de ${MP.max}`,
+        desc: `En combate devuelve el ${Math.round(MP.restore * 100)} % de tu maná máximo, a cambio de tu turno. El maná lanza tus habilidades.`,
+        price: price(MP.price), state: manas >= MP.max ? 'full' : 'ok', gold });
+    consumables += Object.entries(ELIXIRS).map(([id, ex]) => {
+        const have = Meta.elixirCount(meta, id);
+        const e = EFFECTS[ex.effect.id];
+        return _shopCard({ buy: `elixir:${id}`, img: ex.img, name: ex.name, tag: `llevas ${have} de ${ex.max}`,
+            desc: `${ex.desc} En combate${ex.target === 'enemy' ? ', al enemigo' : ''}: ${e.desc(ex.effect)} durante ${ex.effect.turns} rondas, a cambio de tu turno.`,
+            price: price(ex.price), state: have >= ex.max ? 'full' : 'ok', gold });
+    }).join('');
+    consumables += Object.entries(FOOD).map(([id, f]) => {
+        const have = Meta.foodCount(meta, id);
+        return _shopCard({ buy: `food:${id}`, img: f.img, name: f.name, tag: `llevas ${have} de ${f.max}`,
+            desc: `${f.desc} Fuera del combate, desde el inventario: cura el ${Math.round(f.heal * 100)} % de tu vida.`,
+            price: price(f.price), state: have >= f.max ? 'full' : 'ok', gold });
+    }).join('');
+
+    // ⚒️ Las mejoras de La Forja (con nivel, cada vez más caras)
+    const forge = Meta.UPGRADES.map(def => {
         const level = Meta.upgradeLevel(meta, def.id);
         const cost = Meta.nextUpgradeCost(meta, def.id);
-        const maxed = !Number.isFinite(cost);
-        const affordable = !maxed && meta.gold >= cost;
         const amount = upgradeAmountText(def, level);
-        const have = amount ? `<span class="shop-have">Ahora: ${esc(amount)}</span>` : '';
-        return `
-        <article class="shop-card ${maxed ? 'is-maxed' : affordable ? 'is-affordable' : 'is-locked'}">
-            <div class="shop-icon">${def.icon}</div>
-            <div class="shop-info">
-                <div class="shop-name">${esc(def.name)} ${level ? `<span class="shop-level">nivel ${level}</span>` : ''}</div>
-                <div class="shop-desc">${esc(def.desc)}</div>
-                ${have}
-            </div>
-            <button type="button" class="shop-buy" data-shop-buy="${esc(def.id)}" ${maxed || !affordable ? 'disabled' : ''}>
-                ${maxed ? 'COMPRADA' : `🪙 ${cost}`}
-            </button>
-        </article>`;
+        return _shopCard({ buy: def.id, icon: def.icon, img: UPGRADE_IMG[def.id], name: def.name, tag: level ? `nivel ${level}` : '', desc: def.desc,
+            extra: amount ? `<span class="shop-have">Ahora: ${esc(amount)}</span>` : '',
+            price: Number.isFinite(cost) ? cost : 0, state: Number.isFinite(cost) ? 'ok' : 'maxed', gold });
     }).join('');
-    // La poción no es una mejora: es un consumible que llevas encima, con tope y precio fijo
-    const P = RPG_BALANCE.potion;
-    const potions = Meta.potionCount(meta);
-    const potionFull = potions >= P.max;
-    const potionCard = `
-        <article class="shop-card ${potionFull ? 'is-maxed' : meta.gold >= P.price ? 'is-affordable' : 'is-locked'}">
-            <div class="shop-icon">🧪</div>
-            <div class="shop-info">
-                <div class="shop-name">Poción de vida <span class="shop-level">llevas ${potions} de ${P.max}</span></div>
-                <div class="shop-desc">En combate cura el ${Math.round(P.heal * 100)} % de tu vida máxima, a cambio de tu turno. Las que no gastes se quedan contigo.</div>
-            </div>
-            <button type="button" class="shop-buy" data-shop-buy="potion" ${potionFull || meta.gold < P.price ? 'disabled' : ''}>
-                ${potionFull ? 'LLENO' : `🪙 ${P.price}`}
-            </button>
-        </article>`;
+
     el.innerHTML = `
-        <div class="shop-purse">Tu oro: <b>🪙 ${meta.gold}</b></div>
+        <div class="shop-purse">Tu oro: ${UI_IMG('moneda')} <b>${gold}</b></div>
+        ${RPG_BALANCE.freeShop ? '<p class="shop-note shop-free">🧪 <b>Modo pruebas:</b> todo es gratis.</p>' : ''}
         <p class="shop-note">Lo que compras aquí es <b>para siempre</b>: no se pierde al morir ni al empezar otra ruta.
-        Las mejoras con nivel se pueden comprar una y otra vez, cada vez más caras.</p>
-        <div class="shop-grid">${potionCard}${cards}</div>`;
+        Las mejoras de La Forja se pueden comprar una y otra vez, cada vez más caras.</p>
+        ${section(`${UI_IMG('ranura-arma')} Armas`, weapons)}
+        ${section(`${UI_IMG('pocion-vida')} Consumibles`, consumables)}
+        ${section('⚒️ La Forja', forge)}`;
 }
 
 export function addRpgLog(msg, type = 'system') {
@@ -311,12 +373,16 @@ export function clearRpgLog() {
 // Estilo DragonFable: lo que hará el enemigo NO se anuncia. Sus patrones siguen ahí (cargar, protegerse,
 // curarse) y el diario los delata, pero nada de la interfaz lo predice.
 
-function _rpgHpBar(f) {
-    const hpPct = Math.max(0, Math.min(100, (f.hp / f.maxHp) * 100));
-    return `<div class="rpg-hud-hp" role="img" aria-label="Vida ${f.hp} de ${f.maxHp}">
-        <div class="rpg-hud-hpfill" style="width:${hpPct}%"></div>
-        <span class="rpg-stat hp">${f.hp} / ${f.maxHp}</span>
+// Vida y maná con el arte de la interfaz (img/ui/barra-*.webp): la barra llena se recorta según lo que queda
+function _rpgGauge(kind, now, max, label) {
+    const pct = Math.max(0, Math.min(100, max > 0 ? (now / max) * 100 : 0));
+    return `<div class="ui-gauge is-${kind} rpg-hud-${kind}" role="img" aria-label="${label} ${now} de ${max}" style="--pct:${pct.toFixed(1)}%">
+        <span class="ui-gauge-fill"></span><span class="ui-gauge-text rpg-stat ${kind}">${now} / ${max}</span>
     </div>`;
+}
+
+function _rpgHpBar(f) {
+    return _rpgGauge('hp', f.hp, f.maxHp, 'Vida') + (f.maxMp ? _rpgGauge('mp', f.mp, f.maxMp, 'Maná') : '');
 }
 
 function _rpgHudSide(f, sub, status, side) {
@@ -329,6 +395,14 @@ function _rpgHudSide(f, sub, status, side) {
         </article>`;
 }
 
+/** Botón de acción con una imagen (las pociones): sin palabra, el nombre va en el tooltip y para lectores de pantalla. */
+function _rpgImageButton(attrs, img, label, hint, disabled, extra = '') {
+    return `<button type="button" class="rpg-action is-image" ${attrs} ${disabled ? 'disabled' : ''} title="${esc(`${label}: ${hint}`)}" aria-label="${esc(label)}">
+        <img class="rpg-action-img" src="${esc(img)}" alt="" draggable="false">
+        <span class="rpg-action-hint">${esc(hint)}</span>${extra}
+    </button>`;
+}
+
 function _rpgActionButton(attrs, icon, label, hint, disabled, extra = '') {
     return `<button type="button" class="rpg-action" ${attrs} ${disabled ? 'disabled' : ''} title="${esc(hint)}">
         <span class="rpg-action-icon" aria-hidden="true">${icon}</span>
@@ -337,14 +411,16 @@ function _rpgActionButton(attrs, icon, label, hint, disabled, extra = '') {
     </button>`;
 }
 
-const RPG_ACTION_NAMES = { attack: 'ATACAR', defend: 'DEFENDER', skill: 'HABILIDAD', potion: 'POCIÓN' };
+const RPG_ACTION_NAMES = { attack: 'ATACAR', defend: 'DEFENDER', skill: 'HABILIDAD', potion: 'POCIÓN', mana_potion: 'POCIÓN DE MANÁ' };
+const ICON = id => (ART.icons && ART.icons[id] && ART.icons[id].src) || '';
+/** Un icono de img/ui como <img> (para meterlo donde antes iba un emoticono). */
+const UI_IMG = (id, cls = 'ui-icon') => `<img class="${cls}" src="${esc(ICON(id))}" alt="" draggable="false">`;
 
-// Estado del enemigo: quemadura, veneno y, si lee tus movimientos, la acción que ha memorizado (repetirla = golpe doble)
+// Estado del enemigo: si lee tus movimientos, la acción que ha memorizado (repetirla = golpe doble).
+// Sus efectos (veneno, quemadura…) se ven como iconos sobre su dibujo
 function _rpgMonsterStatus(combat) {
     const m = combat.monster;
     const parts = [];
-    if (m.status && m.status.burn) parts.push(`🔥 Arde ${m.status.burn.dmg}×${m.status.burn.turns}`);
-    if (m.status && m.status.poison > 0) parts.push(`☠️ Veneno ${m.status.poison}`);
     if (m.ai === 'reader') {
         const last = RPG_ACTION_NAMES[combat.lastAction];
         parts.push(last ? `👁️ Recuerda ${last}: repítela y golpea doble` : '👁️ Lee tus movimientos');
@@ -352,14 +428,9 @@ function _rpgMonsterStatus(combat) {
     return parts.join(' · ');
 }
 
-// Tu estado: defensa, y lo que te hacen las variantes «de la Plaga» y «de las Brasas»
+// Tu estado: defensa (tus efectos se ven como iconos sobre tu dibujo)
 function _rpgHeroStatus(combat) {
-    const parts = [];
-    if (combat.defending) parts.push('🛡️ Defendiendo');
-    const s = combat.heroStatus || {};
-    if (s.burn) parts.push(`🔥 Ardes ${s.burn.dmg}×${s.burn.turns}`);
-    if (s.poison > 0) parts.push(`☠️ Veneno ${s.poison}`);
-    return parts.join(' · ');
+    return combat.defending ? '🛡️ Defendiendo' : '';
 }
 
 function _rpgWeaponIcon(hero) {
@@ -386,7 +457,7 @@ export function renderRpgCombat(combat, opts = {}) {
 
     const bar = document.getElementById('rpgCombatActions');
     if (!bar) return;
-    if (combat.over) { bar.innerHTML = ''; return; }
+    if (combat.over) { bar.innerHTML = ''; const sb = document.getElementById('rpgSkillBar'); if (sb) sb.innerHTML = ''; return; }
 
     // Tu ataque sí lo conoces (es tu arma), pero sin descontar si el enemigo se protege: eso sería anunciarlo
     const unguarded = { ...combat, monster: { ...monster, intent: null } };
@@ -403,26 +474,57 @@ export function renderRpgCombat(combat, opts = {}) {
     const potionHint = potions <= 0 ? 'No te quedan pociones (se compran en La Forja)'
         : hero.hp >= hero.maxHp ? 'Ya tienes la vida al máximo'
         : `Recupero hasta ${potionHeal} de vida, pero gasto el turno`;
+    const manaPotions = combat.manaPotions | 0;
+    const manaGain = Math.max(1, Math.round((hero.maxMp || 0) * RPG_BALANCE.manaPotion.restore));
+    const manaHint = manaPotions <= 0 ? 'No te quedan (se compran en la tienda)'
+        : (hero.mp || 0) >= (hero.maxMp || 0) ? 'Ya tienes el maná al máximo'
+        : `Recupero hasta ${manaGain} de maná, pero gasto el turno`;
 
-    const skills = Object.keys(Engine.RPG_SKILLS).map(id => {
-        const s = Engine.rpgSkillInfo(hero, id, combat);
-        const cd = combat.cooldowns[s.id];
-        const hint = noSkills ? 'Tu voto de silencio lo impide' : cd > 0 ? `${s.desc} · Lista en ${cd} ${cd === 1 ? 'ronda' : 'rondas'}` : s.desc;
-        const badge = cd > 0 ? `<span class="rpg-action-badge">${cd}</span>` : '';
-        // En el icono cabe una palabra: «Golpe de Fuego» → «Fuego» (el nombre completo va en el tooltip)
-        const short = s.name.split(' ').pop();
-        return _rpgActionButton(`data-rpg-action="skill" data-rpg-skill="${esc(s.id)}"`, s.icon, short, `${s.name}: ${hint}`, noSkills || cd > 0, badge);
+    // Barra de habilidades: una ranura por habilidad (su icono y su coste en maná; el nombre y qué hace, al pasar
+    // el ratón) y el resto cerradas. Pulsar una la lanza directamente
+    const skillBar = document.getElementById('rpgSkillBar');
+    if (skillBar) {
+        const ids = Object.keys(Engine.RPG_SKILLS);
+        const stunned = !!(hero.effects && hero.effects.aturdido);
+        skillBar.innerHTML = Array.from({ length: Math.max(RPG_BALANCE.skillSlots, ids.length) }, (_, i) => {
+            if (!ids[i]) return '<span class="rpg-skill is-locked" title="Ranura cerrada: aún no tienes esta habilidad"></span>';
+            const s = Engine.rpgSkillInfo(hero, ids[i], combat);
+            const ready = Engine.rpgSkillReady(combat, s.id) && !stunned;
+            const hint = noSkills ? 'Tu voto de silencio lo impide'
+                : stunned ? 'Estás aturdido'
+                : Engine.rpgSkillReady(combat, s.id) ? `${s.desc} Cuesta ${s.manaCost} de maná.` : `Te falta maná: cuesta ${s.manaCost} y tienes ${hero.mp || 0}`;
+            return `<button type="button" class="rpg-skill" data-rpg-action="skill" data-rpg-skill="${esc(s.id)}" ${ready ? '' : 'disabled'}
+                title="${esc(`${s.name}: ${hint}`)}" aria-label="${esc(s.name)}">
+                <img src="${esc(ICON(s.img))}" alt="" draggable="false">
+                <span class="rpg-action-badge is-mana">${s.manaCost}</span>
+            </button>`;
+        }).join('');
+    }
+
+    // Elixires: solo los que llevas encima, con su imagen (como las pociones)
+    const elixirs = Object.entries(ELIXIRS).filter(([id]) => (combat.elixirs || {})[id] > 0).map(([id, ex]) => {
+        const e = EFFECTS[ex.effect.id];
+        const hint = `${ex.target === 'enemy' ? 'Lo lanzo al enemigo: ' : ''}${e.desc(ex.effect)} durante ${ex.effect.turns} rondas, pero gasto el turno`;
+        return _rpgImageButton(`data-rpg-action="elixir" data-rpg-skill="${esc(id)}"`, ICON(ex.img), ex.name, hint, false,
+            `<span class="rpg-action-badge is-count">${combat.elixirs[id]}</span>`);
     }).join('');
+
+    // Aturdido: este turno no puedes hacer nada; el botón grande lo dice y pasa el turno
+    if (hero.effects && hero.effects.aturdido) {
+        bar.innerHTML = _rpgActionButton('data-rpg-action="attack" data-main', '💫', 'Aturdido', 'Pierdes este turno: pulsa para seguir', false);
+        return;
+    }
 
     bar.innerHTML = `
         <div class="rpg-actions-side">
-            ${_rpgActionButton('data-rpg-action="defend"', '🛡️', 'Defender', defendHint, false)}
-            ${skills}
+            ${_rpgActionButton('data-rpg-action="defend"', UI_IMG('defensa'), 'Defender', defendHint, false)}
         </div>
-        ${_rpgActionButton('data-rpg-action="attack" data-main', _rpgWeaponIcon(hero), '¡Atacar!', attackHint, false)}
+        ${_rpgActionButton('data-rpg-action="attack" data-main', UI_IMG('ranura-arma'), '¡Atacar!', attackHint, false)}
         <div class="rpg-actions-side">
-            ${_rpgActionButton('data-rpg-action="potion"', '🧪', 'Poción', potionHint, potions <= 0 || hero.hp >= hero.maxHp, `<span class="rpg-action-badge is-count">${potions}</span>`)}
-            ${_rpgActionButton('data-rpg-action="flee"', '🏃', 'Huir', fleeHint, !canFlee)}
+            ${_rpgImageButton('data-rpg-action="potion"', ICON('pocion-vida'), 'Poción de vida', potionHint, potions <= 0 || hero.hp >= hero.maxHp, `<span class="rpg-action-badge is-count">${potions}</span>`)}
+            ${_rpgImageButton('data-rpg-action="mana_potion"', ICON('pocion-mana'), 'Poción de maná menor', manaHint, manaPotions <= 0 || (hero.mp || 0) >= (hero.maxMp || 0), `<span class="rpg-action-badge is-count">${manaPotions}</span>`)}
+            ${elixirs}
+            ${_rpgActionButton('data-rpg-action="flee"', UI_IMG('agilidad'), 'Huir', fleeHint, !canFlee)}
         </div>`;
 }
 
@@ -441,6 +543,8 @@ function _rpgRenderStage(hero, monster) {
     if (!heroActor || !monActor) return;
     heroActor.classList.toggle('is-down', hero.hp <= 0);
     monActor.classList.toggle('is-down', monster.hp <= 0);
+    _rpgRenderEffects(heroActor, hero);
+    _rpgRenderEffects(monActor, monster);
     const img = monActor.querySelector('img');
     const own = monsterArt(ART, monster.baseName || monster.name);
     const sprite = own || RPG_MONSTER_SPRITE;
@@ -456,6 +560,22 @@ function _rpgRenderStage(hero, monster) {
         // Con imagen propia, sin tinte: el arte ya trae su color
         img.style.filter = own ? 'none' : rpgMonsterTint(monster);
     }
+}
+
+/** Los efectos que lleva encima, en fila sobre su cabeza: icono y rondas que le quedan (∞ = todo el combate). */
+function _rpgRenderEffects(actor, unit) {
+    let row = actor.querySelector('.rpg-effects');
+    if (!row) {
+        row = document.createElement('div');
+        row.className = 'rpg-effects';
+        actor.prepend(row);
+    }
+    row.innerHTML = effectList(unit).map(e => `
+        <span class="rpg-effect${e.bad ? ' is-bad' : ' is-good'}" data-effect="${esc(e.id)}" style="--fx:${e.color}"
+            title="${esc(`${e.name}: ${e.desc}${e.turns == null ? ' (todo el combate)' : ` (${e.turns} ${e.turns === 1 ? 'ronda' : 'rondas'})`}`)}">
+            <img src="${esc(ICON(e.icon))}" alt="${esc(e.name)}" draggable="false">
+            ${e.turns == null ? '' : `<span class="rpg-effect-turns">${e.turns}</span>`}
+        </span>`).join('');
 }
 
 function _rpgSetSprite(img, sprite) {
@@ -507,6 +627,15 @@ function _rpgRenderTelegraph(combat) {
 /** Qué pinta cada suceso del combate: quién embiste, a quién y qué número sale. null = nada visible. */
 function _rpgFxStep(ev) {
     if (ev.kind === 'dodge') return { from: 'hero', to: 'monster', text: '¡Esquiva!', cls: 'is-miss' };
+    if (ev.kind === 'stunned') return { to: ev.target, text: '¡Aturdido!', cls: 'is-miss' };
+    if (ev.kind === 'effect-on') {
+        const e = EFFECTS[ev.effect];
+        return e ? { to: ev.target, text: '', cls: 'is-effect-on', icon: ICON(e.icon), color: e.color } : null;
+    }
+    if (ev.kind === 'effect' && ev.amount > 0) {
+        const e = EFFECTS[ev.effect];
+        return { to: ev.target, text: `${ev.heal ? '+' : '-'}${ev.amount}`, cls: 'is-effect', icon: e && ICON(e.icon), color: e && e.color };
+    }
     if (!(ev.amount > 0)) return null;
     if (ev.kind === 'heal') return { to: ev.target, text: `+${ev.amount}`, cls: 'is-heal' };
     const lunge = ['attack', 'crit', 'skill'].includes(ev.kind) && ev.actor !== ev.target;
@@ -514,12 +643,20 @@ function _rpgFxStep(ev) {
         text: `-${ev.amount}${ev.kind === 'crit' ? '!' : ''}`, cls: ev.kind === 'crit' ? 'is-crit' : '' };
 }
 
-function _rpgStageFloat(stage, actor, text, cls) {
+function _rpgStageFloat(stage, actor, text, cls, icon = null, color = null) {
     const s = stage.getBoundingClientRect();
     const a = actor.getBoundingClientRect();
     const el = document.createElement('div');
     el.className = `rpg-stage-float ${cls}`;
     el.textContent = text;
+    if (color) el.style.color = color;
+    if (icon) {
+        const img = document.createElement('img');
+        img.className = 'rpg-stage-float-icon';
+        img.src = icon;
+        img.alt = '';
+        el.appendChild(img);
+    }
     el.style.left = `${a.left - s.left + a.width / 2}px`;
     el.style.top = `${a.top - s.top}px`;
     stage.appendChild(el);
@@ -547,8 +684,8 @@ export function playRpgCombatFx(events) {
             const target = actors[step.to];
             const hit = () => {
                 if (run !== _rpgFxRun) return;
-                _rpgStageFloat(stage, target, step.text, step.cls);
-                if (step.cls !== 'is-miss' && step.cls !== 'is-heal' && !still) {
+                _rpgStageFloat(stage, target, step.text, step.cls, step.icon, step.color);
+                if (!['is-miss', 'is-heal', 'is-effect-on'].includes(step.cls) && !(step.cls === 'is-effect' && step.text.startsWith('+')) && !still) {
                     target.animate([{ filter: 'brightness(2.2) saturate(0.4)' }, { filter: 'none' }], { duration: 220, easing: 'ease-out' });
                 }
             };
@@ -592,12 +729,14 @@ export function clearRpgCombatLog() {
 }
 
 /** Final del combate: un cartel sobre el escenario (el vencido ya se desvanece). info: { result, title, detail, button } */
+const RESULT_IMG = { victory: 'victoria', defeat: 'derrota', fled: 'agilidad' };
 export function showRpgCombatResult(info) {
     const el = document.getElementById('rpgCombatResult');
     if (!el || !info) return;
     el.className = `rpg-combat-result is-${esc(info.result)}`;
     el.innerHTML = `
         <div class="rpg-result-plate">
+            ${RESULT_IMG[info.result] ? UI_IMG(RESULT_IMG[info.result], 'rpg-result-img') : ''}
             <div class="rpg-result-title">${esc(info.title)}</div>
             <div class="rpg-result-detail">${esc(info.detail || '')}</div>
             <button type="button" id="btnRpgCombatContinue" class="btn-forge">${esc(info.button || 'CONTINUAR')}</button>
@@ -698,7 +837,7 @@ export function gearPanelHtml(hero, opts = {}) {
     // En el mapa las estadísticas ya están en el panel del personaje; en el botín no hay otro panel, así que van aquí
     const foot = opts.showStats === false ? '' : `
         <div class="gear-panel-foot">
-            <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
+            <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span> <span class="rpg-stat ph"><b>PH</b> ${Engine.rpgHeroPh(hero)}</span>
             <span class="rpg-stat hp"><b>HP</b> ${hero.hp}/${hero.maxHp}</span>
             ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
         </div>`;
@@ -887,7 +1026,7 @@ export function renderCharacterView(hero, meta, selection) {
         <div class="char-center">
             ${_charDollHtml(hero, selection)}
             <div class="char-stats-row">
-                <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span>
+                <span class="rpg-stat atk"><b>ATK</b> ${hero.atq}</span> <span class="rpg-stat ph"><b>PH</b> ${Engine.rpgHeroPh(hero)}</span>
                 <span class="rpg-stat hp"><b>HP</b> ${hero.hp} / ${hero.maxHp}</span>
                 ${hero.guard ? `<span class="rpg-stat guard"><b>🛡️</b> −${hero.guard}</span>` : ''}
                 ${extraStats}
@@ -932,7 +1071,7 @@ export function renderRpgEnd(summary) {
     const build = (summary.build || []).length
         ? `<div class="rpg-end-build">${summary.build.map(b => `<span class="rpg-hero-tag">${esc(b)}</span>`).join('')}</div>` : '';
     const achievements = (summary.newAchievements || []).length
-        ? `<div class="rpg-end-achievements"><b>🏆 Logros desbloqueados:</b>
+        ? `<div class="rpg-end-achievements"><b>${UI_IMG('menu-logros')} Logros desbloqueados:</b>
             ${summary.newAchievements.map(a => `<span class="rpg-hero-tag is-achievement" title="${esc(a.desc)}">${a.icon} ${esc(a.name)}</span>`).join('')}
            </div>` : '';
     el.className = `rpg-end-card ${win ? 'is-victory' : 'is-defeat'}`;
@@ -979,41 +1118,90 @@ const _panelHeader = (icon, title, sub) => `
     <div class="panel-header"><span class="panel-icon">${icon}</span><div><h3 class="panel-title">${esc(title)}</h3>${sub ? `<p class="panel-sub">${esc(sub)}</p>` : ''}</div></div>`;
 
 /**
- * 🎒 Inventario de la aventura, como en DragonFable: la lista a la izquierda y la ficha del objeto a la derecha
- * (con el héroe tal como se verá con él). opts: { items: [{ id, name, icon, rarity, atq, desc, from, equipped, preview }],
- * selected, gold, onEquip(id) }
+ * 🎒 Inventario de la aventura, como en DragonFable: la lista a la izquierda (cada fila con el icono de su tipo sobre el
+ * color de su elemento y el nombre en el color de su rareza) y la ficha a la derecha, con dos pestañas: «Detalle» (la
+ * pieza tal cual es) y «Vista previa» (tu héroe con ella).
+ * opts: {
+ *   gear: [{ id, name, slot, rarity, element, atq, upgrades, desc, from, effects, image, preview, equipped }],
+ *   items: [{ id, name, img, count, desc, use? }]   (consumibles; `use` = texto del botón si se puede usar aquí)
+ *   selected, gold, onEquip(id), onUse(id)
+ * }
  */
+// Rareza en tinta sobre pergamino (los colores de rarities.js son para fondo oscuro)
+const INV_RARITY_INK = { comun: '#3b2a1c', poco_comun: '#1f7a35', rara: '#1f55b8', epica: '#7a2fb8', legendaria: '#c0560f' };
+
+function _invChip(slot, element) {
+    const el = ELEMENTS[element] || ELEMENTS.neutro;
+    return `<span class="inv-chip" style="--el:${esc(el.color)}" title="${esc(el.name)}">
+        <img src="${esc(ICON(SLOT_ICONS[slot] || 'ranura-arma'))}" alt="" draggable="false">
+        ${el.icon ? `<img class="inv-chip-el" src="${esc(ICON(el.icon))}" alt="" draggable="false">` : ''}
+    </span>`;
+}
+
 export function renderInventoryPanel(opts) {
     const el = document.getElementById('panelBody');
     if (!el) return;
     let selected = opts.selected;
+    let tab = 'detail';
+    const all = [...opts.gear.map(g => ({ ...g, kind: 'gear' })), ...opts.items.map(i => ({ ...i, kind: 'item' }))];
     const draw = () => {
-        const it = opts.items.find(i => i.id === selected) || opts.items[0];
-        const rows = opts.items.map((i, n) => `
-            <li><button type="button" class="inv-row${i.id === it.id ? ' is-selected' : ''}" data-inv-item="${esc(i.id)}">
-                <span class="inv-num">${n + 1}</span><span class="inv-icon" aria-hidden="true">${i.icon}</span>
-                <span class="inv-name">${esc(i.name)}</span>${i.equipped ? '<span class="inv-equipped">Equipada</span>' : ''}
-            </button></li>`).join('');
-        const preview = it.preview || RPG_HERO_SPRITE;
+        const it = all.find(i => i.id === selected) || all[0];
+        const row = (i, n) => `
+            <li><button type="button" class="inv-row${i.id === it.id ? ' is-selected' : ''}${i.equipped ? ' is-equipped' : ''}" data-inv-item="${esc(i.id)}">
+                <span class="inv-num">${i.equipped ? '<span class="inv-check" title="Equipada">✔</span>' : n}</span>
+                ${i.kind === 'gear' ? _invChip(i.slot, i.element) : `<span class="inv-chip is-item"><img src="${esc(ICON(i.img))}" alt="" draggable="false"></span>`}
+                <span class="inv-name"${i.kind === 'gear' ? ` style="color:${INV_RARITY_INK[i.rarity] || INV_RARITY_INK.comun}"` : ''}>${esc(i.name)}${i.upgrades ? ` +${i.upgrades}` : ''}</span>
+                <span class="inv-val">${i.kind === 'gear' ? `ATK ${i.atq}` : `×${i.count}`}</span>
+            </button></li>`;
+        const gearRows = opts.gear.map((g, n) => row({ ...g, kind: 'gear' }, n + 1)).join('');
+        const itemRows = opts.items.map((i, n) => row({ ...i, kind: 'item' }, n + 1)).join('');
+
+        let detail;
+        if (it.kind === 'gear') {
+            const rar = RARITY_BY_ID[it.rarity] || RARITY_BY_ID.comun;
+            const elem = ELEMENTS[it.element] || ELEMENTS.neutro;
+            const picture = tab === 'preview' ? (it.preview || heroArt(ART) || RPG_HERO_SPRITE) : (it.image || null);
+            detail = `
+                <h4 class="inv-item-name" style="color:${INV_RARITY_INK[it.rarity] || INV_RARITY_INK.comun}">${esc(it.name)}${it.upgrades ? ` +${it.upgrades}` : ''}</h4>
+                <p class="inv-item-kind">Arma · ${esc(rar.name)} · ${esc(elem.name)}</p>
+                <div class="inv-frame" data-rarity="${esc(it.rarity)}">
+                ${picture ? `<img class="inv-preview${tab === 'detail' ? ' is-piece' : ''}" src="${esc(picture.src)}" alt="${esc(tab === 'preview' ? `Tu héroe con ${it.name}` : it.name)}" draggable="false">`
+                    : `<div class="inv-preview is-empty">${_invChip(it.slot, it.element)}</div>`}
+                </div>
+                <p class="inv-item-desc">${esc(it.desc)}</p>
+                <dl class="inv-stats"><dt>Ataque</dt><dd>ATK ${it.atq}${it.upgrades ? ` (+${it.upgrades} de mejora)` : ''}</dd>
+                    ${it.effects ? `<dt>Efecto</dt><dd>${esc(it.effects)}</dd>` : ''}<dt>Origen</dt><dd>${esc(it.from || '')}</dd></dl>
+                <button type="button" class="btn-forge inv-equip" data-inv-equip="${esc(it.id)}"${it.equipped ? ' disabled' : ''}>${it.equipped ? '✔ Equipada' : 'Equipar'}</button>`;
+        } else {
+            detail = `
+                <h4 class="inv-item-name">${esc(it.name)}</h4>
+                <p class="inv-item-kind">Objeto · llevas ${it.count}</p>
+                <div class="inv-frame"><img class="inv-preview is-item" src="${esc(ICON(it.img))}" alt="${esc(it.name)}" draggable="false"></div>
+                <p class="inv-item-desc">${esc(it.desc)}</p>
+                ${it.use ? `<button type="button" class="btn-forge inv-equip" data-inv-use="${esc(it.id)}"${it.count > 0 ? '' : ' disabled'}>${esc(it.use)}</button>` : ''}`;
+        }
         el.innerHTML = `<div class="inv">
             <section class="inv-page inv-list" aria-label="Inventario">
                 <h3 class="inv-title">Inventario</h3>
-                <ol class="inv-rows">${rows}</ol>
-                <p class="inv-gold">🪙 ${opts.gold} de oro</p>
+                <h4 class="inv-group">Equipo</h4>
+                <ol class="inv-rows">${gearRows}</ol>
+                ${itemRows ? `<h4 class="inv-group">Objetos</h4><ol class="inv-rows">${itemRows}</ol>` : ''}
+                <p class="inv-gold">${UI_IMG('moneda')} ${opts.gold} de oro</p>
             </section>
             <section class="inv-page inv-detail" aria-label="Detalle del objeto">
-                <h3 class="inv-title">Detalle</h3>
-                <h4 class="inv-item-name">${it.icon} ${esc(it.name)}</h4>
-                <p class="inv-item-kind">Arma · ${esc(it.rarity)}</p>
-                <img class="inv-preview" src="${esc(preview.src)}" alt="Tu héroe con ${esc(it.name)}" draggable="false">
-                <p class="inv-item-desc">${esc(it.desc)}</p>
-                <dl class="inv-stats"><dt>Ataque</dt><dd>ATK ${it.atq}</dd><dt>Origen</dt><dd>${esc(it.from || '')}</dd></dl>
-                <button type="button" class="btn-forge inv-equip" data-inv-equip="${esc(it.id)}"${it.equipped ? ' disabled' : ''}>${it.equipped ? 'Equipada' : 'Equipar'}</button>
+                <div class="inv-tabs" role="tablist">
+                    <button type="button" class="inv-tab${tab === 'detail' ? ' is-on' : ''}" data-inv-tab="detail">Detalle</button>
+                    ${it.kind === 'gear' ? `<button type="button" class="inv-tab${tab === 'preview' ? ' is-on' : ''}" data-inv-tab="preview">Vista previa</button>` : ''}
+                </div>
+                ${detail}
             </section>
         </div>`;
         el.querySelectorAll('[data-inv-item]').forEach(b => b.addEventListener('click', () => { selected = b.dataset.invItem; draw(); }));
+        el.querySelectorAll('[data-inv-tab]').forEach(b => b.addEventListener('click', () => { tab = b.dataset.invTab; draw(); }));
         const eq = el.querySelector('[data-inv-equip]');
         if (eq && !it.equipped) eq.addEventListener('click', () => opts.onEquip(it.id));
+        const use = el.querySelector('[data-inv-use]');
+        if (use && opts.onUse) use.addEventListener('click', () => opts.onUse(it.id));
     };
     draw();
 }
@@ -1037,7 +1225,7 @@ export function renderQuestPanel(log) {
     };
     const main = log.filter(x => x.quest.kind === 'main');
     const side = log.filter(x => x.quest.kind !== 'main').sort((a, b) => (a.status === 'done') - (b.status === 'done'));
-    el.innerHTML = _panelHeader('📜', 'Misiones', '')
+    el.innerHTML = _panelHeader(UI_IMG('mapa'), 'Misiones', '')
         + `<div class="panel-section"><h4 class="panel-section-title">Misión principal</h4>${main.map(quest).join('') || '<p class="panel-field-hint">Ninguna por ahora.</p>'}</div>`
         + `<div class="panel-section"><h4 class="panel-section-title">Misiones secundarias</h4>${side.map(quest).join('') || '<p class="panel-field-hint">Habla con la gente de Zafias: los que tienen un encargo salen en azul en el mapa.</p>'}</div>`;
 }
@@ -1075,7 +1263,7 @@ export function renderBestiaryPanel(meta) {
         Object.keys(v.lin || {}).forEach(id => distinctVariants.add(`l:${id}`));
     }
     const totalVariants = MONSTER_ADJECTIVES.length + MONSTER_LINEAGES.length;
-    el.innerHTML = _panelHeader('📖', 'Bestiario',
+    el.innerHTML = _panelHeader(UI_IMG('menu-bestiario'), 'Bestiario',
         'Se revela cada enemigo que te cruzas y se marca en verde el que has vencido. '
         + `Las variantes (🧬) son formas raras del mismo monstruo: llevas ${distinctVariants.size} de ${totalVariants}.`)
         + _progressBar(doneCount, Meta.BESTIARY.length, 'descubiertos')
@@ -1096,7 +1284,7 @@ export function renderCollectionPanel(meta) {
             <span class="panel-tile-sub" style="font-size:0.9rem;letter-spacing:1px">${dots}</span></div>`;
     }).join('');
     const doneCount = Object.keys(seen).length;
-    el.innerHTML = _panelHeader('🎒', 'Colección', 'Objetos vistos en cofres, hogueras y botín de sub-jefe. Los puntos son las rarezas en las que ya lo has visto.')
+    el.innerHTML = _panelHeader(UI_IMG('menu-coleccion'), 'Colección', 'Objetos vistos en cofres, hogueras y botín de sub-jefe. Los puntos son las rarezas en las que ya lo has visto.')
         + _progressBar(doneCount, bases.length, 'bases descubiertas')
         + `<div class="panel-grid">${tiles}</div>`;
 }
@@ -1114,7 +1302,7 @@ export function renderAchievementsPanel(meta) {
         </div>`;
     }).join('');
     const doneCount = Object.keys(meta.achievements).length;
-    el.innerHTML = _panelHeader('🏆', 'Logros', 'Solo información y orgullo: ningún logro te hace más fuerte.')
+    el.innerHTML = _panelHeader(UI_IMG('menu-logros'), 'Logros', 'Solo información y orgullo: ningún logro te hace más fuerte.')
         + _progressBar(doneCount, Meta.ACHIEVEMENTS.length, 'logros')
         + `<div class="panel-list">${rows}</div>`;
 }
@@ -1146,7 +1334,7 @@ function _renderWipeConfirm(handlers) {
 export function renderOptionsPanel(handlers = {}) {
     const el = document.getElementById('panelBody');
     if (!el) return;
-    el.innerHTML = _panelHeader('⚙️', 'Opciones', '')
+    el.innerHTML = _panelHeader(UI_IMG('menu-opciones'), 'Opciones', '')
         + `<div class="panel-section">
             <h4 class="panel-section-title">Semilla de la ruta actual</h4>
             ${handlers.seedCode

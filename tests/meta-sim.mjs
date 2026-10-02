@@ -12,6 +12,8 @@ import {
 import { ALL_MONSTER_DEFS } from '../src/data/monsters.js';
 import { createRpgItem } from '../src/items.js';
 import { createRng } from '../src/rng.js';
+import { RPG_BALANCE } from '../src/data/balance.js';
+RPG_BALANCE.freeShop = false;   // las pruebas miran los precios de verdad (el juego está en modo pruebas: todo gratis)
 
 let passed = 0;
 let failed = 0;

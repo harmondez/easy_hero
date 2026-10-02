@@ -35,6 +35,11 @@ function assert(label, cond) {
     else { failed++; console.log(`  ❌ ${label}`); }
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// El juego está en modo pruebas (la tienda lo da gratis): estas pruebas miran los precios de verdad
+const realPrices = p => p.evaluate(async () => {
+    const v = document.querySelector('script[type=module]').src.split('?')[1];
+    (await import(`./src/data/balance.js?${v}`)).RPG_BALANCE.freeShop = false;
+});
 // Arriba del todo: los helpers de más abajo (takeLoot…) la usan desde la primera sección
 const visible = sel => page.$eval(sel, el => getComputedStyle(el).display !== 'none').catch(() => false);
 const shotDir = process.env.SHOT_DIR || '';
@@ -104,7 +109,14 @@ const monBox = await (await page.$('#rpgCombatMonster .rpg-hud-card')).boundingB
 assert('Panel de pergamino: tu lado a la izquierda y el del enemigo a la derecha', heroBox && monBox && heroBox.x + heroBox.width <= monBox.x);
 assert('Cada lado muestra su vida con números', (await page.$$eval('.rpg-hud-card .rpg-stat.hp', els => els.length)) === 2);
 const labels = await page.$$eval('#rpgCombatActions .rpg-action-label', els => els.map(e => e.textContent.trim()));
-assert('Acciones a un clic: Defender, cada habilidad, ¡Atacar!, Poción y Huir', labels.join(',') === 'Defender,Fuego,¡Atacar!,Poción,Huir');
+assert('Acciones a un clic: Defender, ¡Atacar!, las dos pociones (solo su imagen) y Huir', labels.join(',') === 'Defender,¡Atacar!,Huir'
+    && (await page.$$('#rpgCombatActions .rpg-action.is-image .rpg-action-img')).length === 2
+    && !!(await page.$('[data-rpg-action="mana_potion"]')));
+assert('Barra de habilidades: 6 ranuras; Bola de fuego y Grito de guerra con su icono y su coste, y 4 cerradas',
+    (await page.$$('#rpgSkillBar .rpg-skill')).length === 6 && (await page.$$('#rpgSkillBar .rpg-skill.is-locked')).length === 4
+    && /Bola de fuego/.test(await page.$eval('#rpgSkillBar [data-rpg-skill="fire_strike"]', el => el.title))
+    && (await page.$eval('#rpgSkillBar [data-rpg-skill="fire_strike"] .is-mana', el => el.textContent)) === '5');
+assert('El héroe tiene barra de maná: 12 / 12 (la mitad de su vida inicial)', /12 \/ 12/.test(await page.$eval('#rpgCombatHero .rpg-stat.mp', el => el.textContent)));
 assert('¡Atacar! es el botón protagonista (el más grande)', await page.evaluate(() => {
     const [main, ...rest] = [document.querySelector('[data-rpg-action="attack"]'), ...document.querySelectorAll('.rpg-action:not([data-main])')];
     return rest.every(b => b.offsetWidth < main.offsetWidth);
@@ -129,18 +141,19 @@ assert('El diario está plegado y enseña la última línea', await page.$eval('
     && (await page.$eval('#rpgCombatLogLast', el => el.textContent)).length > 0);
 
 const skillBtn = await page.$('[data-rpg-skill="fire_strike"]');
-assert('Golpe de Fuego está a un clic, sin submenú', !!skillBtn);
+assert('Bola de fuego está a un clic, sin submenú', !!skillBtn);
 await skillBtn.click();
 await sleep(150);
-assert('Golpe de Fuego inflige 5 de daño (6 → 1 HP)',
+assert('Bola de fuego inflige 5 de daño (6 → 1 HP)',
     /1\s*\/\s*6/.test(await page.$eval('#rpgCombatMonster .rpg-stat.hp', el => el.textContent)));
 assert('Escenario: al golpear, la imagen del héroe se lanza hacia el enemigo',
     (await page.$eval('#rpgActorHero', el => el.getAnimations().length)) > 0);
 await sleep(120);
 assert('Escenario: el daño sale como número encima del enemigo (-5)',
     (await page.$$eval('#rpgStage .rpg-stage-float', els => els.map(e => e.textContent))).includes('-5'));
-assert('Golpe de Fuego queda enfriándose, con las rondas que faltan a la vista',
-    await page.$eval('[data-rpg-skill="fire_strike"]', el => el.disabled && /\d/.test(el.querySelector('.rpg-action-badge')?.textContent || '')));
+assert('Bola de fuego gasta 5 de maná (12 → 7) y su coste está a la vista; sin recarga, sigue disponible',
+    /7 \/ 12/.test(await page.$eval('#rpgCombatHero .rpg-stat.mp', el => el.textContent))
+    && await page.$eval('[data-rpg-skill="fire_strike"]', el => !el.disabled && el.querySelector('.rpg-action-badge')?.textContent === '5'));
 
 await page.click('[data-rpg-action="flee"]');
 await sleep(150);
@@ -614,6 +627,7 @@ console.log('\n🫥 Patrones ocultos (estilo DragonFable) y pociones');
     await page.evaluate(() => { const r = window.gameState.rpg; r.combat = null; r.combatResult = null; window.UI.hideRpgCombatResult(); });
 
     // La Forja vende pociones a precio fijo, con tope
+    await realPrices(page);
     await page.evaluate(() => { window.gameMeta.gold = 100; window.gameMeta.potions = 0; window.UI.renderShop(window.gameMeta); window.UI.toggleRpgView('rpgShopView'); });
     await page.click('[data-shop-buy="potion"]');
     await sleep(100);
@@ -713,8 +727,8 @@ console.log('\n💾 Guardar y retomar');
     assert('Retomas EN MEDIO DEL COMBATE: mismo enemigo, misma vida, misma ronda y el mismo plan (oculto) del enemigo',
         await visible('#rpgCombatView') && restored.mhp === inFight.mhp && restored.hhp === inFight.hhp && restored.turn === inFight.turn
         && restored.intent === inFight.intent && restored.name === inFight.name && restored.seed === seed1);
-    assert('El combate retomado se ve completo: vida del enemigo y las 5 acciones',
-        (await page.$$('#rpgCombatActions .rpg-action')).length === 5 && !!(await page.$('#rpgCombatMonster .rpg-stat.hp')));
+    assert('El combate retomado se ve completo: vida del enemigo, las 5 acciones y la barra de habilidades',
+        (await page.$$('#rpgCombatActions .rpg-action')).length === 5 && (await page.$$('#rpgSkillBar .rpg-skill')).length === 6 && !!(await page.$('#rpgCombatMonster .rpg-stat.hp')));
     for (let i = 0; i < 40 && !(await page.$('#btnRpgCombatContinue')); i++) { await page.click('[data-rpg-action="attack"]'); await sleep(40); }
     await page.click('#btnRpgCombatContinue');
     await sleep(250);
@@ -1008,17 +1022,20 @@ console.log('\n⚒️ La Forja: gastar el oro en mejoras permanentes');
     });
     await page.reload({ waitUntil: 'load' });
     await sleep(500);
+    await realPrices(page);
     assert('El inicio ofrece La Forja con el oro que llevas', /399/.test(await page.$eval('#btnRpgShop', el => el.textContent)));
 
     await page.click('#btnRpgShop');
     await sleep(200);
     assert('La Forja es una vista propia, no un panel superpuesto',
         await visible('#rpgShopView') && !(await visible('#panelOverlay')));
-    // 8 mejoras + la poción (que no es mejora: es un consumible con tope)
-    assert('Se ofrecen las 8 mejoras del catálogo y la poción', (await page.$$('#shopBody .shop-card')).length === 9
-        && !!(await page.$('#shopBody [data-shop-buy="potion"]')));
+    // 8 mejoras + los consumibles con tope: dos pociones, cuatro elixires (con el frasco de veneno) y el pan
+    assert('Se ofrecen las 8 mejoras del catálogo y los 7 consumibles (sin armas: eso es en la aventura)', (await page.$$('#shopBody .shop-card')).length === 15
+        && !(await page.$('#shopBody [data-shop-buy^="gear:"]'))
+        && !!(await page.$('#shopBody [data-shop-buy="elixir:fuerza"]'))
+        && !!(await page.$('#shopBody [data-shop-buy="potion"]')) && !!(await page.$('#shopBody [data-shop-buy="mana_potion"]')));
     assert('Con 399 de oro, lo barato se puede comprar y la mejora de 400 no',
-        (await page.$$('#shopBody .shop-card.is-affordable')).length === 8 && (await page.$$('#shopBody .shop-buy:disabled')).length === 1);
+        (await page.$$('#shopBody .shop-card.is-affordable')).length === 14 && (await page.$$('#shopBody .shop-buy:disabled')).length === 1);
 
     await page.click('[data-shop-buy="constitucion"]');
     await sleep(200);
@@ -1138,8 +1155,8 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     assert('El botón «Modo aventura» abre la vista de Zafias', await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none'));
     assert('Empieza en la aldea, con su cartel', (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea'
         && /aldea/i.test(await adv.$eval('.adv-plaque', el => el.textContent)));
-    assert('La aldea tiene 2 NPC, 2 puntos de interés y 2 salidas al bosque', (await adv.$$('.adv-stop.is-npc')).length === 2
-        && (await adv.$$('.adv-stop.is-poi')).length === 2 && (await adv.$$('.adv-stop.is-exit')).length === 2);
+    assert('La aldea tiene 2 NPC, 3 puntos de interés (con la cueva sellada) y 2 salidas al bosque', (await adv.$$('.adv-stop.is-npc')).length === 2
+        && (await adv.$$('.adv-stop.is-poi')).length === 3 && (await adv.$$('.adv-stop.is-exit')).length === 2);
     assert('El mapa se ve con zoom (la cámara escala el mundo)', await adv.$eval('.adv-world', el => /scale\((1\.[5-9]|2\.)/.test(el.style.transform)));
     assert('Los caminos se dibujan a trazos, como en un mapa antiguo', await adv.$eval('.adv-paths .adv-path-ink', el =>
         getComputedStyle(el).strokeDasharray !== 'none' && el.getAttribute('d').length > 10));
@@ -1157,7 +1174,7 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     }
     assert('El diálogo es solo historia: «Siguiente» hasta la última línea, que dice «Cerrar»',
         pages.length >= 2 && pages[0] === 'Siguiente' && pages[pages.length - 1] === 'Cerrar' && await adv.$eval('.adv-dialogue', el => el.hidden));
-    assert('Maela te da la primera misión y el objetivo queda a la vista', /goblins del bosque: 0\/3/.test(await adv.$eval('.adv-hud', el => el.textContent)));
+    assert('Maela te da la primera misión y el objetivo queda a la vista', /goblins del bosque: 0\/3/.test(await adv.$eval('.adv-objective', el => el.textContent)));
 
     await adv.click('.adv-stop[data-point="al-bosque"]', { force: true });
     await sleep(250);
@@ -1169,8 +1186,8 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     await adv.click('.adv-stop[data-point="goblin-1"]', { force: true });
     await sleep(250);
     assert('Pulsar al goblin: el héroe va hasta él y el goblin le grita', /Goblin/.test(await adv.$eval('.adv-dialogue-who', el => el.textContent)));
-    await adv.click('.adv-dialogue-next');
-    await sleep(250);
+    for (let i = 0; i < 6 && !(await adv.$eval('.adv-dialogue', el => el.hidden)); i++) { await adv.click('.adv-dialogue-next'); await sleep(80); }   // su grito, entero
+    await sleep(200);
     assert('Tras su grito empieza un combate de verdad, en la pantalla de lado, con el nombre del bosque',
         await adv.$eval('#rpgCombatView', el => getComputedStyle(el).display !== 'none')
         && /bosque/i.test(await adv.$eval('#rpgCombatTitle', el => el.textContent)));
@@ -1184,9 +1201,11 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
         && (await adv.$$('.adv-world .adv-enemy')).length === enemiesBefore - 1);
     const saved = await adv.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
     assert('La aventura se guarda: escena, vida y enemigos vencidos', saved.scene === 'bosque' && saved.gone['goblin-1'] === true && saved.hp > 0);
-    assert('La barra de la aventura muestra vida, oro y pociones', /❤️ \d+\/\d+ · 🪙 \d+ · 🧪 \d+/.test(await adv.$eval('.adv-hud', el => el.textContent)));
+    assert('La barra de abajo muestra vida y maná (con su arte), oro y las dos pociones',
+        /^\d+\/\d+$/.test(await adv.$eval('[data-hud="hp"] .ui-gauge-text', el => el.textContent)) && /^\d+\/\d+$/.test(await adv.$eval('[data-hud="mp"] .ui-gauge-text', el => el.textContent))
+        && /^\d+$/.test(await adv.$eval('[data-hud="gold"]', el => el.textContent)) && !!(await adv.$('[data-hud="potions"]')) && !!(await adv.$('[data-hud="mana-potions"]')));
     assert('La misión cuenta el goblin vencido (1/3) y el camino al campamento sigue cerrado',
-        /1\/3/.test(await adv.$eval('.adv-hud', el => el.textContent)) && !(await adv.$('.adv-stop[data-point="al-campamento"]')));
+        /1\/3/.test(await adv.$eval('.adv-objective', el => el.textContent)) && !(await adv.$('.adv-stop[data-point="al-campamento"]')));
     // La aldea funciona: posada, tienda y cueva
     const talkAll = async () => { for (let i = 0; i < 8 && !(await adv.$eval('.adv-dialogue', el => el.hidden)); i++) { await adv.click('.adv-dialogue-next'); await sleep(50); } };
     await adv.click('.adv-stop[data-point="a-la-aldea"]', { force: true });
@@ -1198,7 +1217,7 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     assert('Dormir en la posada cura del todo y hace volver a los goblins', slept.hp === null && Object.keys(slept.gone).length === 0
         && slept.flags['defeated:goblin-1'] === true);
     // Un punto de interés se mira como se habla, y su hallazgo se da una sola vez
-    const goldOf = async () => Number((await adv.$eval('.adv-hud', el => el.textContent)).match(/🪙 (\d+)/)[1]);
+    const goldOf = async () => Number(await adv.$eval('[data-hud="gold"]', el => el.textContent));
     const goldBefore = await goldOf();
     await adv.click('.adv-stop[data-point="pozo"]', { force: true });
     await sleep(200);
@@ -1223,23 +1242,18 @@ console.log('\n🧭 Modo Aventura (prueba de concepto)');
     await sleep(250);
     assert('Al salir de la tienda vuelves a la aldea', await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none'));
     await adv.click('.adv-stop[data-point="cueva"]', { force: true });
-    await sleep(400);
-    assert('La cueva del sur baja al descenso de siempre', await adv.$eval('#rpgMapView', el => getComputedStyle(el).display !== 'none'));
-    await adv.click('#btnRpgAbandon');
     await sleep(300);
-    assert('Abandonar el descenso bajado desde la cueva te devuelve a la aldea, no al inicio',
-        await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none')
-        && (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea'
-        && !(await adv.evaluate(() => 'fromCave' in JSON.parse(localStorage.getItem('easy-hero-adventure')))));
-    // Desde el inicio todo sigue igual: el descenso termina en el inicio
-    await adv.click('.adv-back');
-    await sleep(200);
-    await adv.click('#btnRpgStart');
-    await sleep(300);
-    await adv.click('#btnRpgAbandon');
-    await sleep(200);
-    assert('Un descenso empezado desde el inicio, al abandonarlo, te deja en el inicio',
-        await adv.$eval('#rpgStartView', el => getComputedStyle(el).display !== 'none'));
+    // Lee el diálogo entero, línea a línea
+    let cueva = '';
+    for (let i = 0; i < 8 && !(await adv.$eval('.adv-dialogue', el => el.hidden)); i++) {
+        cueva += await adv.$eval('.adv-dialogue', el => el.textContent);
+        await adv.click('.adv-dialogue-next');
+        await sleep(50);
+    }
+    assert('La cueva del sur está sellada: un escalofrío, «todavía no estás preparado», y sigues en la aldea',
+        /todavía no estás preparado/.test(cueva) && await adv.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none')
+        && (await adv.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea' && !(await adv.$('#btnRpgAbandon:visible')));
+    assert('La aventura ya no tiene botón a la mazmorra', !(await adv.$('.adv-back')));
     assert('Sin errores de página en la aventura', advErrors.length === 0);
     await adv.context().close();
 }
@@ -1294,7 +1308,7 @@ console.log('\n🖼️ Imágenes propias de los monstruos (taller de sprites)');
 }
 
 // ---------------------------------------------
-console.log('\n💀 Modo Aventura: caer en un combate y bajar a la cueva');
+console.log('\n💀 Modo Aventura: caer en un combate');
 {
     const fall = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })).newPage();
     const fallErrors = [];
@@ -1313,8 +1327,8 @@ console.log('\n💀 Modo Aventura: caer en un combate y bajar a la cueva');
     await sleep(400);
     await fall.click('.adv-stop[data-point="goblin-1"]', { force: true });
     await sleep(250);
-    await fall.click('.adv-dialogue-next');
-    await sleep(250);
+    for (let i = 0; i < 6 && !(await fall.$eval('.adv-dialogue', el => el.hidden)); i++) { await fall.click('.adv-dialogue-next'); await sleep(80); }
+    await sleep(200);
     for (let i = 0; i < 40 && !(await fall.$('#btnRpgCombatContinue')); i++) { await fall.click('[data-rpg-action="attack"]'); await sleep(30); }
     assert('Con 1 de vida, el goblin te derriba: sale el cartel «Has caído»',
         /Has caído/.test(await fall.$eval('#rpgCombatResult', el => el.textContent)));
@@ -1325,7 +1339,7 @@ console.log('\n💀 Modo Aventura: caer en un combate y bajar a la cueva');
     assert('Tras caer despiertas en la posada de la aldea', await fall.$eval('#rpgAdventureView', el => getComputedStyle(el).display !== 'none')
         && (await fall.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea' && woke.scene === 'aldea');
     assert('…con la vida llena', woke.hp === null
-        && await fall.$eval('.adv-hud', el => { const m = /❤️ (\d+)\/(\d+)/.exec(el.textContent); return !!m && m[1] === m[2]; }));
+        && await fall.$eval('[data-hud="hp"] .ui-gauge-text', el => { const m = /(\d+)\/(\d+)/.exec(el.textContent); return !!m && m[1] === m[2]; }));
     assert('…y un 10 % menos de oro (200 → 180)', meta.gold === 180);
     assert('Sin errores de página al caer', fallErrors.length === 0);
     await fall.context().close();

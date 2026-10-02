@@ -65,20 +65,21 @@ async function cropSprite(file) {
     });
 }
 
-async function readManifest(manifestFile) {
+export async function readManifest(manifestFile) {
     const empty = { sprites: {}, bg: {}, zones: {} };
     if (!fs.existsSync(manifestFile)) return empty;
     const mod = await import(`${pathToFileURL(manifestFile).href}?t=${Date.now()}`);
     return { ...empty, ...mod.ART };
 }
 
-function manifestText(art) {
+export function manifestText(art) {
     const sorted = Object.fromEntries(Object.entries(art).map(([g, items]) =>
         [g, Object.fromEntries(Object.entries(items).sort(([a], [b]) => a.localeCompare(b)))]));
     return `// =============================================
 // 🖼️ Registro de imágenes del juego — LO ESCRIBE \`npm run sprites\` (tools/sprites.mjs); no se edita a mano.
 //   sprites: enemigo_<id> y heroe_<id>, ya recortados (los pies tocan el borde inferior)
-//   bg: fondos de combate · zones: mapas de zona (sin recortar)
+//   bg: fondos de combate · zones: mapas de zona (sin recortar) · icons: iconos y objetos (npm run icons)
+//   portraits: retratos de los diálogos (npm run icons, de img/characters)
 // Cada entrada: { src, w, h }. El combate usa estas imágenes si existen; si no, el goblin teñido de siempre.
 // =============================================
 export const ART = ${JSON.stringify(sorted, null, 4)};

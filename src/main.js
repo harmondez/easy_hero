@@ -1,17 +1,17 @@
-import * as UI from './ui.js?v=1.8.0';
-import * as Engine from './engine.js?v=1.8.0';
-import * as Events from './events.js?v=1.8.0';
-import * as Save from './save.js?v=1.8.0';
-import * as Items from './items.js?v=1.8.0';
-import * as Meta from './meta.js?v=1.8.0';
-import * as AdventureMode from './adventure.js?v=1.8.0';
-import { playIntro } from './intro.js?v=1.8.0';
-import { ART } from './data/art.js?v=1.8.0';
-import { heroArt } from './art.js?v=1.8.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.8.0';
-import { tierName } from './data/monsters.js?v=1.8.0';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.8.0';
-import { GAME_VERSION } from './version.js?v=1.8.0';
+import * as UI from './ui.js?v=1.9.0';
+import * as Engine from './engine.js?v=1.9.0';
+import * as Events from './events.js?v=1.9.0';
+import * as Save from './save.js?v=1.9.0';
+import * as Items from './items.js?v=1.9.0';
+import * as Meta from './meta.js?v=1.9.0';
+import * as AdventureMode from './adventure.js?v=1.9.0';
+import { playIntro } from './intro.js?v=1.9.0';
+import { ART } from './data/art.js?v=1.9.0';
+import { heroArt } from './art.js?v=1.9.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.0';
+import { tierName } from './data/monsters.js?v=1.9.0';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.9.0';
+import { GAME_VERSION } from './version.js?v=1.9.0';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
@@ -215,7 +215,7 @@ function _rpgPreviewHero() {
 
 function _rpgOpenShop(from) {
     gameState.rpg.shopFrom = from || 'start';
-    UI.renderShop(meta);
+    UI.renderShop(meta, { from: gameState.rpg.shopFrom });
     UI.toggleRpgView('rpgShopView');
 }
 
@@ -228,11 +228,16 @@ function _rpgCloseShop() {
 }
 
 function _rpgBuyUpgrade(id) {
-    const bought = id === 'potion' ? Meta.buyPotion(meta) : Meta.buyUpgrade(meta, id);
+    const bought = id === 'potion' ? Meta.buyPotion(meta) : id === 'mana_potion' ? Meta.buyManaPotion(meta)
+        : id.startsWith('elixir:') ? Meta.buyElixir(meta, id.slice(7))
+        : id.startsWith('gear:') ? Meta.buyGear(meta, id.slice(5))
+        : id.startsWith('food:') ? Meta.buyFood(meta, id.slice(5))
+        : id === 'weapon_upgrade' ? Meta.buyWeaponUpgrade(meta, meta.advWeapon)
+        : Meta.buyUpgrade(meta, id);
     if (!bought.ok) return;
     Meta.checkAchievements(meta, null, { floors: Engine.RPG_MAP_CONFIG.floors });
     persistMeta();
-    UI.renderShop(meta);
+    UI.renderShop(meta, { from: gameState.rpg.shopFrom });
 }
 
 function _refreshShopButton() {
@@ -250,7 +255,6 @@ function _rpgBackToStart() {
     UI.renderRpgHeroCard(_rpgPreviewHero());
     _refreshShopButton();
     refreshContinueButton();
-    AdventureMode.returnFromDescent();   // si bajaste desde la cueva de Zafias, vuelves a la aldea
 }
 
 // Retoma la partida guardada exactamente donde estaba (mapa, evento o combate a medias)
@@ -264,6 +268,8 @@ function _rpgResume() {
     r.log.forEach(l => UI.addRpgLog(l.msg, l.type));
     if (r.combat) {
         r.combat.potions = Meta.potionCount(meta);   // la fuente de verdad es el progreso, no la partida guardada
+        r.combat.manaPotions = Meta.manaPotionCount(meta);
+        r.combat.elixirs = Meta.elixirsForCombat(meta);
         UI.toggleRpgView('rpgCombatView');
         UI.clearRpgCombatLog();
         UI.addRpgCombatLog('▶️ Retomas el combate donde lo dejaste.', 'system');
@@ -590,6 +596,9 @@ function _rpgStartCombat(node, customMonster) {
     const monster = customMonster || Engine.createRpgMonster(node.type, node.floor, tier, variants);
     r.combat = Engine.createRpgCombat(r.hero, monster, r.rng);
     r.combat.potions = Meta.potionCount(meta);   // las pociones son tuyas: entran al combate las que lleves
+    r.combat.manaPotions = Meta.manaPotionCount(meta);
+    r.combat.elixirs = Meta.elixirsForCombat(meta);
+    r.hero.mp = r.hero.maxMp;   // en el descenso (aparcado) cada combate empieza con el maná lleno, como antes la recarga
     r.combatMenu = 'main';
     r.pendingNodeId = node.id;
     Meta.recordMonsterSeen(meta, monster.baseName || monster.name);
@@ -618,6 +627,8 @@ function _rpgCombatAct(action, skillId) {
     }
     r.combatMenu = 'main';
     if (action === 'potion') { meta.potions = c.potions; persistMeta(); }
+    if (action === 'mana_potion') { meta.manaPotions = c.manaPotions; persistMeta(); }
+    if (action === 'elixir') { meta.elixirs = { ...c.elixirs }; persistMeta(); }
     res.events.forEach(ev => UI.addRpgCombatLog(ev.text, ev.actor === 'hero' ? 'player' : 'enemy'));
     _rpgRefreshCombat();
     UI.playRpgCombatFx(res.events);
@@ -824,7 +835,6 @@ function _rpgCombatContinue() {
 function initEvents() {
     // --- 🗡️ RPG ---
     safeListener('btnRpgStart', 'click', () => {
-        AdventureMode.forgetDescentOrigin();
         const input = document.getElementById('rpgSeedInput');
         _rpgStartRun(input ? codeToSeed(input.value) : null);
     });
@@ -857,14 +867,16 @@ function initEvents() {
         else if (e.target.closest('#btnRpgLootStore')) _rpgLootDecide('store');
         else if (e.target.closest('#btnRpgLootDiscard')) _rpgLootDecide('discard');
     });
-    safeListener('rpgCombatActions', 'click', (e) => {
+    const onCombatAction = (e) => {
         const btn = e.target.closest('[data-rpg-action]');
         if (!btn || btn.disabled) return;
         const action = btn.dataset.rpgAction;
         // La misma pantalla sirve a los dos modos: si hay un combate de la aventura en curso, es suyo
         if (AdventureMode.inCombat()) AdventureMode.combatAct(action, btn.dataset.rpgSkill);
         else _rpgCombatAct(action, btn.dataset.rpgSkill);
-    });
+    };
+    safeListener('rpgCombatActions', 'click', onCombatAction);
+    safeListener('rpgSkillBar', 'click', onCombatAction);   // la barra de habilidades
     safeListener('rpgCombatResult', 'click', (e) => {
         if (!e.target.closest('#btnRpgCombatContinue')) return;
         if (AdventureMode.inCombat()) AdventureMode.combatContinue();
@@ -927,6 +939,7 @@ function _openPanel(kind) {
     }
 }
 window.openPanel = _openPanel; // para pruebas y depuración
+window.gameCombat = () => (AdventureMode.inCombat() ? AdventureMode.currentCombat() : gameState.rpg.combat);   // ídem
 
 /** Borra todo lo guardado (claves easy-hero-*) y vuelve a empezar: sin progreso, se abre la introducción. */
 function _wipeProgress() {
@@ -973,14 +986,7 @@ AdventureMode.init({
     rpgPreviewHero: _rpgPreviewHero,
     rpgGrantVictory: _rpgGrantVictory,
     rpgOpenShop: _rpgOpenShop,
-    refreshShopButton: _refreshShopButton,
-    // La cueva del sur: si hay un descenso a medias se retoma; si no, empieza uno
-    // Devuelve cuál de las dos cosas ha pasado, para que la aventura sepa si volver a la aldea al terminar
-    enterDescent: () => {
-        if (Save.peekRun(storage)) { _rpgResume(); return 'resumed'; }
-        _rpgStartRun(null);
-        return 'new';
-    }
+    refreshShopButton: _refreshShopButton
 });
 // --- La puerta de entrada: la aventura. La primera vez, la introducción; después, directo a Zafias ---
 /** Reproduce la introducción y, al terminar, entra en la aventura (en la aldea si es la primera vez). */

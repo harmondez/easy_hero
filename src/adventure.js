@@ -2,23 +2,27 @@
 // 🧭 Modo Aventura (controlador): Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
 // Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
 // =============================================
-import * as UI from './ui.js?v=1.8.0';
-import * as Engine from './engine.js?v=1.8.0';
-import * as Meta from './meta.js?v=1.8.0';
-import * as Adventure from './adventure-view.js?v=1.8.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.8.0';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.8.0';
-import { creatureFor } from './data/creatures.js?v=1.8.0';
-import { QUESTS } from './data/quests.js?v=1.8.0';
-import { GEAR, STARTER_GEAR } from './data/gear.js?v=1.8.0';
-import { ART } from './data/art.js?v=1.8.0';
-import * as Items from './items.js?v=1.8.0';
-import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.8.0';
+import * as UI from './ui.js?v=1.9.0';
+import * as Engine from './engine.js?v=1.9.0';
+import * as Meta from './meta.js?v=1.9.0';
+import * as Adventure from './adventure-view.js?v=1.9.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.0';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.9.0';
+import { creatureFor } from './data/creatures.js?v=1.9.0';
+import { QUESTS } from './data/quests.js?v=1.9.0';
+import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.9.0';
+import { ELIXIRS, FOOD } from './data/effects.js?v=1.9.0';
+import { ART } from './data/art.js?v=1.9.0';
+import * as Items from './items.js?v=1.9.0';
+import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.9.0';
 
 // Lo que la aventura necesita del resto del juego (main.js se lo da al arrancar): el almacenamiento, el progreso
 // permanente y algunas piezas del descenso (el héroe base, las recompensas, La Forja, bajar a la mazmorra).
 let ctx = null;
 export function init(context) { ctx = context; }
+
+/** El combate de la aventura en curso (para pruebas y depuración). */
+export const currentCombat = () => adv.combat;
 
 /** ¿Hay un combate de la aventura en curso? (la pantalla de combate es compartida con el descenso) */
 export const inCombat = () => !!adv.combat;
@@ -43,11 +47,14 @@ function _advSave() {
 const _advOwned = () => (ctx.meta.advGear && ctx.meta.advGear.length ? ctx.meta.advGear : [STARTER_GEAR]);
 const _advWeaponId = () => (GEAR[ctx.meta.advWeapon] && _advOwned().includes(ctx.meta.advWeapon) ? ctx.meta.advWeapon : STARTER_GEAR);
 
-/** El arma equipada como objeto del motor (la espada inicial, con el nombre, el ATK y el dibujo de la ficha). */
+/** El ATK de un arma de la aventura, con sus cristales de mejora. */
+const _advGearAtq = id => GEAR[id].atq + Meta.weaponUpgradeLevel(ctx.meta, id) * WEAPON_UPGRADE.atq;
+
+/** El arma equipada como objeto del motor (la espada inicial, con el nombre y el ATK de la ficha). */
 function _advWeaponItem(id) {
     const g = GEAR[id];
     const item = Items.createStarterItem();
-    return { ...item, id: `aventura-${id}`, name: g.name, icon: g.icon, desc: g.desc, stats: { ...item.stats, atq: g.atq } };
+    return { ...item, id: `aventura-${id}`, name: g.name, desc: g.desc, stats: { ...item.stats, atq: _advGearAtq(id) } };
 }
 
 /** El dibujo del héroe según su arma (null = el de siempre). */
@@ -70,24 +77,66 @@ function _advEquip(id) {
     _advOpenInventory(id);
 }
 
+// Lo que llevas encima, para el inventario: pociones, elixires y comida (solo lo que tienes)
+function _advCarried() {
+    const m = ctx.meta;
+    const P = RPG_BALANCE.potion;
+    const MP = RPG_BALANCE.manaPotion;
+    const out = [
+        { id: 'pocion', name: 'Poción de vida', img: 'pocion-vida', count: Meta.potionCount(m),
+            desc: `En combate cura el ${Math.round(P.heal * 100)} % de tu vida máxima, a cambio de tu turno.` },
+        { id: 'pocion-mana', name: 'Poción de maná menor', img: 'pocion-mana', count: Meta.manaPotionCount(m),
+            desc: `En combate devuelve el ${Math.round(MP.restore * 100)} % de tu maná máximo, a cambio de tu turno.` },
+        ...Object.entries(ELIXIRS).map(([id, ex]) => ({ id: `elixir:${id}`, name: ex.name, img: ex.img, count: Meta.elixirCount(m, id),
+            desc: `${ex.desc} Se usa en combate, a cambio de tu turno.` })),
+        ...Object.entries(FOOD).map(([id, f]) => ({ id: `food:${id}`, name: f.name, img: f.img, count: Meta.foodCount(m, id),
+            desc: `${f.desc} Cura el ${Math.round(f.heal * 100)} % de tu vida.`, use: 'Comer' }))
+    ];
+    return out.filter(i => i.count > 0);
+}
+
+// Comer fuera del combate: cura una parte de la vida máxima
+function _advUse(id) {
+    if (!id.startsWith('food:')) return;
+    const f = FOOD[id.slice(5)];
+    const h = adv.hero;
+    if (!f || h.hp >= h.maxHp || !Meta.eatFood(ctx.meta, id.slice(5))) { _advOpenInventory(id); return; }
+    h.hp = Math.min(h.maxHp, h.hp + Math.max(1, Math.round(h.maxHp * f.heal)));
+    adv.state.hp = h.hp;
+    ctx.persistMeta();
+    _advSave();
+    _advRefreshHud();
+    _advOpenInventory(Meta.foodCount(ctx.meta, id.slice(5)) > 0 ? id : null);
+}
+
 function _advOpenInventory(selected) {
     UI.openPanel();
     UI.renderInventoryPanel({
-        items: _advOwned().map(id => ({ id, ...GEAR[id], equipped: id === _advWeaponId(),
+        gear: _advOwned().map(id => ({ id, ...GEAR[id], atq: _advGearAtq(id), upgrades: Meta.weaponUpgradeLevel(ctx.meta, id),
+            effects: UI.gearEffectsText(GEAR[id]), equipped: id === _advWeaponId(),
+            image: ART.icons[`objeto-${id}`] || null,
             preview: (GEAR[id].sprite && ART.sprites[GEAR[id].sprite]) || null })),
+        items: _advCarried(),
         selected: selected || _advWeaponId(),
         gold: ctx.meta.gold,
-        heroAtq: adv.hero ? adv.hero.atq : null,
-        onEquip: id => _advEquip(id)
+        onEquip: id => _advEquip(id),
+        onUse: id => _advUse(id)
     });
 }
 
 function _advHero() {
     const hero = ctx.rpgPreviewHero();
     // El arma de la aventura sustituye a la espada inicial (los puntos de nivel y La Forja se mantienen)
-    if (_advWeaponId() !== STARTER_GEAR) { Items.equipItem(hero, _advWeaponItem(_advWeaponId())); Engine.refreshPrimaryStats(hero); }
+    if (_advWeaponId() !== STARTER_GEAR || Meta.weaponUpgradeLevel(ctx.meta, STARTER_GEAR) > 0) {
+        Items.equipItem(hero, _advWeaponItem(_advWeaponId()));
+        Engine.refreshPrimaryStats(hero);
+    }
     hero.sprite = _advHeroSprite();
+    // Los efectos de estado del arma (src/data/gear.js): al golpear y al empezar cada combate
+    const g = GEAR[_advWeaponId()];
+    hero.gearEffects = { onHit: g.onHit || [], onStart: g.onStart || [] };
     if (adv.state.hp != null) hero.hp = Math.max(1, Math.min(hero.maxHp, adv.state.hp));
+    if (adv.state.mp != null) hero.mp = Math.max(0, Math.min(hero.maxMp, adv.state.mp));
     return hero;
 }
 
@@ -155,6 +204,7 @@ function _advPlace(p) {
             dialogue: 'posada-dormir',
             onDone: () => {
                 adv.state.hp = null;
+                adv.state.mp = null;
                 adv.state.gone = {};
                 _advSave();
                 adv.hero = _advHero();
@@ -168,13 +218,6 @@ function _advPlace(p) {
         ctx.rpgOpenShop('adventure');
         return null;
     }
-    if (p.kind === 'cave') {
-        // La cueva baja al descenso de siempre: si hay una partida a medias, se retoma; si no, empieza una.
-        // Solo si empieza una nueva desde aquí, al terminarla se vuelve a la aldea (una retomada sigue su origen)
-        Adventure.close();
-        if (ctx.enterDescent() === 'new') { adv.state.fromCave = true; _advSave(); }
-        return null;
-    }
     return null;
 }
 
@@ -182,18 +225,19 @@ function _advPlace(p) {
 function _advQuestText() {
     const f = adv.state.flags;
     // Tras Grask, la pista del jefe de la zona: la guarida del lobo, pasado el campamento
-    if (f.misionCumplida) return f['defeated:feronius'] ? '📜 Misión cumplida · Zafias está en paz'
-        : '📜 Misión cumplida · Algo aúlla pasado el campamento, al sureste';
-    if (f['defeated:grask']) return f['defeated:feronius'] ? '📜 Vuelve con Maela a la aldea' : '📜 Vuelve con Maela a la aldea · Algo aúlla al sureste del campamento';
-    if (!f.misionAceptada) return '📜 Habla con Maela, la posadera';
+    if (f.misionCumplida) return f['defeated:feronius'] ? 'Misión cumplida · Zafias está en paz'
+        : 'Misión cumplida · Algo aúlla pasado el campamento, al sureste';
+    if (f['defeated:grask']) return f['defeated:feronius'] ? 'Vuelve con Maela a la aldea' : 'Vuelve con Maela a la aldea · Algo aúlla al sureste del campamento';
+    if (!f.misionAceptada) return 'Habla con Maela, la posadera';
     const goblins = ['goblin-1', 'goblin-2', 'goblin-3'].filter(id => f[`defeated:${id}`]).length;
-    if (goblins < 3) return `📜 Echa a los goblins del bosque: ${goblins}/3`;
-    return '📜 Entra en el campamento goblin y acaba con Grask';
+    if (goblins < 3) return `Echa a los goblins del bosque: ${goblins}/3`;
+    return 'Entra en el campamento goblin y acaba con Grask';
 }
 
 function _advRefreshHud() {
     const h = adv.hero;
-    Adventure.setHud(`❤️ ${h.hp}/${h.maxHp} · 🪙 ${ctx.meta.gold} · 🧪 ${Meta.potionCount(ctx.meta)}   ${_advQuestText()}`);
+    Adventure.setHud({ name: ctx.meta.heroName || 'Héroe', hp: h.hp, maxHp: h.maxHp, mp: h.mp, maxMp: h.maxMp, gold: ctx.meta.gold,
+        potions: Meta.potionCount(ctx.meta), manaPotions: Meta.manaPotionCount(ctx.meta), quest: _advQuestText() });
 }
 
 export function open() {
@@ -201,7 +245,6 @@ export function open() {
     adv.hero = _advHero();
     UI.toggleRpgView('rpgAdventureView');
     Adventure.open({
-        onExit: () => { UI.toggleRpgView('rpgStartView'); UI.renderRpgHeroCard(ctx.rpgPreviewHero()); ctx.refreshShopButton(); },
         onEnemy: p => _advStartCombat(p),
         onTalk: p => _advTalk(p),
         onPlace: p => _advPlace(p),
@@ -218,24 +261,6 @@ export function open() {
     _advRefreshHud();
 }
 
-/** El descenso terminó (caíste o abandonaste). Si lo bajaste desde la cueva, vuelves a la aldea; devuelve si lo hizo. */
-export function returnFromDescent() {
-    if (!adv.state) adv.state = _advLoad();   // tras recargar la página en mitad del descenso
-    if (!adv.state.fromCave) return false;
-    delete adv.state.fromCave;
-    _advSave();
-    open();
-    return true;
-}
-
-/** Un descenso empezado desde el inicio no vuelve a la aldea, aunque quedara una marca vieja. */
-export function forgetDescentOrigin() {
-    if (!adv.state) adv.state = _advLoad();
-    if (!adv.state.fromCave) return;
-    delete adv.state.fromCave;
-    _advSave();
-}
-
 function _advRenderCombat() {
     const scene = ZAFIAS.scenes[adv.state.scene];
     UI.renderRpgCombat(adv.combat, { where: scene ? scene.name : ZAFIAS.name });
@@ -248,14 +273,18 @@ function _advStartCombat(p) {
     const m = creature ? Engine.createRpgCreature(creature) : Engine.createRpgMonster(def.type, def.floor, 0);
     // baseName: con qué nombre se busca su arte (p. sprite en los datos de la zona; si no, su nombre)
     if (!creature) { m.name = p.name; m.baseName = p.sprite || p.name; m.icon = '👺'; }
+    // Reglas propias de la parada (p. ej. los goblins de Zafias envenenan): se suman a las de su criatura
+    if (def.rules) m.rules = { ...(m.rules || {}), ...def.rules };
     adv.point = p;
     adv.combat = Engine.createRpgCombat(adv.hero, m, Math.random);
     adv.combat.potions = Meta.potionCount(ctx.meta);
+    adv.combat.manaPotions = Meta.manaPotionCount(ctx.meta);
+    adv.combat.elixirs = Meta.elixirsForCombat(ctx.meta);
     Adventure.close();
     UI.toggleRpgView('rpgCombatView');
     UI.hideRpgCombatResult();
     UI.clearRpgCombatLog();
-    UI.addRpgCombatLog(`👺 ${m.name} te corta el paso. ¡Elige tu acción!`, 'system');
+    UI.addRpgCombatLog(`👺 ${m.name} te cierra el paso. No hay forma de rodearlo.`, 'system');
     adv.combat.intro.forEach(ev => UI.addRpgCombatLog(ev.text, 'player'));
     adv.combat.intro = [];
     _advRenderCombat();
@@ -267,10 +296,13 @@ export function combatAct(action, skillId) {
     const res = Engine.rpgCombatAction(c, action, skillId);
     if (!res.ok) { UI.addRpgCombatLog(`⚠️ ${res.error}`, 'system'); return; }
     if (action === 'potion') { ctx.meta.potions = c.potions; ctx.persistMeta(); }
+    if (action === 'mana_potion') { ctx.meta.manaPotions = c.manaPotions; ctx.persistMeta(); }
+    if (action === 'elixir') { ctx.meta.elixirs = { ...c.elixirs }; ctx.persistMeta(); }
     res.events.forEach(ev => UI.addRpgCombatLog(ev.text, ev.actor === 'hero' ? 'player' : 'enemy'));
     _advRenderCombat();
     UI.playRpgCombatFx(res.events);
     adv.state.hp = adv.hero.hp;
+    adv.state.mp = adv.hero.mp;   // el maná se conserva entre combates, como la vida
     _advSave();
     if (c.over) _advFinishCombat();
 }
@@ -294,16 +326,17 @@ function _advFinishCombat() {
         UI.showRpgCombatResult({ result: 'victory', title: '¡Victoria!', button: 'SEGUIR EXPLORANDO',
             detail: `+${gold} 🪙 · +${xp} XP${lvl.levelsGained > 0 ? ` · ¡Subes a nivel ${lvl.newLevel}!` : ''}` });
     } else if (c.result === 'fled') {
-        UI.showRpgCombatResult({ result: 'fled', title: 'Has huido', detail: `${m.name} sigue en el camino.`, button: 'VOLVER' });
+        UI.showRpgCombatResult({ result: 'fled', title: 'Has huido', detail: `Corres sin mirar atrás. ${m.name} se queda en el camino, esperando a que vuelvas.`, button: 'VOLVER' });
     } else {
         const lost = Math.floor(ctx.meta.gold * ADV_DEFEAT_GOLD_LOSS);
         Meta.recordGold(ctx.meta, -lost);
         ctx.persistMeta();
         adv.state.hp = null;                    // despiertas con la vida llena
+        adv.state.mp = null;                    // y el maná
         adv.state.scene = ZAFIAS.startScene;
         _advSave();
         UI.showRpgCombatResult({ result: 'defeat', title: 'Has caído', button: 'DESPERTAR EN LA POSADA',
-            detail: `Te recogen y despiertas en la posada de Zafias${lost > 0 ? `, con ${lost} 🪙 menos` : ''}.` });
+            detail: `Todo se vuelve negro. Despiertas en una cama de la posada de Zafias, con vendas limpias y la bolsa más ligera${lost > 0 ? ` (−${lost} 🪙)` : ''}. Alguien te trajo a rastras.` });
     }
 }
 

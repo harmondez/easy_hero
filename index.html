@@ -8,18 +8,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=1.8.0">
+    <link rel="stylesheet" href="style.css?v=1.9.0">
 </head>
 <body>
     <header class="game-header">
         <span class="game-title">EASY <span class="game-title-accent">HERO</span></span>
         <nav class="game-nav" id="gameNav" aria-label="Progreso y opciones">
-            <button type="button" class="game-nav-btn" data-panel="bestiary" title="Bestiario"><span aria-hidden="true">📖</span><span class="game-nav-label">Bestiario</span></button>
-            <button type="button" class="game-nav-btn" data-panel="collection" title="Colección"><span aria-hidden="true">🎒</span><span class="game-nav-label">Colección</span></button>
-            <button type="button" class="game-nav-btn" data-panel="achievements" title="Logros"><span aria-hidden="true">🏆</span><span class="game-nav-label">Logros</span></button>
-            <button type="button" class="game-nav-btn" data-panel="options" title="Opciones"><span aria-hidden="true">⚙️</span><span class="game-nav-label">Opciones</span></button>
+            <button type="button" class="game-nav-btn" data-panel="bestiary" title="Bestiario"><img class="game-nav-img" src="img/ui/menu-bestiario.webp" alt="" draggable="false"><span class="game-nav-label">Bestiario</span></button>
+            <button type="button" class="game-nav-btn" data-panel="collection" title="Colección"><img class="game-nav-img" src="img/ui/menu-coleccion.webp" alt="" draggable="false"><span class="game-nav-label">Colección</span></button>
+            <button type="button" class="game-nav-btn" data-panel="achievements" title="Logros"><img class="game-nav-img" src="img/ui/menu-logros.webp" alt="" draggable="false"><span class="game-nav-label">Logros</span></button>
+            <button type="button" class="game-nav-btn" data-panel="options" title="Opciones"><img class="game-nav-img" src="img/ui/menu-opciones.webp" alt="" draggable="false"><span class="game-nav-label">Opciones</span></button>
         </nav>
-        <span class="game-version">v1.8.0 · en desarrollo</span>
+        <span class="game-version">v1.9.0 · en desarrollo</span>
     </header>
 
     <!-- Paneles superpuestos: consultables en cualquier momento, sin abandonar la ruta en curso -->
@@ -142,14 +142,6 @@
             <!-- Vista 3: combate (héroe a la izquierda, monstruo a la derecha) -->
             <!-- Modo Aventura (prueba de concepto): Zafias escena a escena -->
             <div id="rpgAdventureView" class="rpg-view" style="display:none;">
-                <div class="rpg-topbar">
-                    <div class="rpg-topbar-actions">
-                        <button type="button" class="btn-secondary adv-back">🗡️ La mazmorra</button>
-                        <button type="button" class="btn-secondary adv-inventory">🎒 Inventario</button>
-                        <button type="button" class="btn-secondary adv-quests">📜 Misiones</button>
-                        <span class="adv-hud" aria-live="polite"></span>
-                    </div>
-                </div>
                 <div class="adv-viewport">
                     <div class="adv-world">
                         <img alt="Mapa de Zafias" draggable="false">
@@ -160,12 +152,24 @@
                     <div class="adv-toast" role="status" hidden></div>
                     <div class="adv-fps" hidden></div>
                     <div class="adv-dialogue" hidden>
+                        <!-- Novela visual: quien habla, de cuerpo entero (src/data/characters.js); el héroe a la derecha -->
+                        <img class="adv-portrait is-left" alt="" draggable="false" hidden>
+                        <img class="adv-portrait is-right" alt="" draggable="false" hidden>
                         <div class="adv-dialogue-box" role="dialog" aria-live="polite">
                             <div class="adv-dialogue-who"></div>
                             <p class="adv-dialogue-text"></p>
                             <button type="button" class="adv-dialogue-next">Siguiente</button>
                         </div>
                     </div>
+                </div>
+                <!-- Barra de abajo, como en DragonFable: tu héroe (vida y maná), tus botones, tu bolsa y el objetivo -->
+                <div class="adv-bar">
+                    <div class="adv-hud" aria-live="polite"></div>
+                    <div class="adv-bar-buttons">
+                        <button type="button" class="adv-bar-btn adv-inventory"><img src="img/ui/inventario.webp" alt="" draggable="false"><span>Inventario</span></button>
+                        <button type="button" class="adv-bar-btn adv-quests"><img src="img/ui/mapa.webp" alt="" draggable="false"><span>Misiones</span></button>
+                    </div>
+                    <p class="adv-objective" aria-live="polite"></p>
                 </div>
             </div>
 
@@ -184,6 +188,8 @@
                     <div id="rpgCombatHero" class="rpg-hud-slot"></div>
                     <div class="rpg-actions" id="rpgCombatActions"></div>
                     <div id="rpgCombatMonster" class="rpg-hud-slot"></div>
+                    <!-- Las habilidades: una fila de ranuras (las que no tienes aún, cerradas) -->
+                    <div class="rpg-skillbar" id="rpgSkillBar" aria-label="Habilidades"></div>
                 </div>
                 <details class="rpg-log rpg-combat-log">
                     <summary><span class="rpg-log-title">📜 Diario</span><span class="rpg-log-last" id="rpgCombatLogLast"></span></summary>
@@ -193,6 +199,6 @@
         </section>
     </main>
 
-    <script type="module" src="src/main.js?v=1.8.0"></script>
+    <script type="module" src="src/main.js?v=1.9.0"></script>
 </body>
 </html>

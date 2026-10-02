@@ -5,6 +5,37 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.9.0] - 2026-10-02
+
+### ✨ Novedades
+- 🗺️ **Easy Hero es la aventura, entera**: la mazmorra queda aparcada. Ya no hay botón «La mazmorra», y la cueva del
+  sur está sellada: al acercarte, un escalofrío y «todavía no estás preparado para entrar aquí».
+- ✨ **Efectos de estado**: veneno, quemadura, sangrado, aturdido, más ATK, más PH y regeneración. Se ven como iconos
+  sobre cada personaje, con las rondas que les quedan; al ponerse, su icono aparece en grande, y su daño o su cura
+  sale en su color seguido del icono. Aturdido pierde el turno.
+- 🐺 **Enemigos con mala idea**: los goblins a veces envenenan, los lobos hacen sangrar, Grask aturde con su golpe
+  fuerte y Feronius hace las dos cosas.
+- 💧 **Maná**: una barra azul (la mitad de tu vida inicial: 12). Las habilidades cuestan maná en vez de tardar en
+  recargarse, y dormir en la posada lo devuelve. **Poción de maná menor** en la tienda.
+- 🔮 **PH (Poder de Habilidad)**: estadística nueva. La **Bola de fuego** (antes «Golpe de Fuego») hace tu PH en daño.
+- 🔥 **Barra de habilidades** bajo las acciones del combate: seis ranuras, con la Bola de fuego y el nuevo **Grito de
+  guerra** (+50 % de ATK durante 3 rondas) a un clic; el resto, cerradas con candado.
+- ⚔️ **El mercader vende armas**: ocho espadas nuevas, de 300 a 2000 de oro, cada una con su elemento y su efecto
+  (veneno, sangrado, quemadura, aturdir, más ATK, más PH, regeneración). La Espada de Zafias también hace sangrar.
+- 💎 **Cristal de mejora**: +1 ATK para siempre al arma equipada, hasta +3.
+- 🧪 **Elixires** (de fuerza, arcano y tónico de hierbas), **frasco de veneno** para lanzar al enemigo y **pan** para
+  curarte en el camino. La tienda, ordenada en Armas, Consumibles y La Forja.
+- 🎒 **Inventario al estilo DragonFable**: el icono de cada objeto sobre el color de su elemento, el nombre en el color
+  de su rareza y una ✔ en lo equipado. La ficha enseña la pieza tal cual (con brillo si es épica o legendaria) y, en
+  «Vista previa», a tu héroe con ella. Lo que llevas encima también sale, y el pan se come desde ahí.
+- 🎭 **Diálogos estilo novela visual**: quien habla aparece de cuerpo entero sobre el cuadro de texto, con su nombre en
+  una etiqueta (de momento, Bram y tu héroe).
+- ✍️ **Toda la historia reescrita**: la introducción, los 80 diálogos de Zafias, las misiones y el bestiario, con más
+  tensión y alguna pista sobre quién eres.
+- 🖼️ **Arte en vez de emoticonos**: barra de abajo como en DragonFable (tu nombre, vida y maná, oro, pociones,
+  Inventario, Misiones y el objetivo); el menú, las paradas del mapa, los botones del combate, la tienda y los carteles
+  de victoria y derrota, con sus iconos; botones de piedra en toda la página.
+
 ## [1.8.0] - 2026-10-02
 
 ### ✨ Novedades

@@ -607,3 +607,78 @@ cofres solo dan objetos · legendarios máx. 1 igual, sin límite total · equip
 - Pruebas intermitentes arregladas (todas por el azar del mapa de la prueba): hogueras (se pedían 5; el mínimo
   garantizado es 2), el salto de piso (el destino podía abrir un combate), descansar (equipo con «Calidez») y
   «ganar no da fuerza» (un arma del botín). 8 vueltas seguidas del navegador sin un fallo.
+
+## 2026-10-02 · Maná y la poción de maná menor; taller de iconos
+- El héroe tiene maná: `maxMp` = la mitad de la vida inicial (25 → 12, `RPG_BALANCE.manaFromHp`). El Golpe de Fuego
+  cuesta 5 de maná (`manaCost`) y desaparece la recarga por rondas. Lo que antes bajaba la recarga (afijo «Recarga»,
+  ahora «Ahorro»; la vía de la llama) abarata el maná 1 punto por cada ronda que quitaba.
+- Aventura: el maná se conserva entre combates como la vida (`adv.state.mp`) y vuelve al dormir o al caer.
+  Descenso (aparcado): cada combate empieza con el maná lleno, para no cambiar su equilibrio.
+- Poción de maná menor (`manaPotion`: devuelve el 50 %, tope 3, 25 de oro) en la tienda y en el combate
+  (acción `mana_potion`). Botones de pociones con imagen (`img/ui/pocion-vida`, `pocion-mana`).
+- `tools/icons.mjs` (`npm run icons`): convierte `img/items/`, `img/icons/` e `img/icons/effects/` a WebP
+  ≤128 px en `img/ui/<id>.webp` con ids en español (tabla NOMBRES) y los registra en `ART.icons`. Originales
+  sin subir.
+- Sin calibrar a propósito (el director: «funcional primero, el equilibrio lo hablamos luego»). Una prueba de
+  1500 builds al azar ahora admite algún empate eterno (sin maná, ATK 1 contra un muñeco que se cura).
+
+## 2026-10-02 · La mazmorra, aparcada: Easy Hero es la aventura
+- Fuera el botón «🗡️ La mazmorra» de la aventura (y su gancho `onExit`). La cueva del sur pasa de `cave` a `poi`
+  con el diálogo `cueva` (escalofrío, «todavía no estás preparado»): ya no baja al descenso. Se quitan
+  `enterDescent`, `returnFromDescent`, `forgetDescentOrigin` y la marca `fromCave`. El descenso sigue en el código,
+  solo accesible con `?inicio` (lo usan las pruebas).
+
+## 2026-10-02 · Motor de efectos de estado, PH y elixires
+- Motor genérico y puro en `src/effects.js` con los datos en `src/data/effects.js` (`EFFECTS` y `ELIXIRS`). Cada
+  combatiente lleva `effects = { id: { power, turns } }` (turns null = todo el combate), vacío al empezar el combate.
+  Daño y cura por ronda al cerrar el turno de quien los lleva; las mejoras puestas por tu propia acción no gastan esa
+  ronda (`fresh`); aturdido no gasta rondas, se consume al perder el turno. Apilado: veneno suma; el resto, el mayor.
+- Sustituye a `monster.status` y `combat.heroStatus`: veneno y quemadura de objetos, variantes y criaturas pasan por
+  el motor (las reglas `poisonOnHit`, `burnOnHit`, `poison_on_hit`… siguen igual). Reglas nuevas: `onHit: [{ id, power,
+  turns, chance }]` y `stunOnHeavy: m` en criaturas, variantes y `enemy.rules` de una parada; `onHit`/`onStart` en el
+  equipo de la aventura (`hero.gearEffects`).
+- Sucesos nuevos: `effect-on` (icono grande), `effect` (número en el color del efecto + icono), `effect-off`, `stunned`.
+- PH: `RPG_HERO_BASE.ph = 5`, `rpgHeroPh(hero)`; las habilidades con `ph` hacen PH × ph. `rpgAtk(unit)` aplica «Más ATK».
+- Convención del director: PH (Poder de Habilidad) para todo lo «mágico» (nunca «magia»); ATK (Poder de Ataque) el
+  golpe básico. El icono `efecto-mas-magia` pasa a `efecto-mas-ph`.
+- Elixires en `meta.elixirs`, en la tienda (`elixir:<id>`) y en combate (acción `elixir`). `window.gameCombat()` para
+  pruebas. Pruebas: `tests/effects-sim.mjs` (motor) y `tests/effects.test.mjs` (navegador).
+
+## 2026-10-02 · Inventario estilo DragonFable, armas del mercader y barra de habilidades
+- `npm run icons` también pasa las hojas de img/weapons/weapon_sword-*.png a img/ui/objeto-<id>.webp (≤256 px) y recorta
+  de img/icons/buttons-ui/ui_1.png los marcos de interfaz (marco-boton*, marco-mini*, marco-ranura*) además de las piezas
+  ya recortadas por el director (barras de vida/maná, ranura bloqueada/desbloqueada).
+- `src/data/gear.js`: `ELEMENTS`, `SLOT_ICONS`, rareza por id, `price` (lo vende el mercader), `GEAR_FOR_SALE`,
+  `WEAPON_UPGRADE` (cristal, `meta.advUpgrades`). Ocho espadas nuevas con efectos para probar el motor de efectos.
+- Tienda por secciones (Armas solo desde la aventura · Consumibles · La Forja); `Meta.shopPrice` aplica el modo pruebas
+  (`RPG_BALANCE.freeShop = true`): las pruebas de precios lo apagan. Frasco de veneno = elixir con `target: "enemy"`;
+  comida en `FOOD` (`meta.food`), se come desde el inventario.
+- Habilidades fuera de la barra de acciones: `#rpgSkillBar` con `RPG_BALANCE.skillSlots` ranuras (6). «Golpe de Fuego» pasa
+  a llamarse «Bola de fuego» (el id sigue siendo `fire_strike`). Pruebas nuevas: `tests/gear-sim.mjs`.
+
+## 2026-10-02 · Repaso de iconografía (1.ª parte)
+- Barra de abajo de la aventura (`.adv-bar`): `Adventure.setHud(obj)` pinta nombre, medidores `.ui-gauge` (barra-vida/mana
+  recortada con clip-path sobre barra-vacia), bolsa con `data-hud` y el objetivo en `.adv-objective`. Las pruebas leen
+  esos `data-hud`, ya no el texto con emoticonos. El combate usa los mismos medidores (`_rpgGauge`).
+- `UI_IMG(id)` para meter un icono de img/ui donde iba un emoticono. Botones `.btn-secondary` y `.shop-buy` con
+  border-image de marco-boton (luz al pasar, oscuro deshabilitado). Pendiente: iconos que pidió el director (opciones,
+  logros, bestiario, colección, misiones, forja, diario, paradas del mapa, huir, grito, victoria/derrota, mejoras).
+
+## 2026-10-02 · Revisión del texto de la aventura
+- Reescritos la introducción, los 80 diálogos de Zafias (con líneas de narración: `who` = el lugar), las misiones,
+  los avisos de golpe fuerte (6), las fichas de las criaturas y los mensajes de huir y de caer. Pistas nuevas del
+  pasado del héroe, para que el director las confirme o las quite: la empuñadura que Bram no reconoce, el buhonero que
+  pregunta por alguien sin memoria, la voz y las piedras azules del santuario (sueño en la posada).
+- Las pruebas leen los diálogos enteros en vez de contar líneas.
+
+## 2026-10-02 · Repaso de iconografía (2.ª parte): los 16 iconos del director
+- `npm run icons`: menu-* (bestiario, colección, logros, opciones), parada-* (hablar, posada, mirar, salida), habilidad-grito,
+  victoria, derrota y forja-* (filo, estudio, herencia, linterna, suerte). Colocados en el menú de arriba, las cabeceras de los
+  paneles, las paradas del mapa (las salidas llevan la puerta y la flecha), la barra de habilidades, el cartel de fin de
+  combate (`RESULT_IMG`), las mejoras de La Forja (`UPGRADE_IMG`) y la espada de la introducción.
+
+## 2026-10-02 · Diálogos estilo novela visual
+- Retratos: img/characters/<id>-profile.png → img/portraits/<id>.webp (`npm run icons`, ART.portraits). Quién lleva cada uno:
+  `src/data/characters.js` (clave = el `who` de la línea). El héroe a la derecha, volteado; el otro a la izquierda; quien
+  habla en luz y el que escucha en penumbra; la etiqueta del nombre, del lado de quien habla. «tabernero» es Bram (decisión
+  del director); Maela aún no tiene retrato.

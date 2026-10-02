@@ -34,9 +34,10 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 
 const scene = () => page.$eval('.adv-viewport', el => el.dataset.scene);
-const hud = () => page.$eval('.adv-hud', el => el.textContent);
-const gold = async () => Number((await hud()).match(/🪙 (\d+)/)[1]);
-const potions = async () => Number((await hud()).match(/🧪 (\d+)/)[1]);
+// La barra de abajo: el objetivo (texto) y cada dato con su data-hud
+const hud = () => page.$eval('.adv-objective', el => el.textContent);
+const gold = async () => Number(await page.$eval('[data-hud="gold"]', el => el.textContent));
+const potions = async () => Number(await page.$eval('[data-hud="potions"]', el => el.textContent));
 const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
 const stop = id => page.$(`.adv-stop[data-point="${id}"]`);
 /** Pasa los diálogos y, si hay combate, ataca hasta el final y vuelve a la aventura. Devuelve el nombre del enemigo. */

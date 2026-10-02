@@ -71,7 +71,7 @@ assert('Se recuerda el nombre (sin espacios de más) y que ya vio la introducci�
 await page.click('.adv-stop[data-point="posadera"]', { force: true });
 await sleep(250);
 const lines = [];
-for (let i = 0; i < 8 && await shown('.adv-dialogue'); i++) {
+for (let i = 0; i < 14 && await shown('.adv-dialogue'); i++) {
     lines.push(`${await page.$eval('.adv-dialogue-who', el => el.textContent)}: ${await page.$eval('.adv-dialogue-text', el => el.textContent)}`);
     await page.click('.adv-dialogue-next'); await sleep(60);
 }
@@ -83,10 +83,7 @@ await page.reload({ waitUntil: 'load' });
 await sleep(500);
 assert('Al volver no hay introducción ni menú de la mazmorra: directo a la aventura',
     !(await shown('#introView')) && !(await viewOn('rpgStartView')) && await viewOn('rpgAdventureView'));
-assert('El botón de arriba lleva a la mazmorra', /mazmorra/i.test(await page.$eval('.adv-back', el => el.textContent)));
-await page.click('.adv-back');
-await sleep(250);
-assert('…y la mazmorra muestra al héroe con su nombre', await viewOn('rpgStartView') && /Aldric/.test(await page.$eval('#rpgHeroCard', el => el.textContent)));
+assert('Y no hay botón a la mazmorra: Easy Hero es la aventura', !(await page.$('.adv-back')));
 
 console.log('\n⚙️ Opciones: verla otra vez y saltarla');
 await page.evaluate(() => window.openPanel('options'));

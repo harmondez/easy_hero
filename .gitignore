@@ -47,3 +47,6 @@ desktop.ini
 # Taller de la fábrica de assets: crudos, mapas maestros, regiones y metadatos (zona de trabajo, no se sube)
 /taller/
 /img/weapons/
+/img/items/
+/img/icons/
+/img/characters/
