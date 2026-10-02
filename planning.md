@@ -7,7 +7,7 @@
 
 ## 📍 Estado (2026-10-02)
 
-- **Publicado:** la **1.9.2** (https://harmondez.github.io/easy_hero/): Easy Hero es solo la aventura (la mazmorra,
+- **Publicado:** la **1.9.3** (https://harmondez.github.io/easy_hero/): Easy Hero es solo la aventura (la mazmorra,
   aparcada tras la cueva sellada). Zafias con introducción, 4 escenas, 28 paradas, misiones y diario, Grask y
   **Feronius**; combate de lado con **efectos de estado**, **maná**, **PH** y barra de habilidades; 10 armas con rareza,
   elemento y efecto; energía y Golpe poderoso; aturdido que da turno al enemigo; tienda con elixires y cristales; inventario estilo DragonFable; diálogos de novela visual; toda la

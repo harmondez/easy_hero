@@ -731,3 +731,31 @@ cofres solo dan objetos · legendarios máx. 1 igual, sin límite total · equip
   Efectos en la carta junto a la vida (`.rpg-fx-chip`: icono, nombre, rondas) y nombre al ponerse.
 - «Sobre Easy Hero» reescrito (beta, gratis, sin cuenta ni anuncios). Pruebas: aturdido automático y espera de ¡Atacar!
   en effects.test; duraciones en items-sim y effects-sim.
+
+## 2026-10-02 · Energía que se guarda y botones del inventario en ámbar
+- `createRpgCombat` ya no pone la energía a 0: la recorta a [0, 100]. La aventura la guarda en `adv.state.energy` tras cada
+  acción y la vacía al dormir (no al caer). Medidor de energía en la barra de abajo. Pruebas: effects-sim y effects.test.
+- `.inv-equip` activo y `.inv-tab.is-on`: marco dorado con interior ámbar y letra oscura en mayúsculas.
+
+## 2026-10-02 · Arreglo: el icono de efecto mostraba el sprite del personaje
+- `_rpgRenderStage` cogía `actor.querySelector('img')`: desde que la fila de efectos va dentro del actor (y antes del dibujo),
+  esa primera img era un icono de efecto, y `_rpgSetSprite` le ponía el sprite. Ahora `:scope > img`. La fila queda solo con
+  el icono (sin recuadro ni número). Prueba en effects.test.
+
+## 2026-10-02 · Números de combate (v2)
+- Fuente Grenze 900 cursiva (`--font-numbers`), contorno con text-shadow en 8 direcciones. Clases por dirección: `is-taken`
+  (rojo), `is-dealt` (claro), `is-crit`, `is-heal`; el tick de efecto, en su color con su icono a 1,05 em.
+- Nacen al 32 % del alto del personaje con un desvío horizontal al azar (±18 px) y un tope para no salirse por arriba;
+  suben hasta 1,5 veces su alto y se desvanecen. Prueba en effects.test (dentro del escenario, cursiva, negrita, Grenze).
+
+## 2026-10-02 · Arreglo: la cara anterior asomaba al cambiar de retrato
+- Los retratos son dos <img> que se reutilizan; al cambiar el src, el navegador sigue pintando la imagen vieja hasta que
+  llega la nueva (en la web, con la red de por medio). Ahora: `.is-loading` (oculto) hasta `img.decode()` y precarga de
+  todos los retratos al montar la vista. `npm run vn -- ver` espera a que estén listos antes de cada captura.
+- Prueba en vn.test: red lenta simulada (500 ms por retrato) y registro por fotograma; falla sin el arreglo.
+
+## 2026-10-02 · La Forja nueva, precios y efectos en el impacto
+- Mejoras con `ramp: true` (`upgradeTotal`: perLevel·n(n+1)/2): Filo, Constitución y Buen ojo, coste 10 y crecimiento ×2. Buen ojo
+  pasa de porcentaje a oro fijo por combate (`goldFlat`). Poción 20, pan 5; `sold: false` en el tónico (no se vende, se usa).
+- `playRpgCombatFx`: los efectos de un `effect-on` se esconden (`.is-pending`) al dibujar y se revelan en el impacto del golpe que
+  los trae (`lastImpact` por objetivo); el aturdimiento, sin texto flotante. Prueba con animaciones reales en effects.test.

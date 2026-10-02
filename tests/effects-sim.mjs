@@ -110,7 +110,15 @@ console.log('\n⚡ Energía y Golpe poderoso');
 {
     const E = RPG_BALANCE.energy;
     const c = fight(dummy({ atq: 2, hp: 400, maxHp: 400, pattern: [{ k: 'rest' }] }));
-    assert('la energía empieza cada combate a 0, sobre 100', c.hero.energy === 0 && c.hero.maxEnergy === 100);
+    assert('un héroe nuevo empieza con la energía a 0, sobre 100', c.hero.energy === 0 && c.hero.maxEnergy === 100);
+    {
+        const h0 = createRpgHero();
+        h0.energy = 70;
+        const c2 = fight(dummy(), h0);
+        assert('la energía se guarda de un combate a otro (no vuelve a 0)', c2.hero.energy === 70);
+        h0.energy = 250;
+        assert('…pero nunca pasa de 100', fight(dummy(), h0).hero.energy === 100);
+    }
     act(c, 'attack');
     assert(`atacar da ${E.onAttack} de energía`, c.hero.energy === E.onAttack);
     act(c, 'defend');
@@ -151,10 +159,12 @@ console.log('\n🧪 Elixires');
 {
     const meta = loadMeta({ getItem: () => null });
     meta.gold = 100;
-    const b = buyElixir(meta, 'hierbas');
-    assert('se compran con oro y se llevan encima', b.ok && meta.elixirs.hierbas === 1 && meta.gold === 100 - ELIXIRS.hierbas.price);
-    buyElixir(meta, 'hierbas');
-    assert('con su tope', !buyElixir(meta, 'hierbas').ok && meta.elixirs.hierbas === ELIXIRS.hierbas.max);
+    const b = buyElixir(meta, 'fuerza');
+    assert('se compran con oro y se llevan encima', b.ok && meta.elixirs.fuerza === 1 && meta.gold === 100 - ELIXIRS.fuerza.price);
+    buyElixir(meta, 'fuerza');
+    assert('con su tope', !buyElixir(meta, 'fuerza').ok && meta.elixirs.fuerza === ELIXIRS.fuerza.max);
+    assert('el tónico de hierbas ya no se vende', !buyElixir(meta, 'hierbas').ok && ELIXIRS.hierbas.sold === false);
+    meta.elixirs.hierbas = 2;   // pero el que ya tuvieras se sigue pudiendo usar
     const c = fight(dummy({ atq: 3, pattern: [{ k: 'attack', m: 1 }] }));
     c.elixirs = elixirsForCombat(meta);
     c.hero.hp = 10;

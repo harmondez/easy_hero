@@ -634,7 +634,7 @@ console.log('\n🫥 Patrones ocultos (estilo DragonFable) y pociones');
     await page.evaluate(() => { window.gameMeta.gold = 100; window.gameMeta.potions = 0; window.UI.renderShop(window.gameMeta); window.UI.toggleRpgView('rpgShopView'); });
     await page.click('[data-shop-buy="potion"]');
     await sleep(100);
-    assert('La Forja vende la poción a 40 de oro', await page.evaluate(() => window.gameMeta.potions === 1 && window.gameMeta.gold === 60));
+    assert('La Forja vende la poción a 20 de oro', await page.evaluate(() => window.gameMeta.potions === 1 && window.gameMeta.gold === 80));
     await page.evaluate(() => { window.gameMeta.potions = 3; window.UI.renderShop(window.gameMeta); });
     assert('Con 3 pociones encima ya no se pueden comprar más', await page.$eval('[data-shop-buy="potion"]', el => el.disabled));
     // Limpieza: el resto de pruebas asumen una cuenta sin pociones ni oro extra
@@ -1033,20 +1033,21 @@ console.log('\n⚒️ La Forja: gastar el oro en mejoras permanentes');
     assert('La Forja es una vista propia, no un panel superpuesto',
         await visible('#rpgShopView') && !(await visible('#panelOverlay')));
     // 8 mejoras + los consumibles con tope: dos pociones, cuatro elixires (con el frasco de veneno) y el pan
-    assert('Se ofrecen las 8 mejoras del catálogo y los 7 consumibles (sin armas: eso es en la aventura)', (await page.$$('#shopBody .shop-card')).length === 15
+    assert('Se ofrecen las 8 mejoras del catálogo y los 6 consumibles (sin armas: eso es en la aventura; el tónico ya no se vende)', (await page.$$('#shopBody .shop-card')).length === 14
+        && !(await page.$('#shopBody [data-shop-buy="elixir:hierbas"]'))
         && !(await page.$('#shopBody [data-shop-buy^="gear:"]'))
         && !!(await page.$('#shopBody [data-shop-buy="elixir:fuerza"]'))
         && !!(await page.$('#shopBody [data-shop-buy="potion"]')) && !!(await page.$('#shopBody [data-shop-buy="mana_potion"]')));
     assert('Con 399 de oro, lo barato se puede comprar y la mejora de 400 no',
-        (await page.$$('#shopBody .shop-card.is-affordable')).length === 14 && (await page.$$('#shopBody .shop-buy:disabled')).length === 1);
+        (await page.$$('#shopBody .shop-card.is-affordable')).length === 13 && (await page.$$('#shopBody .shop-buy:disabled')).length === 1);
 
     await page.click('[data-shop-buy="constitucion"]');
     await sleep(200);
     const afterBuy = await page.evaluate(() => ({ gold: window.gameMeta.gold, level: window.gameMeta.upgrades.constitucion }));
-    assert('Comprar descuenta el oro y sube la mejora de nivel', afterBuy.gold === 369 && afterBuy.level === 1);
+    assert('Comprar descuenta el oro (Constitución cuesta 10) y sube la mejora de nivel', afterBuy.gold === 389 && afterBuy.level === 1);
     const shopText = await page.$eval('#shopBody', el => el.textContent);
-    assert('La tarjeta enseña el nivel y lo que aporta ahora', /nivel 1/.test(shopText) && /\+4 HP/.test(shopText));
-    assert('El precio sube para la siguiente compra (30 → 45)', /45/.test(shopText));
+    assert('La tarjeta enseña el nivel y lo que aporta ahora (+1 HP, y el siguiente da +2)', /nivel 1/.test(shopText) && /\+1 HP/.test(shopText) && /\+2 más/.test(shopText));
+    assert('El precio se duplica para la siguiente compra (10 → 20)', /20/.test(await page.$eval('[data-shop-buy="constitucion"]', el => el.textContent)));
 
     await page.click('[data-shop-buy="constitucion"]');
     await sleep(150);
@@ -1062,8 +1063,8 @@ console.log('\n⚒️ La Forja: gastar el oro en mejoras permanentes');
     await page.click('#btnShopBack');
     await sleep(200);
     assert('Volver de La Forja te deja en el inicio', await visible('#rpgStartView'));
-    assert('La carta del héroe ya refleja lo comprado (+8 de vida máxima)',
-        /33/.test(await page.$eval('#rpgHeroCard', el => el.textContent)));
+    assert('La carta del héroe ya refleja lo comprado (+1 y +2: +3 de vida máxima)',
+        /28/.test(await page.$eval('#rpgHeroCard', el => el.textContent)));
 
     await page.reload({ waitUntil: 'load' });
     await sleep(400);
@@ -1076,7 +1077,7 @@ console.log('\n⚒️ La Forja: gastar el oro en mejoras permanentes');
         const h = window.gameState.rpg.hero;
         return { maxHp: h.maxHp, hp: h.hp, slots: window.Items.inventorySize(h) };
     });
-    assert('Una ruta nueva empieza ya con la vida comprada (25 + 8 = 33)', heroNow.maxHp === 33 && heroNow.hp === 33);
+    assert('Una ruta nueva empieza ya con la vida comprada (25 + 3 = 28)', heroNow.maxHp === 28 && heroNow.hp === 28);
     assert('El zurrón ancho da 15 ranuras de inventario en vez de 10', heroNow.slots === 15);
 
     // La expedición: el reloj se mueve hacia atrás para simular horas fuera

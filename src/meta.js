@@ -1,11 +1,11 @@
-import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.9.2';
-import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.9.2';
-import { DAMAGE_TYPES } from './items.js?v=1.9.2';
-import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.9.2';
-import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax } from './data/upgrades.js?v=1.9.2';
-import { RPG_BALANCE } from './data/balance.js?v=1.9.2';
-import { ELIXIRS, FOOD } from './data/effects.js?v=1.9.2';
-import { GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.9.2';
+import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.9.3';
+import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.9.3';
+import { DAMAGE_TYPES } from './items.js?v=1.9.3';
+import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.9.3';
+import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax, upgradeTotal } from './data/upgrades.js?v=1.9.3';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.3';
+import { ELIXIRS, FOOD } from './data/effects.js?v=1.9.3';
+import { GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.9.3';
 export { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext };
 export { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax };
 
@@ -181,7 +181,7 @@ export function buyUpgrade(meta, id) {
 export const elixirCount = (meta, id) => Math.max(0, ((meta.elixirs || {})[id]) | 0);
 export function canBuyElixir(meta, id) {
     const E = ELIXIRS[id];
-    return !!E && elixirCount(meta, id) < E.max && meta.gold >= shopPrice(E.price);
+    return !!E && E.sold !== false && elixirCount(meta, id) < E.max && meta.gold >= shopPrice(E.price);
 }
 export function buyElixir(meta, id) {
     const E = ELIXIRS[id];
@@ -225,10 +225,10 @@ export function buyPotion(meta) {
     return { ok: true, cost, count: meta.potions };
 }
 
-/** Lo que aporta ahora mismo una mejora (nivel × lo de cada nivel). 0 si no se ha comprado. */
+/** Lo que aporta ahora mismo una mejora (con `ramp`, +1 +2 +3…). 0 si no se ha comprado. */
 export function upgradeEffect(meta, id) {
     const def = UPGRADES_BY_ID[id];
-    return def ? upgradeLevel(meta, id) * def.perLevel : 0;
+    return def ? upgradeTotal(def, upgradeLevel(meta, id)) : 0;
 }
 
 /**

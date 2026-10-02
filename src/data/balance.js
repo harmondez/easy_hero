@@ -47,12 +47,13 @@ globalThis.__RPG_BALANCE__ = globalThis.__RPG_BALANCE__ || {
 
     // Pociones: curan una parte de la vida máxima y gastan el turno (el enemigo responde). Son tuyas entre
     // partidas, con un tope, y se compran con oro a precio fijo en La Forja (en la aldea, cuando exista).
-    potion: { heal: 0.4, max: 3, price: 40 },
+    potion: { heal: 0.4, max: 3, price: 20 },
     // Maná: el héroe empieza con la mitad de su vida inicial (25 → 12). La poción de maná menor devuelve la mitad
     manaFromHp: 0.5,
     manaPotion: { restore: 0.5, max: 3, price: 25 },
 
-    // ⚡ Energía (barra amarilla): empieza cada combate a 0 y se llena peleando. La gastan las técnicas (Golpe poderoso).
+    // ⚡ Energía (barra amarilla): se llena peleando y se guarda de un combate a otro hasta el máximo; solo se vacía al
+    // dormir en la posada. La gastan las técnicas (Golpe poderoso).
     //   onAttack: al atacar · onHit: al recibir daño · onDefend: al defenderte (además de lo que ganes si te golpean)
     energy: { max: 100, onAttack: 5, onHit: 5, onDefend: 10 },
 

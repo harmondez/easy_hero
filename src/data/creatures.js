@@ -18,7 +18,7 @@
 //   scale     tamaño en pantalla respecto a su dibujo (los dibujos se normalizan a la altura del héroe: un lobo a
 //             cuatro patas saldría tan alto como él). Se multiplica por el ×1,25 / ×1,5 de los jefes
 // =============================================
-import { PATTERNS } from './monsters.js?v=1.9.2';
+import { PATTERNS } from './monsters.js?v=1.9.3';
 
 export const CREATURES = {
     // --- Lobos ---

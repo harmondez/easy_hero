@@ -5,6 +5,18 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.9.3] - 2026-10-02
+
+### ✨ Novedades
+- ⚡ **La energía se guarda**: ya no vuelve a 0 en cada combate. Se acumula hasta 100 y solo se vacía al dormir en la posada. La barra de abajo la enseña junto a la vida y el maná.
+- 🎒 **Botones del inventario que se ven activos**: Comer, Equipar y la pestaña abierta, en ámbar y con letra clara (antes parecían bloqueados).
+- 🐛 **Iconos de efecto arreglados**: sobre el personaje salía su propio dibujo en miniatura en vez del icono (la calavera del veneno, la gota del sangrado…). Ahora sale el icono, solo y sin recuadro; las rondas, en la lista junto a la vida.
+- 💥 **Números de combate rehechos**: más grandes, en negrita y cursiva con una fuente medieval (Grenze) y contorno grueso. El daño que recibes, en rojo; el que haces, en claro; el crítico, en oro; el de veneno, sangrado o quemadura, en su color y con su icono al lado. Nacen a la altura del pecho, suben un poco y se desvanecen sin salirse de la pantalla, también en el móvil.
+- 🐛 **Retratos sin cruces**: al hablar con alguien ya no asoma un instante la cara de la conversación anterior (el goblin antes que Maela). Los retratos se cargan al entrar y cada cara espera a estar lista para salir.
+- 💥 **Los efectos llegan con el golpe**: el icono y la etiqueta de un veneno, un sangrado o un aturdimiento aparecen en el instante del impacto, con el destello y el temblor, y no al pulsar el botón.
+- ⚒️ **La Forja, más sencilla**: Filo afilado, Constitución y Buen ojo empiezan en 10 de oro y doblan su precio en cada nivel (10, 20, 40…). Cada nivel da un punto más que el anterior: +1, luego +2, luego +3 (de ATK, de vida o de oro por combate).
+- 🧪 **Tienda más barata**: poción de vida a 20, hogaza de pan a 5. El tónico de hierbas ya no se vende (el que tengas sigue sirviendo).
+
 ## [1.9.2] - 2026-10-02
 
 ### ✨ Novedades

@@ -1,6 +1,6 @@
-import { RARITIES, RARITY_BY_ID, RARITY_MIN, RARITY_BIAS, rollRarity, discardHeal } from './data/rarities.js?v=1.9.2';
-import { ITEM_BASES, ITEM_BASE_BY_ID, ITEM_SLOTS, DAMAGE_TYPES, BASIC_WEAPON_ID, basesBySlot } from './data/items.js?v=1.9.2';
-import { AFFIX_POOL, AFFIX_UNIQUES, affixText } from './data/affixes.js?v=1.9.2';
+import { RARITIES, RARITY_BY_ID, RARITY_MIN, RARITY_BIAS, rollRarity, discardHeal } from './data/rarities.js?v=1.9.3';
+import { ITEM_BASES, ITEM_BASE_BY_ID, ITEM_SLOTS, DAMAGE_TYPES, BASIC_WEAPON_ID, basesBySlot } from './data/items.js?v=1.9.3';
+import { AFFIX_POOL, AFFIX_UNIQUES, affixText } from './data/affixes.js?v=1.9.3';
 
 // =============================================
 // 🎒 RPG-pack — equipo (puro, sin DOM)

@@ -18,7 +18,7 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.9.2-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.9.3-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -33,7 +33,7 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 
 ## 🆕 Novedades
 
-**Versión 1.9.2** · 2 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.9.3** · 2 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **Easy Hero es ya, entero, la aventura.** Los combates tienen venenos, sangrados y aturdimientos que se ven sobre
@@ -41,7 +41,15 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 > con su elemento y su efecto; y los vecinos te hablan cara a cara, como en una novela visual. Toda la historia,
 > reescrita.
 
-| | Qué hay de nuevo en la 1.9.2 |
+| | Qué hay de nuevo en la 1.9.3 |
+|:-:|------------------|
+| 💥 | **Golpes que se sienten:** números más grandes, en negrita y cursiva (rojos los que recibes, claros los que haces, dorados los críticos) y los efectos (veneno, sangrado…) aparecen justo en el impacto, con su icono |
+| ⚡ | **La energía se guarda** de un combate a otro hasta 100; solo se vacía al dormir |
+| ⚒️ | **La Forja, más clara:** Filo afilado, Constitución y Buen ojo desde 10 de oro, cada nivel da un punto más que el anterior (+1, +2, +3…) |
+| 🧪 | **Tienda más barata:** poción a 20 y pan a 5 |
+| 🐛 | **Arreglos:** los iconos de efecto ya no muestran a tu personaje en miniatura y los retratos no se cruzan al cambiar de conversación |
+
+| | Lo que trajo la 1.9.2 |
 |:-:|------------------|
 | ⚡ | **Energía y Golpe poderoso:** una barra amarilla que se llena atacando, recibiendo golpes y, sobre todo, defendiéndote. Con 50 de energía, el **Golpe poderoso** pega el triple y puede aturdir al enemigo |
 | 💫 | **Aturdido de verdad:** si te aturden, la barra se apaga, pierdes el turno solo y el enemigo aprovecha para actuar otra vez |
@@ -181,7 +189,7 @@ parpadea.»*). Es el momento de defenderte. El **diario** del combate cuenta cad
 
 ## 🛡️ Tu héroe
 
-Empiezas con **ATK 1**, **PH 5**, **25 de vida** y **12 de maná**; la **energía** empieza cada combate a 0. Nada más. A partir de ahí depende de ti.
+Empiezas con **ATK 1**, **PH 5**, **25 de vida** y **12 de maná**; la **energía** empieza a 0 y se guarda de un combate a otro hasta que duermes. Nada más. A partir de ahí depende de ti.
 
 ### 🎒 Tus armas
 
@@ -219,7 +227,7 @@ combates, subes de nivel y **repartes tú mismo** los puntos.
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.9.2, sigue en desarrollo.** El foco es la **aventura**: Zafias se puede jugar de principio a fin, con
+> **Versión 1.9.3, sigue en desarrollo.** El foco es la **aventura**: Zafias se puede jugar de principio a fin, con
 > Grask como primer muro y Feronius como jefe. La mazmorra sin fondo de las primeras versiones está aparcada (sigue
 > en el código, pero no se puede entrar).
 
@@ -309,7 +317,7 @@ npx playwright install chromium    # solo la primera vez
 npm test                           # ejecuta todas las comprobaciones
 ```
 
-Son 996 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; las del navegador, unos minutos.
+Son 1007 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; las del navegador, unos minutos.
 
 Para ver cómo está el equilibrio de la aventura: `npm run sim:aventura` juega miles de partidas con un bot.
 
@@ -337,7 +345,7 @@ Receta para meter un NPC con su retrato y su diálogo: [docs/novela-visual.md](d
 
 ```bash
 npm run release              # ¿está todo sincronizado con la versión actual?
-npm run release -- patch     # 1.9.2 → 1.9.3  (también minor o major)
+npm run release -- patch     # 1.9.3 → 1.9.4  (también minor o major)
 ```
 
 Cambia la versión en todos los sitios a la vez y prepara el registro de cambios. Los pasos completos están en [docs/versiones.md](docs/versiones.md).

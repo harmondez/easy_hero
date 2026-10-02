@@ -1,6 +1,6 @@
-import * as Engine from './engine.js?v=1.9.2';
-import { campfireBonus } from './items.js?v=1.9.2';
-import { RPG_EVENTS, RPG_SPECIAL_EVENTS, EVENT_MONSTERS } from './data/events.js?v=1.9.2';
+import * as Engine from './engine.js?v=1.9.3';
+import { campfireBonus } from './items.js?v=1.9.3';
+import { RPG_EVENTS, RPG_SPECIAL_EVENTS, EVENT_MONSTERS } from './data/events.js?v=1.9.3';
 
 // =============================================
 // 🎲 RPG-pack — motor de eventos (puro, sin DOM)

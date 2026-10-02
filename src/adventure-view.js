@@ -1,8 +1,8 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.9.2';
-import { ART } from './data/art.js?v=1.9.2';
-import { monsterArt } from './art.js?v=1.9.2';
-import { creatureFor } from './data/creatures.js?v=1.9.2';
-import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.9.2';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.9.3';
+import { ART } from './data/art.js?v=1.9.3';
+import { monsterArt } from './art.js?v=1.9.3';
+import { creatureFor } from './data/creatures.js?v=1.9.3';
+import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.9.3';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo
@@ -297,7 +297,14 @@ function renderPortraits(lines, i) {
         if (!img) return;
         img.hidden = !art;
         if (!art) return;
-        if (img.getAttribute('src') !== art.src) img.src = art.src;
+        // Cambio de cara: el retrato no se ve hasta que el nuevo está listo (si no, durante un instante seguiría el de
+        // la conversación anterior: el goblin antes que Maela)
+        if (img.getAttribute('src') !== art.src) {
+            img.classList.add('is-loading');
+            img.src = art.src;
+            const ready = () => { if (img.getAttribute('src') === art.src) img.classList.remove('is-loading'); };
+            (img.decode ? img.decode() : Promise.resolve()).then(ready, ready);
+        }
         img.style.setProperty('--portrait-scale', art.scale);   // los grandes (Grask) se ven más grandes
         img.classList.toggle('is-big', art.scale > 1);   // y bajan detrás del cuadro: se te echan encima
         img.classList.toggle('is-speaking', speaking);
@@ -323,6 +330,18 @@ function advanceDialogue() {
 function closeDialogue() {
     st.dialogue = null;
     els.dialogue.hidden = true;
+}
+
+// Todos los retratos, cargados y decodificados de antemano: al hablar con alguien su cara sale al instante
+const _portraitCache = [];
+function preloadPortraits() {
+    if (_portraitCache.length) return;
+    for (const p of Object.values(ART.portraits || {})) {
+        const im = new Image();
+        im.src = p.src;
+        if (im.decode) im.decode().catch(() => {});
+        _portraitCache.push(im);
+    }
 }
 
 /** Lo que pasa al llegar a una parada. */
@@ -392,6 +411,7 @@ function bind() {
         portraitRight: root.querySelector('.adv-portrait.is-right'),
         fps: root.querySelector('.adv-fps')
     };
+    preloadPortraits();
     els.world.querySelector('img').src = zone.image;
     els.world.style.width = `${zone.width}px`;
     els.world.style.height = `${zone.height}px`;
@@ -518,7 +538,7 @@ export function setHud(h) {
         const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
         el.innerHTML = `
             <span class="adv-bar-name" data-hud="name">${esc(h.name)}</span>
-            <div class="adv-bar-gauges">${gaugeHtml('hp', h.hp, h.maxHp, 'Vida')}${gaugeHtml('mp', h.mp, h.maxMp, 'Maná')}</div>
+            <div class="adv-bar-gauges">${gaugeHtml('hp', h.hp, h.maxHp, 'Vida')}${gaugeHtml('mp', h.mp, h.maxMp, 'Maná')}${h.maxEnergy ? gaugeHtml('en', h.energy, h.maxEnergy, 'Energía') : ''}</div>
             <div class="adv-bar-purse">
                 <span title="Oro"><img src="img/ui/moneda.webp" alt="Oro"><b data-hud="gold">${h.gold}</b></span>
                 <span title="Pociones de vida"><img src="img/ui/pocion-vida.webp" alt="Pociones de vida"><b data-hud="potions">${h.potions}</b></span>

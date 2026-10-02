@@ -65,8 +65,21 @@ const tick = await page.waitForSelector('#rpgActorMonster ~ .rpg-stage-float.is-
     .then(h => h.evaluate(el => ({ text: el.textContent.trim(), color: getComputedStyle(el).color, icon: (el.querySelector('img') || {}).src || '' })))
     .catch(() => null);
 assert('El daño del veneno sale en verde, seguido de su icono', tick && /^-1$/.test(tick.text) && tick.color === 'rgb(126, 217, 87)' && /efecto-veneno/.test(tick.icon));
+const floats = await page.evaluate(() => { const s = document.getElementById('rpgStage').getBoundingClientRect();
+    return [...document.querySelectorAll('.rpg-stage-float')].map(e => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e);
+        return { top: r.top - s.top, bottom: s.bottom - r.bottom, italic: cs.fontStyle, weight: Number(cs.fontWeight), font: cs.fontFamily }; }); });
+assert('Los números salen dentro del escenario, en cursiva y negrita, con su fuente propia', floats.length > 0
+    && floats.every(f => f.top >= 0 && f.bottom >= 0 && f.italic === 'italic' && f.weight >= 800 && /Grenze/.test(f.font)));
 const mon = await effectsOn('Monster');
 assert('…y sobre el goblin queda la calavera con las rondas que le quedan (2)', mon.some(e => e.id === 'veneno' && e.turns === '2'));
+const looks = await page.evaluate(() => {
+    const a = document.getElementById('rpgActorMonster');
+    const icon = a.querySelector('.rpg-effect[data-effect="veneno"] img');
+    const box = getComputedStyle(a.querySelector('.rpg-effect'));
+    return { icon: icon.getAttribute('src'), sprite: a.querySelector(':scope > img').getAttribute('src'), border: box.borderTopWidth, bg: box.backgroundColor };
+});
+assert('El icono es el del veneno (no el dibujo del personaje), solo, sin recuadro', /efecto-veneno/.test(looks.icon)
+    && !/efecto-/.test(looks.sprite) && looks.border === '0px' && /rgba\(0, 0, 0, 0\)|transparent/.test(looks.bg));
 assert('El diario cuenta el daño del veneno', /sufre 1 de veneno/.test(await page.$eval('#rpgCombatLogContent', el => el.textContent)));
 if (process.env.SHOTS) await page.screenshot({ path: path.join(process.env.SHOTS, 'efectos-veneno.png') });
 
@@ -135,6 +148,50 @@ if (!(await page.$('#btnRpgCombatContinue'))) {
     await sleep(2200);
     const ready = await page.$eval('[data-rpg-action="attack"]', el => !el.disabled && !el.classList.contains('is-cooling'));
     assert('Tras atacar, ¡Atacar! se apaga 2 segundos (con la franja que se vacía) y vuelve', cooling && ready);
+}
+
+// ⚡ La energía se guarda entre combates y solo se vacía al dormir
+console.log('\n⚡ La energía se guarda hasta dormir');
+await page.evaluate(() => {
+    localStorage.setItem('easy-hero-adventure', JSON.stringify({ v: 1, scene: 'aldea', hp: null, energy: 60, gone: {}, flags: { misionAceptada: true } }));
+});
+await page.reload({ waitUntil: 'load' });
+await sleep(600);
+const barEnergy = () => page.$eval('[data-hud="en"] .ui-gauge-text', el => el.textContent);
+assert('La barra de abajo enseña la energía guardada (60/100)', (await barEnergy()) === '60/100');
+for (let i = 0; i < 20 && !(await shown('.adv-dialogue')); i++) { await page.click('.adv-stop[data-point="posada"]', { force: true }); await sleep(300); }
+await talkAll();
+await sleep(300);
+const slept = await page.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));
+assert('Dormir en la posada la vacía (0/100)', slept.energy === 0 && (await barEnergy()) === '0/100');
+
+// 💥 El efecto que trae un golpe aparece en el impacto, no al pulsar (con animaciones de verdad)
+console.log('\n💥 Efectos en el momento del impacto');
+{
+    const p2 = await (await browser.newContext({ viewport: { width: 1280, height: 860 } })).newPage();
+    p2.on('pageerror', e => errors.push(e.message));
+    await p2.goto(url, { waitUntil: 'load' });
+    await p2.evaluate(() => { Object.assign(window.gameMeta, { introSeen: true, primary: { str: 0, dex: 0, int: 0, vit: 40 } }); localStorage.setItem('easy-hero-meta', JSON.stringify(window.gameMeta));
+        localStorage.setItem('easy-hero-adventure', JSON.stringify({ v: 1, scene: 'bosque', hp: null, gone: {}, flags: { misionAceptada: true } })); });
+    await p2.reload({ waitUntil: 'load' });
+    await sleep(800);
+    const open = () => p2.$eval('.adv-dialogue', el => !el.hidden).catch(() => false);
+    for (let i = 0; i < 25 && !(await open()); i++) { await p2.click('.adv-stop[data-point="goblin-1"]', { force: true }); await sleep(500); }
+    for (let i = 0; i < 6 && await open(); i++) { await p2.click('.adv-dialogue-next'); await sleep(150); }
+    await sleep(700);
+    // Tu arma envenena siempre; el goblin no ataca (así solo cuenta tu golpe)
+    await p2.evaluate(() => { const c = window.gameCombat(); c.monster.hp = c.monster.maxHp = 80; c.monster.intent = { k: 'rest' }; c.monster.pattern = [{ k: 'rest' }];
+        c.hero.gearEffects = { onHit: [{ id: 'veneno', power: 1, turns: 3, chance: 1 }], onStart: [] }; });
+    const poisonShown = () => p2.evaluate(() => { const el = document.querySelector('#rpgActorMonster .rpg-effect[data-effect="veneno"]');
+        const chip = document.querySelector('#rpgCombatMonster .rpg-fx-chip[data-effect="veneno"]');
+        return !!el && getComputedStyle(el).visibility !== 'hidden' && !!chip && getComputedStyle(chip).visibility !== 'hidden'; });
+    await p2.click('[data-rpg-action="attack"]');
+    await sleep(120);
+    const early = await poisonShown();
+    await sleep(800);
+    const late = await poisonShown();
+    assert('Mientras tu golpe va de camino, el veneno aún no se ve; al impactar, aparece (icono y etiqueta)', !early && late);
+    await p2.context().close();
 }
 
 assert('Sin errores de página', errors.length === 0);

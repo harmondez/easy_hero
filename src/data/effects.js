@@ -55,7 +55,7 @@ export const EFFECTS = {
 // 🧪 Elixires: se compran en la tienda, se llevan encima (como las pociones) y en combate dan un efecto a cambio
 // del turno. `effect` = { id, power, turns } · `img` = icono en ART.icons para su botón y su carta.
 // =============================================
-// `target: 'enemy'` = se lanza al enemigo (el efecto es para él); sin target, te lo bebes tú.
+// `target: 'enemy'` = se lanza al enemigo (el efecto es para él); sin target, te lo bebes tú. `sold: false` = no se vende.
 export const ELIXIRS = {
     fuerza: {
         name: 'Elixir de fuerza', img: 'efecto-mas-ataque', price: 30, max: 2,
@@ -68,7 +68,7 @@ export const ELIXIRS = {
         desc: 'Tus habilidades (la Bola de fuego) hacen más daño durante unas rondas.'
     },
     hierbas: {
-        name: 'Tónico de hierbas', img: 'ingrediente-hierba', price: 25, max: 2,
+        name: 'Tónico de hierbas', img: 'ingrediente-hierba', price: 25, max: 2, sold: false,   // ya no se vende (sí se usa el que tengas)
         effect: { id: 'regeneracion', power: 2, turns: 3 },
         desc: 'Cierra tus heridas poco a poco, ronda tras ronda.'
     },
@@ -83,6 +83,6 @@ export const ELIXIRS = {
 // 🍞 Comida: se come fuera del combate, desde el inventario. `heal` = parte de la vida máxima que cura.
 // =============================================
 export const FOOD = {
-    pan: { name: 'Hogaza de pan', img: 'comida', price: 10, max: 5, heal: 0.4,
+    pan: { name: 'Hogaza de pan', img: 'comida', price: 5, max: 5, heal: 0.4,
         desc: 'Pan de la tahona de Zafias. Comerlo en el camino te devuelve fuerzas.' }
 };

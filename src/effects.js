@@ -9,7 +9,7 @@
 //     (`fresh`): «3 rondas» son 3 turnos tuyos con la mejora.
 //   · aturdido: no gasta rondas; se consume al perder el turno.
 // =============================================
-import { EFFECTS, EFFECT_TURNS } from './data/effects.js?v=1.9.2';
+import { EFFECTS, EFFECT_TURNS } from './data/effects.js?v=1.9.3';
 
 const _fx = unit => (unit.effects = unit.effects || {});
 

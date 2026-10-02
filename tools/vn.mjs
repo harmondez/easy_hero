@@ -171,8 +171,12 @@ async function ver(key) {
         await page.waitForSelector('.adv-dialogue:not([hidden])', { timeout: 10000 });
         await page.waitForTimeout(400);
         const n = ZAFIAS_DIALOGUES[key].length;
+        // Antes de cada captura, los retratos ya cargados y a la vista (nunca la cara de la línea anterior)
+        const portraitsReady = () => page.waitForFunction(() => [...document.querySelectorAll('.adv-portrait')]
+            .every(i => i.hidden || (i.complete && i.naturalWidth > 0 && !i.classList.contains('is-loading'))), null, { timeout: 5000 });
         for (let i = 1; i <= n; i++) {
             const file = path.join(out, `${String(i).padStart(2, '0')}.png`);
+            await portraitsReady();
             await page.locator('.adv-viewport').screenshot({ path: file });
             console.log(`📸 ${path.relative(root, file)}`);
             await page.click('.adv-dialogue-next');

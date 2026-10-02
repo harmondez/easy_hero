@@ -30,6 +30,7 @@
     --gold: #f0b03c;
     --gold-glow: rgba(240, 176, 60, 0.4);
     --quest: #4f8fdc;            /* azul de misión: los NPC con un encargo (color funcional, como el de una rareza) */
+    --font-numbers: 'Grenze', 'Work Sans', serif;   /* los números de daño y curación: medievales, en negrita y cursiva */
     --mana: #3a73d6;             /* azul de maná: la barra y los costes (color funcional) */
 
     --danger: #d6432f;
@@ -2257,3 +2258,69 @@ body.is-intro { overflow: hidden; }
 }
 .rpg-fx-chip img { width: 18px; height: 18px; object-fit: contain; image-rendering: pixelated; }
 .rpg-fx-chip b { font-family: ui-monospace, 'Courier New', monospace; }
+
+/* 🎒 Botones del inventario (Detalle, Vista previa, Equipar, Comer): activos en ámbar y oro, que se note que se pueden
+   pulsar. El marco de piedra se queda; el interior, cálido. Deshabilitado, el oscuro de siempre. */
+.inv-equip:not(:disabled), .inv-tab.is-on {
+    border-image: url('img/ui/marco-boton-luz.webp') 32 / 12px stretch;
+    background: linear-gradient(180deg, #ffe08a 0%, #f2b33d 48%, #d9822b 100%) padding-box;
+    color: #3a1d06;
+    font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+    text-shadow: 0 1px 0 rgba(255, 240, 200, 0.75);
+}
+.inv-equip:not(:disabled):hover, .inv-tab.is-on:hover {
+    background: linear-gradient(180deg, #fff0b8 0%, #f7c255 48%, #e3923a 100%) padding-box;
+    filter: drop-shadow(0 0 6px rgba(240, 176, 60, 0.6));
+}
+.inv-equip:not(:disabled):active { transform: translateY(1px); }
+/* La pestaña que no está activa: piedra clara, legible, sin parecer bloqueada */
+.inv-tab:not(.is-on) { color: #3a2614; font-weight: 800; }
+
+/* ✨ Efectos sobre cada personaje (v3): solo el icono, sin recuadro ni número (las rondas, en la lista junto a la vida) */
+.rpg-effect { width: auto; height: auto; background: none; border: 0; box-shadow: none; border-radius: 0; }
+.rpg-actor .rpg-effect img { width: 40px; height: 40px; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)); }
+.rpg-effect-turns { display: none; }
+
+/* =============================================
+   💥 Números de combate (v2): grandes, en negrita y cursiva, con contorno grueso para leerse sobre cualquier fondo.
+   El que recibes, en rojo; el que haces, en blanco cálido; el crítico, más grande y en oro; las curas, en verde.
+   El daño de un efecto (veneno, sangrado, quemadura…) sale en su color y con su icono, a tamaño de letra.
+   ============================================= */
+.rpg-stage-float {
+    font-family: var(--font-numbers);
+    font-style: italic; font-weight: 900;
+    font-size: clamp(2rem, 5.2vw, 3.1rem);
+    line-height: 1;
+    letter-spacing: 0.01em;
+    color: #fff3dc;
+    -webkit-text-stroke: 0;
+    text-shadow:
+        2px 0 0 #170d06, -2px 0 0 #170d06, 0 2px 0 #170d06, 0 -2px 0 #170d06,
+        2px 2px 0 #170d06, -2px 2px 0 #170d06, 2px -2px 0 #170d06, -2px -2px 0 #170d06,
+        0 5px 0 rgba(0, 0, 0, 0.55), 0 0 18px rgba(0, 0, 0, 0.55);
+    animation: rpgNumberPop 1.15s cubic-bezier(.2, .7, .3, 1) forwards;
+}
+.rpg-stage-float.is-taken { color: #ff5b47; }
+.rpg-stage-float.is-dealt { color: #fff3dc; }
+.rpg-stage-float.is-crit { color: var(--gold); font-size: clamp(2.5rem, 6.6vw, 3.9rem); }
+.rpg-stage-float.is-heal { color: #8fe26a; }
+.rpg-stage-float.is-miss { font-size: clamp(1.3rem, 3.4vw, 1.9rem); color: #e8dcc6; font-style: italic; }
+.rpg-stage-float.is-effect { display: flex; align-items: center; gap: 6px; font-size: clamp(1.8rem, 4.6vw, 2.7rem); }
+.rpg-stage-float.is-effect .rpg-stage-float-icon { height: 1.05em; width: auto; }
+.rpg-stage-float-icon { image-rendering: pixelated; filter: drop-shadow(2px 0 0 #170d06) drop-shadow(-2px 0 0 #170d06) drop-shadow(0 2px 0 #170d06) drop-shadow(0 -2px 0 #170d06); }
+.rpg-stage-float.is-effect-on { font-size: clamp(1.1rem, 2.8vw, 1.6rem); font-weight: 800; }
+@keyframes rpgNumberPop {
+    0% { opacity: 0; transform: translate(-50%, -60%) scale(0.4); }
+    12% { opacity: 1; transform: translate(-50%, -100%) scale(1.3); }
+    24% { transform: translate(-50%, -105%) scale(1); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -150%) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .rpg-stage-float { animation: rpgStageFade 1.1s ease-out forwards; } }
+.adv-portrait.is-loading { visibility: hidden; }   /* cambiando de cara: oculto hasta que el nuevo retrato está listo */
+
+/* 💥 Los efectos que trae un golpe salen en el impacto (no antes): escondidos hasta entonces, y aparecen con un saltito */
+.rpg-effect.is-pending, .rpg-fx-chip.is-pending { visibility: hidden; }
+.rpg-effect.is-pop, .rpg-fx-chip.is-pop { animation: rpgFxPop 0.35s cubic-bezier(.2, .9, .3, 1.4); }
+@keyframes rpgFxPop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .rpg-effect.is-pop, .rpg-fx-chip.is-pop { animation: none; } }

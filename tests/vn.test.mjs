@@ -62,6 +62,41 @@ const view = await page.$eval('.adv-viewport', el => el.getBoundingClientRect().
 assert('Grask sale más grande que nadie (y bajado tras el cuadro)', grask.big && grask.h > view * 0.85);
 assert('Una clave que no existe no rompe nada', await page.goto(`${url}?vn=no-existe`, { waitUntil: 'load' }).then(() => sleep(400)).then(() => page.$eval('.adv-dialogue', el => el.hidden)));
 
+console.log('\n🔀 Cambiar de cara sin que asome la anterior');
+// Como en la web: cada retrato tarda medio segundo en llegar (en local llegan al instante y el fallo no se vería)
+await page.route('**/img/portraits/**', async route => { await sleep(500); await route.continue(); });
+// Fotograma a fotograma: mientras haya un retrato a la vista, ¿es el de quien está en la conversación?
+await page.evaluate(() => { localStorage.setItem('easy-hero-adventure', JSON.stringify({ v: 1, scene: 'aldea', hp: null, gone: {}, flags: { misionAceptada: true } })); });
+await page.goto(url, { waitUntil: 'load' });
+await sleep(600);
+await page.evaluate(() => {
+    window.__caras = [];
+    const tick = () => {
+        const d = document.querySelector('.adv-dialogue');
+        const left = document.querySelector('.adv-portrait.is-left');
+        if (d && !d.hidden && left && !left.hidden && getComputedStyle(left).visibility !== 'hidden') {
+            window.__caras.push({ src: left.getAttribute('src'), text: d.textContent, ready: left.complete && left.naturalWidth > 0 });
+        }
+        requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+});
+const shownAdv = sel => page.$eval(sel, el => !el.hidden).catch(() => false);
+const talk = async id => {
+    for (let i = 0; i < 25 && !(await shownAdv('.adv-dialogue')); i++) { await page.click(`.adv-stop[data-point="${id}"]`, { force: true }); await sleep(300); }
+    for (let i = 0; i < 12 && await shownAdv('.adv-dialogue'); i++) { await page.click('.adv-dialogue-next'); await sleep(90); }
+};
+await talk('posadera');   // Maela
+await page.click('.adv-stop[data-point="al-bosque"]', { force: true });
+await sleep(900);
+for (let i = 0; i < 25 && !(await shownAdv('.adv-dialogue')); i++) { await page.click('.adv-stop[data-point="goblin-1"]', { force: true }); await sleep(300); }
+await sleep(400);
+const caras = await page.evaluate(() => window.__caras);
+// Un retrato a la vista con su imagen sin cargar = el navegador sigue pintando la cara anterior
+const wrong = caras.filter(c => !c.ready || (/Maela/.test(c.text) && !/maela/.test(c.src)) || (/Goblin/.test(c.text) && !/goblin/.test(c.src)));
+assert(`Con Maela solo se ve a Maela y con el goblin solo el goblin (${caras.length} fotogramas mirados)`, caras.length > 10 && wrong.length === 0);
+if (wrong.length) console.log(wrong.slice(0, 3));
+
 assert('Sin errores de página', errors.length === 0);
 if (errors.length) console.log(errors);
 console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📊 RESULTS: ${passed} passed, ${failed} failed\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);

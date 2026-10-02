@@ -166,17 +166,24 @@ console.log('\n⚒️ La Forja: mejoras permanentes compradas con oro');
     assert('sin oro no se puede comprar nada', !canBuyUpgrade(meta, 'filo') && buyUpgrade(meta, 'filo').ok === false);
     assert('una mejora que no existe no rompe nada', !canBuyUpgrade(meta, 'inventada') && upgradeEffect(meta, 'inventada') === 0);
 
-    recordGold(meta, 100);
+    recordGold(meta, 25);
     const first = buyUpgrade(meta, 'filo');
-    assert('la primera compra cuesta 40 y descuenta del oro', first.ok && first.cost === 40 && meta.gold === 60);
-    assert('la mejora sube a nivel 1 y su efecto es +1 ATK', upgradeLevel(meta, 'filo') === 1 && upgradeEffect(meta, 'filo') === 1);
-
-    assert('el coste crece con cada nivel (progresión geométrica, no lineal)', nextUpgradeCost(meta, 'filo') === 64);
-    assert('con 60 monedas no llega para el segundo nivel, que cuesta 64', !canBuyUpgrade(meta, 'filo') && !buyUpgrade(meta, 'filo').ok);
-    recordGold(meta, 10);
+    assert('Filo afilado: la primera compra cuesta 10 y descuenta del oro', first.ok && first.cost === 10 && meta.gold === 15);
+    assert('…sube a nivel 1 y da +1 ATK', upgradeLevel(meta, 'filo') === 1 && upgradeEffect(meta, 'filo') === 1);
+    assert('el precio se duplica: el segundo nivel cuesta 20', nextUpgradeCost(meta, 'filo') === 20);
+    assert('con 15 monedas no llega para el segundo nivel', !canBuyUpgrade(meta, 'filo') && !buyUpgrade(meta, 'filo').ok);
+    recordGold(meta, 5);
     buyUpgrade(meta, 'filo');
-    assert('al segundo nivel el efecto se acumula (+2 ATK)', upgradeLevel(meta, 'filo') === 2 && upgradeEffect(meta, 'filo') === 2);
-    assert('el tercer nivel cuesta todavía más (40 → 64 → 102)', nextUpgradeCost(meta, 'filo') === 102);
+    assert('el segundo nivel da +2 más: +3 ATK en total', upgradeLevel(meta, 'filo') === 2 && upgradeEffect(meta, 'filo') === 3);
+    assert('el tercero cuesta 40 (10 → 20 → 40)', nextUpgradeCost(meta, 'filo') === 40);
+    recordGold(meta, 40);
+    buyUpgrade(meta, 'filo');
+    assert('y el tercero da +3 más: +6 ATK en total (1, 3, 6, 10…)', upgradeEffect(meta, 'filo') === 6 && nextUpgradeCost(meta, 'filo') === 80);
+    const vida = loadMeta(fakeStorage());
+    recordGold(vida, 1000);
+    for (let i = 0; i < 3; i++) { buyUpgrade(vida, 'constitucion'); buyUpgrade(vida, 'buen_ojo'); }
+    assert('Constitución igual: +1, +2, +3 HP (6 en total) y Buen ojo: +1, +2, +3 de oro por combate (6)',
+        upgradeEffect(vida, 'constitucion') === 6 && upgradeEffect(vida, 'buen_ojo') === 6 && vida.gold === 1000 - 2 * (10 + 20 + 40));
 
     const once = loadMeta(fakeStorage());
     recordGold(once, 10000);
@@ -184,8 +191,8 @@ console.log('\n⚒️ La Forja: mejoras permanentes compradas con oro');
     assert('…y ya no se puede volver a comprar, ni aunque sobre oro',
         nextUpgradeCost(once, 'zurron') === Infinity && !canBuyUpgrade(once, 'zurron') && buyUpgrade(once, 'zurron').ok === false);
     assert('las de porcentaje devuelven fracción, no entero', (() => {
-        buyUpgrade(once, 'buen_ojo');
-        return Math.abs(upgradeEffect(once, 'buen_ojo') - 0.1) < 1e-9;
+        buyUpgrade(once, 'estudio');
+        return Math.abs(upgradeEffect(once, 'estudio') - 0.1) < 1e-9;
     })());
     assert('el oro nunca queda negativo por comprar', once.gold >= 0);
     assert('todas las mejoras del catálogo tienen id, icono, nombre, descripción y coste',

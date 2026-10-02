@@ -11,26 +11,28 @@
 //
 // El efecto no se aplica aquí (esto son datos puros): cada sistema pregunta por el suyo con
 // `upgradeEffect()` de meta.js. `effect` dice qué cambia y `perLevel` cuánto por nivel comprado.
+// `ramp: true` = cada nivel da un `perLevel` más que el anterior (+1, luego +2, luego +3…: en total 1, 3, 6, 10…).
 // =============================================
 
 export const UPGRADES = [
+    // Las tres básicas: cada nivel da un punto más que el anterior y cuesta el doble (10, 20, 40, 80…)
     {
         id: 'filo', icon: '💪', name: 'Filo afilado',
-        desc: 'Empiezas cada ruta con más fuerza de ataque.',
-        effect: 'atk', perLevel: 1, unit: 'ATK',
-        cost: 40, growth: 1.6
+        desc: 'Más ATK para siempre. Cada nivel da más que el anterior: +1, luego +2, luego +3…',
+        effect: 'atk', perLevel: 1, ramp: true, unit: 'ATK',
+        cost: 10, growth: 2
     },
     {
         id: 'constitucion', icon: '❤️', name: 'Constitución',
-        desc: 'Empiezas cada ruta con más vida máxima.',
-        effect: 'maxHp', perLevel: 4, unit: 'HP',
-        cost: 30, growth: 1.5
+        desc: 'Más vida máxima para siempre. Cada nivel da más que el anterior: +1, luego +2, luego +3…',
+        effect: 'maxHp', perLevel: 1, ramp: true, unit: 'HP',
+        cost: 10, growth: 2
     },
     {
         id: 'buen_ojo', icon: '🪙', name: 'Buen ojo',
-        desc: 'Encuentras más oro en todo lo que vences.',
-        effect: 'gold', perLevel: 0.1, unit: 'oro', percent: true,
-        cost: 60, growth: 1.7
+        desc: 'Más oro al acabar cada combate. Cada nivel da más que el anterior: +1, luego +2, luego +3…',
+        effect: 'goldFlat', perLevel: 1, ramp: true, unit: 'oro por combate',
+        cost: 10, growth: 2
     },
     {
         id: 'estudio', icon: '✨', name: 'Estudio',
@@ -78,8 +80,16 @@ export function upgradeCost(def, level = 0) {
 }
 
 /** Texto de lo que da ahora mismo («+3 ATK», «+20 % oro»), para la pantalla de La Forja. */
+/** Lo que da una mejora al nivel `level` (0 = nada). Con `ramp`, cada nivel suma uno más que el anterior. */
+export function upgradeTotal(def, level) {
+    const lv = Math.max(0, level | 0);
+    if (!def || !lv) return 0;
+    return def.ramp ? def.perLevel * lv * (lv + 1) / 2 : def.perLevel * lv;
+}
+
 export function upgradeAmountText(def, level) {
     if (!def || !level) return '';
+    if (def.ramp) return `+${upgradeTotal(def, level)} ${def.unit} (el siguiente nivel, +${def.perLevel * (level + 1)} más)`;
     if (def.percent) return `+${Math.round(def.perLevel * level * 100)} %${def.unit ? ` ${def.unit}` : ''}`;
     // Las de compra única no llevan unidad: el propio botón ya dice «COMPRADA», no hace falta repetirlo
     return def.unit ? `+${def.perLevel * level} ${def.unit}` : '';

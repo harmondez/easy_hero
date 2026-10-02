@@ -2,19 +2,19 @@
 // 🧭 Modo Aventura (controlador): Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
 // Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
 // =============================================
-import * as UI from './ui.js?v=1.9.2';
-import * as Engine from './engine.js?v=1.9.2';
-import * as Meta from './meta.js?v=1.9.2';
-import * as Adventure from './adventure-view.js?v=1.9.2';
-import { RPG_BALANCE } from './data/balance.js?v=1.9.2';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.9.2';
-import { creatureFor } from './data/creatures.js?v=1.9.2';
-import { QUESTS } from './data/quests.js?v=1.9.2';
-import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.9.2';
-import { ELIXIRS, FOOD } from './data/effects.js?v=1.9.2';
-import { ART } from './data/art.js?v=1.9.2';
-import * as Items from './items.js?v=1.9.2';
-import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.9.2';
+import * as UI from './ui.js?v=1.9.3';
+import * as Engine from './engine.js?v=1.9.3';
+import * as Meta from './meta.js?v=1.9.3';
+import * as Adventure from './adventure-view.js?v=1.9.3';
+import { RPG_BALANCE } from './data/balance.js?v=1.9.3';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.9.3';
+import { creatureFor } from './data/creatures.js?v=1.9.3';
+import { QUESTS } from './data/quests.js?v=1.9.3';
+import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.9.3';
+import { ELIXIRS, FOOD } from './data/effects.js?v=1.9.3';
+import { ART } from './data/art.js?v=1.9.3';
+import * as Items from './items.js?v=1.9.3';
+import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.9.3';
 
 // Lo que la aventura necesita del resto del juego (main.js se lo da al arrancar): el almacenamiento, el progreso
 // permanente y algunas piezas del descenso (el héroe base, las recompensas, La Forja, bajar a la mazmorra).
@@ -141,6 +141,8 @@ function _advHero() {
     hero.gearEffects = { onHit: g.onHit || [], onStart: g.onStart || [] };
     if (adv.state.hp != null) hero.hp = Math.max(1, Math.min(hero.maxHp, adv.state.hp));
     if (adv.state.mp != null) hero.mp = Math.max(0, Math.min(hero.maxMp, adv.state.mp));
+    hero.maxEnergy = RPG_BALANCE.energy.max;
+    hero.energy = Math.max(0, Math.min(hero.maxEnergy, adv.state.energy || 0));   // se guarda entre combates
     return hero;
 }
 
@@ -209,6 +211,7 @@ function _advPlace(p) {
             onDone: () => {
                 adv.state.hp = null;
                 adv.state.mp = null;
+                adv.state.energy = 0;                   // dormir vacía la energía
                 adv.state.gone = {};
                 _advSave();
                 adv.hero = _advHero();
@@ -241,7 +244,8 @@ function _advQuestText() {
 function _advRefreshHud() {
     const h = adv.hero;
     Adventure.setHud({ name: ctx.meta.heroName || 'Héroe', hp: h.hp, maxHp: h.maxHp, mp: h.mp, maxMp: h.maxMp, gold: ctx.meta.gold,
-        potions: Meta.potionCount(ctx.meta), manaPotions: Meta.manaPotionCount(ctx.meta), quest: _advQuestText() });
+        potions: Meta.potionCount(ctx.meta), manaPotions: Meta.manaPotionCount(ctx.meta), quest: _advQuestText(),
+        energy: h.energy || 0, maxEnergy: h.maxEnergy || RPG_BALANCE.energy.max });
 }
 
 export function open() {
@@ -312,6 +316,7 @@ export function combatAct(action, skillId) {
     }
     adv.state.hp = adv.hero.hp;
     adv.state.mp = adv.hero.mp;   // el maná se conserva entre combates, como la vida
+    adv.state.energy = adv.hero.energy;   // y la energía (hasta 100; solo se vacía al dormir)
     _advSave();
     if (c.over) _advFinishCombat();
 }

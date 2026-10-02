@@ -20,7 +20,7 @@
 //              `whenCount: { creature, n }` exige además haber vencido n criaturas de ese tipo para una misión)
 // Marcas: `defeated:<id>` al vencer a ese enemigo (permanente) y las que pongan los diálogos.
 // =============================================
-import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.9.2';
+import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.9.3';
 
 // Los goblins de Zafias pelean con cuchillos sucios: a veces envenenan (src/data/effects.js)
 const GOBLIN = { onHit: [{ id: 'veneno', power: 1, turns: 3, chance: 0.35 }] };
