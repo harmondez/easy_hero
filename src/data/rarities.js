@@ -7,13 +7,14 @@
 //   - weight:  probabilidad base de que un objeto salga con esta rareza
 //
 // Una sola tabla para todo: el borde del objeto se pinta con `color` y el jugador lee la rareza sin pensar.
+// Los cinco colores son los oficiales del juego: gris, verde, azul, lila y amarillo.
 // =============================================
 export const RARITIES = [
-    { id: 'comun',       name: 'Común',        icon: '⚪', color: '#e2e8f0', affixes: 0, power: 1.00, weight: 50 },
+    { id: 'comun',       name: 'Común',        icon: '⚪', color: '#a8a29e', affixes: 0, power: 1.00, weight: 50 },
     { id: 'poco_comun',  name: 'Poco común',   icon: '🟢', color: '#22c55e', affixes: 1, power: 1.15, weight: 28 },
-    { id: 'rara',        name: 'Rara',         icon: '🔵', color: '#3b82f6', affixes: 2, power: 1.30, weight: 14 },
-    { id: 'epica',       name: 'Épica',        icon: '🟣', color: '#a855f7', affixes: 3, power: 1.50, weight: 6 },
-    { id: 'legendaria',  name: 'Legendaria',   icon: '🟠', color: '#f97316', affixes: 3, unique: true, power: 1.70, weight: 2 }
+    { id: 'rara',        name: 'Raro',         icon: '🔵', color: '#3b82f6', affixes: 2, power: 1.30, weight: 14 },
+    { id: 'epica',       name: 'Épico',        icon: '🟣', color: '#a855f7', affixes: 3, power: 1.50, weight: 6 },
+    { id: 'legendaria',  name: 'Legendario',   icon: '🟡', color: '#facc15', affixes: 3, unique: true, power: 1.70, weight: 2 }
 ];
 
 export const RARITY_BY_ID = Object.fromEntries(RARITIES.map(r => [r.id, r]));

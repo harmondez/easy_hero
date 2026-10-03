@@ -8,7 +8,9 @@
 //   done       marca con la que se cumple (sin `done`, no se cumple todavía: la historia sigue)
 //   steps      objetivos en orden; el diario muestra el primero sin cumplir. Cada paso se cumple con:
 //                when: [marcas]                  todas las marcas
-//                count: { creature, n }          vencer n criaturas de ese tipo (cuentan desde que empieza la misión)
+//                count: { creature, n }          vencer n criaturas de ese tipo (cuentan desde que empieza la misión;
+//                                                los goblins cuentan como 'goblin', su tabla de botín)
+//                item: { material, n }           llevar encima n de ese material (src/data/loot.js)
 //              y opcionalmente progress: [marcas] para mostrar «2/3»
 // Las cuentas viven en el guardado de la aventura (`counts`); las marcas, en `flags`.
 // =============================================
@@ -24,24 +26,54 @@ export const QUESTS = [
         ]
     },
     {
-        id: 'goblins', kind: 'side', giver: 'posadera',
-        title: 'Los goblins del bosque',
-        desc: 'Los goblins de Grask han tomado los cruces del bosque y a Zafias ya no llegan carros. Maela, la posadera, te ha pedido que los eches.',
+        id: 'goblins', kind: 'side', giver: 'posada',
+        title: 'Grask, el goblin del bosque',
+        desc: 'Un goblin que se hace llamar Grask asalta a los viajeros en el bosque, y a la posada ya no llega nadie. Evelyn, la posadera, te ha pedido que te encargues de él.',
         start: 'misionAceptada', done: 'misionCumplida',
         steps: [
             { text: 'Echa a los goblins del bosque', when: GOBLINS, progress: GOBLINS },
             { text: 'Entra en el campamento goblin y acaba con Grask', when: ['defeated:grask'] },
-            { text: 'Vuelve con Maela a la aldea', when: ['misionCumplida'] }
+            { text: 'Vuelve con Evelyn, a la posada', when: ['misionCumplida'] }
         ]
     },
     {
-        id: 'dientes', kind: 'side', giver: 'herrero',
-        title: 'Dientes de lobo',
-        desc: 'Bram, el herrero, templa el acero con dientes de lobo molidos. Si le llevas cinco, te forjará una espada.',
-        start: 'dientes:aceptada', done: 'dientes:cumplida',
+        id: 'colmillo', kind: 'side', giver: 'herrero',
+        title: 'El colmillo de Feronius',
+        desc: 'Bram, el herrero, quiere un colmillo de Feronius, el lobo enorme que tiene su guarida pasado el campamento goblin. Si se lo llevas, te forjará una espada.',
+        start: 'colmillo:aceptada', done: 'colmillo:cumplida',
         steps: [
-            { text: 'Consigue dientes de lobo', count: { creature: 'lobo-de-zafias', n: 5 } },
-            { text: 'Llévaselos a Bram, en la aldea', when: ['dientes:cumplida'] }
+            { text: 'Consigue el colmillo de Feronius', item: { material: 'colmillo-feronius', n: 1 } },
+            { text: 'Llévaselo a Bram, a la forja', when: ['colmillo:cumplida'] }
+        ]
+    },
+    {
+        id: 'plantas', kind: 'side', giver: 'boticaria',
+        title: 'Plantas para Amelie',
+        desc: 'Amelie, la boticaria, cuida sola de su hermana pequeña, que está enferma, y se ha quedado sin plantas para su medicina. Crecen en la senda del santuario, en las ruinas del vigía y en la escalinata del castillo.',
+        start: 'plantas:aceptada', done: 'plantas:cumplida',
+        steps: [
+            { text: 'Encuentra plantas medicinales', item: { material: 'planta-medicinal', n: 3 } },
+            { text: 'Llévaselas a Amelie, a la botica', when: ['plantas:cumplida'] }
+        ]
+    },
+    {
+        id: 'goblins-odo', kind: 'side', giver: 'odo',
+        title: 'Seis goblins menos',
+        desc: 'Odo, el veterano de las casas del camino, ya no puede salir a pelear. Paga por cada seis goblins que quites de los caminos.',
+        start: 'goblins-odo:aceptada', done: 'goblins-odo:cumplida',
+        steps: [
+            { text: 'Vence goblins', count: { creature: 'goblin', n: 6 } },
+            { text: 'Vuelve con Odo, a las casas del camino', when: ['goblins-odo:cumplida'] }
+        ]
+    },
+    {
+        id: 'lobos-hilda', kind: 'side', giver: 'hilda',
+        title: 'Los lobos del arroyo',
+        desc: 'Hilda, la curtidora, lava sus pieles en el arroyo del bosque, pero los lobos la siguen. Te paga si le quitas cuatro de en medio.',
+        start: 'lobos-hilda:aceptada', done: 'lobos-hilda:cumplida',
+        steps: [
+            { text: 'Vence lobos', count: { creature: 'lobo-de-zafias', n: 4 } },
+            { text: 'Vuelve con Hilda, a las casas del camino', when: ['lobos-hilda:cumplida'] }
         ]
     }
 ];

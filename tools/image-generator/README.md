@@ -17,12 +17,14 @@ npm run generate -- enemy orco                  # genera UNA imagen (≈0,034 $ 
 npm run generate -- boss grask --details "goblin chieftain with a bone crown"
 npm run generate -- enemy goblin --variant plaga --details "green toxic boils"
 npm run generate -- background templo_volcanico
+npm run generate -- scene "small forest village" --variant v1 --no-game --regions "inn:NW:a large inn,forge:W:a forge"   # el cuadro de una escena
 npm run generate -- map volcanic_world          # mapa maestro + regiones recortadas + manifest.json
 npm run generate -- map mi_isla --regions "playa:S:sandy beach,pico:N:snowy peak"
 npm run generate -- fix enemy orco --flip       # arreglar sin pagar: voltear y volver a entregar al juego
 npm run generate -- list                        # lo generado hasta ahora
 ```
-Tipos: `character`, `enemy`, `npc`, `portrait` (retrato de novela visual: ver [docs/novela-visual.md](../../docs/novela-visual.md)), `boss`, `prop`, `obstacle`, `structure`, `ambient`, `terrain`, `background`, `map`.
+Tipos: `character`, `enemy`, `npc`, `portrait` (retrato de novela visual: ver [docs/novela-visual.md](../../docs/novela-visual.md)), `boss`, `prop`, `obstacle`, `structure`, `ambient`, `terrain`, `background`, `scene` (una escena explorable vista desde arriba, a escala de personaje: una aldea, un caserío;
+receta en [docs/zonas.md](../../docs/zonas.md)), `map`.
 Opciones: `--dry-run`, `--force` (rehacer; lo anterior se aparta con fecha), `--variant`, `--details`, `--regions`,
 `--model`, `--no-game`, `--game-id`.
 

@@ -808,6 +808,28 @@ body {
 .rpg-combat-result.is-defeat .rpg-result-title { color: var(--danger); }
 .rpg-result-detail { margin: 6px 0 14px; color: var(--text-light); font-size: 0.92rem; }
 @keyframes rpgResultIn { from { opacity: 0; } }
+/* Botín del enemigo, en el cartel de victoria: icono sobre el brillo de su rareza y el nombre en su color */
+.rpg-result-loot {
+    display: flex; align-items: center; gap: 12px;
+    width: fit-content; max-width: 100%;
+    margin: 0 auto 14px; padding: 8px 14px 8px 8px;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--rarity);
+    border-left-width: 4px;
+    border-radius: 4px;
+}
+.rpg-drop-icon {
+    flex: none; display: grid; place-items: center;
+    width: 52px; height: 52px;
+    background: radial-gradient(circle, color-mix(in srgb, var(--rarity) 35%, transparent), transparent 72%);
+}
+.rpg-drop-icon img { max-width: 44px; max-height: 44px; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7)); }
+.rpg-drop-text { display: flex; flex-direction: column; line-height: 1.25; }
+.rpg-drop-text small { color: var(--text-light); font-size: 0.74rem; }
+.rpg-drop-text b { color: var(--rarity); font-size: 1rem; }
+.rpg-drop-text i { color: var(--text-light); font-size: 0.72rem; font-style: normal; text-transform: uppercase; letter-spacing: 0.06em; }
+.rpg-result-loot.is-left { opacity: 0.7; border-style: dashed; }
 
 /* --- Diario plegado bajo el panel: se lee la última línea --- */
 .rpg-combat-log { max-width: 960px; margin: 10px auto 0; }
@@ -2324,3 +2346,61 @@ body.is-intro { overflow: hidden; }
 .rpg-effect.is-pop, .rpg-fx-chip.is-pop { animation: rpgFxPop 0.35s cubic-bezier(.2, .9, .3, 1.4); }
 @keyframes rpgFxPop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .rpg-effect.is-pop, .rpg-fx-chip.is-pop { animation: none; } }
+
+/* --- 🪧 Menú de una parada (posada, forja): un pergamino con botones de piedra, uno por cosa que se puede hacer --- */
+.adv-menu {
+    position: absolute; inset: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    padding: 14px;
+    background: rgba(21, 16, 12, 0.6);
+}
+.adv-menu[hidden] { display: none; }
+.adv-menu-box {
+    width: min(100%, 380px);
+    padding: 18px 20px 20px;
+    text-align: center;
+    color: var(--parchment-ink);
+    background:
+        radial-gradient(ellipse at 20% 10%, rgba(255, 255, 255, 0.35), transparent 60%),
+        linear-gradient(180deg, var(--parchment), color-mix(in srgb, var(--parchment) 82%, var(--parchment-edge)));
+    border: 2px solid var(--parchment-edge);
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), var(--shadow-elevated);
+    animation: advDialogueIn 0.25s ease-out;
+}
+.adv-menu-title { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; color: #7a3514; }
+.adv-menu-text { margin: 6px 0 0; font-size: 0.92rem; line-height: 1.45; }
+.adv-menu-options { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.adv-menu-option {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 48px; padding: 2px 12px;
+    border: 12px solid transparent; border-radius: 0;
+    border-image: url('img/ui/marco-boton.webp') 32 fill / 12px stretch;
+    background: none; color: var(--parchment-ink);
+    font: 800 1rem var(--font-body); letter-spacing: 0.02em;
+    cursor: pointer;
+}
+.adv-menu-option:not(:disabled):hover, .adv-menu-option:focus-visible { border-image-source: url('img/ui/marco-boton-luz.webp'); outline: none; }
+.adv-menu-option:disabled { border-image-source: url('img/ui/marco-boton-oscuro.webp'); color: #e9dcc4; cursor: not-allowed; }
+.adv-menu-option small { display: inline-flex; align-items: center; gap: 4px; font: 700 0.82rem ui-monospace, SFMono-Regular, monospace; opacity: 0.85; }
+.adv-menu-option small img { width: 18px; height: 18px; }
+@media (prefers-reduced-motion: reduce) { .adv-menu-box { animation: none; } }
+/* La posada también puede tener misión: su parada sale azul, como la de un vecino */
+.adv-stop.is-inn.is-quest { --stop: var(--quest); }
+.adv-stop.is-inn.is-talk { --stop: var(--gold); }
+
+/* --- 🛒 Tiendas de la aventura: pestañas Comprar / Vender y el panel de mejorar espadas --- */
+.shop-tabs { display: flex; justify-content: center; gap: 8px; margin: 0 0 14px; }
+.shop-tab {
+    min-width: 130px; padding: 2px 14px;
+    border: 10px solid transparent; border-radius: 0;
+    border-image: url('img/ui/marco-boton.webp') 32 fill / 10px stretch;
+    background: none; color: var(--parchment-ink);
+    font: 800 0.92rem var(--font-body); cursor: pointer;
+}
+.shop-tab:hover, .shop-tab.is-on { border-image-source: url('img/ui/marco-boton-luz.webp'); }
+.shop-tab:not(.is-on) { opacity: 0.8; }
+.shop-empty { grid-column: 1 / -1; margin: 18px auto; }
+.shop-sell { color: #1f5a2a; }
+.upgrade-panel .shop-grid { grid-template-columns: 1fr; }
+.upgrade-panel .shop-buy .ui-icon { width: 20px; height: 20px; vertical-align: -4px; }

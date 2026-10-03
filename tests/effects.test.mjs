@@ -153,13 +153,17 @@ if (!(await page.$('#btnRpgCombatContinue'))) {
 // ⚡ La energía se guarda entre combates y solo se vacía al dormir
 console.log('\n⚡ La energía se guarda hasta dormir');
 await page.evaluate(() => {
+    window.gameMeta.gold = 50;   // dormir cuesta 5 monedas
+    localStorage.setItem('easy-hero-meta', JSON.stringify(window.gameMeta));
     localStorage.setItem('easy-hero-adventure', JSON.stringify({ v: 1, scene: 'aldea', hp: null, energy: 60, gone: {}, flags: { misionAceptada: true } }));
 });
 await page.reload({ waitUntil: 'load' });
 await sleep(600);
 const barEnergy = () => page.$eval('[data-hud="en"] .ui-gauge-text', el => el.textContent);
 assert('La barra de abajo enseña la energía guardada (60/100)', (await barEnergy()) === '60/100');
-for (let i = 0; i < 20 && !(await shown('.adv-dialogue')); i++) { await page.click('.adv-stop[data-point="posada"]', { force: true }); await sleep(300); }
+for (let i = 0; i < 20 && !(await shown('.adv-menu')); i++) { await page.click('.adv-stop[data-point="posada"]', { force: true }); await sleep(300); }
+await page.click('.adv-menu [data-menu="sleep"]');
+await sleep(250);
 await talkAll();
 await sleep(300);
 const slept = await page.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-adventure')));

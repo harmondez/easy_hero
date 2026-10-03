@@ -136,7 +136,9 @@ export class AssetFactory {
 
     // ---------- AssetGenerator: personajes, enemigos, NPC, jefes, props… ----------
     async generateAsset(type, name, opts = {}) {
-        const plan = this.plan(type, name, opts);
+        // Las escenas (aldeas, caseríos) admiten --regions como los mapas: dónde va cada edificio
+        const layout = type === 'scene' && opts.regions ? this.mapLayout(name, opts.regions) : null;
+        const plan = this.plan(type, name, { ...opts, layout });
         plan.gameId = opts.gameId || '';
         if (opts.dryRun) return { dryRun: true, plan };
         this.guardOverwrite(plan, opts.force);

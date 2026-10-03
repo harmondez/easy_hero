@@ -1,5 +1,5 @@
 {
-  "_doc": "Escenarios: BACKGROUND (fondo de combate de lado) y MAP (región explorable entera, una sola imagen maestra que luego se recorta).",
+  "_doc": "Escenarios: BACKGROUND (fondo de combate de lado) y MAP (región explorable entera, una sola imagen maestra que luego se recorta). SCENE: una escena explorable (aldea, caserío) vista desde arriba, a escala de personaje: un solo cuadro por el que el héroe pasea.",
   "background": {
     "kind": "background",
     "uses_sprite_rules": false,
@@ -27,5 +27,22 @@
       "Place each point of interest in the region of the image indicated in the layout, with open space around it."
     ],
     "layout_doc": "Las zonas del mapa se colocan en una rejilla de 3×3 (norte/centro/sur × oeste/centro/este). El prompt pide cada punto de interés en su casilla y el MAP CUTTER recorta exactamente esas casillas (con margen) del mapa maestro: nunca se vuelve a generar nada."
+  },
+  "scene": {
+    "kind": "map",
+    "uses_sprite_rules": false,
+    "references": "scene",
+    "subject": "one single explorable top-down RPG location: {name}{details}",
+    "pose": "elevated top-down 3/4 view of the WHOLE location in one image, at walking scale (buildings large enough that a small character could stand at each door), the place fills the frame edge to edge",
+    "mandatory": [
+      "ONE continuous place, NOT a collage, NOT separate panels, NO grid, NO tiles.",
+      "WALKABLE ROADS ARE THE PRIORITY: one network of light sandy-brown dirt roads about one cart wide (not huge empty plazas), clearly lighter than the grass, continuous and unbroken, with a visible branch of road reaching the front door of EVERY building and every exit. No road is hidden under roofs, trees, crates or stalls.",
+      "In front of every building door there is a small open patch of bare dirt road (no props on it) where a character could stand.",
+      "Roads that leave the place run all the way to the edge of the image.",
+      "Every building has the same scale, perspective, palette and lighting; roofs do not cover the roads.",
+      "Empty of life: NO people, NO villagers, NO animals, NO creatures, NO characters at all.",
+      "No text, signs with letters, labels, legend, compass, UI, markers or frame.",
+      "Place each building in the area of the image indicated in the layout."
+    ]
   }
 }

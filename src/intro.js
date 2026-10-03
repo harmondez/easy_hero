@@ -2,7 +2,7 @@
 // 🌅 La introducción (presentación): negro, el despertar en las ruinas, el nombre, la espada y el camino al pueblo.
 // El guion vive en src/data/intro.js. Quien la abre decide qué pasa al terminar (main.js: entrar en la aventura).
 // =============================================
-import { INTRO_STEPS, DEFAULT_HERO_NAME, HERO_NAME_MAX } from './data/intro.js?v=1.9.3';
+import { INTRO_STEPS, DEFAULT_HERO_NAME, HERO_NAME_MAX } from './data/intro.js?v=1.10.0';
 
 const reducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Duración de los pasos que van solos (ms). Con «reducir movimiento», casi nada

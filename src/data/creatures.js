@@ -14,11 +14,13 @@
 //   rules     reglas de combate, las mismas que las variantes (variants.js): physResist (defensa), rageBelow…, y los
 //             efectos de estado (src/data/effects.js): onHit [{ id, power, turns, chance }], stunOnHeavy (aturde con
 //             los golpes de ×n o más)
+//   drops     tabla de botín que suelta al caer (src/data/loot.js DROPS); sin ella, no suelta nada
+//   rare      encuentro raro que puede salir en su lugar (src/data/rares.js RARES)
 //   tag       etiqueta bajo su nombre en el combate (si no, «Monstruo», «Sub-jefe» o «Jefe final»)
 //   scale     tamaño en pantalla respecto a su dibujo (los dibujos se normalizan a la altura del héroe: un lobo a
 //             cuatro patas saldría tan alto como él). Se multiplica por el ×1,25 / ×1,5 de los jefes
 // =============================================
-import { PATTERNS } from './monsters.js?v=1.9.3';
+import { PATTERNS } from './monsters.js?v=1.10.0';
 
 export const CREATURES = {
     // --- Lobos ---
@@ -26,12 +28,14 @@ export const CREATURES = {
         name: 'Lobo de Zafias', icon: '🐺', type: 'monster', floor: 1, pattern: 'rapido',
         scale: 0.55,   // a media altura del torso del héroe
         rules: { onHit: [{ id: 'sangrado', power: 1, turns: 3, chance: 0.4 }] },
+        drops: 'lobo', rare: 'lobo',
         desc: 'Un lobo flaco y gris que va en grupo. Muerde y se aparta: a veces te deja sangrando.'
     },
     feronius: {
         name: 'Feronius el Feroz', icon: '🐺', type: 'boss', tag: 'Jefe de Zafias', floor: 1, pattern: 'agresivo',
         atkMul: 0.8, hpMul: 0.85, scale: 0.55,   // con el ×1,5 de jefe: grande, pero sin llenar la pantalla
         rules: { rageBelow: 0.3, rageAtkMul: 1.5, onHit: [{ id: 'sangrado', power: 2, turns: 3, chance: 0.5 }], stunOnHeavy: 1.5 },
+        drops: 'feronius',
         desc: 'El lobo alfa de Zafias. Su zarpazo aturde, su mordisco hace sangrar y, cuando está herido, se vuelve loco.'
     },
     // --- Gnolls ---

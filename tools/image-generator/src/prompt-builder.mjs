@@ -22,7 +22,7 @@ export class PromptBuilder {
             portrait: readJson(path.join(dir, 'prompts', 'portrait.json')),
             prop: objects.prop, obstacle: objects.obstacle, structure: objects.structure,
             ambient: objects.ambient, terrain: objects.terrain,
-            background: scenario.background, map: scenario.map
+            background: scenario.background, map: scenario.map, scene: scenario.scene
         };
     }
 

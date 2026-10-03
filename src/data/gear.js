@@ -101,4 +101,5 @@ export const GEAR = {
 export const GEAR_FOR_SALE = Object.keys(GEAR).filter(id => GEAR[id].price != null).sort((a, b) => GEAR[a].price - GEAR[b].price);
 
 /** Cuánto ATK suma cada cristal de mejora, y cuántos admite cada arma. */
-export const WEAPON_UPGRADE = { atq: 1, max: 3, price: 250, name: 'Cristal de mejora', img: 'mejora-arma' };
+// El cristal se compra en la forja (`price`), se lleva encima (hasta `carry`) y Bram lo gasta al mejorar un arma
+export const WEAPON_UPGRADE = { atq: 1, max: 3, price: 100, carry: 9, name: 'Cristal de mejora', img: 'mejora-arma' };

@@ -2,17 +2,28 @@
 // No editar: para corregir un camino, escribe sus recodos en zafias.js (mandan sobre estos) o vuelve a trazar.
 export const ZAFIAS_PATHS = {
     aldea: {
-        'plaza>cruce-norte': [],
-        'cruce-norte>al-bosque': [],
-        'cruce-norte>pozo': [],
-        'pozo>posadera': [],
-        'posadera>posada': [],
-        'plaza>tienda': [],
-        'tienda>herrero': [],
-        'plaza>cruce-sur': [],
-        'cruce-sur>mercado': [],
-        'cruce-sur>escalones': [],
-        'escalones>al-bosque-sur': []
+        'al-bosque>cruce-norte': [],
+        'cruce-norte>esquina-posada': [{ x: 234, y: 155 }],
+        'esquina-posada>posada': [],
+        'cruce-norte>esquina-botica': [{ x: 386, y: 151 }],
+        'esquina-botica>a-las-casas': [],
+        'esquina-botica>boticaria': [],
+        'boticaria>esquina-sendero': [],
+        'esquina-sendero>al-bosque-sur': [],
+        'esquina-sendero>mercado': [],
+        'mercado>plaza': [],
+        'plaza>pozo': [],
+        'plaza>esquina-forja': [{ x: 225, y: 298 }],
+        'esquina-forja>herrero': [],
+        'esquina-forja>esquina-posada': [],
+        'esquina-forja>escalones': []
+    },
+    casas: {
+        'a-la-aldea-desde-casas>patio': [],
+        'patio>odo': [],
+        'patio>hilda': [],
+        'patio>nell': [],
+        'patio>camino-viejo': []
     },
     bosque: {
         'a-la-aldea>goblin-1': [],
@@ -44,7 +55,7 @@ export const ZAFIAS_PATHS = {
     },
     guarida: {
         'al-campamento-desde-guarida>lobo-guarida': [],
-        'lobo-guarida>huesos': [{ x: 1266, y: 900 }],
+        'lobo-guarida>huesos': [{ x: 1262, y: 904 }],
         'huesos>feronius': []
     }
 };

@@ -26,7 +26,8 @@ const args = process.argv.slice(2);
 const compare = args.includes('--comparar');
 const shotDir = args.includes('--captura') ? path.resolve(args[args.indexOf('--captura') + 1]) : null;
 const zone = ZAFIAS;
-const W = zone.width, H = zone.height;
+// Cada «lienzo» es una imagen con su tamaño lógico: el mapa de la zona, o el cuadro propio de una escena (`image`)
+let W = zone.width, H = zone.height, cost = null, canvasImage = zone.image;
 const EPSILON = 3.5;        // px lógicos que puede separarse la línea simplificada de la ruta encontrada
 const PAD = 16;             // la ruta puede salirse un poco del encuadre, no más
 const BLUR = 5;             // difuminado de la máscara: cuanto más, más se centra la ruta en caminos anchos
@@ -35,8 +36,10 @@ const SAMPLE = 5;           // radio (px lógicos) alrededor de cada parada y cr
 const colorMode = args.includes('--color') ? args[args.indexOf('--color') + 1] : 'aprendido';
 const maskOut = args.includes('--mascara') ? path.resolve(args[args.indexOf('--mascara') + 1]) : null;
 
-// --- 1-2. Mapa de costes ---
-const img = sharp(path.join(root, zone.image)).resize(W, H, { fit: 'fill' }).removeAlpha();
+// --- 1-2. Mapa de costes (de un lienzo: su imagen y las escenas que viven en ella) ---
+async function loadCanvas(image, w, h, scenes) {
+W = w; H = h; canvasImage = image;
+const img = sharp(path.join(root, image)).resize(W, H, { fit: 'fill' }).removeAlpha();
 const px = await img.raw().toBuffer();
 const dirt = Buffer.alloc(W * H), water = new Uint8Array(W * H);
 for (let i = 0; i < W * H; i++) water[i] = px[i * 3 + 2] > px[i * 3] + 25 && px[i * 3 + 2] > px[i * 3 + 1] + 5 ? 1 : 0;
@@ -55,7 +58,7 @@ if (colorMode === 'tierra') {
     const near = new Float64Array(4096), all = new Float64Array(4096);
     for (let i = 0; i < W * H; i++) all[bin(i)]++;
     let nNear = 0;
-    for (const sc of Object.values(zone.scenes)) {
+    for (const sc of scenes) {
         for (const p of [...Object.values(sc.forks || {}), ...sc.points]) {
             for (let dy = -SAMPLE; dy <= SAMPLE; dy++) for (let dx = -SAMPLE; dx <= SAMPLE; dx++) {
                 const x = Math.round(p.x) + dx, y = Math.round(p.y) + dy;
@@ -70,12 +73,13 @@ if (colorMode === 'tierra') {
     }
     for (let i = 0; i < W * H; i++) dirt[i] = Math.round(score[bin(i)] * 255);
 }
-if (maskOut) await sharp(dirt, { raw: { width: W, height: H, channels: 1 } }).png().toFile(maskOut);
+if (maskOut) await sharp(dirt, { raw: { width: W, height: H, channels: 1 } }).png().toFile(image === zone.image ? maskOut : `${maskOut}.${path.basename(image, path.extname(image))}.png`);
 const road = await sharp(dirt, { raw: { width: W, height: H, channels: 1 } }).blur(BLUR).raw().toBuffer();
-const cost = new Float32Array(W * H);
+cost = new Float32Array(W * H);
 for (let i = 0; i < W * H; i++) {
     const off = 1 - road[i] / 255;                     // 0 en el centro del camino, 1 lejos de él
     cost[i] = 1 + 29 * off * off + (water[i] ? 100 : 0);
+}
 }
 
 // --- 3. A* en 8 direcciones ---
@@ -99,7 +103,8 @@ function astar(from, to, box) {
         for (const [dx, dy, len] of D) {
             const nx = x + dx, ny = y + dy;
             if (nx < x0 || nx > x1 || ny < y0 || ny > y1) continue;
-            const n = ny * W + nx, ng = g[i] + len * (cost[i] + cost[n]) / 2;
+            // fround: g es de 32 bits; sin redondear igual, el mismo valor «mejoraría» una y otra vez y no acabaría nunca
+            const n = ny * W + nx, ng = Math.fround(g[i] + len * (cost[i] + cost[n]) / 2);
             if (ng < g[n]) { g[n] = ng; prev[n] = i; push(ng + h(n), n); }
         }
     }
@@ -168,13 +173,19 @@ function gap(p, q) {
     return samples.reduce((s, pt) => s + near(pt), 0) / (samples.length || 1);
 }
 
-const result = {};
+const result = Object.fromEntries(Object.keys(zone.scenes).map(sid => [sid, {}]));   // en el orden de la zona
 const report = [];
 const t0 = Date.now();
-for (const [sid, sc] of Object.entries(zone.scenes)) {
+// Las escenas, agrupadas por lienzo: primero las del mapa de la zona y luego cada escena con cuadro propio
+const own = Object.entries(zone.scenes).filter(([, sc]) => sc.image);
+const shared = Object.entries(zone.scenes).filter(([, sc]) => !sc.image);
+const canvases = [{ image: zone.image, w: zone.width, h: zone.height, scenes: shared }, ...own.map(([sid, sc]) => ({ image: sc.image, w: sc.width, h: sc.height, scenes: [[sid, sc]] }))];
+for (const cv of canvases) {
+if (!cv.scenes.length) continue;
+await loadCanvas(cv.image, cv.w, cv.h, cv.scenes.map(([, sc]) => sc));
+for (const [sid, sc] of cv.scenes) {
     const nodes = { ...(sc.forks || {}) };
     for (const p of sc.points) nodes[p.id] = p;
-    result[sid] = {};
     let svg = '';
     for (const [a, b, via, auto] of sc.links || []) {
         const manual = via && auto !== 'auto';
@@ -200,10 +211,11 @@ for (const [sid, sc] of Object.entries(zone.scenes)) {
         const b = sc.box, x = Math.max(0, b.x - 30), y = Math.max(0, b.y - 30), w = Math.min(W - x, b.w + 60), h = Math.min(H - y, b.h + 60);
         const over = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${svg}</svg>`;
         fs.mkdirSync(shotDir, { recursive: true });
-        await sharp(await sharp(path.join(root, zone.image)).resize(W, H).png().toBuffer())
+        await sharp(await sharp(path.join(root, canvasImage)).resize(W, H).png().toBuffer())
             .composite([{ input: Buffer.from(over) }]).png().toBuffer()
             .then(buf => sharp(buf).extract({ left: x, top: y, width: w, height: h }).resize(w * 2).jpeg({ quality: 85 }).toFile(path.join(shotDir, `caminos_${sid}.jpg`)));
     }
+}
 }
 console.log(report.join('\n'));
 console.log(`(${((Date.now() - t0) / 1000).toFixed(1)} s)`);

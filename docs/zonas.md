@@ -9,6 +9,20 @@ Receta para pasar de «un mapa pintado» a «una zona jugable con paradas y cami
    `node tools/assemble-map.mjs` los recompone en HD fundiendo las costuras (las piezas redibujadas ceden).
 3. La imagen va a `img/zones/<zona>.webp`, a ×3 del tamaño lógico. Las coordenadas del juego son siempre lógicas.
 
+### Una escena con su propio cuadro
+Una escena puede no ser un recorte del mapa grande, sino una imagen aparte (la aldea de Zafias y las casas del camino):
+1. Se genera con la fábrica: `npm run generate -- scene "small medieval forest village" --variant v1 --no-game --details "…" --regions "inn:NW:…,forge:W:…"`
+   (`--regions` dice en qué casilla de una rejilla 3×3 va cada edificio). Cuando una variante convence:
+   `npm run generate -- fix scene <nombre>-v1 --game-id zafias-aldea` la deja en `img/zones/zafias-aldea.webp`.
+2. En la escena: `image`, `width`, `height` (el tamaño lógico; la imagen va a ×2) y `box: { x: 0, y: 0, w, h }`.
+   Sus paradas van en esas coordenadas, de 0 al tamaño de la escena.
+3. El trazador (`tools/trace-paths.mjs`) y el visor la tratan como un lienzo aparte, sin más.
+
+Lo que hizo que el cuadro de la aldea saliera bien (aprendido del prompt del mapa anterior): pedir **los caminos lo
+primero** (una sola red de tierra clara, continua, con un ramal hasta la puerta de cada edificio y hasta cada salida,
+y de un carro de ancho: si se piden «anchos» salen plazas vacías), un claro de tierra delante de cada puerta, nada de
+gente ni animales, y mucho detalle pequeño nombrado uno a uno (muros bajos, vallas, faroles, leña, barriles).
+
 ## 2. Las paradas (lo único que se decide a mano: es diseño de juego)
 1. Mirar el mapa con cuadrícula: `node tools/zone-overlay.mjs salida.jpg x,y,ancho,alto 2`
    (`--tierra` resalta la tierra de camino de Zafias; `--limpio` quita las paradas).
@@ -32,5 +46,5 @@ Receta para pasar de «un mapa pintado» a «una zona jugable con paradas y cami
   destino, diálogos escritos, hallazgos de una sola vez y ningún camino sin trazar.
 - Una captura en el juego de cada escena.
 
-> Pendiente para la segunda zona: hoy las herramientas leen Zafias directamente; al llegar otra, que reciban la zona
+> Pendiente para la segunda zona (las escenas con cuadro propio ya están; falta otra zona entera): hoy las herramientas leen Zafias directamente; al llegar otra, que reciban la zona
 > por parámetro (`--zona nieve`) y que el visor cargue la zona de la escena en vez de importar Zafias.

@@ -2,19 +2,21 @@
 // 🧭 Modo Aventura (controlador): Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
 // Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
 // =============================================
-import * as UI from './ui.js?v=1.9.3';
-import * as Engine from './engine.js?v=1.9.3';
-import * as Meta from './meta.js?v=1.9.3';
-import * as Adventure from './adventure-view.js?v=1.9.3';
-import { RPG_BALANCE } from './data/balance.js?v=1.9.3';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.9.3';
-import { creatureFor } from './data/creatures.js?v=1.9.3';
-import { QUESTS } from './data/quests.js?v=1.9.3';
-import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.9.3';
-import { ELIXIRS, FOOD } from './data/effects.js?v=1.9.3';
-import { ART } from './data/art.js?v=1.9.3';
-import * as Items from './items.js?v=1.9.3';
-import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.9.3';
+import * as UI from './ui.js?v=1.10.0';
+import * as Engine from './engine.js?v=1.10.0';
+import * as Meta from './meta.js?v=1.10.0';
+import * as Adventure from './adventure-view.js?v=1.10.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.10.0';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.10.0';
+import { creatureFor } from './data/creatures.js?v=1.10.0';
+import { QUESTS } from './data/quests.js?v=1.10.0';
+import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.10.0';
+import { ELIXIRS, FOOD } from './data/effects.js?v=1.10.0';
+import { MATERIALS, rollDrop } from './loot.js?v=1.10.0';
+import { rollRare, applyRare } from './rares.js?v=1.10.0';
+import { ART } from './data/art.js?v=1.10.0';
+import * as Items from './items.js?v=1.10.0';
+import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.10.0';
 
 // Lo que la aventura necesita del resto del juego (main.js se lo da al arrancar): el almacenamiento, el progreso
 // permanente y algunas piezas del descenso (el héroe base, las recompensas, La Forja, bajar a la mazmorra).
@@ -94,7 +96,11 @@ function _advCarried() {
         ...Object.entries(ELIXIRS).map(([id, ex]) => ({ id: `elixir:${id}`, name: ex.name, img: ex.img, count: Meta.elixirCount(m, id),
             desc: `${ex.desc} Se usa en combate, a cambio de tu turno.` })),
         ...Object.entries(FOOD).map(([id, f]) => ({ id: `food:${id}`, name: f.name, img: f.img, count: Meta.foodCount(m, id),
-            desc: `${f.desc} Cura el ${Math.round(f.heal * 100)} % de tu vida.`, use: 'Comer' }))
+            desc: `${f.desc} Cura el ${Math.round(f.heal * 100)} % de tu vida.`, use: 'Comer' })),
+        { id: 'cristal', name: WEAPON_UPGRADE.name, img: WEAPON_UPGRADE.img, count: Meta.crystalCount(m), type: 'Objeto',
+            desc: `Llévaselo a Bram: con un cristal mejora una espada (+${WEAPON_UPGRADE.atq} de ATK para siempre, hasta +${WEAPON_UPGRADE.max}).` },
+        ...Object.entries(MATERIALS).map(([id, mt]) => ({ id: `material:${id}`, name: mt.name, img: mt.img, rarity: mt.rarity,
+            count: Meta.materialCount(m, id), desc: mt.desc, type: 'Material' }))
     ];
     return out.filter(i => i.count > 0);
 }
@@ -148,6 +154,9 @@ function _advHero() {
 
 const _advHas = flags => (flags || []).every(f => adv.state.flags[f]);
 
+// El estado que miran las misiones: las marcas y cuentas de la aventura, más los materiales que llevas
+const _advQuestState = () => ({ ...adv.state, items: ctx.meta.materials || {} });
+
 // Una parada se ve si la historia lo permite
 const _advIsShown = p => _advHas(p.requires);
 
@@ -157,7 +166,9 @@ const _advIsCleared = p => p.kind === 'enemy' && (!!adv.state.gone[p.id] || !!(p
 
 // Lo que dice un NPC: la primera entrada de su `talk` cuyas marcas se cumplen. Al terminar, marca y recompensa.
 // Un punto de interés ya mirado queda «visto» (su parada se pone gris, como un enemigo vencido)
-const _advIsSeen = p => p.kind === 'poi' && !!adv.state.flags[`visto:${p.id}`];
+// (salvo que ahora tenga algo nuevo que encontrar: una entrada con `unless` todavía pendiente, como las plantas de Amelie)
+const _advIsSeen = p => p.kind === 'poi' && !!adv.state.flags[`visto:${p.id}`]
+    && !(p.talk || []).some(t => t.unless && _advHas(t.when) && !t.unless.some(f => adv.state.flags[f]));
 function _advMarkSeen(p) {
     if (p.kind !== 'poi' || adv.state.flags[`visto:${p.id}`]) return;
     adv.state.flags[`visto:${p.id}`] = true;
@@ -167,19 +178,30 @@ function _advMarkSeen(p) {
 
 function _advTalk(p) {
     if (!p.talk) return p.dialogue ? { dialogue: p.dialogue, onDone: () => _advMarkSeen(p) } : null;
-    const entry = p.talk.find(t => _advHas(t.when) && (!t.whenCount || ((adv.state.counts || {})[t.whenCount.creature] || 0) >= t.whenCount.n));
+    const entry = p.talk.find(t => _advHas(t.when) && !(t.unless || []).some(f => adv.state.flags[f]) && (!t.whenCount || ((adv.state.counts || {})[t.whenCount.creature] || 0) >= t.whenCount.n)
+        && (!t.whenItem || Meta.materialCount(ctx.meta, t.whenItem.material) >= (t.whenItem.n || 1)));
     if (!entry) return null;
     return {
         dialogue: entry.dialogue,
         onDone: () => {
             if (entry.set && !adv.state.flags[entry.set]) {
                 adv.state.flags[entry.set] = true;
+                // Lo que entregas (los materiales que pedía la misión) y lo que recibes
+                if (entry.take) Meta.takeMaterial(ctx.meta, entry.take.material, entry.take.n || 1);
+                let leveled = null;
                 if (entry.reward) {
-                    if (entry.reward.gold) Meta.recordGold(ctx.meta, entry.reward.gold);
-                    if (entry.reward.potions) ctx.meta.potions = Math.min(RPG_BALANCE.potion.max, Meta.potionCount(ctx.meta) + entry.reward.potions);
+                    const rw = entry.reward;
+                    if (rw.gold) Meta.recordGold(ctx.meta, rw.gold);
+                    if (rw.potions) ctx.meta.potions = Math.min(RPG_BALANCE.potion.max, Meta.potionCount(ctx.meta) + rw.potions);
+                    if (rw.xp) leveled = Meta.recordXp(ctx.meta, rw.xp);
+                    if (rw.material) Meta.grantDrop(ctx.meta, { kind: 'material', id: rw.material });
+                    if (rw.food && FOOD[rw.food]) ctx.meta.food = { ...(ctx.meta.food || {}), [rw.food]: Math.min(FOOD[rw.food].max, Meta.foodCount(ctx.meta, rw.food) + 1) };
                     ctx.persistMeta();
-                    if (entry.reward.item) _advGiveItem(entry.reward.item);
+                    if (rw.item) _advGiveItem(rw.item);
+                    else if (rw.material && MATERIALS[rw.material]) Adventure.inventoryNotice(`🎁 Nuevo objeto: ${MATERIALS[rw.material].name}`);
                 }
+                if (entry.take || (entry.reward && entry.reward.xp)) ctx.persistMeta();
+                if (leveled && leveled.levelsGained > 0) adv.hero = _advHero();
                 _advSave();
                 Adventure.refresh();
                 _advRefreshHud();
@@ -199,33 +221,83 @@ function _advQuestNotice(flag) {
 
 function _advOpenQuests() {
     UI.openPanel();
-    UI.renderQuestPanel(questLog(adv.state));
+    UI.renderQuestPanel(questLog(_advQuestState()));
 }
 
-// Los lugares de la aldea
-function _advPlace(p) {
-    if (p.kind === 'inn') {
-        // Dormir: vida llena y los enemigos normales vuelven a los caminos (los jefes de misión no)
-        return {
-            dialogue: 'posada-dormir',
-            onDone: () => {
-                adv.state.hp = null;
-                adv.state.mp = null;
-                adv.state.energy = 0;                   // dormir vacía la energía
-                adv.state.gone = {};
-                _advSave();
-                adv.hero = _advHero();
-                Adventure.refresh();
-                _advRefreshHud();
-            }
-        };
-    }
-    if (p.kind === 'shop') {
-        Adventure.close();
-        ctx.rpgOpenShop('adventure');
-        return null;
-    }
-    return null;
+// --- Llegar a un vecino, un lugar o un punto de interés ---
+// `menu` en la parada: qué se puede hacer allí ('talk' · 'sleep' · 'shop' · 'upgrade' · 'leave'). Con `talkFirst`,
+// primero habla y después sale el menú (Bram). Sin menú pero con `shop`, habla y abre su tienda (Amelie).
+
+/** Lo que cuesta dormir ahora: 0 cuando Evelyn ya te deja quedarte gratis. */
+const _advInnPrice = () => (adv.state.flags.misionCumplida ? 0 : Meta.shopPrice(RPG_BALANCE.inn.price));
+
+// Dormir: vida y maná llenos, energía a cero, y los enemigos normales vuelven a los caminos (los jefes de misión no)
+function _advSleep() {
+    const cost = _advInnPrice();
+    if (ctx.meta.gold < cost) return;
+    if (cost > 0) { Meta.recordGold(ctx.meta, -cost); ctx.persistMeta(); _advRefreshHud(); }
+    Adventure.say('posada-dormir', () => {
+        adv.state.hp = null;
+        adv.state.mp = null;
+        adv.state.energy = 0;                   // dormir vacía la energía
+        adv.state.gone = {};
+        adv.state.rare = {};                    // y los encuentros raros se vuelven a sortear
+        _advSave();
+        adv.hero = _advHero();
+        Adventure.refresh();
+        _advRefreshHud();
+    });
+}
+
+function _advOpenShop(shopId) {
+    Adventure.close();
+    ctx.rpgOpenShop('adventure', shopId);
+}
+
+// «Mejorar» en la forja: Bram gasta un cristal en una de tus espadas
+function _advOpenUpgrade() {
+    UI.openPanel();
+    UI.renderUpgradePanel({
+        weapons: _advOwned().map(id => ({ id, name: GEAR[id].name, atq: _advGearAtq(id), level: Meta.weaponUpgradeLevel(ctx.meta, id),
+            image: (ART.icons[`objeto-${id}`] || {}).src || null, equipped: id === _advWeaponId(), can: Meta.canUpgradeWeapon(ctx.meta, id) })),
+        crystals: Meta.crystalCount(ctx.meta), max: WEAPON_UPGRADE.max,
+        onUpgrade: id => {
+            if (!Meta.upgradeWeapon(ctx.meta, id).ok) return;
+            ctx.persistMeta();
+            adv.hero = _advHero();
+            _advRefreshHud();
+            _advOpenUpgrade();
+        }
+    });
+}
+
+function _advSay(p, after = null) {
+    const t = _advTalk(p);
+    if (!t) { if (after) after(); return; }
+    Adventure.say(t.dialogue, () => { if (t.onDone) t.onDone(); if (after) after(); });
+}
+
+function _advMenu(p) {
+    const price = _advInnPrice();
+    const who = (p.who || p.name).split(',')[0];
+    const OPTION = {
+        talk: { label: `Hablar con ${who}` },
+        sleep: price > 0 ? { label: 'Descansar', note: `${price} monedas`, coin: true, disabled: ctx.meta.gold < price } : { label: 'Descansar', note: 'Gratis' },
+        shop: { label: p.shopLabel || 'Comprar' },
+        upgrade: { label: 'Mejorar' },
+        leave: { label: 'Salir' }
+    };
+    Adventure.showMenu({ title: p.name, text: p.menuText || '', options: p.menu.map(id => ({ id, ...OPTION[id] })) }, pick => {
+        if (pick === 'talk') _advSay(p);
+        else if (pick === 'sleep') _advSleep();
+        else if (pick === 'shop') _advOpenShop(p.shop);
+        else if (pick === 'upgrade') _advOpenUpgrade();
+    });
+}
+
+function _advVisit(p) {
+    if (p.menu && !p.talkFirst) { _advMenu(p); return; }
+    _advSay(p, p.menu ? () => _advMenu(p) : p.shop ? () => _advOpenShop(p.shop) : null);
 }
 
 // El objetivo de la misión, a la vista (estilo DragonFable: siempre sabes qué toca)
@@ -234,8 +306,8 @@ function _advQuestText() {
     // Tras Grask, la pista del jefe de la zona: la guarida del lobo, pasado el campamento
     if (f.misionCumplida) return f['defeated:feronius'] ? 'Misión cumplida · Zafias está en paz'
         : 'Misión cumplida · Algo aúlla pasado el campamento, al sureste';
-    if (f['defeated:grask']) return f['defeated:feronius'] ? 'Vuelve con Maela a la aldea' : 'Vuelve con Maela a la aldea · Algo aúlla al sureste del campamento';
-    if (!f.misionAceptada) return 'Habla con Maela, la posadera';
+    if (f['defeated:grask']) return f['defeated:feronius'] ? 'Vuelve con Evelyn, a la posada' : 'Vuelve con Evelyn, a la posada · Algo aúlla al sureste del campamento';
+    if (!f.misionAceptada) return 'Habla con Evelyn, en la posada';
     const goblins = ['goblin-1', 'goblin-2', 'goblin-3'].filter(id => f[`defeated:${id}`]).length;
     if (goblins < 3) return `Echa a los goblins del bosque: ${goblins}/3`;
     return 'Entra en el campamento goblin y acaba con Grask';
@@ -249,19 +321,26 @@ function _advRefreshHud() {
 }
 
 export function open() {
-    if (!adv.state) adv.state = _advLoad();
+    if (!adv.state) {
+        adv.state = _advLoad();
+        // Partidas de antes del colmillo: quien ya venció a Feronius lo lleva encima (no vuelve a aparecer para soltarlo)
+        const f = adv.state.flags;
+        if (f['defeated:feronius'] && !f['colmillo:cumplida'] && Meta.materialCount(ctx.meta, 'colmillo-feronius') === 0) {
+            Meta.grantDrop(ctx.meta, { kind: 'material', id: 'colmillo-feronius' });
+            ctx.persistMeta();
+        }
+    }
     adv.hero = _advHero();
     UI.toggleRpgView('rpgAdventureView');
     Adventure.open({
         onEnemy: p => _advStartCombat(p),
-        onTalk: p => _advTalk(p),
-        onPlace: p => _advPlace(p),
+        onVisit: p => _advVisit(p),
         heroName: () => ctx.meta.heroName || 'Héroe',
         onScene: id => { adv.state.scene = id; _advSave(); },
         isShown: p => _advIsShown(p),
         isCleared: p => _advIsCleared(p),
         isSeen: p => _advIsSeen(p),
-        npcMark: p => npcQuestMark(p.id, adv.state),
+        npcMark: p => npcQuestMark(p.id, _advQuestState()),
         onQuests: () => _advOpenQuests(),
         onInventory: () => _advOpenInventory()
     }, adv.state.scene);
@@ -283,6 +362,16 @@ function _advStartCombat(p) {
     if (!creature) { m.name = p.name; m.baseName = p.sprite || p.name; m.icon = '👺'; }
     // Reglas propias de la parada (p. ej. los goblins de Zafias envenenan): se suman a las de su criatura
     if (def.rules) m.rules = { ...(m.rules || {}), ...def.rules };
+    // Encuentro raro (src/data/rares.js): se sortea la primera vez que te lo cruzas y se queda hasta que duermes
+    const rareId = def.rare || (creature && creature.rare);
+    if (rareId) {
+        adv.state.rare = adv.state.rare || {};
+        if (!(p.id in adv.state.rare)) {
+            adv.state.rare[p.id] = rollRare(rareId, (typeof window !== 'undefined' && window.__rareRng) || Math.random);
+            _advSave();
+        }
+        if (adv.state.rare[p.id]) applyRare(m, rareId);
+    }
     adv.point = p;
     adv.combat = Engine.createRpgCombat(adv.hero, m, Math.random);
     adv.combat.potions = Meta.potionCount(ctx.meta);
@@ -292,7 +381,7 @@ function _advStartCombat(p) {
     UI.toggleRpgView('rpgCombatView');
     UI.hideRpgCombatResult();
     UI.clearRpgCombatLog();
-    UI.addRpgCombatLog(`👺 ${m.name} te cierra el paso.`, 'system');
+    UI.addRpgCombatLog(m.rare ? `✨ ¡Un encuentro raro! ${m.name} te cierra el paso.` : `👺 ${m.name} te cierra el paso.`, 'system');
     adv.combat.intro.forEach(ev => UI.addRpgCombatLog(ev.text, 'player'));
     adv.combat.intro = [];
     _advRenderCombat();
@@ -327,18 +416,25 @@ function _advFinishCombat() {
     if (c.result === 'victory') {
         const { gold, xp, lvl } = ctx.rpgGrantVictory(m);
         Meta.recordCombatWin(ctx.meta);
+        // Botín: la tabla de su criatura o la de la parada (src/data/loot.js). Una poción que no cabe se queda en el suelo
+        const creature = creatureFor(adv.point);
+        const drop = rollDrop((adv.point.enemy && adv.point.enemy.drops) || (creature && creature.drops),
+            (typeof window !== 'undefined' && window.__lootRng) || Math.random, { always: !!m.rare });   // un raro suelta siempre
+        const taken = Meta.grantDrop(ctx.meta, drop);
         ctx.persistMeta();
         adv.state.gone[adv.point.id] = true;   // no vuelve hasta que duermas en la posada
         adv.state.flags[`defeated:${adv.point.id}`] = true;   // pero la historia recuerda que lo venciste
         // Si alguna misión en marcha cuenta este tipo de criatura (p. ej. dientes de lobo), suma uno
-        const kind = adv.point.enemy && adv.point.enemy.creature;
+        // (los goblins no son una criatura con nombre: cuentan por su familia, la de su tabla de botín)
+        const kind = adv.point.enemy && (adv.point.enemy.creature || adv.point.enemy.drops);
         if (kind && countingCreatures(adv.state).has(kind)) {
             adv.state.counts = adv.state.counts || {};
             adv.state.counts[kind] = (adv.state.counts[kind] || 0) + 1;
         }
         _advSave();
         UI.showRpgCombatResult({ result: 'victory', title: '¡Victoria!', button: 'SEGUIR EXPLORANDO',
-            detail: `+${gold} 🪙 · +${xp} XP${lvl.levelsGained > 0 ? ` · ¡Subes a nivel ${lvl.newLevel}!` : ''}` });
+            detail: `+${gold} 🪙 · +${xp} XP${lvl.levelsGained > 0 ? ` · ¡Subes a nivel ${lvl.newLevel}!` : ''}`,
+            loot: drop ? { ...drop, taken } : null });
     } else if (c.result === 'fled') {
         UI.showRpgCombatResult({ result: 'fled', title: 'Has huido', detail: `${m.name} sigue en el camino.`, button: 'VOLVER' });
     } else {

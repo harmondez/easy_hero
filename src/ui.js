@@ -1,16 +1,17 @@
-import * as Engine from './engine.js?v=1.9.3';
-import * as Items from './items.js?v=1.9.3';
-import * as Meta from './meta.js?v=1.9.3';
-import * as Stats from './stats.js?v=1.9.3';
-import { upgradeAmountText } from './data/upgrades.js?v=1.9.3';
-import { RPG_BALANCE } from './data/balance.js?v=1.9.3';
-import { ART } from './data/art.js?v=1.9.3';
-import { EFFECTS, ELIXIRS, FOOD } from './data/effects.js?v=1.9.3';
-import { GEAR, GEAR_FOR_SALE, STARTER_GEAR, WEAPON_UPGRADE, ELEMENTS, SLOT_ICONS } from './data/gear.js?v=1.9.3';
-import { RARITY_BY_ID } from './data/rarities.js?v=1.9.3';
-import { effectList } from './effects.js?v=1.9.3';
-import { monsterArt, heroArt } from './art.js?v=1.9.3';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.9.3';
+import * as Engine from './engine.js?v=1.10.0';
+import * as Items from './items.js?v=1.10.0';
+import * as Meta from './meta.js?v=1.10.0';
+import * as Stats from './stats.js?v=1.10.0';
+import { upgradeAmountText } from './data/upgrades.js?v=1.10.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.10.0';
+import { ART } from './data/art.js?v=1.10.0';
+import { EFFECTS, ELIXIRS, FOOD } from './data/effects.js?v=1.10.0';
+import { GEAR, GEAR_FOR_SALE, STARTER_GEAR, WEAPON_UPGRADE, ELEMENTS, SLOT_ICONS } from './data/gear.js?v=1.10.0';
+import { RARITY_BY_ID } from './data/rarities.js?v=1.10.0';
+import { SHOPS } from './data/shops.js?v=1.10.0';
+import { effectList } from './effects.js?v=1.10.0';
+import { monsterArt, heroArt } from './art.js?v=1.10.0';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.10.0';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -279,79 +280,144 @@ export function gearEffectsText(g) {
     return parts.join(' · ');
 }
 
+/** Lo que hay que saber de un artículo de tienda (clave de src/data/shops.js) para pintar su carta de compra. */
+function _shopItem(meta, key) {
+    const price = Meta.shopPrice;
+    const [kind, id] = key.split(':');
+    if (kind === 'potion') {
+        const P = RPG_BALANCE.potion, have = Meta.potionCount(meta);
+        return { buy: 'potion', img: 'pocion-vida', name: 'Poción de vida', tag: `llevas ${have} de ${P.max}`,
+            desc: `En combate cura el ${Math.round(P.heal * 100)} % de tu vida máxima, a cambio de tu turno. Las que no gastes se quedan contigo.`,
+            price: price(P.price), state: have >= P.max ? 'full' : 'ok' };
+    }
+    if (kind === 'mana_potion') {
+        const MP = RPG_BALANCE.manaPotion, have = Meta.manaPotionCount(meta);
+        return { buy: 'mana_potion', img: 'pocion-mana', name: 'Poción de maná menor', tag: `llevas ${have} de ${MP.max}`,
+            desc: `En combate devuelve el ${Math.round(MP.restore * 100)} % de tu maná máximo, a cambio de tu turno. El maná lanza tus habilidades.`,
+            price: price(MP.price), state: have >= MP.max ? 'full' : 'ok' };
+    }
+    if (kind === 'elixir' && ELIXIRS[id]) {
+        const ex = ELIXIRS[id], have = Meta.elixirCount(meta, id), e = EFFECTS[ex.effect.id];
+        return { buy: key, img: ex.img, name: ex.name, tag: `llevas ${have} de ${ex.max}`,
+            desc: `${ex.desc} En combate${ex.target === 'enemy' ? ', al enemigo' : ''}: ${e.desc(ex.effect)} durante ${ex.effect.turns} rondas, a cambio de tu turno.`,
+            price: price(ex.price), state: have >= ex.max ? 'full' : 'ok' };
+    }
+    if (kind === 'food' && FOOD[id]) {
+        const fd = FOOD[id], have = Meta.foodCount(meta, id);
+        return { buy: key, img: fd.img, name: fd.name, tag: `llevas ${have} de ${fd.max}`,
+            desc: `${fd.desc} Fuera del combate, desde el inventario: cura el ${Math.round(fd.heal * 100)} % de tu vida.`,
+            price: price(fd.price), state: have >= fd.max ? 'full' : 'ok' };
+    }
+    if (kind === 'gear' && GEAR[id]) {
+        const g = GEAR[id], rar = RARITY_BY_ID[g.rarity] || RARITY_BY_ID.comun, fx = gearEffectsText(g);
+        return { buy: key, img: `objeto-${id}`, name: g.name, tag: `${rar.name} · ATK ${g.atq}`, color: rar.color,
+            desc: g.desc, extra: fx ? `<span class="shop-have">${esc(fx)}</span>` : '',
+            price: price(g.price), state: Meta.ownsGear(meta, id) ? 'owned' : 'ok' };
+    }
+    if (kind === 'crystal') {
+        const have = Meta.crystalCount(meta);
+        return { buy: 'crystal', img: WEAPON_UPGRADE.img, name: WEAPON_UPGRADE.name, tag: `llevas ${have} de ${WEAPON_UPGRADE.carry}`,
+            desc: `Bram lo usa para mejorar una espada: +${WEAPON_UPGRADE.atq} de ATK para siempre (hasta +${WEAPON_UPGRADE.max} por espada). Pídele «Mejorar».`,
+            price: price(WEAPON_UPGRADE.price), state: have >= WEAPON_UPGRADE.carry ? 'full' : 'ok' };
+    }
+    const def = Meta.UPGRADES_BY_ID[kind === 'upgrade' ? id : key];
+    if (def) {
+        const level = Meta.upgradeLevel(meta, def.id), cost = Meta.nextUpgradeCost(meta, def.id), amount = upgradeAmountText(def, level);
+        return { buy: def.id, icon: def.icon, img: UPGRADE_IMG[def.id], name: def.name, tag: level ? `nivel ${level}` : '', desc: def.desc,
+            extra: amount ? `<span class="shop-have">Ahora: ${esc(amount)}</span>` : '',
+            price: Number.isFinite(cost) ? cost : 0, state: Number.isFinite(cost) ? 'ok' : 'maxed' };
+    }
+    return null;
+}
+
+/** Las claves de una tienda, con los comodines abiertos ('gear:*' → todas las armas a la venta). */
+function _shopKeys(sells) {
+    return sells.flatMap(k => k === 'gear:*' ? GEAR_FOR_SALE.map(id => `gear:${id}`)
+        : k === 'upgrade:*' ? Meta.UPGRADES.map(u => `upgrade:${u.id}`) : [k]);
+}
+
+/** Carta de venta: lo que llevas de ese artículo y lo que te dan por uno. */
+function _shopSellCard(meta, key) {
+    const info = Meta.sellInfo(meta, key);
+    const it = _shopItem(meta, key);
+    if (!it || (info.have <= 0 && !info.equipped)) return '';
+    return `
+        <article class="shop-card ${info.have > 0 ? 'is-affordable' : 'is-maxed'}">
+            <div class="shop-icon">${it.img ? `<img class="shop-icon-img${it.img.startsWith('objeto-') ? ' is-piece' : ''}" src="${esc(ICON(it.img))}" alt="">` : it.icon}</div>
+            <div class="shop-info">
+                <div class="shop-name"${it.color ? ` style="color:${esc(it.color)}"` : ''}>${esc(it.name)} <span class="shop-level">${info.equipped ? 'la llevas puesta' : key.startsWith('gear:') ? 'tuya' : `llevas ${info.have}`}</span></div>
+                <div class="shop-desc">${info.equipped ? 'Equipa otra espada antes de venderla.' : key.startsWith('gear:') ? 'Si la vendes, pierde los cristales de mejora que le hayas puesto.' : 'Te doy tres cuartos de lo que cuesta.'}</div>
+            </div>
+            <button type="button" class="shop-buy shop-sell" data-shop-sell="${esc(key)}" ${info.have > 0 ? '' : 'disabled'}>+${info.value} 🪙</button>
+        </article>`;
+}
+
 /**
- * La tienda: armas del mercader y cristales de mejora (en la aventura), consumibles y las mejoras de La Forja.
- * opts.from: desde dónde se abrió ('adventure' enseña también las armas).
+ * La tienda. Con opts.shop (id de src/data/shops.js), la de ese tendero: solo lo suyo, con las pestañas Comprar y
+ * Vender (opts.tab). Sin opts.shop, La Forja del descenso: consumibles y mejoras permanentes.
  */
 export function renderShop(meta, opts = {}) {
     const el = document.getElementById('shopBody');
     if (!el || !meta) return;
     const gold = meta.gold;
-    const price = Meta.shopPrice;
-    const section = (title, cards) => cards ? `<h3 class="shop-section">${title}</h3><div class="shop-grid">${cards}</div>` : '';
+    const shop = opts.shop ? SHOPS[opts.shop] : null;
+    const title = document.querySelector('#rpgShopView .char-title');
+    if (title) title.textContent = shop ? shop.name : '⚒️ La Forja';
+    const card = key => { const it = _shopItem(meta, key); return it ? _shopCard({ ...it, gold }) : ''; };
+    const purse = `<div class="shop-purse">Tu oro: ${UI_IMG('moneda')} <b>${gold}</b></div>
+        ${RPG_BALANCE.freeShop ? '<p class="shop-note shop-free">🧪 <b>Modo pruebas:</b> todo es gratis.</p>' : ''}`;
 
-    // ⚔️ Armas del mercader (solo en la aventura: es su equipo)
-    let weapons = '';
-    if (opts.from === 'adventure') {
-        weapons = GEAR_FOR_SALE.map(id => {
-            const g = GEAR[id];
-            const rar = RARITY_BY_ID[g.rarity] || RARITY_BY_ID.comun;
-            const fx = gearEffectsText(g);
-            return _shopCard({ buy: `gear:${id}`, img: `objeto-${id}`, name: g.name, tag: `${rar.name} · ATK ${g.atq}`, color: rar.color,
-                desc: g.desc, extra: fx ? `<span class="shop-have">${esc(fx)}</span>` : '',
-                price: price(g.price), state: Meta.ownsGear(meta, id) ? 'owned' : 'ok', gold });
-        }).join('');
-        const w = GEAR[meta.advWeapon] || GEAR[STARTER_GEAR];
-        const lvl = Meta.weaponUpgradeLevel(meta, meta.advWeapon);
-        weapons += _shopCard({ buy: 'weapon_upgrade', img: WEAPON_UPGRADE.img, name: WEAPON_UPGRADE.name,
-            tag: `${w.name} +${lvl} de ${WEAPON_UPGRADE.max}`,
-            desc: `+${WEAPON_UPGRADE.atq} de ATK para siempre a tu arma equipada.`,
-            price: price(WEAPON_UPGRADE.price), state: lvl >= WEAPON_UPGRADE.max ? 'maxed' : 'ok', gold });
+    if (shop) {
+        const keys = _shopKeys(shop.sells);
+        const sellable = keys.filter(k => !k.startsWith('upgrade:'));
+        const tab = opts.tab === 'sell' && sellable.length ? 'sell' : 'buy';
+        const sellCards = sellable.map(k => _shopSellCard(meta, k)).join('');
+        el.innerHTML = `${purse}
+            <p class="shop-note">${esc(shop.note || '')}</p>
+            ${sellable.length ? `<div class="shop-tabs" role="tablist">
+                <button type="button" class="shop-tab${tab === 'buy' ? ' is-on' : ''}" data-shop-tab="buy">Comprar</button>
+                <button type="button" class="shop-tab${tab === 'sell' ? ' is-on' : ''}" data-shop-tab="sell">Vender</button>
+            </div>` : ''}
+            <div class="shop-grid">${tab === 'buy' ? keys.map(card).join('')
+                : sellCards || '<p class="shop-note shop-empty">No llevas nada que esta tienda quiera comprar.</p>'}</div>`;
+        return;
     }
 
-    // 🧪 Consumibles: pociones, elixires y comida, con tope
-    const P = RPG_BALANCE.potion;
-    const MP = RPG_BALANCE.manaPotion;
-    const potions = Meta.potionCount(meta);
-    const manas = Meta.manaPotionCount(meta);
-    let consumables = _shopCard({ buy: 'potion', img: 'pocion-vida', name: 'Poción de vida', tag: `llevas ${potions} de ${P.max}`,
-        desc: `En combate cura el ${Math.round(P.heal * 100)} % de tu vida máxima, a cambio de tu turno. Las que no gastes se quedan contigo.`,
-        price: price(P.price), state: potions >= P.max ? 'full' : 'ok', gold });
-    consumables += _shopCard({ buy: 'mana_potion', img: 'pocion-mana', name: 'Poción de maná menor', tag: `llevas ${manas} de ${MP.max}`,
-        desc: `En combate devuelve el ${Math.round(MP.restore * 100)} % de tu maná máximo, a cambio de tu turno. El maná lanza tus habilidades.`,
-        price: price(MP.price), state: manas >= MP.max ? 'full' : 'ok', gold });
-    consumables += Object.entries(ELIXIRS).filter(([, ex]) => ex.sold !== false).map(([id, ex]) => {
-        const have = Meta.elixirCount(meta, id);
-        const e = EFFECTS[ex.effect.id];
-        return _shopCard({ buy: `elixir:${id}`, img: ex.img, name: ex.name, tag: `llevas ${have} de ${ex.max}`,
-            desc: `${ex.desc} En combate${ex.target === 'enemy' ? ', al enemigo' : ''}: ${e.desc(ex.effect)} durante ${ex.effect.turns} rondas, a cambio de tu turno.`,
-            price: price(ex.price), state: have >= ex.max ? 'full' : 'ok', gold });
-    }).join('');
-    consumables += Object.entries(FOOD).map(([id, f]) => {
-        const have = Meta.foodCount(meta, id);
-        return _shopCard({ buy: `food:${id}`, img: f.img, name: f.name, tag: `llevas ${have} de ${f.max}`,
-            desc: `${f.desc} Fuera del combate, desde el inventario: cura el ${Math.round(f.heal * 100)} % de tu vida.`,
-            price: price(f.price), state: have >= f.max ? 'full' : 'ok', gold });
-    }).join('');
-
-    // ⚒️ Las mejoras de La Forja (con nivel, cada vez más caras)
-    const forge = Meta.UPGRADES.map(def => {
-        const level = Meta.upgradeLevel(meta, def.id);
-        const cost = Meta.nextUpgradeCost(meta, def.id);
-        const amount = upgradeAmountText(def, level);
-        return _shopCard({ buy: def.id, icon: def.icon, img: UPGRADE_IMG[def.id], name: def.name, tag: level ? `nivel ${level}` : '', desc: def.desc,
-            extra: amount ? `<span class="shop-have">Ahora: ${esc(amount)}</span>` : '',
-            price: Number.isFinite(cost) ? cost : 0, state: Number.isFinite(cost) ? 'ok' : 'maxed', gold });
-    }).join('');
-
-    el.innerHTML = `
-        <div class="shop-purse">Tu oro: ${UI_IMG('moneda')} <b>${gold}</b></div>
-        ${RPG_BALANCE.freeShop ? '<p class="shop-note shop-free">🧪 <b>Modo pruebas:</b> todo es gratis.</p>' : ''}
+    const section = (title2, cards) => cards ? `<h3 class="shop-section">${title2}</h3><div class="shop-grid">${cards}</div>` : '';
+    const consumables = ['potion', 'mana_potion', ...Object.keys(ELIXIRS).filter(id => ELIXIRS[id].sold !== false).map(id => `elixir:${id}`),
+        ...Object.keys(FOOD).map(id => `food:${id}`)].map(card).join('');
+    const forge = Meta.UPGRADES.map(u => card(`upgrade:${u.id}`)).join('');
+    el.innerHTML = `${purse}
         <p class="shop-note">Lo que compras aquí es <b>para siempre</b>: no se pierde al morir ni al empezar otra ruta.
         Las mejoras de La Forja se pueden comprar una y otra vez, cada vez más caras.</p>
-        ${section(`${UI_IMG('ranura-arma')} Armas`, weapons)}
         ${section(`${UI_IMG('pocion-vida')} Consumibles`, consumables)}
         ${section('⚒️ La Forja', forge)}`;
+}
+
+/**
+ * «Mejorar» en la forja de Bram: tus espadas, cada una con su nivel, y un botón que gasta un cristal.
+ * opts: { weapons: [{ id, name, atq, level, image, equipped, can }], crystals, max }
+ */
+export function renderUpgradePanel(opts) {
+    const el = document.getElementById('panelBody');
+    if (!el) return;
+    const rows = opts.weapons.map(w => `
+        <article class="shop-card ${w.can ? 'is-affordable' : 'is-maxed'}">
+            <div class="shop-icon">${w.image ? `<img class="shop-icon-img is-piece" src="${esc(w.image)}" alt="">` : UI_IMG('ranura-arma')}</div>
+            <div class="shop-info">
+                <div class="shop-name">${esc(w.name)}${w.level ? ` +${w.level}` : ''} <span class="shop-level">${w.equipped ? 'equipada · ' : ''}ATK ${w.atq}</span></div>
+                <div class="shop-desc">${w.level >= opts.max ? `Ya no admite más cristales (+${opts.max}).` : `Mejora ${w.level + 1} de ${opts.max}: +${WEAPON_UPGRADE.atq} de ATK para siempre.`}</div>
+            </div>
+            <button type="button" class="shop-buy" data-upgrade-weapon="${esc(w.id)}" ${w.can ? '' : 'disabled'}>${w.level >= opts.max ? 'AL MÁXIMO' : `${UI_IMG(WEAPON_UPGRADE.img)} 1 cristal`}</button>
+        </article>`).join('');
+    el.innerHTML = `
+        <div class="upgrade-panel">
+            <h3 class="panel-title">Mejorar una espada</h3>
+            <p class="shop-purse">Cristales de mejora: ${UI_IMG(WEAPON_UPGRADE.img)} <b data-upgrade-crystals>${opts.crystals}</b></p>
+            ${opts.crystals > 0 ? '' : '<p class="shop-note">No llevas cristales. Bram los vende: pídele «Comprar».</p>'}
+            <div class="shop-grid">${rows}</div>
+        </div>`;
+    el.querySelectorAll('[data-upgrade-weapon]').forEach(b => b.addEventListener('click', () => opts.onUpgrade && opts.onUpgrade(b.dataset.upgradeWeapon)));
 }
 
 export function addRpgLog(msg, type = 'system') {
@@ -810,6 +876,16 @@ export function clearRpgCombatLog() {
     if (last) last.textContent = '';
 }
 
+// Lo que soltó el enemigo: su icono en un marco del color de su rareza y su nombre
+function _rpgLootLine(loot) {
+    const rar = RARITY_BY_ID[loot.rarity] || RARITY_BY_ID.comun;
+    return `<div class="rpg-result-loot${loot.taken ? '' : ' is-left'}" data-rarity="${esc(rar.id)}" style="--rarity:${esc(rar.color)}">
+        <span class="rpg-drop-icon"><img src="${esc(ICON(loot.img))}" alt="" draggable="false"></span>
+        <span class="rpg-drop-text"><small>${loot.taken ? 'Has conseguido' : 'No te cabe: llevas el máximo'}</small>
+            <b>${esc(loot.name)}</b><i>${esc(rar.name)}</i></span>
+    </div>`;
+}
+
 /** Final del combate: un cartel sobre el escenario (el vencido ya se desvanece). info: { result, title, detail, button } */
 const RESULT_IMG = { victory: 'victoria', defeat: 'derrota', fled: 'agilidad' };
 export function showRpgCombatResult(info) {
@@ -821,6 +897,7 @@ export function showRpgCombatResult(info) {
             ${RESULT_IMG[info.result] ? UI_IMG(RESULT_IMG[info.result], 'rpg-result-img') : ''}
             <div class="rpg-result-title">${esc(info.title)}</div>
             <div class="rpg-result-detail">${esc(info.detail || '')}</div>
+            ${info.loot ? _rpgLootLine(info.loot) : ''}
             <button type="button" id="btnRpgCombatContinue" class="btn-forge">${esc(info.button || 'CONTINUAR')}</button>
         </div>`;
     el.style.display = 'flex';
@@ -1205,12 +1282,12 @@ const _panelHeader = (icon, title, sub) => `
  * pieza tal cual es) y «Vista previa» (tu héroe con ella).
  * opts: {
  *   gear: [{ id, name, slot, rarity, element, atq, upgrades, desc, from, effects, image, preview, equipped }],
- *   items: [{ id, name, img, count, desc, use? }]   (consumibles; `use` = texto del botón si se puede usar aquí)
+ *   items: [{ id, name, img, count, desc, use?, rarity?, type? }]   (consumibles; `use` = texto del botón si se puede usar aquí)
  *   selected, gold, onEquip(id), onUse(id)
  * }
  */
 // Rareza en tinta sobre pergamino (los colores de rarities.js son para fondo oscuro)
-const INV_RARITY_INK = { comun: '#3b2a1c', poco_comun: '#1f7a35', rara: '#1f55b8', epica: '#7a2fb8', legendaria: '#c0560f' };
+const INV_RARITY_INK = { comun: '#57504a', poco_comun: '#1f7a35', rara: '#1f55b8', epica: '#7a2fb8', legendaria: '#a17800' };
 
 function _invChip(slot, element) {
     const el = ELEMENTS[element] || ELEMENTS.neutro;
@@ -1232,7 +1309,7 @@ export function renderInventoryPanel(opts) {
             <li><button type="button" class="inv-row${i.id === it.id ? ' is-selected' : ''}${i.equipped ? ' is-equipped' : ''}" data-inv-item="${esc(i.id)}">
                 <span class="inv-num">${i.equipped ? '<span class="inv-check" title="Equipada">✔</span>' : n}</span>
                 ${i.kind === 'gear' ? _invChip(i.slot, i.element) : `<span class="inv-chip is-item"><img src="${esc(ICON(i.img))}" alt="" draggable="false"></span>`}
-                <span class="inv-name"${i.kind === 'gear' ? ` style="color:${INV_RARITY_INK[i.rarity] || INV_RARITY_INK.comun}"` : ''}>${esc(i.name)}${i.upgrades ? ` +${i.upgrades}` : ''}</span>
+                <span class="inv-name"${i.rarity ? ` style="color:${INV_RARITY_INK[i.rarity] || INV_RARITY_INK.comun}"` : ''}>${esc(i.name)}${i.upgrades ? ` +${i.upgrades}` : ''}</span>
                 <span class="inv-val">${i.kind === 'gear' ? `ATK ${i.atq}` : `×${i.count}`}</span>
             </button></li>`;
         const gearRows = opts.gear.map((g, n) => row({ ...g, kind: 'gear' }, n + 1)).join('');
@@ -1256,9 +1333,9 @@ export function renderInventoryPanel(opts) {
                 <button type="button" class="btn-forge inv-equip" data-inv-equip="${esc(it.id)}"${it.equipped ? ' disabled' : ''}>${it.equipped ? '✔ Equipada' : 'Equipar'}</button>`;
         } else {
             detail = `
-                <h4 class="inv-item-name">${esc(it.name)}</h4>
-                <p class="inv-item-kind">Objeto · llevas ${it.count}</p>
-                <div class="inv-frame"><img class="inv-preview is-item" src="${esc(ICON(it.img))}" alt="${esc(it.name)}" draggable="false"></div>
+                <h4 class="inv-item-name"${it.rarity ? ` style="color:${INV_RARITY_INK[it.rarity] || INV_RARITY_INK.comun}"` : ''}>${esc(it.name)}</h4>
+                <p class="inv-item-kind">${esc(it.type || 'Objeto')}${it.rarity ? ` · ${esc((RARITY_BY_ID[it.rarity] || RARITY_BY_ID.comun).name)}` : ''} · llevas ${it.count}</p>
+                <div class="inv-frame"${it.rarity ? ` data-rarity="${esc(it.rarity)}"` : ''}><img class="inv-preview is-item" src="${esc(ICON(it.img))}" alt="${esc(it.name)}" draggable="false"></div>
                 <p class="inv-item-desc">${esc(it.desc)}</p>
                 ${it.use ? `<button type="button" class="btn-forge inv-equip" data-inv-use="${esc(it.id)}"${it.count > 0 ? '' : ' disabled'}>${esc(it.use)}</button>` : ''}`;
         }

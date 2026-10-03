@@ -18,7 +18,7 @@ if (errors.length) console.log(errors);
 assert('Diálogos y retratos sin errores (paradas, marcadores, retratos que existen)', errors.length === 0);
 assert('Ningún diálogo queda con texto de plantilla', !warnings.some(w => /plantilla/.test(w)));
 assert('Ningún retrato está sin dueño ni nadie con retrato se queda callado', !warnings.some(w => /no lo lleva nadie|no habla en ningún/.test(w)));
-assert('Maela, Bram, Grask y tu héroe hablan (y se cuentan sus líneas)', ['Maela, la posadera', 'Bram, el herrero', 'Grask, jefe goblin', '{heroe}'].every(w => speakers[w] && speakers[w].lines > 0));
+assert('Evelyn, Bram, Amelie, los tres vecinos, Grask y tu héroe hablan (y se cuentan sus líneas)', ['Evelyn, la posadera', 'Bram, el herrero', 'Amelie, la boticaria', 'Odo, el veterano', 'Hilda, la curtidora', 'Nell, la abuela', 'Grask, jefe goblin', '{heroe}'].every(w => speakers[w] && speakers[w].lines > 0));
 
 console.log('\n🏭 Retratos en la fábrica de arte');
 const pb = new PromptBuilder(path.join(root, 'tools/image-generator'));

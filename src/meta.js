@@ -1,11 +1,12 @@
-import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.9.3';
-import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.9.3';
-import { DAMAGE_TYPES } from './items.js?v=1.9.3';
-import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.9.3';
-import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax, upgradeTotal } from './data/upgrades.js?v=1.9.3';
-import { RPG_BALANCE } from './data/balance.js?v=1.9.3';
-import { ELIXIRS, FOOD } from './data/effects.js?v=1.9.3';
-import { GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.9.3';
+import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.10.0';
+import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.10.0';
+import { DAMAGE_TYPES } from './items.js?v=1.10.0';
+import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.10.0';
+import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax, upgradeTotal } from './data/upgrades.js?v=1.10.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.10.0';
+import { ELIXIRS, FOOD } from './data/effects.js?v=1.10.0';
+import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.10.0';
+import { SELL_RATE } from './data/shops.js?v=1.10.0';
 export { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext };
 export { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax };
 
@@ -58,6 +59,8 @@ const emptyMeta = () => ({
     advGear: ['espada-de-hierro'],   // el inventario de la aventura (ids de src/data/gear.js): permanente
     advWeapon: 'espada-de-hierro',   // el arma equipada en la aventura
     advUpgrades: {},            // cristales de mejora puestos en cada arma de la aventura ({ id: n }, +1 ATK cada uno)
+    crystals: 0,                // cristales de mejora que llevas (se compran en la forja y Bram los gasta al mejorar un arma)
+    materials: {},              // materiales que sueltan los enemigos ({ 'piel-lobo': 2 }), src/data/loot.js
     food: {},                   // comida que llevas ({ pan: 2 }), src/data/effects.js FOOD: se come desde el inventario
     primary: { str: 0, dex: 0, int: 0, vit: 0 }   // puntos YA INVERTIDOS, por encima de la base (5/5/5/5)
 });
@@ -131,16 +134,96 @@ export function buyGear(meta, id) {
     return { ok: true, cost };
 }
 export const weaponUpgradeLevel = (meta, id) => Math.max(0, ((meta.advUpgrades || {})[id]) | 0);
-export function canBuyWeaponUpgrade(meta, id) {
-    return !!GEAR[id] && weaponUpgradeLevel(meta, id) < WEAPON_UPGRADE.max && meta.gold >= shopPrice(WEAPON_UPGRADE.price);
+// El cristal de mejora: se compra (y se lleva encima) y se gasta al mejorar un arma
+export const crystalCount = meta => Math.max(0, meta.crystals | 0);
+export function canBuyCrystal(meta) {
+    return crystalCount(meta) < WEAPON_UPGRADE.carry && meta.gold >= shopPrice(WEAPON_UPGRADE.price);
 }
-/** Un cristal de mejora para el arma `id` (la equipada): +1 ATK para siempre, hasta WEAPON_UPGRADE.max. */
-export function buyWeaponUpgrade(meta, id) {
+export function buyCrystal(meta) {
     const cost = shopPrice(WEAPON_UPGRADE.price);
-    if (!canBuyWeaponUpgrade(meta, id)) return { ok: false, cost };
+    if (!canBuyCrystal(meta)) return { ok: false, cost };
     meta.gold -= cost;
+    meta.crystals = crystalCount(meta) + 1;
+    return { ok: true, cost, count: meta.crystals };
+}
+export function canUpgradeWeapon(meta, id) {
+    return !!GEAR[id] && ownsGear(meta, id) && weaponUpgradeLevel(meta, id) < WEAPON_UPGRADE.max && crystalCount(meta) >= 1;
+}
+/** Gasta un cristal en el arma `id`: +1 ATK para siempre, hasta WEAPON_UPGRADE.max. */
+export function upgradeWeapon(meta, id) {
+    if (!canUpgradeWeapon(meta, id)) return { ok: false };
+    meta.crystals = crystalCount(meta) - 1;
     meta.advUpgrades = { ...(meta.advUpgrades || {}), [id]: weaponUpgradeLevel(meta, id) + 1 };
-    return { ok: true, cost, level: meta.advUpgrades[id] };
+    return { ok: true, level: meta.advUpgrades[id] };
+}
+
+// --- 💰 Vender: cada tienda te compra lo que vende, al SELL_RATE de su precio (src/data/shops.js) ---
+// Claves: 'potion' · 'mana_potion' · 'elixir:<id>' · 'food:<id>' · 'crystal' · 'gear:<id>'
+export const sellValue = price => Math.floor(shopPrice(price) * SELL_RATE);
+/** Lo que tienes de `key` y lo que te dan por una unidad: { have, value } (have 0 = no hay nada que vender). */
+export function sellInfo(meta, key) {
+    const [kind, id] = String(key).split(':');
+    if (kind === 'potion') return { have: potionCount(meta), value: sellValue(RPG_BALANCE.potion.price) };
+    if (kind === 'mana_potion') return { have: manaPotionCount(meta), value: sellValue(RPG_BALANCE.manaPotion.price) };
+    if (kind === 'elixir' && ELIXIRS[id]) return { have: elixirCount(meta, id), value: sellValue(ELIXIRS[id].price) };
+    if (kind === 'food' && FOOD[id]) return { have: foodCount(meta, id), value: sellValue(FOOD[id].price) };
+    if (kind === 'crystal') return { have: crystalCount(meta), value: sellValue(WEAPON_UPGRADE.price) };
+    // Un arma se puede vender si es tuya, tiene precio y no es la que llevas puesta (ni la de inicio)
+    if (kind === 'gear' && GEAR[id] && GEAR[id].price != null) {
+        const equipped = (meta.advWeapon || STARTER_GEAR) === id;
+        return { have: ownsGear(meta, id) && !equipped && id !== STARTER_GEAR ? 1 : 0, value: sellValue(GEAR[id].price), equipped: ownsGear(meta, id) && equipped };
+    }
+    return { have: 0, value: 0 };
+}
+/** Vende una unidad de `key`. Un arma vendida pierde sus cristales de mejora. */
+export function sellItem(meta, key) {
+    const { have, value } = sellInfo(meta, key);
+    if (have <= 0) return { ok: false, value };
+    const [kind, id] = String(key).split(':');
+    if (kind === 'potion') meta.potions = potionCount(meta) - 1;
+    else if (kind === 'mana_potion') meta.manaPotions = manaPotionCount(meta) - 1;
+    else if (kind === 'elixir') meta.elixirs = { ...(meta.elixirs || {}), [id]: elixirCount(meta, id) - 1 };
+    else if (kind === 'food') meta.food = { ...(meta.food || {}), [id]: foodCount(meta, id) - 1 };
+    else if (kind === 'crystal') meta.crystals = crystalCount(meta) - 1;
+    else if (kind === 'gear') {
+        meta.advGear = (meta.advGear || []).filter(g => g !== id);
+        const { [id]: _gone, ...rest } = meta.advUpgrades || {};
+        meta.advUpgrades = rest;
+    }
+    meta.gold += value;
+    return { ok: true, value };
+}
+
+/** Gasta `n` materiales (entregarlos en una misión). Devuelve false si no hay bastantes. */
+export function takeMaterial(meta, id, n = 1) {
+    if (materialCount(meta, id) < n) return false;
+    meta.materials = { ...(meta.materials || {}), [id]: materialCount(meta, id) - n };
+    return true;
+}
+
+// --- 🎒 Botín de los enemigos (src/data/loot.js) ---
+export const materialCount = (meta, id) => Math.max(0, ((meta.materials || {})[id]) | 0);
+/**
+ * Guarda lo que soltó un enemigo (un resultado de rollDrop). Las pociones respetan su tope: si ya llevas el máximo,
+ * se queda en el suelo. Devuelve true si te lo llevas.
+ */
+export function grantDrop(meta, drop) {
+    if (!drop) return false;
+    if (drop.kind === 'potion') {
+        if (potionCount(meta) >= RPG_BALANCE.potion.max) return false;
+        meta.potions = potionCount(meta) + 1;
+        return true;
+    }
+    if (drop.kind === 'manaPotion') {
+        if (manaPotionCount(meta) >= RPG_BALANCE.manaPotion.max) return false;
+        meta.manaPotions = manaPotionCount(meta) + 1;
+        return true;
+    }
+    if (drop.kind === 'material' && drop.id) {
+        meta.materials = { ...(meta.materials || {}), [drop.id]: materialCount(meta, drop.id) + 1 };
+        return true;
+    }
+    return false;
 }
 
 // --- 🍞 Comida (src/data/effects.js FOOD) ---

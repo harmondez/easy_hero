@@ -5,6 +5,25 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.10.0] - 2026-10-03
+
+### ✨ Novedades
+- 🏘️ **La aldea de Zafias, rehecha**: un cuadro nuevo (la plaza del pozo, la posada, la forja, la botica, el mercado y la cueva), con las calles marcadas para pasear de un sitio a otro.
+- ⚒️ **La Forja de Bram**: al hablar con él pregunta **Comprar, Mejorar o Salir**. Vende solo espadas y el **cristal de mejora** (100 de oro); con un cristal mejora una espada (+1 de ATK, hasta +3).
+- 🧪 **La botica de Amelie**: una chica tímida que lleva la tienda sola y cuida de su hermana enferma. Habla y abre la tienda: pociones de vida y de maná, elixir de fuerza, elixir arcano y frasco de veneno. Te pide **tres plantas medicinales**, escondidas en puntos de interés.
+- 🛏️ **La posada de Evelyn** (antes Maela), posadera y bibliotecaria: **Hablar con Evelyn** o **Descansar · 5 monedas**. Te pide que te encargues de Grask; cuando vuelves, dormir es **gratis para siempre**. También vende el pan.
+- 🏡 **Zona nueva: las casas del camino**, con tres vecinos: **Odo** el veterano (misión de goblins y sus lecciones: las mejoras permanentes), **Hilda** la curtidora (misión de lobos) y **Nell** la abuela. Las dos misiones pagan oro y experiencia.
+- 🦷 **El colmillo de Feronius** sustituye a la misión de los cinco dientes de lobo: lo suelta Feronius y Bram te forja la Espada de Zafias a cambio.
+- 💰 **Vender**: cada tienda te compra lo que vende, al 75 % de su precio.
+- 🎒 **Botín**: los goblins y los lobos sueltan algo una de cada tres veces (pociones y materiales: oreja de goblin, collar goblin, piel, garra y diente de lobo…). Sale en el cartel de victoria y se guarda en el inventario.
+- 💎 **Rarezas oficiales**: Común (gris), Poco común (verde), Raro (azul), Épico (lila) y Legendario (amarillo).
+- ✨ **Encuentros raros**: un 10 % de las veces, en lugar de un lobo sale el **Lobo Negro**, y en lugar de un goblin del camino, el **Goblin Pícaro**: doble de vida y de ataque, y sueltan botín siempre.
+
+### 🔧 Por dentro
+- Una escena puede tener su propio cuadro (`image`, `width`, `height`); la fábrica tiene el tipo `scene` para hacerlos y el trazador de caminos los entiende (y ya no se queda en bucle por un redondeo).
+- Tiendas como datos (`src/data/shops.js`), botín (`src/data/loot.js`) y encuentros raros (`src/data/rares.js`). Las paradas admiten `menu`, `shop`, `whenItem`, `take` y `unless`.
+- El taller de iconos lee `img/items/drop/<enemigo>/` e `img/icons/buttons-ui/`.
+
 ## [1.9.3] - 2026-10-02
 
 ### ✨ Novedades

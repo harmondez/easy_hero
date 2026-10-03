@@ -3,17 +3,37 @@
 > Solo lo que falta por hacer y las decisiones vigentes. Lo hecho y cómo se resolvió está en
 > [historial.md](historial.md) (la bitácora). Cómo se trabaja: [CLAUDE.md](CLAUDE.md),
 > [cloud-method.md](cloud-method.md) (sesiones en la nube) y [tools/image-generator/README.md](tools/image-generator/README.md)
-> (fábrica de arte).
+> (fábrica de arte). La visión de fondo (plataforma y mapa del mundo: el castillo, el bosque amarillo, las Minas
+> Hundidas) está en [future.md](future.md).
 
-## 📍 Estado (2026-10-02)
+## 📍 Estado (2026-10-03)
 
-- **Publicado:** la **1.9.3** (https://harmondez.github.io/easy_hero/): Easy Hero es solo la aventura (la mazmorra,
+- **Publicado:** la **1.10.0** (https://harmondez.github.io/easy_hero/): Easy Hero es solo la aventura (la mazmorra,
   aparcada tras la cueva sellada). Zafias con introducción, 4 escenas, 28 paradas, misiones y diario, Grask y
   **Feronius**; combate de lado con **efectos de estado**, **maná**, **PH** y barra de habilidades; 10 armas con rareza,
   elemento y efecto; energía y Golpe poderoso; aturdido que da turno al enemigo; tienda con elixires y cristales; inventario estilo DragonFable; diálogos de novela visual; toda la
   interfaz con arte del director. Criaturas con nombre en la recámara (gnolls y orcos con sus jefes, ya dibujados).
 - Herramientas: taller de sprites, Asset Factory, montaje de zonas (`docs/zonas.md`) y banco de la aventura
   (`npm run sim:aventura`).
+
+## ❓ Dudas de la aldea nueva (decidí yo; el director confirma o cambia)
+
+- **Los materiales no se venden**: no tienen precio. ¿Les ponemos uno, o se quedan para fabricar cosas más adelante?
+- **Topes de la mochila**: siguen los de antes (3 pociones, 2 elixires, 5 panes, 9 cristales). «Comprar sin límite» lo
+  entendí como «mientras quepa». Si la mochila debe tener un número de huecos, hay que diseñarla.
+- **Las mejoras permanentes** (Filo afilado, Constitución, Buen ojo, Estudio) ya no están en la forja: son las
+  «lecciones» de Odo. Las cuatro que solo servían en la mazmorra no se ofrecen en la aventura.
+- **El retrato de Evelyn** es el de Maela (sonriente, con delantal de tabernera). Si se quiere más seria y con libros,
+  es una imagen (quedan 8 del cupón).
+- **Vender una espada** le quita sus cristales; la espada de inicio y la que llevas puesta no se venden.
+- **El pan lo vende Evelyn** en el menú de la posada («Comprar pan»).
+- **Las plantas** están en la senda del santuario, las ruinas del vigía y la escalinata del castillo (esta última, tras
+  echar a los tres goblins del bosque).
+- **El Goblin Pícaro** solo sale en los tres goblins que no hablan antes de pelear.
+- **El raro** da el mismo oro y la misma XP que el normal; su premio es el botín seguro.
+- **Premios de las misiones nuevas**: Amelie 40 de oro, 30 XP y 2 pociones; Odo 50 y 40 XP; Hilda 45 y 40 XP.
+- **El bot de equilibrio** (`npm run sim:aventura`) no sabe que dormir cuesta 5 monedas ni usa las tiendas nuevas.
+- **Sigue pendiente** del director: las tres pistas del pasado del héroe y de quién es el castillo (ver future.md).
 
 ## 🔥 Siguiente, en este orden
 

@@ -50,6 +50,7 @@ globalThis.__RPG_BALANCE__ = globalThis.__RPG_BALANCE__ || {
     potion: { heal: 0.4, max: 3, price: 20 },
     // Maná: el héroe empieza con la mitad de su vida inicial (25 → 12). La poción de maná menor devuelve la mitad
     manaFromHp: 0.5,
+    inn: { price: 5 },   // lo que cobra la posada por dormir (hasta que Evelyn te deja quedarte gratis)
     manaPotion: { restore: 0.5, max: 3, price: 25 },
 
     // ⚡ Energía (barra amarilla): se llena peleando y se guarda de un combate a otro hasta el máximo; solo se vacía al

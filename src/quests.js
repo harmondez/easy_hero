@@ -1,7 +1,7 @@
 // =============================================
 // 📜 Misiones (puro, sin DOM): en qué estado está cada misión según las marcas y las cuentas de la aventura
 // =============================================
-import { QUESTS } from './data/quests.js?v=1.9.3';
+import { QUESTS } from './data/quests.js?v=1.10.0';
 
 const hasAll = (flags, list) => (list || []).every(f => flags[f]);
 
@@ -16,8 +16,12 @@ export function questStatus(q, state) {
 /** Cuántas criaturas de ese tipo lleva vencidas para la misión (desde que empezó). */
 export const questCount = (state, creature) => ((state.counts || {})[creature]) || 0;
 
+/** Cuántos materiales de ese tipo llevas encima (state.items: los materiales del inventario). */
+export const questItems = (state, material) => ((state.items || {})[material]) || 0;
+
 function stepDone(step, state) {
     if (step.count) return questCount(state, step.count.creature) >= step.count.n;
+    if (step.item) return questItems(state, step.item.material) >= step.item.n;
     if (step.when) return hasAll(state.flags || {}, step.when);
     return false;
 }
@@ -28,6 +32,7 @@ export function questSteps(q, state) {
         const done = stepDone(step, state);
         let progress = null;
         if (step.count) progress = { have: Math.min(step.count.n, questCount(state, step.count.creature)), need: step.count.n };
+        else if (step.item) progress = { have: Math.min(step.item.n, questItems(state, step.item.material)), need: step.item.n };
         else if (step.progress) progress = { have: step.progress.filter(f => (state.flags || {})[f]).length, need: step.progress.length };
         return { text: step.text, done, progress };
     });

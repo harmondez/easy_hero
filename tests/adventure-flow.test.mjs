@@ -1,6 +1,6 @@
 // =============================================
 // 🧭 El final de Zafias jugado de verdad en el navegador: campamento → Grask → botín → la guarida del lobo →
-// Feronius (el jefe de la zona) → Maela. Con un héroe ya fuerte, para que el combate no sea lo que se prueba.
+// Feronius (el jefe de la zona) → Evelyn. Con un héroe ya fuerte, para que el combate no sea lo que se prueba.
 // =============================================
 import http from 'http';
 import fs from 'fs';
@@ -84,7 +84,7 @@ await page.click('.adv-stop[data-point="grask"]', { force: true });
 await sleep(250);
 const grask = await playOut();
 assert('Grask pelea con su dibujo propio y cae', !!grask && grask.won && /enemigo_grask/.test(grask.src));
-assert('La misión pide volver con Maela', /Vuelve con Maela/.test(await hud()));
+assert('La misión pide volver con Evelyn', /Vuelve con Evelyn/.test(await hud()));
 assert('Vencido Grask aparecen su botín y la bajada a la guarida del lobo', !!(await stop('botin')) && !!(await stop('a-la-guarida')));
 assert('La misión ya apunta al jefe de la zona («algo aúlla al sureste»)', /aúlla/.test(await hud()));
 const inView = await page.evaluate(() => {
@@ -134,19 +134,32 @@ const st = await saved();
 assert('Feronius queda vencido para siempre (no vuelve al dormir)', st.flags['defeated:feronius'] === true
     && !!(await page.$('.adv-stop.is-cleared[data-point="feronius"]')));
 
-// Maela, de vuelta en la aldea: recompensa de la misión, una sola vez
+// Evelyn, de vuelta en la posada: recompensa de la misión, una sola vez, y la cama gratis desde entonces
 await prepare({ v: 1, scene: 'aldea', hp: null, gone: {}, flags: { ...st.flags } });
 const g2 = await gold();
-await page.click('.adv-stop[data-point="posadera"]', { force: true });
+await page.click('.adv-stop[data-point="posada"]', { force: true });
+await sleep(250);
+assert('Antes de cobrar, descansar todavía cuesta 5 monedas', /5 monedas/.test(await page.$eval('.adv-menu [data-menu="sleep"]', el => el.textContent)));
+await page.click('.adv-menu [data-menu="talk"]');
 await sleep(250);
 await playOut();
-assert('Maela paga la misión (+60 de oro y una poción) y la marca como cumplida', (await gold()) === g2 + 60 && (await potions()) === 1
+assert('Evelyn paga la misión (+60 de oro y una poción) y la marca como cumplida', (await gold()) === g2 + 60 && (await potions()) === 1
     && /Misión cumplida/.test(await hud()));
-await page.click('.adv-stop[data-point="posadera"]', { force: true });
+await page.click('.adv-stop[data-point="posada"]', { force: true });
+await sleep(250);
+await page.click('.adv-menu [data-menu="talk"]');
 await sleep(250);
 const after = await page.$$eval('.adv-dialogue-text', els => els.map(e => e.textContent).join(' '));
 await playOut();
-assert('…y después solo da conversación (ni oro ni poción otra vez)', (await gold()) === g2 + 60 && /bosque está tranquilo/.test(after));
+assert('…y después solo da conversación (ni oro ni poción otra vez)', (await gold()) === g2 + 60 && /Han vuelto los viajeros/.test(after));
+await page.click('.adv-stop[data-point="posada"]', { force: true });
+await sleep(250);
+assert('Desde entonces la posada es gratis: «Descansar · Gratis»', /Gratis/.test(await page.$eval('.adv-menu [data-menu="sleep"]', el => el.textContent))
+    && !(await page.$eval('.adv-menu [data-menu="sleep"]', el => el.disabled)));
+await page.click('.adv-menu [data-menu="sleep"]');
+await sleep(250);
+await playOut();
+assert('…y dormir ya no descuenta oro', (await gold()) === g2 + 60);
 
 assert('Sin errores de página en todo el recorrido', errors.length === 0);
 if (errors.length) console.log(errors);

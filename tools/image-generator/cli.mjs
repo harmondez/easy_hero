@@ -17,7 +17,7 @@
 //     --force           rehace un asset que ya existe (lo anterior se aparta con fecha, no se borra)
 //     --variant <v>     otra versión del mismo asset (nombre distinto, no sobrescribe)
 //     --details <txt>   matices para el prompt
-//     --regions <lista> (mapas) zonas «id:CASILLA:descripción» con CASILLA en NW N NE W C E SW S SE
+//     --regions <lista> (mapas y escenas) zonas «id:CASILLA:descripción» con CASILLA en NW N NE W C E SW S SE
 //     --model <id>      usa otro modelo solo esta vez (por defecto, el de config/factory.json)
 //     --no-game         no lo entrega al juego (se queda en taller/)
 //     --game-id <id>    con qué nombre lo busca el juego (p. ej. el nombre base del monstruo: orco, grask)

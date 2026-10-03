@@ -1,6 +1,7 @@
 // El equipo de la aventura y la tienda: armas del mercader, cristales de mejora, comida, el frasco de veneno y el
 // modo pruebas (todo gratis)
 import { GEAR, GEAR_FOR_SALE, ELEMENTS, SLOT_ICONS, WEAPON_UPGRADE, STARTER_GEAR } from '../src/data/gear.js';
+import { SHOPS, SELL_RATE } from '../src/data/shops.js';
 import { EFFECTS, ELIXIRS, FOOD } from '../src/data/effects.js';
 import { RARITY_BY_ID } from '../src/data/rarities.js';
 import { ART } from '../src/data/art.js';
@@ -38,10 +39,50 @@ const r = Meta.buyGear(m, 'espada-imperial');
 assert('con oro, el arma pasa al inventario y cuesta su precio', r.ok && Meta.ownsGear(m, 'espada-imperial') && m.gold === 1000 - GEAR['espada-imperial'].price);
 assert('no se compra dos veces', !Meta.buyGear(m, 'espada-imperial').ok);
 assert('lo que no está a la venta no se compra', !Meta.buyGear(m, 'espada-de-zafias').ok);
+// El cristal de mejora: se compra (100), se lleva encima y Bram lo gasta al mejorar
 m = freshMeta(1000);
-for (let i = 0; i < 5; i++) Meta.buyWeaponUpgrade(m, STARTER_GEAR);
-assert(`el cristal de mejora sube el arma hasta +${WEAPON_UPGRADE.max}`, Meta.weaponUpgradeLevel(m, STARTER_GEAR) === WEAPON_UPGRADE.max
-    && m.gold === 1000 - WEAPON_UPGRADE.max * WEAPON_UPGRADE.price);
+assert('sin cristales no se puede mejorar un arma', !Meta.canUpgradeWeapon(m, STARTER_GEAR) && !Meta.upgradeWeapon(m, STARTER_GEAR).ok);
+assert('el cristal cuesta 100 de oro y se queda en la mochila', WEAPON_UPGRADE.price === 100 && Meta.buyCrystal(m).ok && Meta.crystalCount(m) === 1 && m.gold === 900);
+assert('mejorar gasta un cristal y sube el arma +1', Meta.upgradeWeapon(m, STARTER_GEAR).ok && Meta.crystalCount(m) === 0 && Meta.weaponUpgradeLevel(m, STARTER_GEAR) === 1 && m.gold === 900);
+for (let i = 0; i < 5; i++) { Meta.buyCrystal(m); Meta.upgradeWeapon(m, STARTER_GEAR); }
+assert(`un arma admite hasta +${WEAPON_UPGRADE.max}: el cristal que sobra no se gasta`, Meta.weaponUpgradeLevel(m, STARTER_GEAR) === WEAPON_UPGRADE.max
+    && Meta.crystalCount(m) === 3 && m.gold === 400);
+assert('no se mejora un arma que no es tuya', !Meta.canUpgradeWeapon(m, 'espada-imperial'));
+m = freshMeta(5000);
+for (let i = 0; i < 20; i++) Meta.buyCrystal(m);
+assert(`se pueden llevar hasta ${WEAPON_UPGRADE.carry} cristales`, Meta.crystalCount(m) === WEAPON_UPGRADE.carry && m.gold === 5000 - WEAPON_UPGRADE.carry * 100);
+
+console.log('\n💰 Vender al 75 %');
+m = freshMeta(1000);
+assert('el precio de venta es el 75 % del de compra, redondeado hacia abajo', SELL_RATE === 0.75 && Meta.sellValue(20) === 15 && Meta.sellValue(5) === 3 && Meta.sellValue(650) === 487);
+assert('sin nada que vender, no se vende', !Meta.sellItem(m, 'potion').ok && !Meta.sellItem(m, 'crystal').ok && m.gold === 1000);
+Meta.buyPotion(m); Meta.buyManaPotion(m); Meta.buyElixir(m, 'veneno'); Meta.buyFood(m, 'pan'); Meta.buyCrystal(m);
+let before = m.gold;
+assert('se venden pociones, elixires, pan y cristales, de uno en uno',
+    ['potion', 'mana_potion', 'elixir:veneno', 'food:pan', 'crystal'].every(k => Meta.sellInfo(m, k).have === 1 && Meta.sellItem(m, k).ok && Meta.sellInfo(m, k).have === 0)
+    && m.gold === before + 15 + 18 + 15 + 3 + 75);
+m = freshMeta(2000);
+Meta.buyGear(m, 'espada-imperial');
+assert('la espada de inicio no se vende (no tiene precio)', Meta.sellInfo(m, `gear:${STARTER_GEAR}`).have === 0 && !Meta.sellItem(m, `gear:${STARTER_GEAR}`).ok);
+m.advWeapon = 'espada-imperial';
+assert('la espada que llevas puesta no se vende', Meta.sellInfo(m, 'gear:espada-imperial').have === 0 && Meta.sellInfo(m, 'gear:espada-imperial').equipped && !Meta.sellItem(m, 'gear:espada-imperial').ok);
+m.advWeapon = STARTER_GEAR;
+Meta.buyCrystal(m); Meta.upgradeWeapon(m, 'espada-imperial');
+before = m.gold;
+assert('una espada guardada se vende al 75 % y pierde sus cristales', Meta.sellItem(m, 'gear:espada-imperial').ok && !Meta.ownsGear(m, 'espada-imperial')
+    && m.gold === before + 487 && Meta.weaponUpgradeLevel(m, 'espada-imperial') === 0);
+assert('y se puede volver a comprar', Meta.buyGear(m, 'espada-imperial').ok);
+assert('las mejoras permanentes y los materiales no se venden', !Meta.sellItem(m, 'upgrade:filo').ok && !Meta.sellItem(m, 'material:piel-lobo').ok);
+
+console.log('\n🛒 Cada tienda vende lo suyo');
+assert('la forja: solo espadas y el cristal', SHOPS.forja.sells.join() === 'gear:*,crystal');
+assert('la botica: pociones de vida y de maná, elixir de fuerza, elixir arcano y frasco de veneno',
+    SHOPS.botica.sells.join() === 'potion,mana_potion,elixir:fuerza,elixir:arcano,elixir:veneno');
+assert('la posada: pan', SHOPS.posada.sells.join() === 'food:pan');
+assert('las lecciones de Odo: las mejoras permanentes que sirven en la aventura',
+    SHOPS.instructor.sells.every(k => k.startsWith('upgrade:') && Meta.UPGRADES_BY_ID[k.slice(8)]) && SHOPS.instructor.sells.length === 4);
+assert('todo lo que se vende existe', Object.values(SHOPS).flatMap(s => s.sells).every(k => k === 'gear:*' || k === 'crystal' || k === 'potion' || k === 'mana_potion'
+    || (k.startsWith('elixir:') && ELIXIRS[k.slice(7)]) || (k.startsWith('food:') && FOOD[k.slice(5)]) || (k.startsWith('upgrade:') && Meta.UPGRADES_BY_ID[k.slice(8)])));
 m = freshMeta(1000);
 Meta.buyFood(m, 'pan');
 assert('el pan se compra y se come una vez', Meta.foodCount(m, 'pan') === 1 && Meta.eatFood(m, 'pan') && !Meta.eatFood(m, 'pan'));
@@ -49,7 +90,8 @@ assert('el pan se compra y se come una vez', Meta.foodCount(m, 'pan') === 1 && M
 RPG_BALANCE.freeShop = true;
 m = freshMeta(0);
 assert('modo pruebas: con 0 de oro se compra todo gratis', Meta.buyGear(m, 'quebrantaamaneceres').ok && Meta.buyPotion(m).ok
-    && Meta.buyElixir(m, 'veneno').ok && Meta.buyFood(m, 'pan').ok && Meta.buyWeaponUpgrade(m, STARTER_GEAR).ok && m.gold === 0);
+    && Meta.buyElixir(m, 'veneno').ok && Meta.buyFood(m, 'pan').ok && Meta.buyCrystal(m).ok && m.gold === 0);
+assert('…y en modo pruebas vender no da oro (si no, sería oro infinito)', Meta.sellItem(m, 'potion').ok && m.gold === 0);
 assert('…y las mejoras de La Forja también salen a 0 (salvo las ya al máximo)', Meta.nextUpgradeCost(m, Meta.UPGRADES[0].id) === 0);
 RPG_BALANCE.freeShop = false;
 

@@ -67,6 +67,9 @@
     "portrait": [
       "img/portraits/herrero-braum.webp",
       "img/portraits/tabernera-maela.webp"
+    ],
+    "scene": [
+      "tools/image-generator/references/estilo-aldea.webp"
     ]
   }
 }

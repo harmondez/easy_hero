@@ -128,6 +128,15 @@
       "game_prefix": null,
       "deliver": "portrait",
       "_doc": "Retrato de novela visual: se entrega a img/characters/<id>-profile.png y a img/portraits/<id>.webp (tools/portraits.mjs). Quién lo lleva: src/data/characters.js (npm run vn)."
+    },
+    "scene": {
+      "category": "scenes",
+      "prompt": "scene",
+      "aspect_ratio": "4:3",
+      "image_size": "1K",
+      "remove_background": false,
+      "game_prefix": "escena",
+      "_doc": "Escena explorable vista desde arriba (una aldea, un caserío): el cuadro entero de una escena del Modo Aventura. Admite --regions como los mapas (dónde va cada edificio) pero no se recorta."
     }
   },
   "background_removal": {

@@ -32,6 +32,11 @@ export const ART = {
             "w": 253,
             "h": 256
         },
+        "enemigo_goblin-picaro": {
+            "src": "img/sprites/enemigo_goblin-picaro.webp",
+            "w": 263,
+            "h": 256
+        },
         "enemigo_grask": {
             "src": "img/sprites/enemigo_grask.webp",
             "w": 196,
@@ -45,6 +50,11 @@ export const ART = {
         "enemigo_lobo-de-zafias": {
             "src": "img/sprites/enemigo_lobo-de-zafias.webp",
             "w": 433,
+            "h": 256
+        },
+        "enemigo_lobo-negro": {
+            "src": "img/sprites/enemigo_lobo-negro.webp",
+            "w": 453,
             "h": 256
         },
         "enemigo_orco": {
@@ -75,7 +85,18 @@ export const ART = {
             "h": 768
         }
     },
-    "zones": {},
+    "zones": {
+        "zafias-aldea": {
+            "src": "img/zones/zafias-aldea.webp",
+            "w": 1200,
+            "h": 896
+        },
+        "zafias-casas": {
+            "src": "img/zones/zafias-casas.webp",
+            "w": 1200,
+            "h": 896
+        }
+    },
     "icons": {
         "agilidad": {
             "src": "img/ui/agilidad.webp",
@@ -272,6 +293,41 @@ export const ART = {
             "w": 224,
             "h": 216
         },
+        "material-armadura-oxidada": {
+            "src": "img/ui/material-armadura-oxidada.webp",
+            "w": 128,
+            "h": 123
+        },
+        "material-collar-goblin": {
+            "src": "img/ui/material-collar-goblin.webp",
+            "w": 121,
+            "h": 128
+        },
+        "material-diente-lobo": {
+            "src": "img/ui/material-diente-lobo.webp",
+            "w": 100,
+            "h": 128
+        },
+        "material-garra-lobo": {
+            "src": "img/ui/material-garra-lobo.webp",
+            "w": 128,
+            "h": 121
+        },
+        "material-oreja-goblin": {
+            "src": "img/ui/material-oreja-goblin.webp",
+            "w": 85,
+            "h": 128
+        },
+        "material-piel-lobo": {
+            "src": "img/ui/material-piel-lobo.webp",
+            "w": 128,
+            "h": 92
+        },
+        "material-slime-condensado": {
+            "src": "img/ui/material-slime-condensado.webp",
+            "w": 128,
+            "h": 108
+        },
         "mejora-arma": {
             "src": "img/ui/mejora-arma.webp",
             "w": 87,
@@ -439,6 +495,21 @@ export const ART = {
         }
     },
     "portraits": {
+        "abuela-nell": {
+            "src": "img/portraits/abuela-nell.webp",
+            "w": 394,
+            "h": 640
+        },
+        "boticaria-amelie": {
+            "src": "img/portraits/boticaria-amelie.webp",
+            "w": 266,
+            "h": 640
+        },
+        "curtidora-hilda": {
+            "src": "img/portraits/curtidora-hilda.webp",
+            "w": 356,
+            "h": 640
+        },
         "enemy-goblin-minion": {
             "src": "img/portraits/enemy-goblin-minion.webp",
             "w": 517,
@@ -462,6 +533,11 @@ export const ART = {
         "tabernera-maela": {
             "src": "img/portraits/tabernera-maela.webp",
             "w": 376,
+            "h": 640
+        },
+        "veterano-odo": {
+            "src": "img/portraits/veterano-odo.webp",
+            "w": 402,
             "h": 640
         }
     }

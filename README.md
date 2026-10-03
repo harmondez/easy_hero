@@ -18,7 +18,7 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.9.3-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.10.0-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -33,7 +33,7 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 
 ## 🆕 Novedades
 
-**Versión 1.9.3** · 2 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.10.0** · 3 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **Easy Hero es ya, entero, la aventura.** Los combates tienen venenos, sangrados y aturdimientos que se ven sobre
@@ -41,7 +41,18 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 > con su elemento y su efecto; y los vecinos te hablan cara a cara, como en una novela visual. Toda la historia,
 > reescrita.
 
-| | Qué hay de nuevo en la 1.9.3 |
+| | Qué hay de nuevo en la 1.10.0 |
+|:-:|------------------|
+| 🏘️ | **La aldea, rehecha:** un cuadro nuevo con la plaza del pozo, la posada, la forja, la botica y el mercado, y calles por las que pasear |
+| ⚒️ | **La Forja de Bram:** Comprar, Mejorar o Salir. Vende espadas y el cristal de mejora (100 de oro); con un cristal te mejora una espada |
+| 🧪 | **La botica de Amelie:** pociones, elixires y frascos. Y una misión: tres plantas medicinales para su hermana |
+| 🛏️ | **La posada de Evelyn:** dormir cuesta 5 monedas… hasta que acabas con Grask. Desde entonces, gratis |
+| 🏡 | **Zona nueva, las casas del camino:** Odo, Hilda y Nell, con dos misiones que pagan oro y experiencia |
+| 💰 | **Vender:** cada tienda te compra lo que vende, al 75 % |
+| 🎒 | **Botín:** goblins y lobos sueltan pociones y materiales (oreja de goblin, piel de lobo, collar goblin…), con sus cinco rarezas |
+| ✨ | **Encuentros raros:** un 10 % de las veces aparece el Lobo Negro o el Goblin Pícaro, el doble de duros y con botín seguro |
+
+| | Lo que trajo la 1.9.3 |
 |:-:|------------------|
 | 💥 | **Golpes que se sienten:** números más grandes, en negrita y cursiva (rojos los que recibes, claros los que haces, dorados los críticos) y los efectos (veneno, sangrado…) aparecen justo en el impacto, con su icono |
 | ⚡ | **La energía se guarda** de un combate a otro hasta 100; solo se vacía al dormir |
@@ -125,8 +136,9 @@ que te toca hacer.
 </p>
 
 - 🎭 **Vecinos que te hablan a la cara.** Cada conversación es una pequeña escena de novela visual. Los que tienen un
-  encargo salen **en azul**: Maela, la posadera, quiere a los goblins fuera del bosque y a **Grask**, su jefe, muerto;
-  Bram, el herrero, necesita cinco dientes de lobo. Todo queda en tu **diario de misiones**.
+  encargo salen **en azul**: Evelyn, la posadera, quiere que acabes con **Grask**, el goblin que asalta a los viajeros;
+  Bram, el herrero, pide el colmillo del lobo Feronius; Amelie, la boticaria, tres plantas medicinales. Todo queda en
+  tu **diario de misiones**.
 - ❔ **Una pregunta sin respuesta.** La misión principal es saber quién eres. Bram no reconoce la empuñadura de tu
   espada, las piedras del santuario parecen pronunciar tu nombre… y alguien está preguntando por ti.
 - 👺 **Enemigos que ves venir.** Goblins y lobos esperan en los caminos. Si los vences desaparecen… hasta que duermes
@@ -199,8 +211,8 @@ Empiezas con **ATK 1**, **PH 5**, **25 de vida** y **12 de maná**; la **energí
 
 Cada arma tiene su **rareza** (el color de su nombre), su **elemento** (el color de su icono) y, muchas, un
 **efecto**: Aguijón envenena, Mirmulnir quema, Cryovain te deja al enemigo helado, Quebrantaamaneceres te cura al
-empezar el combate… Bram te forja la **Espada de Zafias** si le traes cinco dientes de lobo; el resto las vende el
-mercader, de **300 a 2000 de oro**, junto con el **cristal de mejora** (+1 ATK a tu arma, hasta +3). Cada espada con
+empezar el combate… Bram te forja la **Espada de Zafias** si le traes el colmillo de Feronius; el resto las vende él
+mismo, de **300 a 2000 de oro**, junto con el **cristal de mejora** (100 de oro: +1 ATK a una espada, hasta +3). Cada espada con
 dibujo propio cambia el aspecto de tu héroe, en el mapa y en el combate.
 
 <p align="center">
@@ -227,14 +239,14 @@ combates, subes de nivel y **repartes tú mismo** los puntos.
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.9.3, sigue en desarrollo.** El foco es la **aventura**: Zafias se puede jugar de principio a fin, con
+> **Versión 1.10.0, sigue en desarrollo.** El foco es la **aventura**: Zafias se puede jugar de principio a fin, con
 > Grask como primer muro y Feronius como jefe. La mazmorra sin fondo de las primeras versiones está aparcada (sigue
 > en el código, pero no se puede entrar).
 
 ### ✅ Ya se puede jugar
 
 - 🌅 **Una introducción**: despiertas sin memoria en unas ruinas, eliges tu nombre y caminas hasta Zafias
-- 🧭 **Zafias**: aldea, bosque, campamento goblin y la guarida del lobo; 28 paradas, goblins, lobos y dos jefes
+- 🧭 **Zafias**: aldea, las casas del camino, bosque, campamento goblin y la guarida del lobo; 41 paradas, goblins, lobos y dos jefes
 - 🎭 **Diálogos de novela visual** con retratos, y una historia con misterio
 - 📜 **Misiones y diario**: la principal y las secundarias, con su progreso
 - ⚔️ **Combate de lado** con embestidas, números de daño y enemigos que se aprenden
@@ -265,7 +277,7 @@ el código y en sus comprobaciones, a la espera de volver… quizá detrás de l
 ## 🔮 Qué viene
 
 > [!TIP]
-> **Lo próximo:** más retratos para los diálogos (Maela, Grask, Feronius, los goblins); avanzar la misión principal
+> **Lo próximo:** más retratos para los diálogos (Feronius); avanzar la misión principal
 > —¿quién eres?—; más habilidades para la barra; el resto del equipo (armadura, casco, guantes, botas, anillos: ya
 > tienen su icono); y un segundo mapa, **el bosque amarillo**, con **gnolls y orcos** ya dibujados y sus jefes
 > **Gnarok** y **Guul, el rey orco**.
@@ -317,7 +329,7 @@ npx playwright install chromium    # solo la primera vez
 npm test                           # ejecuta todas las comprobaciones
 ```
 
-Son 1007 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; las del navegador, unos minutos.
+Son 1149 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; las del navegador, unos minutos.
 
 Para ver cómo está el equilibrio de la aventura: `npm run sim:aventura` juega miles de partidas con un bot.
 
@@ -345,7 +357,7 @@ Receta para meter un NPC con su retrato y su diálogo: [docs/novela-visual.md](d
 
 ```bash
 npm run release              # ¿está todo sincronizado con la versión actual?
-npm run release -- patch     # 1.9.3 → 1.9.4  (también minor o major)
+npm run release -- patch     # 1.10.0 → 1.10.1  (también minor o major)
 ```
 
 Cambia la versión en todos los sitios a la vez y prepara el registro de cambios. Los pasos completos están en [docs/versiones.md](docs/versiones.md).

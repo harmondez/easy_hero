@@ -4,6 +4,10 @@
 // recodos caen dentro del encuadre, las salidas llevan a paradas reales y cada diálogo citado está escrito.
 // =============================================
 import { ZAFIAS, ZAFIAS_DIALOGUES } from '../src/data/zones/zafias.js';
+import { SHOPS } from '../src/data/shops.js';
+import { MATERIALS } from '../src/data/loot.js';
+import { FOOD } from '../src/data/effects.js';
+import { GEAR } from '../src/data/gear.js';
 import { PORTRAITS } from '../src/data/characters.js';
 import { ART } from '../src/data/art.js';
 
@@ -60,15 +64,40 @@ for (const [sid, sc] of Object.entries(zone.scenes)) {
 }
 
 const pois = Object.values(zone.scenes).flatMap(sc => sc.points.filter(p => p.kind === 'poi'));
-assert('Hay puntos de interés en las tres escenas', Object.values(zone.scenes).every(sc => sc.points.some(p => p.kind === 'poi')));
+assert('Hay puntos de interés en todas las escenas', Object.values(zone.scenes).every(sc => sc.points.some(p => p.kind === 'poi')));
 assert('Los hallazgos con recompensa se marcan para darla una sola vez',
-    pois.every(p => (p.talk || []).every(t => !t.reward || (t.set && p.talk.some(o => (o.when || []).includes(t.set))))));
+    pois.every(p => (p.talk || []).every(t => !t.reward || (t.set && (p.talk.some(o => (o.when || []).includes(t.set)) || (t.unless || []).includes(t.set))))));
 
 // Retratos de los diálogos (novela visual)
 const whos = new Set(Object.values(ZAFIAS_DIALOGUES).flat().map(l => l.who));
 assert('Cada retrato asignado existe en el juego (img/portraits)', Object.values(PORTRAITS).every(p => ART.portraits[typeof p === 'string' ? p : p.id]));
 assert('Cada retrato es de alguien que habla de verdad en Zafias', Object.keys(PORTRAITS).every(w => whos.has(w)));
-assert('Maela, Bram, Grask y el héroe tienen retrato', ['Maela, la posadera', 'Bram, el herrero', 'Grask, jefe goblin', '{heroe}'].every(w => PORTRAITS[w]));
+assert('Evelyn, Bram, Amelie, Odo, Hilda, Nell, Grask y el héroe tienen retrato',
+    ['Evelyn, la posadera', 'Bram, el herrero', 'Amelie, la boticaria', 'Odo, el veterano', 'Hilda, la curtidora', 'Nell, la abuela', 'Grask, jefe goblin', '{heroe}'].every(w => PORTRAITS[w]));
+
+// Escenas con cuadro propio (la aldea y las casas del camino)
+const own = Object.entries(zone.scenes).filter(([, sc]) => sc.image);
+assert('La aldea y las casas del camino tienen su propio cuadro, registrado y del tamaño de su escena',
+    own.map(([sid]) => sid).join() === 'aldea,casas' && own.every(([, sc]) => {
+        const art = Object.values(ART.zones).find(z => z.src === sc.image);
+        return art && sc.box.x === 0 && sc.box.y === 0 && sc.box.w === sc.width && sc.box.h === sc.height
+            && Math.abs(art.w / art.h - sc.width / sc.height) < 0.01;
+    }));
+
+// Tiendas, menús y lo que piden y dan las misiones
+const everyPoint = Object.values(zone.scenes).flatMap(sc => sc.points);
+assert('Cada tienda citada en una parada existe', everyPoint.filter(p => p.shop).every(p => SHOPS[p.shop]) && everyPoint.filter(p => p.shop).length === 4);
+assert('Los menús solo ofrecen cosas que la parada puede hacer',
+    everyPoint.filter(p => p.menu).every(p => p.menu.every(o => ['talk', 'sleep', 'shop', 'upgrade', 'leave'].includes(o))
+        && (!p.menu.includes('shop') || p.shop) && (!p.menu.includes('talk') || p.talk) && p.menu.includes('leave')));
+const entries = everyPoint.flatMap(p => p.talk || []);
+assert('Lo que se pide, se entrega o se regala en un diálogo existe (materiales, comida, armas)',
+    entries.every(t => (!t.whenItem || MATERIALS[t.whenItem.material]) && (!t.take || MATERIALS[t.take.material])
+        && (!t.reward || ((!t.reward.material || MATERIALS[t.reward.material]) && (!t.reward.food || FOOD[t.reward.food]) && (!t.reward.item || GEAR[t.reward.item])))));
+assert('Quien entrega materiales los lleva encima: `take` va siempre con su `whenItem`',
+    entries.filter(t => t.take).every(t => t.whenItem && t.whenItem.material === t.take.material && (t.whenItem.n || 1) >= (t.take.n || 1)));
+assert('Hay tres plantas medicinales repartidas por los puntos de interés, las que pide Amelie',
+    entries.filter(t => t.reward && t.reward.material === 'planta-medicinal').length === 3);
 
 console.log(`\n📊 RESULTS: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

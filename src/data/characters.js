@@ -12,7 +12,11 @@ const GOBLIN = 'enemy-goblin-minion';
 
 export const PORTRAITS = {
     '{heroe}': 'hero',
-    'Maela, la posadera': 'tabernera-maela',
+    'Evelyn, la posadera': 'tabernera-maela',   // el retrato conserva el nombre de su archivo
+    'Amelie, la boticaria': 'boticaria-amelie',
+    'Odo, el veterano': 'veterano-odo',
+    'Hilda, la curtidora': 'curtidora-hilda',
+    'Nell, la abuela': 'abuela-nell',
     'Bram, el herrero': 'herrero-braum',
     'Grask, jefe goblin': { id: 'enemy-grask-boss', scale: 1.25 },
     // Los esbirros de Grask comparten cara (para ellos, todos los goblins son iguales)

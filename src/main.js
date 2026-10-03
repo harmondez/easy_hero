@@ -1,17 +1,17 @@
-import * as UI from './ui.js?v=1.9.3';
-import * as Engine from './engine.js?v=1.9.3';
-import * as Events from './events.js?v=1.9.3';
-import * as Save from './save.js?v=1.9.3';
-import * as Items from './items.js?v=1.9.3';
-import * as Meta from './meta.js?v=1.9.3';
-import * as AdventureMode from './adventure.js?v=1.9.3';
-import { playIntro } from './intro.js?v=1.9.3';
-import { ART } from './data/art.js?v=1.9.3';
-import { heroArt } from './art.js?v=1.9.3';
-import { RPG_BALANCE } from './data/balance.js?v=1.9.3';
-import { tierName } from './data/monsters.js?v=1.9.3';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.9.3';
-import { GAME_VERSION } from './version.js?v=1.9.3';
+import * as UI from './ui.js?v=1.10.0';
+import * as Engine from './engine.js?v=1.10.0';
+import * as Events from './events.js?v=1.10.0';
+import * as Save from './save.js?v=1.10.0';
+import * as Items from './items.js?v=1.10.0';
+import * as Meta from './meta.js?v=1.10.0';
+import * as AdventureMode from './adventure.js?v=1.10.0';
+import { playIntro } from './intro.js?v=1.10.0';
+import { ART } from './data/art.js?v=1.10.0';
+import { heroArt } from './art.js?v=1.10.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.10.0';
+import { tierName } from './data/monsters.js?v=1.10.0';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.10.0';
+import { GAME_VERSION } from './version.js?v=1.10.0';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
@@ -213,9 +213,13 @@ function _rpgPreviewHero() {
     return hero;
 }
 
-function _rpgOpenShop(from) {
+// shopId: la tienda de un tendero de la aventura (src/data/shops.js); sin él, La Forja del descenso
+const _rpgShopOpts = () => ({ from: gameState.rpg.shopFrom, shop: gameState.rpg.shopId, tab: gameState.rpg.shopTab });
+function _rpgOpenShop(from, shopId = null) {
     gameState.rpg.shopFrom = from || 'start';
-    UI.renderShop(meta, { from: gameState.rpg.shopFrom });
+    gameState.rpg.shopId = shopId;
+    gameState.rpg.shopTab = 'buy';
+    UI.renderShop(meta, _rpgShopOpts());
     UI.toggleRpgView('rpgShopView');
 }
 
@@ -232,12 +236,18 @@ function _rpgBuyUpgrade(id) {
         : id.startsWith('elixir:') ? Meta.buyElixir(meta, id.slice(7))
         : id.startsWith('gear:') ? Meta.buyGear(meta, id.slice(5))
         : id.startsWith('food:') ? Meta.buyFood(meta, id.slice(5))
-        : id === 'weapon_upgrade' ? Meta.buyWeaponUpgrade(meta, meta.advWeapon)
+        : id === 'crystal' ? Meta.buyCrystal(meta)
         : Meta.buyUpgrade(meta, id);
     if (!bought.ok) return;
     Meta.checkAchievements(meta, null, { floors: Engine.RPG_MAP_CONFIG.floors });
     persistMeta();
-    UI.renderShop(meta, { from: gameState.rpg.shopFrom });
+    UI.renderShop(meta, _rpgShopOpts());
+}
+
+function _rpgSell(key) {
+    if (!Meta.sellItem(meta, key).ok) return;
+    persistMeta();
+    UI.renderShop(meta, _rpgShopOpts());
 }
 
 function _refreshShopButton() {
@@ -913,6 +923,10 @@ function initEvents() {
     safeListener('shopBody', 'click', (e) => {
         const btn = e.target.closest('[data-shop-buy]');
         if (btn && !btn.disabled) _rpgBuyUpgrade(btn.dataset.shopBuy);
+        const sell = e.target.closest('[data-shop-sell]');
+        if (sell && !sell.disabled) _rpgSell(sell.dataset.shopSell);
+        const tab = e.target.closest('[data-shop-tab]');
+        if (tab) { gameState.rpg.shopTab = tab.dataset.shopTab; UI.renderShop(meta, _rpgShopOpts()); }
     });
 
     // --- 📖🎒🏆⚙️ Cabecera: bestiario, colección, logros y opciones ---

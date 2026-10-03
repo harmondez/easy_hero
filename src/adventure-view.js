@@ -1,8 +1,8 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.9.3';
-import { ART } from './data/art.js?v=1.9.3';
-import { monsterArt } from './art.js?v=1.9.3';
-import { creatureFor } from './data/creatures.js?v=1.9.3';
-import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.9.3';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.10.0';
+import { ART } from './data/art.js?v=1.10.0';
+import { monsterArt } from './art.js?v=1.10.0';
+import { creatureFor } from './data/creatures.js?v=1.10.0';
+import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.10.0';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo
@@ -28,11 +28,14 @@ const EXIT_EDGE = { x: 110, top: 70, bottom: 70 };   // margen (px de pantalla) 
 const zone = ZAFIAS;
 const st = {
     scene: null, sceneId: null, at: null, hero: { x: 0, y: 0, facing: 1 }, path: null, onArrive: null,
-    cam: { x: 0, y: 0, z: 2 }, dialogue: null, raf: 0, last: 0, fps: null,
+    cam: { x: 0, y: 0, z: 2 }, dialogue: null, menu: null, raf: 0, last: 0, fps: null,
     // Quien controla la aventura (main.js): salir, pelear, hablar, guardar la escena, qué se ve y qué está vencido
-    hooks: { onEnemy: null, onTalk: null, onPlace: null, onScene: null, isShown: () => true, isCleared: () => false }
+    hooks: { onEnemy: null, onVisit: null, onScene: null, isShown: () => true, isCleared: () => false }
 };
 let els = null;
+
+// El lienzo de la escena: su propio cuadro (`image`, `width`, `height` en la escena) o el mapa de la zona
+const canvas = (sc = st.scene) => (sc && sc.image ? { image: sc.image, w: sc.width, h: sc.height } : { image: zone.image, w: zone.width, h: zone.height });
 
 const reducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -99,8 +102,8 @@ function cameraTarget() {
         return Math.min(max - half, Math.max(half, v)); // y nunca fuera del mapa
     };
     return {
-        x: clampAxis(st.hero.x, b.x, b.x + b.w, halfW, zone.width),
-        y: clampAxis(st.hero.y - HERO_MAP_H / 2, b.y, b.y + b.h, halfH, zone.height),
+        x: clampAxis(st.hero.x, b.x, b.x + b.w, halfW, canvas().w),
+        y: clampAxis(st.hero.y - HERO_MAP_H / 2, b.y, b.y + b.h, halfH, canvas().h),
         z
     };
 }
@@ -160,7 +163,8 @@ function tick(now) {
     }
 
     const t = cameraTarget();
-    const k = reducedMotion() ? 1 : 1 - Math.pow(1 - CAMERA_EASE, dt * 60);
+    const k = reducedMotion() || st.jump ? 1 : 1 - Math.pow(1 - CAMERA_EASE, dt * 60);
+    st.jump = false;
     st.cam.x += (t.x - st.cam.x) * k;
     st.cam.y += (t.y - st.cam.y) * k;
     st.cam.z += (t.z - st.cam.z) * k;
@@ -226,7 +230,7 @@ function renderMarkers() {
         const cleared = p.kind === 'enemy' && st.hooks.isCleared(p);
         const seen = p.kind === 'poi' && !!(st.hooks.isSeen && st.hooks.isSeen(p));   // punto de interés ya mirado
         // NPC: azul si tiene misión (por dar o en marcha), gris si ya la cumpliste, amarillo si solo habla
-        const mark = p.kind === 'npc' ? (st.hooks.npcMark ? st.hooks.npcMark(p) : 'talk') : null;
+        const mark = p.kind === 'npc' || (p.kind === 'inn' && p.talk) ? (st.hooks.npcMark ? st.hooks.npcMark(p) : 'talk') : null;
         const icon = p.kind === 'exit' ? STOP_ICONS.exit : cleared ? '✓' : STOP_ICONS[p.kind] || '';
         const img = !cleared && STOP_IMAGES[p.kind];
         const iconHtml = img ? `<img class="adv-stop-img" src="${img}" alt="" draggable="false">` : icon;
@@ -249,15 +253,31 @@ function renderScene() {
 
 /** Entra en una escena y pone al héroe en una parada (por defecto, la de inicio de la escena). */
 function enterScene(id, atStop) {
+    const before = st.scene ? canvas().image : null;
     st.scene = zone.scenes[id];
     st.sceneId = id;
     els.viewport.dataset.scene = id;
+    // Si la escena tiene otro cuadro, se cambia el lienzo (imagen, tamaño del mundo y de la capa de caminos)
+    const cv = canvas();
+    if (cv.image !== before) {
+        const img = els.world.querySelector('img');
+        if (img.getAttribute('src') !== cv.image) img.src = cv.image;
+        els.world.style.width = `${cv.w}px`;
+        els.world.style.height = `${cv.h}px`;
+        els.paths.setAttribute('viewBox', `0 0 ${cv.w} ${cv.h}`);
+        st.jump = true;   // otro lienzo: la cámara no viaja, aparece ya encuadrada
+    }
     st.at = atStop && node(atStop) ? atStop : st.scene.startAt;
     const n = node(st.at);
     st.hero.x = n.x; st.hero.y = n.y;
     st.path = null;
     if (st.hooks.onScene) st.hooks.onScene(id);
     renderScene();
+}
+
+// Los cuadros de todas las escenas, cargados de antemano: al cambiar de escena no se ve el anterior ni un hueco
+function preloadCanvases() {
+    for (const src of new Set(Object.values(zone.scenes).map(sc => canvas(sc).image))) { const im = new Image(); im.src = src; _portraitCache.push(im); }
 }
 
 // --- Diálogo: «Siguiente» hasta el final, y listo ---
@@ -332,6 +352,40 @@ function closeDialogue() {
     els.dialogue.hidden = true;
 }
 
+// --- Menú de una parada: qué quieres hacer aquí («Comprar · Mejorar · Salir», «Hablar con Evelyn · Descansar») ---
+/**
+ * Abre el menú de una parada. menu: { title, text?, options: [{ id, label, note?, disabled? }] }; onPick(id) recibe la
+ * opción elegida (el menú ya está cerrado). Escape o la opción 'leave' lo cierran sin más.
+ */
+function openMenu(menu, onPick) {
+    if (!els) return;
+    st.menu = { onPick };
+    els.menu.innerHTML = `
+        <div class="adv-menu-box" role="dialog" aria-label="${esc(menu.title)}">
+            <div class="adv-menu-title">${esc(menu.title)}</div>
+            ${menu.text ? `<p class="adv-menu-text">${esc(menu.text)}</p>` : ''}
+            <div class="adv-menu-options">${menu.options.map(o => `
+                <button type="button" class="adv-menu-option" data-menu="${esc(o.id)}"${o.disabled ? ' disabled' : ''}>
+                    <span>${esc(o.label)}</span>${o.note ? `<small>${o.coin ? '<img src="img/ui/moneda.webp" alt="" draggable="false">' : ''}${esc(o.note)}</small>` : ''}
+                </button>`).join('')}</div>
+        </div>`;
+    els.menu.hidden = false;
+    const first = els.menu.querySelector('.adv-menu-option:not([disabled])');
+    if (first) first.focus({ preventScroll: true });
+}
+
+function closeMenu() {
+    st.menu = null;
+    if (els) { els.menu.hidden = true; els.menu.innerHTML = ''; }
+}
+
+function pickMenu(id) {
+    if (!st.menu) return;
+    const pick = st.menu.onPick;
+    closeMenu();
+    if (id !== 'leave' && pick) pick(id);
+}
+
 // Todos los retratos, cargados y decodificados de antemano: al hablar con alguien su cara sale al instante
 const _portraitCache = [];
 function preloadPortraits() {
@@ -349,23 +403,14 @@ function arriveAt(p) {
     if (p.kind === 'exit') { enterScene(p.to, p.arriveAt); return; }
     if (p.kind === 'enemy' && st.hooks.isCleared(p)) return;   // ya vencido: solo se pasa por aquí
     // Lugares de la aldea (posada, tienda) y vecinos: lo que pasa lo decide quien controla la aventura
-    if (['inn', 'shop'].includes(p.kind) && st.hooks.onPlace) {
-        const t = st.hooks.onPlace(p);
-        if (t) openDialogue(t.dialogue, t.onDone);
-        return;
-    }
-    if ((p.kind === 'npc' || p.kind === 'poi') && st.hooks.onTalk) {   // un punto de interés se mira como se habla
-        const t = st.hooks.onTalk(p);
-        if (t) openDialogue(t.dialogue, t.onDone);
-        return;
-    }
+    if (['inn', 'shop', 'npc', 'poi'].includes(p.kind) && st.hooks.onVisit) { st.hooks.onVisit(p); return; }
     const fight = p.kind === 'enemy' && st.hooks.onEnemy ? () => st.hooks.onEnemy(p) : null;
     if (p.dialogue) openDialogue(p.dialogue, fight);
     else if (fight) fight();
 }
 
 function onStopClick(id) {
-    if (st.dialogue || st.path) return;
+    if (st.dialogue || st.menu || st.path) return;
     const r = route(st.at, id);
     if (!r) return;
     let points = r.points;
@@ -404,6 +449,7 @@ function bind() {
         hero: root.querySelector('.adv-hero'),
         markers: root.querySelector('.adv-markers'),
         dialogue: root.querySelector('.adv-dialogue'),
+        menu: root.querySelector('.adv-menu'),
         dialogueWho: root.querySelector('.adv-dialogue-who'),
         dialogueText: root.querySelector('.adv-dialogue-text'),
         dialogueNext: root.querySelector('.adv-dialogue-next'),
@@ -412,13 +458,10 @@ function bind() {
         fps: root.querySelector('.adv-fps')
     };
     preloadPortraits();
-    els.world.querySelector('img').src = zone.image;
-    els.world.style.width = `${zone.width}px`;
-    els.world.style.height = `${zone.height}px`;
+    preloadCanvases();
     // La capa de los caminos: un SVG del tamaño del mapa, debajo de los personajes
     els.paths = document.createElementNS(SVG_NS, 'svg');
     els.paths.setAttribute('class', 'adv-paths');
-    els.paths.setAttribute('viewBox', `0 0 ${zone.width} ${zone.height}`);
     els.paths.setAttribute('aria-hidden', 'true');
     els.world.insertBefore(els.paths, els.hero);
     els.hero.style.height = `${HERO_MAP_H}px`;
@@ -429,6 +472,10 @@ function bind() {
     });
     // Pulsar en cualquier parte del pergamino (o su botón, que burbujea hasta aquí) pasa a la siguiente línea
     els.dialogue.addEventListener('click', advanceDialogue);
+    els.menu.addEventListener('click', e => {
+        const b = e.target.closest('[data-menu]');
+        if (b && !b.disabled) pickMenu(b.dataset.menu);
+    });
     root.querySelector('.adv-inventory').addEventListener('click', () => {
         root.querySelector('.adv-inventory').classList.remove('is-new');
         if (st.hooks.onInventory) st.hooks.onInventory();
@@ -438,6 +485,7 @@ function bind() {
         if (st.hooks.onQuests) st.hooks.onQuests();
     });
     document.addEventListener('keydown', e => {
+        if (st.raf && st.menu && e.key === 'Escape') { closeMenu(); return; }
         if (!st.raf || !st.dialogue) return;
         if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); advanceDialogue(); }
         if (e.key === 'Escape') closeDialogue();
@@ -446,7 +494,7 @@ function bind() {
 }
 
 /**
- * Abre el Modo Aventura. hooks: { onEnemy(point), onTalk(point) → { dialogue, onDone }, onPlace(point),
+ * Abre el Modo Aventura. hooks: { onEnemy(point), onVisit(point) (vecinos, lugares y puntos de interés),
  * onScene(id), isShown(point), isCleared(point) }.
  * scene: la escena guardada (si no hay, la de inicio de la zona). Si ya estaba abierta, sigue donde estaba.
  */
@@ -454,6 +502,7 @@ export function open(hooks = {}, scene = null) {
     if (!els && !bind()) return;
     st.hooks = { ...st.hooks, ...hooks };
     closeDialogue();
+    closeMenu();
     if (!st.scene) enterScene(zone.scenes[scene] ? scene : zone.startScene);
     else renderScene();
     const debug = /[?&]debug\b/.test(location.search);
@@ -549,8 +598,15 @@ export function setHud(h) {
     if (q) q.textContent = h.quest || '';
 }
 
+/** Abre un diálogo de la zona y, al terminar, llama a onDone (lo usa el controlador para encadenar: hablar y luego el menú). */
+export function say(key, onDone = null) { openDialogue(key, onDone); }
+
+/** El menú de una parada (ver openMenu). */
+export function showMenu(menu, onPick) { openMenu(menu, onPick); }
+
 export function close() {
     cancelAnimationFrame(st.raf);
     st.raf = 0;
     closeDialogue();
+    closeMenu();
 }

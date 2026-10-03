@@ -1,5 +1,6 @@
 // =============================================
-// 🧪 Taller de iconos — deja listos para el juego los PNG de img/items/ e img/icons/ (incluida img/icons/effects/)
+// 🧪 Taller de iconos — deja listos para el juego los PNG de img/items/ (y img/items/drop/<enemigo>/) e img/icons/
+// (incluidas img/icons/buttons-ui/ e img/icons/effects/)
 // Uso: npm run icons
 //
 // También las piezas de equipo de img/weapons/weapon_<tipo>-<Nombre>.png (la hoja sola, sin fondo): salen más grandes
@@ -20,7 +21,13 @@ import { processAllPortraits } from './portraits.mjs';
 
 sharp.cache(false);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCES = ['img/items', 'img/icons', 'img/icons/effects'];
+// img/items/drop/<enemigo>/ guarda lo que suelta cada enemigo: se leen todas sus carpetas
+const DROP_DIR = 'img/items/drop';
+const dropDirs = fs.existsSync(path.join(root, DROP_DIR))
+    ? fs.readdirSync(path.join(root, DROP_DIR), { withFileTypes: true }).filter(d => d.isDirectory()).map(d => `${DROP_DIR}/${d.name}`).sort() : [];
+const SOURCES = ['img/items', ...dropDirs, 'img/icons', 'img/icons/buttons-ui', 'img/icons/effects'];
+// En img/icons/buttons-ui conviven los iconos sueltos con la hoja de marcos y las barras, que van aparte (más abajo)
+const NO_ICONO = /^(ui_\d+|ranura_desbloqueada|ranura_bloqueada|bar-hp|bar-sp|hp-sp-bar)$/i;
 const OUT = 'img/ui';
 const MAX = 128;
 
@@ -30,6 +37,11 @@ export const NOMBRES = {
     pocion_vida_t: 'pocion-vida', pocion_mana_t: 'pocion-mana', pocion_veneno_t: 'pocion-veneno',
     comida_vida_2_t: 'comida', upgrade_mejora_arma: 'mejora-arma', ingrediente_pocion_vida_t: 'ingrediente-hierba',
     misc_bolsa_oro_t: 'bolsa-oro', misc_gold_coin_t: 'moneda',
+    // Materiales que sueltan los enemigos (src/data/loot.js)
+    'item-poco comun-trozo de armadura oxidada': 'material-armadura-oxidada', 'item-poco comun-oreja de goblin': 'material-oreja-goblin',
+    'item-raro-collar goblin': 'material-collar-goblin', 'item-epic-diente de lobo': 'material-diente-lobo',
+    'item-poco comun-piel de lobo': 'material-piel-lobo', 'item-poco comun-garra de lobo': 'material-garra-lobo',
+    'item-epic-slime condensado': 'material-slime-condensado',
     // Interfaz
     icon_mochila_inventory_t: 'inventario', icon_book_spell_t: 'libro-hechizos', icon_map_t: 'mapa',
     // Ranuras de equipo
@@ -51,7 +63,7 @@ export const NOMBRES = {
     forja_filo: 'forja-filo', forja_estudio: 'forja-estudio', forja_herencia: 'forja-herencia', forja_linterna: 'forja-linterna',
     forja_suerte: 'forja-suerte'
 };
-const idFor = base => NOMBRES[base] || base.replace(/_t$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const idFor = base => NOMBRES[base] || NOMBRES[base.trim()] || base.replace(/_t$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const manifestFile = path.join(root, 'src', 'data', 'art.js');
 const art = await readManifest(manifestFile);
@@ -61,7 +73,7 @@ const done = [];
 for (const dir of SOURCES) {
     const abs = path.join(root, dir);
     if (!fs.existsSync(abs)) continue;
-    for (const file of fs.readdirSync(abs).filter(f => /\.png$/i.test(f)).sort()) {
+    for (const file of fs.readdirSync(abs).filter(f => /\.png$/i.test(f) && !NO_ICONO.test(f.replace(/\.png$/i, ''))).sort()) {
         const id = idFor(file.replace(/\.png$/i, ''));
         const outRel = `${OUT}/${id}.webp`;
         const trimmed = await sharp(path.join(abs, file)).trim({ threshold: 1 }).toBuffer();

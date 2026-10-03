@@ -759,3 +759,20 @@ cofres solo dan objetos · legendarios máx. 1 igual, sin límite total · equip
   pasa de porcentaje a oro fijo por combate (`goldFlat`). Poción 20, pan 5; `sold: false` en el tónico (no se vende, se usa).
 - `playRpgCombatFx`: los efectos de un `effect-on` se esconden (`.is-pending`) al dibujar y se revelan en el impacto del golpe que
   los trae (`lastImpact` por objetivo); el aturdimiento, sin texto flotante. Prueba con animaciones reales en effects.test.
+
+## 2026-10-03 · Botín, rarezas, encuentros raros y la aldea rehecha (1.10.0)
+- **Rarezas oficiales** en `rarities.js`: Común gris, Poco común verde, Raro azul, Épico lila, Legendario amarillo.
+- **Botín** (`src/data/loot.js`, `src/loot.js`): goblins y lobos normales, 33 % de soltar algo; tablas por pesos. Los materiales
+  se guardan en `meta.materials`. Una poción que no cabe se queda en el suelo. Feronius suelta siempre su colmillo.
+- **Encuentros raros** (`src/data/rares.js`): Lobo Negro y Goblin Pícaro (10 %, ×2 vida y ataque, botín seguro). Solo en los
+  goblins sin diálogo. La tirada se guarda por parada hasta dormir (huir no la repite).
+- **La aldea**: cuadro propio (`scene.image`), hecho con la fábrica (tipo `scene`, 2 intentos de 5). Evelyn (antes Maela), Bram
+  con menú Comprar/Mejorar/Salir, Amelie y su botica, posada a 5 monedas (gratis tras Grask). **Las casas del camino**: Odo,
+  Hilda y Nell (1 intento para el cuadro, 1 por retrato). 7 imágenes de las 15 del cupón.
+- **Tiendas como datos** (`src/data/shops.js`): cada una vende lo suyo y compra lo mismo al 75 %. El cristal de mejora es un
+  objeto (100 de oro) que Bram gasta al mejorar. Las mejoras permanentes pasan a ser las lecciones de Odo.
+- **Misiones**: fuera «Dientes de lobo»; entran el colmillo de Feronius (Bram), las plantas de Amelie (tres puntos de interés,
+  con `unless`), los seis goblins de Odo y los cuatro lobos de Hilda. Pasos de misión `item: { material, n }`.
+- **Trazador de caminos**: se quedaba en bucle (comparaba un doble con un float de 32 bits y «mejoraba» siempre); arreglado con
+  `Math.fround`. Ahora traza también las escenas con cuadro propio.
+- Decisiones mías, a confirmar por el director: están en planning.md («Dudas de la aldea nueva»).

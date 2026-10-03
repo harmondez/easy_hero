@@ -38,7 +38,7 @@ await sleep(600);
 assert('Abre el diálogo pedido sin introducción', !(await page.$eval('#introView', el => !el.hidden)) && await page.$eval('.adv-dialogue', el => !el.hidden)
     && /Grask/.test(await page.$eval('.adv-dialogue-text', el => el.textContent)));
 let left = await portrait('left'), right = await portrait('right');
-assert('Maela habla a la izquierda, con su retrato; el héroe escucha a la derecha, en penumbra', left.shown && /tabernera-maela/.test(left.src) && left.speaking
+assert('Evelyn habla a la izquierda, con su retrato; el héroe escucha a la derecha, en penumbra', left.shown && /tabernera-maela/.test(left.src) && left.speaking
     && right.shown && /hero/.test(right.src) && !right.speaking);
 await page.click('.adv-dialogue-next');
 await sleep(150);
@@ -83,18 +83,22 @@ await page.evaluate(() => {
 });
 const shownAdv = sel => page.$eval(sel, el => !el.hidden).catch(() => false);
 const talk = async id => {
-    for (let i = 0; i < 25 && !(await shownAdv('.adv-dialogue')); i++) { await page.click(`.adv-stop[data-point="${id}"]`, { force: true }); await sleep(300); }
+    for (let i = 0; i < 25 && !(await shownAdv('.adv-dialogue')); i++) {
+        if (await shownAdv('.adv-menu')) await page.click('.adv-menu [data-menu="talk"]');   // la posada pregunta antes qué quieres
+        else await page.click(`.adv-stop[data-point="${id}"]`, { force: true });
+        await sleep(300);
+    }
     for (let i = 0; i < 12 && await shownAdv('.adv-dialogue'); i++) { await page.click('.adv-dialogue-next'); await sleep(90); }
 };
-await talk('posadera');   // Maela
+await talk('posada');   // Evelyn
 await page.click('.adv-stop[data-point="al-bosque"]', { force: true });
 await sleep(900);
 for (let i = 0; i < 25 && !(await shownAdv('.adv-dialogue')); i++) { await page.click('.adv-stop[data-point="goblin-1"]', { force: true }); await sleep(300); }
 await sleep(400);
 const caras = await page.evaluate(() => window.__caras);
 // Un retrato a la vista con su imagen sin cargar = el navegador sigue pintando la cara anterior
-const wrong = caras.filter(c => !c.ready || (/Maela/.test(c.text) && !/maela/.test(c.src)) || (/Goblin/.test(c.text) && !/goblin/.test(c.src)));
-assert(`Con Maela solo se ve a Maela y con el goblin solo el goblin (${caras.length} fotogramas mirados)`, caras.length > 10 && wrong.length === 0);
+const wrong = caras.filter(c => !c.ready || (/Evelyn/.test(c.text) && !/maela/.test(c.src)) || (/Goblin/.test(c.text) && !/goblin/.test(c.src)));
+assert(`Con Evelyn solo se ve a Evelyn y con el goblin solo el goblin (${caras.length} fotogramas mirados)`, caras.length > 10 && wrong.length === 0);
 if (wrong.length) console.log(wrong.slice(0, 3));
 
 assert('Sin errores de página', errors.length === 0);

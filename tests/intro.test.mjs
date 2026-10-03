@@ -68,15 +68,17 @@ assert('Al terminar aparece en la aventura, en la aldea de Zafias', !(await show
     && (await page.$eval('.adv-viewport', el => el.dataset.scene)) === 'aldea');
 let m = await meta();
 assert('Se recuerda el nombre (sin espacios de más) y que ya vio la introducción', m.heroName === 'Aldric' && m.introSeen === true);
-await page.click('.adv-stop[data-point="posadera"]', { force: true });
+await page.click('.adv-stop[data-point="posada"]', { force: true });
+await sleep(250);
+await page.click('.adv-menu [data-menu="talk"]');
 await sleep(250);
 const lines = [];
 for (let i = 0; i < 14 && await shown('.adv-dialogue'); i++) {
     lines.push(`${await page.$eval('.adv-dialogue-who', el => el.textContent)}: ${await page.$eval('.adv-dialogue-text', el => el.textContent)}`);
     await page.click('.adv-dialogue-next'); await sleep(60);
 }
-assert('Maela le llama por su nombre y él cuenta que despertó en las ruinas',
-    lines.some(l => /^Aldric: .*ruinas/.test(l)) && lines.some(l => /Pues, Aldric/.test(l)) && !lines.some(l => /\{heroe\}/.test(l)));
+assert('Evelyn le llama por su nombre y él cuenta que despertó en las ruinas',
+    lines.some(l => /^Aldric: .*ruinas/.test(l)) && lines.some(l => /^Evelyn.*clara, Aldric/.test(l)) && !lines.some(l => /\{heroe\}/.test(l)));
 
 console.log('\n🔁 Al volver: directo a la aventura');
 await page.reload({ waitUntil: 'load' });
