@@ -8,7 +8,8 @@ import { RPG_BALANCE } from '../src/data/balance.js';
 import * as Meta from '../src/meta.js';
 import { createRng } from '../src/rng.js';
 import { RARES, rollRare, applyRare } from '../src/rares.js';
-import { createRpgCreature, createRpgMonster } from '../src/engine.js';
+import { createRpgCreature, createRpgMonster, createRpgHero, refreshPrimaryStats, tuneEnemy, rpgHeroPh } from '../src/engine.js';
+import { SHOPS } from '../src/data/shops.js';
 import { monsterArt } from '../src/art.js';
 
 let passed = 0, failed = 0;
@@ -116,6 +117,39 @@ assert('en Zafias: el lobo puede ser raro; de los goblins, solo los que no habla
     let n = 0;
     for (let i = 0; i < N; i++) if (rollRare('goblin', rng)) n++;
     assert('50 000 encuentros: el raro sale 1 de cada 10', Math.abs(n / N - 0.1) < 0.006, String(n / N));
+}
+
+// --- Equilibrio de la aventura (oct 2026): vender materiales, la poción que sobra, niveles que se notan y jefes con vida ---
+{
+    const meta = Meta.loadMeta(null);
+    Meta.grantDrop(meta, { kind: 'material', id: 'diente-lobo' });
+    Meta.grantDrop(meta, { kind: 'material', id: 'colmillo-feronius' });
+    const before = meta.gold;
+    assert('Bram compra los materiales por su valor entero (un diente de lobo, 25)', SHOPS.forja.buys.includes('material:*')
+        && Meta.sellInfo(meta, 'material:diente-lobo').value === MATERIALS['diente-lobo'].value && Meta.sellItem(meta, 'material:diente-lobo').ok
+        && meta.gold === before + 25 && Meta.materialCount(meta, 'diente-lobo') === 0 && !Meta.sellItem(meta, 'material:diente-lobo').ok);
+    assert('lo que pide una misión no se vende (el colmillo de Feronius, las plantas)', !Meta.sellItem(meta, 'material:colmillo-feronius').ok
+        && Meta.materialCount(meta, 'colmillo-feronius') === 1 && MATERIALS['planta-medicinal'].value == null);
+    assert('la poción que no cabe se cambia por lo que vale vendida (15 y 18); un material, por nada',
+        Meta.spareDropGold({ kind: 'potion' }) === 15 && Meta.spareDropGold({ kind: 'manaPotion' }) === 18 && Meta.spareDropGold({ kind: 'material', id: 'piel-lobo' }) === 0);
+
+    const hero = createRpgHero();
+    const base = { atq: hero.atq, ph: rpgHeroPh(hero), mp: hero.maxMp };
+    hero.primary.str += 2; hero.primary.int += 2;
+    refreshPrimaryStats(hero);
+    assert('un nivel entero a Fuerza (2 puntos) es +1 de ATK; 2 puntos a Inteligencia, +2 de PH y +4 de maná',
+        hero.atq === base.atq + 1 && rpgHeroPh(hero) === base.ph + 2 && hero.maxMp === base.mp + 4);
+    refreshPrimaryStats(hero);
+    assert('…y recalcular no lo suma dos veces', hero.atq === base.atq + 1 && rpgHeroPh(hero) === base.ph + 2 && hero.maxMp === base.mp + 4);
+
+    const fire = base.ph;
+    const grask = stops.find(p => p.id === 'grask'), feronius = createRpgCreature(CREATURES.feronius);
+    const g = tuneEnemy(createRpgMonster(grask.enemy.type, grask.enemy.floor, 0), grask.enemy);
+    assert('los jefes ya no caen con dos Bolas de fuego: Grask aguanta 6 y Feronius 11', g.maxHp >= fire * 6 && feronius.maxHp >= fire * 11 && feronius.maxHp > g.maxHp && feronius.atq > g.atq);
+    const rare = applyRare(createRpgCreature(CREATURES['lobo-de-zafias']), 'lobo');
+    assert('un encuentro raro paga más oro y más experiencia', rare.goldMul > 1 && rare.xpMul > 1);
+    assert('en la aventura un enemigo normal da 5 de oro, y los jefes mucho más', RPG_BALANCE.adventure.gold.monster === 5
+        && RPG_BALANCE.adventure.gold.subboss >= 25 && RPG_BALANCE.adventure.gold.boss > RPG_BALANCE.adventure.gold.subboss);
 }
 
 console.log(`\nRESULTS: ${passed} passed, ${failed} failed`);

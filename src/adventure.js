@@ -2,22 +2,23 @@
 // 🧭 Modo Aventura (controlador): Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
 // Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
 // =============================================
-import * as UI from './ui.js?v=1.11.0';
-import * as Engine from './engine.js?v=1.11.0';
-import * as Meta from './meta.js?v=1.11.0';
-import * as Adventure from './adventure-view.js?v=1.11.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.11.0';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.11.0';
-import { creatureFor } from './data/creatures.js?v=1.11.0';
-import { QUESTS } from './data/quests.js?v=1.11.0';
-import { GEAR, STARTER_GEAR, WEAPON_UPGRADE, SLOT_ORDER, SLOT_NAMES, SLOT_ICONS, ELEMENTS } from './data/gear.js?v=1.11.0';
-import * as Stats from './stats.js?v=1.11.0';
-import { ELIXIRS, FOOD } from './data/effects.js?v=1.11.0';
-import { MATERIALS, rollDrop } from './loot.js?v=1.11.0';
-import { rollRare, applyRare } from './rares.js?v=1.11.0';
-import { ART } from './data/art.js?v=1.11.0';
-import * as Items from './items.js?v=1.11.0';
-import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.11.0';
+import * as UI from './ui.js?v=1.12.0';
+import * as Engine from './engine.js?v=1.12.0';
+import * as Meta from './meta.js?v=1.12.0';
+import * as Adventure from './adventure-view.js?v=1.12.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.12.0';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.12.0';
+import { creatureFor } from './data/creatures.js?v=1.12.0';
+import { QUESTS } from './data/quests.js?v=1.12.0';
+import { GEAR, STARTER_GEAR, STARTER_ARMOR, WEAPON_UPGRADE, SLOT_ORDER, SLOT_NAMES, SLOT_ICONS, ELEMENTS } from './data/gear.js?v=1.12.0';
+import { HERO_SPRITES } from './data/hero-sprites.js?v=1.12.0';
+import * as Stats from './stats.js?v=1.12.0';
+import { ELIXIRS, FOOD } from './data/effects.js?v=1.12.0';
+import { MATERIALS, rollDrop } from './loot.js?v=1.12.0';
+import { rollRare, applyRare } from './rares.js?v=1.12.0';
+import { ART } from './data/art.js?v=1.12.0';
+import * as Items from './items.js?v=1.12.0';
+import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.12.0';
 
 // Lo que la aventura necesita del resto del juego (main.js se lo da al arrancar): el almacenamiento, el progreso
 // permanente y algunas piezas del descenso (el héroe base, las recompensas, La Forja, bajar a la mazmorra).
@@ -51,8 +52,31 @@ function _advSave() {
 }
 
 // --- 🎒 El equipo de la aventura (src/data/gear.js): permanente y aparte del botín del descenso ---
-const _advOwned = () => (ctx.meta.advGear && ctx.meta.advGear.length ? ctx.meta.advGear : [STARTER_GEAR]);
+// (la espada y la armadura con las que despiertas son tuyas siempre; primero las armas y luego las armaduras)
+const _advOwned = () => {
+    const own = ctx.meta.advGear && ctx.meta.advGear.length ? ctx.meta.advGear : [STARTER_GEAR];
+    const all = own.includes(STARTER_ARMOR) ? own : [...own, STARTER_ARMOR];
+    return [...all.filter(id => GEAR[id] && GEAR[id].slot === 'weapon'), ...all.filter(id => GEAR[id] && GEAR[id].slot !== 'weapon')];
+};
 const _advWeaponId = () => (GEAR[ctx.meta.advWeapon] && _advOwned().includes(ctx.meta.advWeapon) ? ctx.meta.advWeapon : STARTER_GEAR);
+const _advArmorId = () => (GEAR[ctx.meta.advArmor] && GEAR[ctx.meta.advArmor].slot === 'armor' && _advOwned().includes(ctx.meta.advArmor) ? ctx.meta.advArmor : STARTER_ARMOR);
+const _advEquipped = id => id === _advWeaponId() || id === _advArmorId();
+
+/**
+ * El aspecto del héroe (src/hero-sprite.js): la armadura que lleva y la imagen de su espada. `swap` = un objeto que se
+ * prueba encima de lo equipado (la vista previa del inventario).
+ */
+function _advLook(swap = null) {
+    const weapon = swap && GEAR[swap].slot === 'weapon' ? swap : _advWeaponId();
+    const armor = swap && GEAR[swap].slot === 'armor' ? swap : _advArmorId();
+    return { armor: GEAR[armor].look, weapon: (ART.icons[`objeto-${weapon}`] || {}).src || null, weaponId: weapon };
+}
+/** Lo que da una pieza, en corto: «ATK 3» o «Vida +10». */
+const _advGearStat = id => (GEAR[id].slot === 'armor' ? `Vida +${GEAR[id].hp || 0}` : `ATK ${_advGearAtq(id)}`);
+/** La imagen de una pieza suelta: la espada, o el héroe de pie con esa armadura. */
+const _advGearImage = id => (GEAR[id].slot === 'armor'
+    ? (HERO_SPRITES.armors[GEAR[id].look] ? { src: `${HERO_SPRITES.armors[GEAR[id].look].dir}/${HERO_SPRITES.idle.anim}_${HERO_SPRITES.idle.frame + 1}.webp` } : null)
+    : ART.icons[`objeto-${id}`] || null);
 
 /** El ATK de un arma de la aventura, con sus cristales de mejora. */
 const _advGearAtq = id => GEAR[id].atq + Meta.weaponUpgradeLevel(ctx.meta, id) * WEAPON_UPGRADE.atq;
@@ -65,7 +89,6 @@ function _advWeaponItem(id) {
 }
 
 /** El dibujo del héroe según su arma (null = el de siempre). */
-const _advHeroSprite = () => { const g = GEAR[_advWeaponId()]; return (g.sprite && ART.sprites[g.sprite]) || null; };
 
 function _advGiveItem(id) {
     if (!GEAR[id]) return;
@@ -76,10 +99,12 @@ function _advGiveItem(id) {
 
 function _advEquip(id) {
     if (!GEAR[id] || !_advOwned().includes(id)) return;
-    ctx.meta.advWeapon = id;
+    if (GEAR[id].slot === 'armor') ctx.meta.advArmor = id; else ctx.meta.advWeapon = id;
     ctx.persistMeta();
     adv.hero = _advHero();
-    Adventure.setHeroSprite(_advHeroSprite());
+    adv.state.hp = adv.hero.hp;   // otra armadura cambia la vida máxima
+    _advSave();
+    Adventure.setHeroLook(_advLook());
     _advRefreshHud();
     _advOpenInventory(id);
 }
@@ -101,7 +126,7 @@ function _advCarried() {
         { id: 'cristal', name: WEAPON_UPGRADE.name, img: WEAPON_UPGRADE.img, count: Meta.crystalCount(m), type: 'Objeto',
             desc: `Llévaselo a Bram: con un cristal mejora una espada (+${WEAPON_UPGRADE.atq} de ATK para siempre, hasta +${WEAPON_UPGRADE.max}).` },
         ...Object.entries(MATERIALS).map(([id, mt]) => ({ id: `material:${id}`, name: mt.name, img: mt.img, rarity: mt.rarity,
-            count: Meta.materialCount(m, id), desc: mt.desc, type: 'Material' }))
+            count: Meta.materialCount(m, id), desc: mt.value != null ? `${mt.desc} Bram te da ${mt.value} 🪙 por cada uno.` : mt.desc, type: 'Material' }))
     ];
     return out.filter(i => i.count > 0);
 }
@@ -124,9 +149,9 @@ function _advOpenInventory(selected) {
     UI.openPanel();
     UI.renderInventoryPanel({
         gear: _advOwned().map(id => ({ id, ...GEAR[id], atq: _advGearAtq(id), upgrades: Meta.weaponUpgradeLevel(ctx.meta, id),
-            effects: UI.gearEffectsText(GEAR[id]), equipped: id === _advWeaponId(),
-            image: ART.icons[`objeto-${id}`] || null,
-            preview: (GEAR[id].sprite && ART.sprites[GEAR[id].sprite]) || null })),
+            stat: _advGearStat(id), slotName: SLOT_NAMES[GEAR[id].slot], look: _advLook(id),
+            effects: UI.gearEffectsText(GEAR[id]), equipped: _advEquipped(id),
+            image: _advGearImage(id) })),
         items: _advCarried(),
         selected: selected || _advWeaponId(),
         gold: ctx.meta.gold,
@@ -143,13 +168,13 @@ function _advOpenEquip(selected) {
     const m = ctx.meta;
     const wid = _advWeaponId();
     const w = GEAR[wid];
-    // Hoy solo existe el arma: las otras siete ranuras salen vacías hasta que haya armaduras, cascos…
-    const equipped = { weapon: { id: wid, name: w.name, rarity: w.rarity, element: (ELEMENTS[w.element] || ELEMENTS.neutro).name, desc: w.desc,
-        atq: _advGearAtq(wid), upgrades: Meta.weaponUpgradeLevel(m, wid), effects: UI.gearEffectsText(w),
-        image: (ART.icons[`objeto-${wid}`] || {}).src || null } };
+    const piece = id => ({ id, name: GEAR[id].name, rarity: GEAR[id].rarity, element: (ELEMENTS[GEAR[id].element] || ELEMENTS.neutro).name, desc: GEAR[id].desc,
+        stat: _advGearStat(id), upgrades: Meta.weaponUpgradeLevel(m, id), effects: UI.gearEffectsText(GEAR[id]), image: (_advGearImage(id) || {}).src || null });
+    // Hoy existen el arma y la armadura: las otras seis ranuras salen vacías hasta que haya cascos, botas…
+    const equipped = { weapon: piece(wid), armor: piece(_advArmorId()) };
     UI.openPanel();
     UI.renderEquipPanel({
-        name: m.heroName || 'Héroe', figure: (ART.portraits['hero-cuerpo'] || ART.portraits.hero || {}).src || null,
+        name: m.heroName || 'Héroe', look: _advLook(),
         level: m.charLevel, xp: m.xp, xpNext: Meta.xpToNext(m.charLevel), points: m.statPoints || 0,
         slots: SLOT_ORDER.map(slot => ({ slot, label: SLOT_NAMES[slot], icon: SLOT_ICONS[slot], item: equipped[slot] || null })),
         selected: selected || 'weapon',
@@ -159,7 +184,7 @@ function _advOpenEquip(selected) {
             { id: 'hp', label: 'Vida', img: 'vida', value: `${h.hp}/${h.maxHp}`, title: 'Vida: si llega a 0, caes' },
             { id: 'mp', label: 'Maná', img: 'mana', value: `${h.mp}/${h.maxMp}`, title: 'Maná: lo gastan la Bola de fuego y el Grito de guerra' },
             { id: 'en', label: 'Energía', img: 'rayo', value: `${h.energy || 0}/${h.maxEnergy}`, title: 'Energía: se gana peleando y la gasta el Golpe poderoso' },
-            { id: 'crit', label: 'Crítico', img: 'forja-filo', value: _pct(h.critChance || 0), title: `Probabilidad de golpe crítico (×${h.critMult || 1.5} de daño)` },
+            { id: 'crit', label: 'Crítico', img: 'forja-filo', value: _pct(h.critChance || 0), title: `Probabilidad de golpe crítico (×${h.critMult || 2} de daño)` },
             { id: 'dodge', label: 'Esquiva', img: 'agilidad', value: _pct(h.dodgeChance || 0), title: 'Probabilidad de esquivar un golpe' },
             { id: 'pres', label: 'Res. física', img: 'defensa', value: _pct(h.physResist || 0), title: 'Parte del daño físico que no recibes' },
             { id: 'eres', label: 'Res. elem.', img: 'hielo', value: _pct(h.elemResist || 0), title: 'Parte del daño elemental que no recibes' }
@@ -185,7 +210,10 @@ function _advHero() {
         Items.equipItem(hero, _advWeaponItem(_advWeaponId()));
         Engine.refreshPrimaryStats(hero);
     }
-    hero.sprite = _advHeroSprite();
+    // La armadura: una sola pieza, da vida máxima
+    const armor = GEAR[_advArmorId()];
+    if (armor.hp) { hero.maxHp += armor.hp; hero.hp += armor.hp; }
+    hero.look = _advLook();   // cómo se le ve: en el mapa, en el combate y en el inventario
     // Los efectos de estado del arma (src/data/gear.js): al golpear y al empezar cada combate
     const g = GEAR[_advWeaponId()];
     hero.gearEffects = { onHit: g.onHit || [], onStart: g.onStart || [] };
@@ -302,7 +330,7 @@ function _advOpenShop(shopId) {
 function _advOpenUpgrade() {
     UI.openPanel();
     UI.renderUpgradePanel({
-        weapons: _advOwned().map(id => ({ id, name: GEAR[id].name, atq: _advGearAtq(id), level: Meta.weaponUpgradeLevel(ctx.meta, id),
+        weapons: _advOwned().filter(id => GEAR[id].slot === 'weapon').map(id => ({ id, name: GEAR[id].name, atq: _advGearAtq(id), level: Meta.weaponUpgradeLevel(ctx.meta, id),
             image: (ART.icons[`objeto-${id}`] || {}).src || null, equipped: id === _advWeaponId(), can: Meta.canUpgradeWeapon(ctx.meta, id) })),
         crystals: Meta.crystalCount(ctx.meta), max: WEAPON_UPGRADE.max,
         onUpgrade: id => {
@@ -389,7 +417,7 @@ export function open() {
         onInventory: () => _advOpenInventory(),
         onEquip: () => _advOpenEquip()
     }, adv.state.scene);
-    Adventure.setHeroSprite(_advHeroSprite());
+    Adventure.setHeroLook(_advLook());
     _advRefreshHud();
 }
 
@@ -407,12 +435,18 @@ function _advStartCombat(p) {
     if (!creature) { m.name = p.name; m.baseName = p.sprite || p.name; m.icon = '👺'; }
     // Reglas propias de la parada (p. ej. los goblins de Zafias envenenan): se suman a las de su criatura
     if (def.rules) m.rules = { ...(m.rules || {}), ...def.rules };
+    // Lo que da al caer en la aventura (y la vida y el ataque que la parada escriba a mano)
+    if (m.gold == null) m.gold = (RPG_BALANCE.adventure.gold[m.type] ?? RPG_BALANCE.adventure.gold.monster);
+    if (!creature) Engine.tuneEnemy(m, def);
     // Encuentro raro (src/data/rares.js): se sortea la primera vez que te lo cruzas y se queda hasta que duermes
     const rareId = def.rare || (creature && creature.rare);
     if (rareId) {
         adv.state.rare = adv.state.rare || {};
         if (!(p.id in adv.state.rare)) {
-            adv.state.rare[p.id] = rollRare(rareId, (typeof window !== 'undefined' && window.__rareRng) || Math.random);
+            // En las pruebas automáticas no salen raros (si no, una de cada diez veces el lobo que se espera es otro),
+            // salvo que la prueba fije la tirada con window.__rareRng
+            const auto = typeof navigator !== 'undefined' && navigator.webdriver;
+            adv.state.rare[p.id] = rollRare(rareId, (typeof window !== 'undefined' && window.__rareRng) || (auto ? () => 1 : Math.random));
             _advSave();
         }
         if (adv.state.rare[p.id]) applyRare(m, rareId);
@@ -466,6 +500,9 @@ function _advFinishCombat() {
         const drop = rollDrop((adv.point.enemy && adv.point.enemy.drops) || (creature && creature.drops),
             (typeof window !== 'undefined' && window.__lootRng) || Math.random, { always: !!m.rare });   // un raro suelta siempre
         const taken = Meta.grantDrop(ctx.meta, drop);
+        // Una poción que no cabe no se pierde: se cambia por lo que vale vendida
+        const spare = drop && !taken ? Meta.spareDropGold(drop) : 0;
+        if (spare) Meta.recordGold(ctx.meta, spare);
         ctx.persistMeta();
         adv.state.gone[adv.point.id] = true;   // no vuelve hasta que duermas en la posada
         adv.state.flags[`defeated:${adv.point.id}`] = true;   // pero la historia recuerda que lo venciste
@@ -479,7 +516,7 @@ function _advFinishCombat() {
         _advSave();
         UI.showRpgCombatResult({ result: 'victory', title: '¡Victoria!', button: 'SEGUIR EXPLORANDO',
             detail: `+${gold} 🪙 · +${xp} XP${lvl.levelsGained > 0 ? ` · ¡Subes a nivel ${lvl.newLevel}!` : ''}`,
-            loot: drop ? { ...drop, taken } : null });
+            loot: drop ? { ...drop, taken, spare } : null });
     } else if (c.result === 'fled') {
         UI.showRpgCombatResult({ result: 'fled', title: 'Has huido', detail: `${m.name} sigue en el camino.`, button: 'VOLVER' });
     } else {

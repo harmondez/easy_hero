@@ -1,0 +1,98 @@
+{
+  "_doc": "Sprite Factory: el héroe animado por capas. Aquí se dice quién es, qué animaciones tiene (con su hoja base de ejemplo y el prompt que la describe), cómo se coloca la espada y qué se exige a una hoja vestida.",
+  "hero": {
+    "who": "young knight in steel plate armour with a long dark blue hooded cape, messy brown hair",
+    "anchor": "tools/sprite-factory/ejemplos/ancla.png",
+    "_anchor_doc": "El héroe canónico, de lado y sin arma: la referencia de identidad de toda hoja nueva."
+  },
+  "marker": "In his right hand he holds a plain, perfectly straight, thin, solid bright MAGENTA (#FF00FF) rod about as long as his arm, instead of a sword (it is a placeholder: flat magenta, no shading, no outline)",
+  "anims": {
+    "walk": {
+      "label": "Caminar",
+      "grid": "2x2",
+      "align": "torso",
+      "standing": 1,
+      "fps": 6,
+      "loop": true,
+      "order": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "base": "tools/sprite-factory/ejemplos/base-walk.png",
+      "action": "a 4-frame looping WALK cycle to the right, walking in place, upright relaxed posture, torso and head at the same height and angle in every frame; only the legs and arms change. {marker}, hanging low at his side, pointing forward and slightly down, held at the same angle in every frame. Frame 1: contact, RIGHT leg forward with the heel touching, LEFT leg back, widest stride. Frame 2: passing, legs close together under the body, left foot lifting past the right knee. Frame 3: contact, LEFT leg forward, RIGHT leg back, widest stride (the mirror of frame 1). Frame 4: passing, legs close together, right foot lifting past the left knee"
+    },
+    "attack": {
+      "label": "Atacar",
+      "grid": "2x2",
+      "align": "masa",
+      "standing": 0,
+      "fps": 8,
+      "loop": false,
+      "order": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "hold": [
+        90,
+        140,
+        70,
+        220
+      ],
+      "base": "tools/sprite-factory/ejemplos/base-attack.png",
+      "action": "a one-handed overhead sword strike. {marker}. Frame 1: ready stance, knees slightly bent, rod held low and forward. Frame 2: wind-up, arm raised high, rod pointing up and back over the shoulder. Frame 3: the strike, front foot stepping forward, arm fully extended forward, rod swinging down pointing forward. Frame 4: follow-through, body leaning forward, arm low, rod pointing down and forward near the ground"
+    },
+    "cast": {
+      "label": "Lanzar habilidad",
+      "grid": "2x2",
+      "align": "masa",
+      "standing": 0,
+      "fps": 8,
+      "loop": false,
+      "order": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "hold": [
+        110,
+        160,
+        220,
+        140
+      ],
+      "base": "tools/sprite-factory/ejemplos/base-cast.png",
+      "action": "channelling a spell THROUGH the weapon, strict side view facing right in all four frames (never facing the viewer); no magic effects are drawn (no fire, no glow, no particles): only the body pose. {marker}; the rod is clearly visible in EVERY frame. Frame 1: ready stance side view, feet apart, rod held low pointing forward and down. Frame 2: he lifts the rod upright in front of his chest, pointing straight up, elbow bent, head slightly bowed (gathering power). Frame 3: release: arm thrust fully forward at shoulder height, the rod pointing straight forward to the right, horizontal, body leaning into it, front knee bent. Frame 4: recovery: arm lowering, rod pointing forward and down, body upright",
+      "_doc": "Primer intento (la mano libre lanzando y el palo quieto): salió de frente, con rayas de cuadrícula y sin palo en dos fotogramas. Canalizar por el arma mantiene el palo a la vista en los cuatro."
+    }
+  },
+  "idle": {
+    "anim": "walk",
+    "frame": 1,
+    "_doc": "El reposo no se dibuja: es este fotograma (de pie, piernas juntas) respirando por código."
+  },
+  "sword": {
+    "length": 0.62,
+    "grip": 0.11,
+    "fist": 0.045,
+    "_doc": "length: largo de la espada respecto a la altura del héroe de pie · grip: dónde se agarra (parte del largo, desde el pomo) · fist: radio del puño que se repinta encima de la empuñadura."
+  },
+  "qa": {
+    "angle": 6,
+    "hand": 0.04,
+    "height": 0.07,
+    "color": 0.08,
+    "outfit": 0.2,
+    "attempts": 2,
+    "_doc": "Lo que se exige a una hoja vestida frente a su base: giro del arma (grados), altura de la mano sobre los pies y altura del héroe (parte de su altura), y que ningún fotograma lleve un color que los demás no llevan. attempts: cuántas veces se intenta generar antes de dejarla marcada «para revisar». outfit: cuánto pueden diferir los colores de la ropa entre dos animaciones de la misma armadura."
+  },
+  "paths": {
+    "game": "img/hero",
+    "manifest": "src/data/hero-sprites.js",
+    "work": "taller/sprite-factory",
+    "armario": "tools/sprite-factory/armario.json"
+  }
+}

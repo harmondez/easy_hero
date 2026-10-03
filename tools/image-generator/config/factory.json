@@ -157,6 +157,24 @@
       "game_prefix": null,
       "deliver": "gear",
       "_doc": "Pieza de equipo suelta (una espada, un casco), de frente, para el inventario y la pantalla de Equipo. Se entrega a img/weapons/weapon_sword-<id>.png y de ahí, con el taller de iconos, a img/ui/objeto-<id>.webp. El --game-id es el id del objeto en src/data/gear.js."
+    },
+    "sheet": {
+      "category": "sheets",
+      "prompt": "sheet",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": false,
+      "game_prefix": null,
+      "_doc": "Hoja de animación: 4 fotogramas del mismo personaje en una cuadrícula 2×2 (de izquierda a derecha y de arriba abajo), de lado, sobre blanco. Se queda en taller/sheets/; la corta y la ancla tools/sprite-sheet.mjs. PRUEBA (v2: sprites animados)."
+    },
+    "dress": {
+      "category": "sheets",
+      "prompt": "dress",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": false,
+      "game_prefix": null,
+      "_doc": "Vestir una hoja de animación: la misma hoja (mismas poses, mismo palo magenta) con otra armadura. La hoja de partida se pasa con --ref. PRUEBA (v2: sprites animados)."
     }
   },
   "background_removal": {

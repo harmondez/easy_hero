@@ -15,24 +15,25 @@
 // =============================================
 
 export const UPGRADES = [
-    // Las tres básicas: cada nivel da un punto más que el anterior y cuesta el doble (10, 20, 40, 80…)
+    // Las tres básicas: cada nivel da lo mismo y cuesta bastante más que el anterior. (Antes cada nivel daba uno más
+    // que el anterior y costaba 10, 20, 40…: con 70 monedas el ATK pasaba de 1 a 7 y el juego se acababa solo)
     {
         id: 'filo', icon: '💪', name: 'Filo afilado',
-        desc: 'Más ATK para siempre. Cada nivel da más que el anterior: +1, luego +2, luego +3…',
-        effect: 'atk', perLevel: 1, ramp: true, unit: 'ATK',
-        cost: 10, growth: 2
+        desc: 'Más ATK para siempre: +1 por lección.',
+        effect: 'atk', perLevel: 1, unit: 'ATK',
+        cost: 30, growth: 1.6
     },
     {
         id: 'constitucion', icon: '❤️', name: 'Constitución',
-        desc: 'Más vida máxima para siempre. Cada nivel da más que el anterior: +1, luego +2, luego +3…',
-        effect: 'maxHp', perLevel: 1, ramp: true, unit: 'HP',
-        cost: 10, growth: 2
+        desc: 'Más vida máxima para siempre: +4 por lección.',
+        effect: 'maxHp', perLevel: 4, unit: 'HP',
+        cost: 25, growth: 1.6
     },
     {
         id: 'buen_ojo', icon: '🪙', name: 'Buen ojo',
-        desc: 'Más oro al acabar cada combate. Cada nivel da más que el anterior: +1, luego +2, luego +3…',
-        effect: 'goldFlat', perLevel: 1, ramp: true, unit: 'oro por combate',
-        cost: 10, growth: 2
+        desc: 'Más oro al acabar cada combate: +1 por lección.',
+        effect: 'goldFlat', perLevel: 1, unit: 'oro por combate',
+        cost: 40, growth: 1.8
     },
     {
         id: 'estudio', icon: '✨', name: 'Estudio',

@@ -77,6 +77,10 @@
     ],
     "gear": [
       "img/ui/objeto-espada-imperial.webp"
+    ],
+    "sheet": [
+      "tools/image-generator/references/heroe-ancla.png",
+      "img/portraits/hero-cuerpo.webp"
     ]
   }
 }

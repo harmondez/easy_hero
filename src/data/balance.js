@@ -50,6 +50,8 @@ globalThis.__RPG_BALANCE__ = globalThis.__RPG_BALANCE__ || {
     potion: { heal: 0.4, max: 3, price: 20 },
     // Maná: el héroe empieza con la mitad de su vida inicial (25 → 12). La poción de maná menor devuelve la mitad
     manaFromHp: 0.5,
+    // 🧭 La aventura: lo que da cada enemigo al caer si sus datos no dicen otra cosa (`gold` en la criatura o la parada)
+    adventure: { gold: { monster: 5, subboss: 30, boss: 60 } },
     inn: { price: 5 },   // lo que cobra la posada por dormir (hasta que Evelyn te deja quedarte gratis)
     manaPotion: { restore: 0.5, max: 3, price: 25 },
 

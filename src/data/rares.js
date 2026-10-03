@@ -7,11 +7,12 @@
 //   chance   probabilidad de que salga en lugar del normal
 //   name     su nombre (y con el que se busca su dibujo: img/sprites/enemigo_<nombre>.webp)
 //   hpMul / atkMul   multiplican la vida y el ataque del enemigo normal de esa parada
+//   goldMul / xpMul  multiplican lo que da al caer: es más duro, y paga más
 //   scaleMul tamaño en pantalla respecto al normal
 //   tag      etiqueta bajo su nombre en el combate
 // La tirada se hace la primera vez que te cruzas con la parada y se queda hasta que duermes: huir no la repite.
 // =============================================
 export const RARES = {
-    lobo: { chance: 0.1, name: 'Lobo Negro', icon: '🐺', hpMul: 2, atkMul: 2, scaleMul: 1.2, tag: 'Encuentro raro' },
-    goblin: { chance: 0.1, name: 'Goblin Pícaro', icon: '👺', hpMul: 2, atkMul: 2, scaleMul: 1.1, tag: 'Encuentro raro' }
+    lobo: { chance: 0.1, name: 'Lobo Negro', icon: '🐺', hpMul: 2, atkMul: 2, goldMul: 4, xpMul: 3, scaleMul: 1.2, tag: 'Encuentro raro' },
+    goblin: { chance: 0.1, name: 'Goblin Pícaro', icon: '👺', hpMul: 2, atkMul: 2, goldMul: 4, xpMul: 3, scaleMul: 1.1, tag: 'Encuentro raro' }
 };

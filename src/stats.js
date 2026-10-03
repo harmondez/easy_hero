@@ -13,10 +13,10 @@
 export const PRIMARY_BASE = { str: 5, dex: 5, int: 5, vit: 5 };
 export const PRIMARY_KEYS = ['str', 'dex', 'int', 'vit'];
 export const PRIMARY_INFO = {
-    str: { icon: '💪', name: 'Fuerza', short: 'STR', desc: 'Daño físico (Filo, Contundente, Perforante) y algo de vida.' },
-    dex: { icon: '🏹', name: 'Destreza', short: 'DEX', desc: 'Probabilidad de crítico y de esquivar un golpe.' },
-    int: { icon: '🧠', name: 'Inteligencia', short: 'INT', desc: 'Daño elemental (Veneno, Fuego, Rayo) y resistencia elemental.' },
-    vit: { icon: '❤️', name: 'Vitalidad', short: 'VIT', desc: 'Vida máxima y resistencia física.' }
+    str: { icon: '💪', name: 'Fuerza', short: 'STR', desc: 'Cada 2 puntos, +1 de ATK: tu golpe pega más.' },
+    dex: { icon: '🏹', name: 'Destreza', short: 'DEX', desc: 'Cada punto, +3 % de golpe crítico (daño doble) y +1,5 % de esquivar.' },
+    int: { icon: '🧠', name: 'Inteligencia', short: 'INT', desc: 'Cada punto, +1 de PH (tus habilidades pegan más) y +2 de maná.' },
+    vit: { icon: '❤️', name: 'Vitalidad', short: 'VIT', desc: 'Cada punto, +4 de vida máxima y algo menos de daño recibido.' }
 };
 
 const PHYSICAL_TYPES = new Set(['filo', 'contundente', 'perforante']);
@@ -27,6 +27,11 @@ export function isElementalDamage(typeId) { return ELEMENTAL_TYPES.has(typeId); 
 // --- Nivel del personaje (permanente: vive en meta.js, no en la partida) ---
 export const XP_REWARD = { monster: 5, subboss: 15, boss: 50 };
 export const POINTS_PER_LEVEL = 2;
+// Cuántos puntos hacen falta para +1 de ATK (Fuerza) y +1 de PH (Inteligencia): con 2 puntos por nivel, un nivel
+// entero a Fuerza es +1 de ATK en cada golpe; el PH sube el doble de rápido, pero lo limita el maná.
+// Antes eran 10 puntos para cada uno y subir de nivel no se notaba
+export const STR_PER_ATK = 2;
+export const INT_PER_PH = 1;
 /** XP que hace falta para pasar del nivel `level` al siguiente. Curva de relleno: se recalibra cuando haga falta. */
 export function xpToNext(level) { return 40 + Math.max(1, level) * 20; }
 
@@ -40,11 +45,13 @@ export function derivePrimary(primary, weaponDamageType) {
     const isElem = isElementalDamage(weaponDamageType);
     return {
         maxHpBonus: (p.vit - PRIMARY_BASE.vit) * 4,
-        atqBonus: isPhys ? Math.floor((p.str - PRIMARY_BASE.str) / 10) : 0,
+        atqBonus: isPhys ? Math.max(0, Math.floor((p.str - PRIMARY_BASE.str) / STR_PER_ATK)) : 0,
+        phBonus: Math.max(0, Math.floor((p.int - PRIMARY_BASE.int) / INT_PER_PH)),   // el PH: lo que pegan las habilidades
+        maxMpBonus: Math.max(0, (p.int - PRIMARY_BASE.int) * 2),                      // y más maná para lanzarlas
         elemDmgBonus: isElem ? Math.floor((p.int - PRIMARY_BASE.int) / 10) : 0,
-        critChance: Math.max(0, (p.dex - PRIMARY_BASE.dex) * 0.004),   // +0,4 %/DEX por encima de la base
-        critMult: 1.5,
-        dodgeChance: Math.max(0, (p.dex - PRIMARY_BASE.dex) * 0.003),  // +0,3 %/DEX
+        critChance: Math.max(0, (p.dex - PRIMARY_BASE.dex) * 0.03),   // +3 %/DEX por encima de la base
+        critMult: 2,
+        dodgeChance: Math.min(0.5, Math.max(0, (p.dex - PRIMARY_BASE.dex) * 0.015)),  // +1,5 %/DEX (tope: la mitad de los golpes)
         physResist: Math.max(0, (p.vit - PRIMARY_BASE.vit) * 0.004),   // +0,4 %/VIT, reduce el daño recibido
         elemResist: Math.max(0, (p.int - PRIMARY_BASE.int) * 0.004)    // +0,4 %/INT (a la espera de monstruos con tipo de daño)
     };

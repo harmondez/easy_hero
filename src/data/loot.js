@@ -1,8 +1,10 @@
 // =============================================
 // 🎒 Botín de la aventura (solo datos): lo que sueltan los enemigos al caer
 //
-// MATERIALS — objetos que se guardan en el inventario (aún no se usan para nada: se coleccionan)
+// MATERIALS — objetos que se guardan en el inventario: se venden (y algunos los pide una misión)
 //   name, rarity (id de src/data/rarities.js), img (icono de ART.icons, salido de img/items con `npm run icons`), desc
+//   value   lo que te dan por uno en la tienda que los compra (src/data/shops.js `buys`); sin `value`, no se vende
+//           (los de misión)
 //
 // DROPS — tablas de botín. Un enemigo usa una con `drops: '<id>'` (en su criatura o en su parada de la zona)
 //   chance   probabilidad de que suelte algo (el resto de las veces, nada)
@@ -13,17 +15,17 @@
 //            Si los pesos no suman 100, se reparten en proporción.
 // =============================================
 export const MATERIALS = {
-    'armadura-oxidada': { name: 'Trozo de armadura oxidada', rarity: 'poco_comun', img: 'material-armadura-oxidada',
+    'armadura-oxidada': { name: 'Trozo de armadura oxidada', rarity: 'poco_comun', img: 'material-armadura-oxidada', value: 8,
         desc: 'Un pedazo de coraza comido por el óxido. Los goblins se lo atan al pecho con cuerdas.' },
-    'oreja-goblin': { name: 'Oreja de goblin', rarity: 'poco_comun', img: 'material-oreja-goblin',
+    'oreja-goblin': { name: 'Oreja de goblin', rarity: 'poco_comun', img: 'material-oreja-goblin', value: 6,
         desc: 'Una oreja de goblin, larga y puntiaguda.' },
-    'collar-goblin': { name: 'Collar goblin', rarity: 'rara', img: 'material-collar-goblin',
+    'collar-goblin': { name: 'Collar goblin', rarity: 'rara', img: 'material-collar-goblin', value: 15,
         desc: 'Un collar de huesos y cuentas. Los goblins no se lo quitan ni para dormir.' },
-    'diente-lobo': { name: 'Diente de lobo', rarity: 'epica', img: 'material-diente-lobo',
+    'diente-lobo': { name: 'Diente de lobo', rarity: 'epica', img: 'material-diente-lobo', value: 25,
         desc: 'Un colmillo entero, sin una sola grieta. Cuesta sacar uno así.' },
-    'piel-lobo': { name: 'Piel de lobo', rarity: 'poco_comun', img: 'material-piel-lobo',
+    'piel-lobo': { name: 'Piel de lobo', rarity: 'poco_comun', img: 'material-piel-lobo', value: 10,
         desc: 'Una piel gris, gruesa y áspera.' },
-    'garra-lobo': { name: 'Garra de lobo', rarity: 'poco_comun', img: 'material-garra-lobo',
+    'garra-lobo': { name: 'Garra de lobo', rarity: 'poco_comun', img: 'material-garra-lobo', value: 12,
         desc: 'Una garra negra y curva.' },
     // De misión: el colmillo se lo lleva Bram y las plantas, Amelie
     'colmillo-feronius': { name: 'Colmillo de Feronius', rarity: 'epica', img: 'material-diente-lobo',
@@ -31,7 +33,7 @@ export const MATERIALS = {
     'planta-medicinal': { name: 'Planta medicinal', rarity: 'comun', img: 'ingrediente-hierba',
         desc: 'Una mata de hojas anchas y flores blancas, con la raíz entera. Amelie hace medicina con ella.' },
     // Con dibujo, pero todavía no lo suelta nadie
-    'slime-condensado': { name: 'Slime condensado', rarity: 'epica', img: 'material-slime-condensado',
+    'slime-condensado': { name: 'Slime condensado', rarity: 'epica', img: 'material-slime-condensado', value: 25,
         desc: 'Una bola de slime dura como la resina.' }
 };
 

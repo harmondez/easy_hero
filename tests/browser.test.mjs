@@ -1044,10 +1044,10 @@ console.log('\n⚒️ La Forja: gastar el oro en mejoras permanentes');
     await page.click('[data-shop-buy="constitucion"]');
     await sleep(200);
     const afterBuy = await page.evaluate(() => ({ gold: window.gameMeta.gold, level: window.gameMeta.upgrades.constitucion }));
-    assert('Comprar descuenta el oro (Constitución cuesta 10) y sube la mejora de nivel', afterBuy.gold === 389 && afterBuy.level === 1);
+    assert('Comprar descuenta el oro (Constitución cuesta 25) y sube la mejora de nivel', afterBuy.gold === 374 && afterBuy.level === 1);
     const shopText = await page.$eval('#shopBody', el => el.textContent);
-    assert('La tarjeta enseña el nivel y lo que aporta ahora (+1 HP, y el siguiente da +2)', /nivel 1/.test(shopText) && /\+1 HP/.test(shopText) && /\+2 más/.test(shopText));
-    assert('El precio se duplica para la siguiente compra (10 → 20)', /20/.test(await page.$eval('[data-shop-buy="constitucion"]', el => el.textContent)));
+    assert('La tarjeta enseña el nivel y lo que aporta ahora (+4 HP)', /nivel 1/.test(shopText) && /\+4 HP/.test(shopText));
+    assert('La siguiente lección cuesta más (25 → 40)', /40/.test(await page.$eval('[data-shop-buy="constitucion"]', el => el.textContent)));
 
     await page.click('[data-shop-buy="constitucion"]');
     await sleep(150);
@@ -1063,8 +1063,8 @@ console.log('\n⚒️ La Forja: gastar el oro en mejoras permanentes');
     await page.click('#btnShopBack');
     await sleep(200);
     assert('Volver de La Forja te deja en el inicio', await visible('#rpgStartView'));
-    assert('La carta del héroe ya refleja lo comprado (+1 y +2: +3 de vida máxima)',
-        /28/.test(await page.$eval('#rpgHeroCard', el => el.textContent)));
+    assert('La carta del héroe ya refleja lo comprado (dos lecciones: +8 de vida máxima)',
+        /33/.test(await page.$eval('#rpgHeroCard', el => el.textContent)));
 
     await page.reload({ waitUntil: 'load' });
     await sleep(400);
@@ -1077,7 +1077,7 @@ console.log('\n⚒️ La Forja: gastar el oro en mejoras permanentes');
         const h = window.gameState.rpg.hero;
         return { maxHp: h.maxHp, hp: h.hp, slots: window.Items.inventorySize(h) };
     });
-    assert('Una ruta nueva empieza ya con la vida comprada (25 + 3 = 28)', heroNow.maxHp === 28 && heroNow.hp === 28);
+    assert('Una ruta nueva empieza ya con la vida comprada (25 + 8 = 33)', heroNow.maxHp === 33 && heroNow.hp === 33);
     assert('El zurrón ancho da 15 ranuras de inventario en vez de 10', heroNow.slots === 15);
 
     // La expedición: el reloj se mueve hacia atrás para simular horas fuera

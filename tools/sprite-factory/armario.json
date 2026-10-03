@@ -1,0 +1,63 @@
+{
+  "acero": {
+    "name": "Armadura de acero",
+    "base": true
+  },
+  "negra": {
+    "name": "Armadura negra",
+    "tint": {
+      "from": "acero",
+      "color": "negra"
+    }
+  },
+  "oro": {
+    "name": "Armadura dorada",
+    "tint": {
+      "from": "acero",
+      "color": "oro"
+    }
+  },
+  "cuero": {
+    "name": "Armadura de cuero",
+    "sheets": {
+      "walk": "taller/sprite-factory/cuero/walk.png",
+      "attack": "taller/sprite-factory/cuero/attack.png",
+      "cast": "taller/sprite-factory/cuero/cast.png"
+    },
+    "prompt": "studded brown leather armour: a ranger's outfit, hardened leather cuirass with rivets, leather bracers and shoulder guards, brown trousers, tall leather boots, no metal plates"
+  },
+  "malla": {
+    "name": "Cota de malla",
+    "prompt": "a chainmail hauberk: a long shirt of fine steel rings down to mid-thigh with chainmail sleeves, a plain dark blue cloth tabard over the chest with a thin gold border, a wide leather belt, leather gloves, padded brown trousers and leather boots; no plate armour",
+    "sheets": {
+      "walk": "taller/sprite-factory/malla/walk.png",
+      "attack": "taller/sprite-factory/malla/attack.png",
+      "cast": "taller/sprite-factory/malla/cast.png"
+    }
+  },
+  "imperial": {
+    "name": "Placas imperiales",
+    "prompt": "heavy imperial full plate armour: thick dark gunmetal plates with ornate gold trim and engravings, large layered pauldrons, a gold lion crest on the breastplate, armoured gauntlets, plated greaves and sabatons; bare head, same face and hair",
+    "sheets": {
+      "walk": "taller/sprite-factory/imperial/walk.png",
+      "attack": "taller/sprite-factory/imperial/attack.png",
+      "cast": "taller/sprite-factory/imperial/cast.png"
+    }
+  },
+  "escamas": {
+    "name": "Armadura de escamas de dragón",
+    "prompt": "dragon-scale armour: overlapping deep crimson scales covering the torso, shoulders and thighs, blackened steel edging, spiked scale pauldrons, crimson scale bracers and greaves, dark leather straps; bare head, same face and hair",
+    "sheets": {
+      "walk": "taller/sprite-factory/escamas/walk.png",
+      "attack": "taller/sprite-factory/escamas/attack.png",
+      "cast": "taller/sprite-factory/escamas/cast.png"
+    }
+  },
+  "imperial-negra": {
+    "name": "Placas imperiales negras",
+    "tint": {
+      "from": "imperial",
+      "color": "negra"
+    }
+  }
+}

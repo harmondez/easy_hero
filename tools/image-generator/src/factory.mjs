@@ -58,13 +58,15 @@ export class AssetFactory {
     }
 
     /** Plan de una generación (lo que haría), sin llamar a la API. */
-    plan(type, name, { details = '', variant = '', layout = null } = {}) {
+    plan(type, name, { details = '', variant = '', layout = null, ref = '' } = {}) {
         const tc = this.typeConfig(type);
         const id = slug(variant ? `${name}-${variant}` : name);
         if (!id) throw new Error('Falta el nombre del asset (p. ej. «orc»).');
         const refsMax = this.config.provider.max_reference_images;
         const tplName = tc.prompt;
-        const references = this.prompts.references(this.prompts.template(tplName), this.root, refsMax);
+        // --ref: las imágenes que se le pasan (p. ej. la hoja que hay que vestir), en lugar de las referencias del tipo
+        const references = ref ? ref.split(',').map(r => path.resolve(this.root, r.trim())).filter(r => fs.existsSync(r)).slice(0, refsMax)
+            : this.prompts.references(this.prompts.template(tplName), this.root, refsMax);
         const fullDetails = [details, variant && `variant: ${variant.replace(/[_-]+/g, ' ')}`].filter(Boolean).join(', ');
         const { text } = this.prompts.build(tplName, { name, details: fullDetails, layout, hasReferences: references.length > 0 });
         const dir = path.join(this.workshop, tc.category, id);

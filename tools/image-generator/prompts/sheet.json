@@ -1,0 +1,18 @@
+{
+  "_doc": "Hoja de animación de un personaje: 4 fotogramas en cuadrícula 2×2, mismo personaje, misma escala, de lado mirando a la derecha. El nombre dice quién es; --details, la secuencia fotograma a fotograma. Referencias: el sprite de lado del héroe (pose y escala) y su figura de cuerpo entero (identidad).",
+  "kind": "character",
+  "uses_sprite_rules": false,
+  "references": "sheet",
+  "subject": "an animation sprite sheet of {name}: exactly 4 frames of the SAME character arranged in a 2x2 grid (frame 1 top-left, frame 2 top-right, frame 3 bottom-left, frame 4 bottom-right){details}",
+  "pose": "strict side view, the character faces the RIGHT side of the image in all four frames, one frame per grid cell, each cell showing the whole body",
+  "mandatory": [
+    "EXACTLY 4 frames in a 2x2 grid of four equal cells. No more, no fewer.",
+    "The SAME character in every frame: identical face, hair, armour, cape, colours and proportions. Only the pose changes.",
+    "Same scale in every frame; the feet rest on the same invisible baseline near the bottom of each cell.",
+    "Each figure is fully inside its own cell with clear empty margin on all sides; figures in different cells never touch or overlap.",
+    "NO grid lines, NO borders, NO frames, NO numbers, NO labels between or around the cells.",
+    "The character faces RIGHT in all frames. Strict side profile.",
+    "Pure flat white background (#FFFFFF), perfectly uniform, in every cell.",
+    "No scenery, no ground, no floor line, no cast shadow, no motion lines, no slash effects, no dust."
+  ]
+}

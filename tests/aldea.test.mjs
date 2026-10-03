@@ -55,7 +55,7 @@ async function start(scene, metaPatch = {}, flags = {}, extra = {}) {
 
 // ---------------------------------------------
 console.log('\n⚒️ La Forja de Bram: comprar, mejorar o salir');
-await start('aldea', { gold: 1000 }, { 'colmillo:aceptada': true });
+await start('aldea', { gold: 1000, materials: { 'piel-lobo': 2, 'colmillo-feronius': 0 } }, { 'colmillo:aceptada': true });
 await go('herrero');
 await talkAll();
 await sleep(150);
@@ -74,23 +74,32 @@ await sleep(150);
 await page.click('.adv-menu [data-menu="shop"]');
 await sleep(250);
 let keys = await buyKeys();
-assert('«Comprar»: su tienda solo vende espadas y el cristal de mejora (ni pociones ni mejoras permanentes)',
-    await shown('#rpgShopView') && keys.length === 9 && keys.slice(0, 8).every(k => k.startsWith('gear:')) && keys[8] === 'crystal');
+assert('«Comprar»: su tienda vende el equipo (8 espadas y 7 armaduras) y el cristal de mejora (ni pociones ni mejoras permanentes)',
+    await shown('#rpgShopView') && keys.length === 16 && keys.slice(0, 15).every(k => k.startsWith('gear:')) && keys[15] === 'crystal');
+assert('Las armaduras dicen la vida que dan y se ven puestas', /Vida \+6/.test(await page.$eval('[data-shop-buy="gear:armadura-de-cuero"]', el => el.closest('.shop-card').textContent))
+    && /img\/hero\/cuero\//.test(await page.$eval('[data-shop-buy="gear:armadura-de-cuero"]', el => el.closest('.shop-card').querySelector('img').getAttribute('src'))));
 assert('El cristal cuesta 100 de oro', /100/.test(await page.$eval('[data-shop-buy="crystal"]', el => el.textContent)));
 await page.click('[data-shop-buy="crystal"]');
 await page.click('[data-shop-buy="crystal"]');
 await page.click('[data-shop-buy="gear:aguijon"]');
 await sleep(100);
 let m = await meta();
-assert('Comprar dos cristales y el Aguijón: 1000 − 100 − 100 − 300 = 500 de oro', m.gold === 500 && m.crystals === 2 && m.advGear.includes('aguijon'));
+assert('Comprar dos cristales y el Aguijón: 1000 − 100 − 100 − 180 = 620 de oro', m.gold === 620 && m.crystals === 2 && m.advGear.includes('aguijon'));
 await page.click('[data-shop-tab="sell"]');
 await sleep(100);
-assert('«Vender»: Bram te compra el Aguijón y los cristales, no la espada que llevas puesta', (await sellKeys()).join() === 'gear:aguijon,crystal'
-    && /\+225/.test(await page.$eval('[data-shop-sell="gear:aguijon"]', el => el.textContent)) && /\+75/.test(await page.$eval('[data-shop-sell="crystal"]', el => el.textContent)));
+assert('«Vender»: Bram te compra el Aguijón, los cristales y lo que sueltan los enemigos (2 pieles de lobo, a 10 cada una), no la espada que llevas puesta',
+    (await sellKeys()).join() === 'gear:aguijon,crystal,material:piel-lobo' && /\+10/.test(await page.$eval('[data-shop-sell="material:piel-lobo"]', el => el.textContent))
+    && /\+135/.test(await page.$eval('[data-shop-sell="gear:aguijon"]', el => el.textContent)) && /\+75/.test(await page.$eval('[data-shop-sell="crystal"]', el => el.textContent)));
 await page.click('[data-shop-sell="gear:aguijon"]');
 await sleep(100);
 m = await meta();
-assert('Vender el Aguijón devuelve el 75 % (225) y sale del inventario', m.gold === 725 && !m.advGear.includes('aguijon') && (await sellKeys()).join() === 'crystal');
+assert('Vender el Aguijón devuelve el 75 % (135) y sale del inventario', m.gold === 755 && !m.advGear.includes('aguijon') && (await sellKeys()).join() === 'crystal,material:piel-lobo');
+await page.click('[data-shop-sell="material:piel-lobo"]');
+await sleep(100);
+await page.click('[data-shop-sell="material:piel-lobo"]');
+await sleep(100);
+m = await meta();
+assert('Vender las dos pieles da 20 de oro y ya no quedan', m.gold === 775 && !m.materials['piel-lobo'] && (await sellKeys()).join() === 'crystal');
 await page.click('#btnShopBack');
 await sleep(300);
 await go('herrero');
@@ -101,7 +110,7 @@ await sleep(200);
 await page.click('[data-upgrade-weapon="espada-de-hierro"]');
 await sleep(150);
 m = await meta();
-assert('«Mejorar» gasta un cristal y deja la espada en +1 (sin tocar el oro)', m.crystals === 1 && m.advUpgrades['espada-de-hierro'] === 1 && m.gold === 725
+assert('«Mejorar» gasta un cristal y deja la espada en +1 (sin tocar el oro)', m.crystals === 1 && m.advUpgrades['espada-de-hierro'] === 1 && m.gold === 775
     && /\+1/.test(await page.$eval('.upgrade-panel .shop-name', el => el.textContent)) && /ATK 2/.test(await page.$eval('.upgrade-panel .shop-level', el => el.textContent)));
 if (process.env.SHOTS) await page.screenshot({ path: path.join(process.env.SHOTS, 'aldea-mejorar.png') });
 await page.click('#btnPanelClose');

@@ -219,16 +219,16 @@ assert('Bram da la Espada de Zafias: entra en el inventario y el botón se ilumi
     mm.advGear.includes('espada-de-zafias') && /is-new/.test(await page.$eval('.adv-inventory', el => el.className)));
 await page.click('.adv-inventory');
 await sleep(200);
-assert('El inventario lista la espada de hierro (equipada) y la Espada de Zafias',
-    (await page.$$('.inv-rows:first-of-type [data-inv-item]')).length === 2
+assert('El inventario lista la espada de hierro (equipada), la Espada de Zafias y tu armadura',
+    (await page.$$eval('.inv-rows:first-of-type [data-inv-item]', els => els.map(e => e.dataset.invItem).join())) === 'espada-de-hierro,espada-de-zafias,armadura-de-acero'
     && /is-equipped/.test(await page.$eval('[data-inv-item="espada-de-hierro"]', el => el.className)) && !!(await page.$('[data-inv-item="espada-de-hierro"] .inv-check')));
 await page.click('[data-inv-item="espada-de-zafias"]');
 await sleep(150);
-assert('Su ficha muestra ATK 2, de dónde sale y la espada tal cual es', /ATK 2/.test(await page.$eval('.inv-detail', el => el.textContent))
+assert('Su ficha muestra ATK 3, de dónde sale y la espada tal cual es', /ATK 3/.test(await page.$eval('.inv-detail', el => el.textContent))
     && /objeto-espada-de-zafias/.test(await page.$eval('.inv-preview', el => el.src)));
 await page.click('[data-inv-tab="preview"]');
-await sleep(100);
-assert('…y en «Vista previa», al héroe con ella', /arma_espada-de-zafias/.test(await page.$eval('.inv-preview', el => el.src)));
+await page.waitForFunction(() => { const i = document.querySelector('.inv-preview'); return i && i.dataset.weapon && i.complete && i.naturalWidth > 0; }, null, { timeout: 5000 }).catch(() => {});
+assert('…y en «Vista previa», al héroe con ella en la mano (antes de equiparla)', await page.$eval('.inv-preview', el => el.dataset.weapon === 'espada-de-zafias' && el.dataset.armor === 'acero' && el.naturalWidth > 0));
 await page.click('[data-inv-equip="espada-de-zafias"]');
 await sleep(200);
 mm = await advMeta();
@@ -237,7 +237,8 @@ assert('Equiparla la guarda y la marca como equipada', mm.advWeapon === 'espada-
     && !/is-equipped/.test(await page.$eval('[data-inv-item="espada-de-hierro"]', el => el.className)));
 await page.click('#btnPanelClose');
 await sleep(150);
-assert('En el mapa, el héroe cambia de dibujo: lleva la Espada de Zafias', /arma_espada-de-zafias/.test(await page.$eval('.adv-hero', el => el.src)));
+await page.waitForFunction(() => document.querySelector('.adv-hero').dataset.weapon === 'espada-de-zafias', null, { timeout: 5000 }).catch(() => {});
+assert('En el mapa, el héroe cambia de dibujo: lleva la Espada de Zafias', await page.$eval('.adv-hero', el => el.dataset.weapon === 'espada-de-zafias' && el.naturalWidth > 0));
 // El lobo del sendero ya cayó antes: vuelve a los caminos (como al dormir) para pelear con la espada nueva
 await page.evaluate(() => { const st = JSON.parse(localStorage.getItem('easy-hero-adventure')); st.gone = {}; st.scene = 'bosque'; localStorage.setItem('easy-hero-adventure', JSON.stringify(st)); });
 await page.reload({ waitUntil: 'load' });
@@ -245,10 +246,12 @@ await sleep(500);
 await page.click('.adv-stop[data-point="lobo-sendero"]', { force: true });
 await sleep(300);
 await talkAll();
-assert('En el combate también: el héroe sale con la Espada de Zafias', /arma_espada-de-zafias/.test(await page.$eval('#rpgActorHero img', el => el.src)));
+await page.waitForFunction(() => document.querySelector('#rpgActorHero > img').dataset.weapon === 'espada-de-zafias', null, { timeout: 5000 }).catch(() => {});
+assert('En el combate también: el héroe sale con la Espada de Zafias', await page.$eval('#rpgActorHero > img', el => el.dataset.weapon === 'espada-de-zafias' && el.naturalWidth > 0));
 await page.reload({ waitUntil: 'load' });
 await sleep(500);
-assert('Tras recargar sigue equipada (el equipo de la aventura es permanente)', /arma_espada-de-zafias/.test(await page.$eval('.adv-hero', el => el.src)));
+await page.waitForFunction(() => document.querySelector('.adv-hero').dataset.weapon === 'espada-de-zafias', null, { timeout: 5000 }).catch(() => {});
+assert('Tras recargar sigue equipada (el equipo de la aventura es permanente)', await page.$eval('.adv-hero', el => el.dataset.weapon === 'espada-de-zafias'));
 
 assert('Sin errores de página', errors.length === 0);
 if (errors.length) console.log(errors);

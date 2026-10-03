@@ -1,7 +1,7 @@
 // =============================================
 // 📜 Misiones (puro, sin DOM): en qué estado está cada misión según las marcas y las cuentas de la aventura
 // =============================================
-import { QUESTS } from './data/quests.js?v=1.11.0';
+import { QUESTS } from './data/quests.js?v=1.12.0';
 
 const hasAll = (flags, list) => (list || []).every(f => flags[f]);
 

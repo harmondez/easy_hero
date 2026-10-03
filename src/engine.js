@@ -1,11 +1,11 @@
-import { RPG_BALANCE } from './data/balance.js?v=1.11.0';
-import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.11.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.11.0';
-import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.11.0';
-import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.11.0';
-import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.11.0';
-import { ELIXIRS } from './data/effects.js?v=1.11.0';
-import { applyEffect, effectStatMul, tickEffects, consumeStun, effectAppliedEvent } from './effects.js?v=1.11.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.12.0';
+import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.12.0';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.12.0';
+import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.12.0';
+import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.12.0';
+import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.12.0';
+import { ELIXIRS } from './data/effects.js?v=1.12.0';
+import { applyEffect, effectStatMul, tickEffects, consumeStun, effectAppliedEvent } from './effects.js?v=1.12.0';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)
@@ -70,7 +70,15 @@ export function refreshPrimaryStats(hero) {
         hero.maxHp = Math.max(1, hero.maxHp + dHp);
         hero.hp = Math.min(hero.maxHp, Math.max(1, hero.hp + Math.max(0, dHp)));
     }
-    hero._primaryBonus = { atq: bonus.atqBonus, maxHp: bonus.maxHpBonus };
+    // La Inteligencia sube el PH (lo que pegan las habilidades)
+    const basePh = hero.ph != null ? hero.ph : RPG_HERO_BASE.ph;
+    hero.ph = Math.max(1, basePh - (old.ph || 0) + (bonus.phBonus || 0));
+    const dMp = (bonus.maxMpBonus || 0) - (old.maxMp || 0);
+    if (dMp && hero.maxMp != null) {
+        hero.maxMp = Math.max(0, hero.maxMp + dMp);
+        hero.mp = Math.min(hero.maxMp, Math.max(0, (hero.mp || 0) + Math.max(0, dMp)));
+    }
+    hero._primaryBonus = { atq: bonus.atqBonus, maxHp: bonus.maxHpBonus, ph: bonus.phBonus || 0, maxMp: bonus.maxMpBonus || 0 };
     hero.elemDmgBonus = bonus.elemDmgBonus;
     hero.critChance = bonus.critChance;
     hero.critMult = bonus.critMult;
@@ -434,8 +442,22 @@ export function createRpgCreature(c, tier = 0) {
     m.atq = Math.max(1, Math.round(m.atq * (c.atkMul || 1)));
     m.maxHp = m.hp = Math.max(1, Math.round(m.maxHp * (c.hpMul || 1)));
     m.rules = { ...(c.rules || {}) };
+    tuneEnemy(m, c);
     if (c.scale) m.scale = c.scale;   // tamaño en pantalla (lo usa la interfaz)
     if (c.tag) m.tag = c.tag;         // la etiqueta bajo su nombre («Jefe de Zafias»)
+    return m;
+}
+
+/**
+ * Números escritos a mano en los datos de un enemigo (una criatura o una parada de zona): `hp` y `atq` sustituyen a
+ * los de su piso; `gold` y `xp` son lo que da al caer. Lo que no se escriba se queda como estaba.
+ */
+export function tuneEnemy(m, def) {
+    if (!m || !def) return m;
+    if (def.hp != null) m.maxHp = m.hp = Math.max(1, def.hp | 0);
+    if (def.atq != null) m.atq = Math.max(1, def.atq | 0);
+    if (def.gold != null) m.gold = Math.max(0, def.gold | 0);
+    if (def.xp != null) m.xp = Math.max(0, def.xp | 0);
     return m;
 }
 

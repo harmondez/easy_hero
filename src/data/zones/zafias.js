@@ -10,8 +10,8 @@
 //   `arriveAt` (en las salidas) la parada de la escena de destino donde apareces
 //   `kind`     npc · enemy · exit · inn · shop · cave · poi (punto de interés: se mira o se registra, con `dialogue`
 //              o con `talk`, como un NPC; un hallazgo da su `reward` una sola vez con la marca `visto:<id>`)
-//   `enemy`    contra qué se pelea (tipo y piso fijan su fuerza: la dificultad es fija por zona); `enemy.rules` le
-//              añade reglas de combate, como las de creatures.js (p. ej. los efectos de estado que pone al golpear)
+//   `enemy`    contra qué se pelea (tipo y piso fijan su fuerza; `hp` y `atq` la escriben a mano, y `gold` y `xp`
+//              lo que da al caer: la dificultad es fija por zona); `enemy.rules` le añade reglas de combate, como las de creatures.js (p. ej. los efectos de estado que pone al golpear)
 //   `once`     el enemigo no vuelve nunca (jefes de misión); los demás reaparecen al dormir en la posada
 //   `sprite`   (enemigos) con qué id se busca su imagen en src/data/art.js (enemigo_<sprite>); si no, por su nombre
 //   `requires` marcas de la historia que hacen falta para que el punto aparezca (todas)
@@ -28,7 +28,7 @@
 //   Una escena puede tener su propio cuadro: `image`, `width`, `height` (sus coordenadas van de 0 a ese tamaño)
 // Marcas: `defeated:<id>` al vencer a ese enemigo (permanente) y las que pongan los diálogos.
 // =============================================
-import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.11.0';
+import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.12.0';
 
 // Los goblins de Zafias pelean con cuchillos sucios: a veces envenenan (src/data/effects.js)
 const GOBLIN = { onHit: [{ id: 'veneno', power: 1, turns: 3, chance: 0.35 }] };
@@ -168,18 +168,18 @@ export const ZAFIAS = {
                 { id: 'a-la-aldea', kind: 'exit', name: 'A la aldea', x: 438, y: 368, to: 'aldea', arriveAt: 'al-bosque' },
                 { id: 'sendero-aldea', kind: 'exit', name: 'A la aldea (sur)', x: 432, y: 606, to: 'aldea', arriveAt: 'al-bosque-sur' },
                 { id: 'goblin-1', kind: 'enemy', name: 'Goblin vigía', x: 500, y: 367,
-                    enemy: { type: 'monster', floor: 0, rules: GOBLIN, drops: 'goblin' }, dialogue: 'goblin-vigia' },
+                    enemy: { type: 'monster', floor: 0, hp: 6, atq: 1, rules: GOBLIN, drops: 'goblin' }, dialogue: 'goblin-vigia' },
                 { id: 'senda-santuario', kind: 'poi', name: 'La senda del santuario', x: 488, y: 284, talk: [
                     { when: ['plantas:aceptada'], unless: ['planta:senda'], dialogue: 'planta-senda', set: 'planta:senda', reward: { material: 'planta-medicinal' } },
                     { dialogue: 'senda-santuario', set: 'visto:senda-santuario' }
                 ] },
-                { id: 'goblin-2', kind: 'enemy', name: 'Goblin del camino', x: 636, y: 432, enemy: { type: 'monster', floor: 0, rules: GOBLIN, drops: 'goblin', rare: 'goblin' } },
+                { id: 'goblin-2', kind: 'enemy', name: 'Goblin del camino', x: 636, y: 432, enemy: { type: 'monster', floor: 0, hp: 8, atq: 1, rules: GOBLIN, drops: 'goblin', rare: 'goblin' } },
                 { id: 'poste', kind: 'poi', name: 'El poste de los cruces', x: 610, y: 530, dialogue: 'poste' },
                 // Lobos: criaturas con nombre (src/data/creatures.js), con su dibujo y su forma de pelear
                 { id: 'lobo-sendero', kind: 'enemy', name: 'Lobo de Zafias', x: 492, y: 592, enemy: { creature: 'lobo-de-zafias' } },
                 { id: 'lobo-ruinas', kind: 'enemy', name: 'Lobo de Zafias', x: 752, y: 396, enemy: { creature: 'lobo-de-zafias' } },
                 { id: 'goblin-puente', kind: 'enemy', name: 'Goblin del puente', x: 728, y: 616,
-                    enemy: { type: 'monster', floor: 0, rules: GOBLIN, drops: 'goblin' }, dialogue: 'goblin-puente' },
+                    enemy: { type: 'monster', floor: 0, hp: 9, atq: 2, rules: GOBLIN, drops: 'goblin' }, dialogue: 'goblin-puente' },
                 { id: 'fardo', kind: 'poi', name: 'Un fardo en la orilla', x: 846, y: 596, talk: [
                     { when: ['visto:fardo'], dialogue: 'fardo-visto' },
                     { dialogue: 'fardo', set: 'visto:fardo', reward: { gold: 25 } }
@@ -190,7 +190,7 @@ export const ZAFIAS = {
                     { dialogue: 'ruinas', set: 'visto:ruinas', reward: { potions: 1 } }
                 ] },
                 { id: 'camino-norte', kind: 'poi', name: 'El camino del norte', x: 772, y: 276, dialogue: 'camino-norte' },
-                { id: 'goblin-3', kind: 'enemy', name: 'Goblin ladrón', x: 790, y: 508, enemy: { type: 'monster', floor: 1, rules: GOBLIN, drops: 'goblin', rare: 'goblin' } },
+                { id: 'goblin-3', kind: 'enemy', name: 'Goblin ladrón', x: 790, y: 508, enemy: { type: 'monster', floor: 1, hp: 11, atq: 2, rules: GOBLIN, drops: 'goblin', rare: 'goblin' } },
                 // Limpio el bosque (y aceptada la misión), el sendero del este lleva al campamento goblin
                 { id: 'al-campamento', kind: 'exit', name: 'Al campamento', x: 895, y: 534,
                     requires: ['misionAceptada', ...GOBLINS_DEL_BOSQUE], to: 'campamento', arriveAt: 'al-bosque-desde-campamento' }
@@ -225,19 +225,19 @@ export const ZAFIAS = {
             points: [
                 { id: 'al-bosque-desde-campamento', kind: 'exit', name: 'Al bosque', x: 912, y: 548, to: 'bosque', arriveAt: 'al-campamento' },
                 { id: 'guardia', kind: 'enemy', name: 'Goblin de guardia', x: 1012, y: 616,
-                    enemy: { type: 'monster', floor: 2, rules: GOBLIN, drops: 'goblin' }, dialogue: 'guardia' },
+                    enemy: { type: 'monster', floor: 2, hp: 14, atq: 2, rules: GOBLIN, drops: 'goblin' }, dialogue: 'guardia' },
                 { id: 'grask', kind: 'enemy', name: 'Grask, jefe goblin', sprite: 'grask', x: 1185, y: 640, once: true,
-                    requires: ['defeated:guardia'], enemy: { type: 'subboss', floor: 1, rules: { ...GOBLIN, stunOnHeavy: 1.5 } }, dialogue: 'grask' },
+                    requires: ['defeated:guardia'], enemy: { type: 'subboss', floor: 1, hp: 30, atq: 3, rules: { ...GOBLIN, stunOnHeavy: 1.5 } }, dialogue: 'grask' },
                 // Al norte del claro, la puerta de estandartes y el camino a la escalinata del castillo
                 { id: 'estandartes', kind: 'poi', name: 'Los estandartes de Grask', x: 1138, y: 562, dialogue: 'estandartes' },
                 { id: 'centinela', kind: 'enemy', name: 'Goblin centinela', x: 1146, y: 494,
-                    enemy: { type: 'monster', floor: 2, rules: GOBLIN, drops: 'goblin' }, dialogue: 'centinela' },
+                    enemy: { type: 'monster', floor: 2, hp: 14, atq: 2, rules: GOBLIN, drops: 'goblin' }, dialogue: 'centinela' },
                 { id: 'escalinata', kind: 'poi', name: 'La escalinata del castillo', x: 1150, y: 448, talk: [
                     { when: ['plantas:aceptada'], unless: ['planta:escalinata'], dialogue: 'planta-escalinata', set: 'planta:escalinata', reward: { material: 'planta-medicinal' } },
                     { dialogue: 'escalinata', set: 'visto:escalinata' }
                 ] },
                 // Al sureste, por donde huyen los rezagados: el botín de Grask (solo cuando ha caído)
-                { id: 'rezagado', kind: 'enemy', name: 'Goblin rezagado', x: 1262, y: 700, enemy: { type: 'monster', floor: 2, rules: GOBLIN, drops: 'goblin', rare: 'goblin' } },
+                { id: 'rezagado', kind: 'enemy', name: 'Goblin rezagado', x: 1262, y: 700, enemy: { type: 'monster', floor: 2, hp: 14, atq: 2, rules: GOBLIN, drops: 'goblin', rare: 'goblin' } },
                 { id: 'botin', kind: 'poi', name: 'El botín de Grask', x: 1284, y: 742, requires: ['defeated:grask'], talk: [
                     { when: ['visto:botin'], dialogue: 'botin-visto' },
                     { dialogue: 'botin', set: 'visto:botin', reward: { gold: 40, potions: 1 } }
@@ -382,6 +382,7 @@ export const ZAFIAS_DIALOGUES = {
         { who: 'Odo, el veterano', text: 'Coges mal la espada. No te ofendas: casi todo el mundo la coge mal.' },
         { who: 'Odo, el veterano', text: 'Soy Odo. Fui soldado treinta años, hasta que la rodilla dijo basta.' },
         { who: 'Odo, el veterano', text: 'Yo ya no puedo salir a los caminos, pero los goblins siguen ahí. Tumba a seis y te pago por ello. Me da igual cuáles.' },
+        { who: 'Odo, el veterano', text: 'Un consejo, este sí gratis: cuando veas que te van a dar fuerte, cúbrete. Y no guardes la Bola de fuego para mañana. Solo con la espada no vas a llegar lejos.' },
         { who: 'Odo, el veterano', text: 'Y si quieres aprender a pelear mejor, enseño. No es gratis.' }
     ],
     'odo-espera': [

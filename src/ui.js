@@ -1,17 +1,20 @@
-import * as Engine from './engine.js?v=1.11.0';
-import * as Items from './items.js?v=1.11.0';
-import * as Meta from './meta.js?v=1.11.0';
-import * as Stats from './stats.js?v=1.11.0';
-import { upgradeAmountText } from './data/upgrades.js?v=1.11.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.11.0';
-import { ART } from './data/art.js?v=1.11.0';
-import { EFFECTS, ELIXIRS, FOOD } from './data/effects.js?v=1.11.0';
-import { GEAR, GEAR_FOR_SALE, STARTER_GEAR, WEAPON_UPGRADE, ELEMENTS, SLOT_ICONS } from './data/gear.js?v=1.11.0';
-import { RARITY_BY_ID } from './data/rarities.js?v=1.11.0';
-import { SHOPS } from './data/shops.js?v=1.11.0';
-import { effectList } from './effects.js?v=1.11.0';
-import { monsterArt, heroArt } from './art.js?v=1.11.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.11.0';
+import * as Engine from './engine.js?v=1.12.0';
+import * as Items from './items.js?v=1.12.0';
+import * as Meta from './meta.js?v=1.12.0';
+import * as Stats from './stats.js?v=1.12.0';
+import { upgradeAmountText } from './data/upgrades.js?v=1.12.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.12.0';
+import { ART } from './data/art.js?v=1.12.0';
+import { EFFECTS, ELIXIRS, FOOD } from './data/effects.js?v=1.12.0';
+import { GEAR, GEAR_FOR_SALE, STARTER_GEAR, WEAPON_UPGRADE, ELEMENTS, SLOT_ICONS } from './data/gear.js?v=1.12.0';
+import { RARITY_BY_ID } from './data/rarities.js?v=1.12.0';
+import { SHOPS } from './data/shops.js?v=1.12.0';
+import { MATERIALS } from './data/loot.js?v=1.12.0';
+import { HERO_SPRITES } from './data/hero-sprites.js?v=1.12.0';
+import { HeroAnimator, HERO_FRAME, prepareHero } from './hero-sprite.js?v=1.12.0';
+import { effectList } from './effects.js?v=1.12.0';
+import { monsterArt, heroArt } from './art.js?v=1.12.0';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.12.0';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -256,6 +259,10 @@ export function renderRpgTierGate(info) {
 const UPGRADE_IMG = { constitucion: 'vida', buen_ojo: 'moneda', zurron: 'inventario', filo: 'forja-filo', estudio: 'forja-estudio',
     herencia: 'forja-herencia', linterna: 'forja-linterna', suerte: 'forja-suerte' };
 
+// La imagen de un artículo: un icono de ART.icons (por su id) o, si trae ruta, esa imagen (el héroe con una armadura)
+const _shopImg = img => (img.includes('/') ? `<img class="shop-icon-img is-piece is-armor" src="${esc(img)}" alt="">`
+    : `<img class="shop-icon-img${img.startsWith('objeto-') ? ' is-piece' : ''}" src="${esc(ICON(img))}" alt="">`);
+
 /** Una carta de la tienda. price ya con el modo pruebas aplicado (0 = «GRATIS»); state: 'ok' | 'full' | 'owned' | 'maxed'. */
 function _shopCard({ buy, img, icon, name, tag, desc, extra = '', price, state, gold, color }) {
     const blocked = state !== 'ok';
@@ -263,7 +270,7 @@ function _shopCard({ buy, img, icon, name, tag, desc, extra = '', price, state, 
     const label = state === 'full' ? 'LLENO' : state === 'owned' ? 'TUYA' : state === 'maxed' ? 'COMPRADA' : price === 0 ? 'GRATIS' : `🪙 ${price}`;
     return `
         <article class="shop-card ${blocked ? 'is-maxed' : affordable ? 'is-affordable' : 'is-locked'}">
-            <div class="shop-icon">${img ? `<img class="shop-icon-img${img.startsWith('objeto-') ? ' is-piece' : ''}" src="${esc(ICON(img))}" alt="">` : icon}</div>
+            <div class="shop-icon">${img ? _shopImg(img) : icon}</div>
             <div class="shop-info">
                 <div class="shop-name"${color ? ` style="color:${esc(color)}"` : ''}>${esc(name)} ${tag ? `<span class="shop-level">${esc(tag)}</span>` : ''}</div>
                 <div class="shop-desc">${esc(desc)}</div>${extra}
@@ -310,7 +317,9 @@ function _shopItem(meta, key) {
     }
     if (kind === 'gear' && GEAR[id]) {
         const g = GEAR[id], rar = RARITY_BY_ID[g.rarity] || RARITY_BY_ID.comun, fx = gearEffectsText(g);
-        return { buy: key, img: `objeto-${id}`, name: g.name, tag: `${rar.name} · ATK ${g.atq}`, color: rar.color,
+        const armor = g.slot === 'armor', look = armor && HERO_SPRITES.armors[g.look];
+        return { buy: key, img: armor ? (look ? `${look.dir}/${HERO_SPRITES.idle.anim}_${HERO_SPRITES.idle.frame + 1}.webp` : 'ranura-armadura') : `objeto-${id}`,
+            name: g.name, tag: `${rar.name} · ${armor ? `Vida +${g.hp}` : `ATK ${g.atq}`}`, color: rar.color,
             desc: g.desc, extra: fx ? `<span class="shop-have">${esc(fx)}</span>` : '',
             price: price(g.price), state: Meta.ownsGear(meta, id) ? 'owned' : 'ok' };
     }
@@ -319,6 +328,10 @@ function _shopItem(meta, key) {
         return { buy: 'crystal', img: WEAPON_UPGRADE.img, name: WEAPON_UPGRADE.name, tag: `llevas ${have} de ${WEAPON_UPGRADE.carry}`,
             desc: `Bram lo usa para mejorar una espada: +${WEAPON_UPGRADE.atq} de ATK para siempre (hasta +${WEAPON_UPGRADE.max} por espada). Pídele «Mejorar».`,
             price: price(WEAPON_UPGRADE.price), state: have >= WEAPON_UPGRADE.carry ? 'full' : 'ok' };
+    }
+    if (kind === 'material' && MATERIALS[id]) {
+        const mt = MATERIALS[id], rar = RARITY_BY_ID[mt.rarity] || RARITY_BY_ID.comun;
+        return { img: mt.img, name: mt.name, color: rar.color, desc: mt.desc, price: 0, state: 'ok' };
     }
     const def = Meta.UPGRADES_BY_ID[kind === 'upgrade' ? id : key];
     if (def) {
@@ -333,7 +346,8 @@ function _shopItem(meta, key) {
 /** Las claves de una tienda, con los comodines abiertos ('gear:*' → todas las armas a la venta). */
 function _shopKeys(sells) {
     return sells.flatMap(k => k === 'gear:*' ? GEAR_FOR_SALE.map(id => `gear:${id}`)
-        : k === 'upgrade:*' ? Meta.UPGRADES.map(u => `upgrade:${u.id}`) : [k]);
+        : k === 'upgrade:*' ? Meta.UPGRADES.map(u => `upgrade:${u.id}`)
+        : k === 'material:*' ? Object.keys(MATERIALS).filter(id => MATERIALS[id].value != null).map(id => `material:${id}`) : [k]);
 }
 
 /** Carta de venta: lo que llevas de ese artículo y lo que te dan por uno. */
@@ -343,10 +357,10 @@ function _shopSellCard(meta, key) {
     if (!it || (info.have <= 0 && !info.equipped)) return '';
     return `
         <article class="shop-card ${info.have > 0 ? 'is-affordable' : 'is-maxed'}">
-            <div class="shop-icon">${it.img ? `<img class="shop-icon-img${it.img.startsWith('objeto-') ? ' is-piece' : ''}" src="${esc(ICON(it.img))}" alt="">` : it.icon}</div>
+            <div class="shop-icon">${it.img ? _shopImg(it.img) : it.icon}</div>
             <div class="shop-info">
                 <div class="shop-name"${it.color ? ` style="color:${esc(it.color)}"` : ''}>${esc(it.name)} <span class="shop-level">${info.equipped ? 'la llevas puesta' : key.startsWith('gear:') ? 'tuya' : `llevas ${info.have}`}</span></div>
-                <div class="shop-desc">${info.equipped ? 'Equipa otra espada antes de venderla.' : key.startsWith('gear:') ? 'Si la vendes, pierde los cristales de mejora que le hayas puesto.' : 'Te doy tres cuartos de lo que cuesta.'}</div>
+                <div class="shop-desc">${info.equipped ? 'Equipa otra antes de venderla.' : key.startsWith('gear:') ? 'Si vendes una espada, pierde los cristales de mejora que le hayas puesto.' : key.startsWith('material:') ? esc(it.desc) : 'Te doy tres cuartos de lo que cuesta.'}</div>
             </div>
             <button type="button" class="shop-buy shop-sell" data-shop-sell="${esc(key)}" ${info.have > 0 ? '' : 'disabled'}>+${info.value} 🪙</button>
         </article>`;
@@ -369,7 +383,7 @@ export function renderShop(meta, opts = {}) {
 
     if (shop) {
         const keys = _shopKeys(shop.sells);
-        const sellable = keys.filter(k => !k.startsWith('upgrade:'));
+        const sellable = [...keys.filter(k => !k.startsWith('upgrade:')), ..._shopKeys(shop.buys || [])];
         const tab = opts.tab === 'sell' && sellable.length ? 'sell' : 'buy';
         const sellCards = sellable.map(k => _shopSellCard(meta, k)).join('');
         el.innerHTML = `${purse}
@@ -399,8 +413,8 @@ export function renderShop(meta, opts = {}) {
  * elegida y, debajo, todas sus estadísticas: nivel y experiencia, las de combate y los cuatro atributos (con un «+»
  * por cada uno mientras queden puntos de nivel por repartir).
  * opts: {
- *   name, figure (src), level, xp, xpNext, points, selected (ranura),
- *   slots: [{ slot, label, icon, item: null | { id, name, rarity, element, desc, atq, upgrades, effects, image } }],
+ *   name, look (el aspecto del héroe: src/hero-sprite.js), level, xp, xpNext, points, selected (ranura),
+ *   slots: [{ slot, label, icon, item: null | { id, name, rarity, element, desc, stat, upgrades, effects, image } }],
  *   stats: [{ id, label, img, value, title }], primaries: [{ key, name, desc, value }],
  *   onSpend(key), onChange(slot)
  * }
@@ -411,6 +425,7 @@ export function renderEquipPanel(opts) {
     const el = document.getElementById('panelBody');
     if (!el) return;
     let selected = opts.selected;
+    let figureUrl = null;
     const slotHtml = sl => {
         const it = sl.item;
         const rar = it ? (RARITY_BY_ID[it.rarity] || RARITY_BY_ID.comun) : null;
@@ -434,7 +449,7 @@ export function renderEquipPanel(opts) {
                 <b class="equip-detail-name" style="color:${esc(rar.color)}">${esc(it.name)}${it.upgrades ? ` +${it.upgrades}` : ''}</b>
                 <span class="equip-detail-kind">${esc(sl.label)} · ${esc(rar.name)} · ${esc(it.element)}</span>
             </div>
-            <p class="equip-detail-text"><b class="equip-num">ATK ${it.atq}</b>${it.upgrades ? ` (+${it.upgrades} de mejora)` : ''}${it.effects ? ` · ${esc(it.effects)}` : ''}</p>
+            <p class="equip-detail-text"><b class="equip-num">${esc(it.stat)}</b>${it.upgrades ? ` (+${it.upgrades} de mejora)` : ''}${it.effects ? ` · ${esc(it.effects)}` : ''}</p>
             <p class="equip-detail-text is-desc">${esc(it.desc || '')}</p>
             <button type="button" class="btn-secondary equip-change" data-equip-change="${esc(sl.slot)}">Cambiar</button>`
             : `
@@ -450,7 +465,7 @@ export function renderEquipPanel(opts) {
             <div class="equip-stage">
                 <div class="equip-col">${opts.slots.slice(0, 4).map(slotHtml).join('')}</div>
                 <div class="equip-figure">
-                    ${opts.figure ? `<img src="${esc(opts.figure)}" alt="${esc(opts.name)}" draggable="false">` : ''}
+                    <img class="is-idle" alt="${esc(opts.name)}" draggable="false" data-equip-figure>
                 </div>
                 <div class="equip-col">${opts.slots.slice(4).map(slotHtml).join('')}</div>
             </div>
@@ -475,6 +490,11 @@ export function renderEquipPanel(opts) {
                 </ul>
             </div>
         </div>`;
+        // El héroe del centro: con la armadura y la espada que lleva (se monta aparte; al llegar, se pone)
+        const fig = el.querySelector('[data-equip-figure]');
+        if (figureUrl) fig.src = figureUrl;
+        else prepareHero(opts.look).then(set => { figureUrl = set.frames[HERO_SPRITES.idle.anim][HERO_SPRITES.idle.frame]; fig.dataset.armor = set.armor; fig.dataset.weapon = opts.look.weaponId || ''; const now = el.querySelector('[data-equip-figure]'); if (now) { now.src = figureUrl; now.dataset.armor = set.armor; now.dataset.weapon = opts.look.weaponId || ''; } });
+        if (figureUrl) { fig.dataset.armor = opts.look.armor; fig.dataset.weapon = opts.look.weaponId || ''; }
         el.querySelectorAll('[data-equip-slot]').forEach(b => b.addEventListener('click', () => { selected = b.dataset.equipSlot; draw(); }));
         el.querySelectorAll('[data-equip-spend]').forEach(b => b.addEventListener('click', () => opts.onSpend && opts.onSpend(b.dataset.equipSpend)));
         const ch = el.querySelector('[data-equip-change]');
@@ -729,6 +749,16 @@ const RPG_FX_GAP_MS = 220;       // pausa entre un golpe y el siguiente
 const RPG_HIT_FLASH_MS = 200;    // parpadeo blanco al recibir un golpe
 const RPG_HIT_SHAKE_MS = 260;    // y su temblor
 
+// Las medidas de la imagen del héroe por capas, para el CSS: cuánto más alta es que el héroe (--hero-zoom) y dónde
+// quedan sus pies (--hero-fx, --hero-fy). Con ellas se le cuelga de los pies y se le ve a su tamaño en cualquier sitio.
+if (typeof document !== 'undefined') {
+    const rs = document.documentElement.style;
+    rs.setProperty('--hero-zoom', HERO_FRAME.zoom.toFixed(4));
+    rs.setProperty('--hero-fx', HERO_FRAME.fx.toFixed(4));
+    rs.setProperty('--hero-fy', HERO_FRAME.fy.toFixed(4));
+}
+let _rpgHeroAnim = null, _rpgHeroLook = null;   // el héroe por capas del combate de la aventura (src/hero-sprite.js)
+
 function _rpgRenderStage(hero, monster) {
     const heroActor = document.getElementById('rpgActorHero');
     const monActor = document.getElementById('rpgActorMonster');
@@ -740,9 +770,18 @@ function _rpgRenderStage(hero, monster) {
     const img = monActor.querySelector(':scope > img');   // el dibujo, no los iconos de efecto (que también son img)
     const own = monsterArt(ART, monster.baseName || monster.name);
     const sprite = own || RPG_MONSTER_SPRITE;
-    // El héroe con su arma de la aventura (hero.sprite), si tiene dibujo propio; si no, el de siempre
-    const heroSprite = hero.sprite || heroArt(ART) || RPG_HERO_SPRITE;
-    _rpgSetSprite(heroActor.querySelector(':scope > img'), heroSprite);
+    // En la aventura, el héroe por capas (hero.look: su armadura y su espada); en el descenso, el dibujo de siempre
+    const heroImg = heroActor.querySelector(':scope > img');
+    const heroSprite = heroArt(ART) || RPG_HERO_SPRITE;
+    heroActor.classList.toggle('is-layered', !!hero.look);
+    if (hero.look) {
+        if (!_rpgHeroAnim || _rpgHeroAnim.img !== heroImg) _rpgHeroAnim = new HeroAnimator(heroImg);
+        const key = `${hero.look.armor}|${hero.look.weaponId}`;
+        if (_rpgHeroLook !== key) { _rpgHeroLook = key; _rpgHeroAnim.setLook(hero.look); }
+    } else {
+        if (_rpgHeroAnim) { _rpgHeroAnim._stop(); _rpgHeroAnim = null; _rpgHeroLook = null; heroImg.classList.remove('is-idle'); ['armor', 'weapon', 'anim', 'frame'].forEach(k => delete heroImg.dataset[k]); }
+        _rpgSetSprite(heroImg, heroSprite);
+    }
     _rpgSetSprite(img, sprite);
     // Misma escala de píxel para los dos: la altura del enemigo es relativa a la del héroe (y crece si es jefe)
     const size = (RPG_MONSTER_SIZE[monster.type] || 1) * (monster.scale || 1);   // jefes más grandes; cada especie, su tamaño
@@ -834,7 +873,7 @@ function _rpgFxStep(ev) {
     if (!(ev.amount > 0)) return null;
     if (ev.kind === 'heal') return { to: ev.target, text: `+${ev.amount}`, cls: 'is-heal' };
     const lunge = ['attack', 'crit', 'skill'].includes(ev.kind) && ev.actor !== ev.target;
-    return { from: lunge ? (ev.target === 'hero' ? 'monster' : 'hero') : null, to: ev.target,
+    return { from: lunge ? (ev.target === 'hero' ? 'monster' : 'hero') : null, to: ev.target, kind: ev.kind,
         text: `-${ev.amount}${ev.kind === 'crit' ? '!' : ''}`,
         cls: `${ev.target === 'hero' ? 'is-taken' : 'is-dealt'}${ev.kind === 'crit' ? ' is-crit' : ''}` };
 }
@@ -917,6 +956,12 @@ export function playRpgCombatFx(events) {
                 { transform: `translateX(${dx}px)`, offset: RPG_LUNGE_IMPACT, easing: 'cubic-bezier(.2,.6,.35,1)' },
                 { transform: 'translateX(0)' }
             ], { duration: RPG_LUNGE_MS });
+            // El héroe por capas hace su gesto (alza y baja la espada, o lanza la habilidad), con el golpe en el impacto
+            if (step.from === 'hero' && _rpgHeroAnim && _rpgHeroAnim.set) {
+                const anim = step.kind === 'skill' ? 'cast' : 'attack';
+                const lead = RPG_LUNGE_MS * RPG_LUNGE_IMPACT - HeroAnimator.timing(anim).impact;
+                setTimeout(() => { if (run === _rpgFxRun && _rpgHeroAnim) _rpgHeroAnim.play(anim); }, Math.max(0, lead));
+            }
             attacker.classList.add('is-attacking');
             setTimeout(hit, RPG_LUNGE_MS * RPG_LUNGE_IMPACT);
             setTimeout(() => attacker.classList.remove('is-attacking'), RPG_LUNGE_MS);
@@ -970,7 +1015,7 @@ function _rpgLootLine(loot) {
     const rar = RARITY_BY_ID[loot.rarity] || RARITY_BY_ID.comun;
     return `<div class="rpg-result-loot${loot.taken ? '' : ' is-left'}" data-rarity="${esc(rar.id)}" style="--rarity:${esc(rar.color)}">
         <span class="rpg-drop-icon"><img src="${esc(ICON(loot.img))}" alt="" draggable="false"></span>
-        <span class="rpg-drop-text"><small>${loot.taken ? 'Has conseguido' : 'No te cabe: llevas el máximo'}</small>
+        <span class="rpg-drop-text"><small>${loot.taken ? 'Has conseguido' : loot.spare ? `No te cabe: la cambias por ${loot.spare} 🪙` : 'No te cabe: llevas el máximo'}</small>
             <b>${esc(loot.name)}</b><i>${esc(rar.name)}</i></span>
     </div>`;
 }
@@ -1370,7 +1415,8 @@ const _panelHeader = (icon, title, sub) => `
  * color de su elemento y el nombre en el color de su rareza) y la ficha a la derecha, con dos pestañas: «Detalle» (la
  * pieza tal cual es) y «Vista previa» (tu héroe con ella).
  * opts: {
- *   gear: [{ id, name, slot, rarity, element, atq, upgrades, desc, from, effects, image, preview, equipped }],
+ *   gear: [{ id, name, slot, slotName, rarity, element, stat, upgrades, desc, from, effects, image, look, equipped }],
+ *         (look: el aspecto del héroe con esa pieza puesta, para la vista previa)
  *   items: [{ id, name, img, count, desc, use?, rarity?, type? }]   (consumibles; `use` = texto del botón si se puede usar aquí)
  *   selected, gold, onEquip(id), onUse(id)
  * }
@@ -1399,7 +1445,7 @@ export function renderInventoryPanel(opts) {
                 <span class="inv-num">${i.equipped ? '<span class="inv-check" title="Equipada">✔</span>' : n}</span>
                 ${i.kind === 'gear' ? _invChip(i.slot, i.element) : `<span class="inv-chip is-item"><img src="${esc(ICON(i.img))}" alt="" draggable="false"></span>`}
                 <span class="inv-name"${i.rarity ? ` style="color:${INV_RARITY_INK[i.rarity] || INV_RARITY_INK.comun}"` : ''}>${esc(i.name)}${i.upgrades ? ` +${i.upgrades}` : ''}</span>
-                <span class="inv-val">${i.kind === 'gear' ? `ATK ${i.atq}` : `×${i.count}`}</span>
+                <span class="inv-val">${i.kind === 'gear' ? esc(i.stat) : `×${i.count}`}</span>
             </button></li>`;
         const gearRows = opts.gear.map((g, n) => row({ ...g, kind: 'gear' }, n + 1)).join('');
         const itemRows = opts.items.map((i, n) => row({ ...i, kind: 'item' }, n + 1)).join('');
@@ -1408,16 +1454,17 @@ export function renderInventoryPanel(opts) {
         if (it.kind === 'gear') {
             const rar = RARITY_BY_ID[it.rarity] || RARITY_BY_ID.comun;
             const elem = ELEMENTS[it.element] || ELEMENTS.neutro;
-            const picture = tab === 'preview' ? (it.preview || heroArt(ART) || RPG_HERO_SPRITE) : (it.image || null);
+            const picture = tab === 'preview' ? { src: '' } : (it.image || null);
+            const armor = it.slot === 'armor';
             detail = `
                 <h4 class="inv-item-name" style="color:${INV_RARITY_INK[it.rarity] || INV_RARITY_INK.comun}">${esc(it.name)}${it.upgrades ? ` +${it.upgrades}` : ''}</h4>
-                <p class="inv-item-kind">Arma · ${esc(rar.name)} · ${esc(elem.name)}</p>
+                <p class="inv-item-kind">${esc(it.slotName || 'Arma')} · ${esc(rar.name)} · ${esc(elem.name)}</p>
                 <div class="inv-frame" data-rarity="${esc(it.rarity)}">
-                ${picture ? `<img class="inv-preview${tab === 'detail' ? ' is-piece' : ''}" src="${esc(picture.src)}" alt="${esc(tab === 'preview' ? `Tu héroe con ${it.name}` : it.name)}" draggable="false">`
+                ${picture ? `<img class="inv-preview${tab === 'detail' ? ` is-piece${armor ? ' is-armor' : ''}` : ' is-hero'}"${tab === 'preview' ? ' data-inv-look' : ` src="${esc(picture.src)}"`} alt="${esc(tab === 'preview' ? `Tu héroe con ${it.name}` : it.name)}" draggable="false">`
                     : `<div class="inv-preview is-empty">${_invChip(it.slot, it.element)}</div>`}
                 </div>
                 <p class="inv-item-desc">${esc(it.desc)}</p>
-                <dl class="inv-stats"><dt>Ataque</dt><dd>ATK ${it.atq}${it.upgrades ? ` (+${it.upgrades} de mejora)` : ''}</dd>
+                <dl class="inv-stats"><dt>${armor ? 'Protección' : 'Ataque'}</dt><dd>${esc(it.stat)}${it.upgrades ? ` (+${it.upgrades} de mejora)` : ''}</dd>
                     ${it.effects ? `<dt>Efecto</dt><dd>${esc(it.effects)}</dd>` : ''}<dt>Origen</dt><dd>${esc(it.from || '')}</dd></dl>
                 <button type="button" class="btn-forge inv-equip" data-inv-equip="${esc(it.id)}"${it.equipped ? ' disabled' : ''}>${it.equipped ? '✔ Equipada' : 'Equipar'}</button>`;
         } else {
@@ -1444,6 +1491,9 @@ export function renderInventoryPanel(opts) {
                 ${detail}
             </section>
         </div>`;
+        // Vista previa: el héroe con esa pieza puesta (se monta aparte y se pone al llegar)
+        const lookImg = el.querySelector('[data-inv-look]');
+        if (lookImg && it.look) prepareHero(it.look).then(set => { lookImg.src = set.frames[HERO_SPRITES.idle.anim][HERO_SPRITES.idle.frame]; lookImg.dataset.armor = set.armor; lookImg.dataset.weapon = it.look.weaponId || ''; });
         el.querySelectorAll('[data-inv-item]').forEach(b => b.addEventListener('click', () => { selected = b.dataset.invItem; draw(); }));
         el.querySelectorAll('[data-inv-tab]').forEach(b => b.addEventListener('click', () => { tab = b.dataset.invTab; draw(); }));
         const eq = el.querySelector('[data-inv-equip]');

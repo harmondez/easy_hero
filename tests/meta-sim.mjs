@@ -166,24 +166,24 @@ console.log('\n⚒️ La Forja: mejoras permanentes compradas con oro');
     assert('sin oro no se puede comprar nada', !canBuyUpgrade(meta, 'filo') && buyUpgrade(meta, 'filo').ok === false);
     assert('una mejora que no existe no rompe nada', !canBuyUpgrade(meta, 'inventada') && upgradeEffect(meta, 'inventada') === 0);
 
-    recordGold(meta, 25);
+    recordGold(meta, 45);
     const first = buyUpgrade(meta, 'filo');
-    assert('Filo afilado: la primera compra cuesta 10 y descuenta del oro', first.ok && first.cost === 10 && meta.gold === 15);
+    assert('Filo afilado: la primera lección cuesta 30 y descuenta del oro', first.ok && first.cost === 30 && meta.gold === 15);
     assert('…sube a nivel 1 y da +1 ATK', upgradeLevel(meta, 'filo') === 1 && upgradeEffect(meta, 'filo') === 1);
-    assert('el precio se duplica: el segundo nivel cuesta 20', nextUpgradeCost(meta, 'filo') === 20);
+    assert('cada lección cuesta bastante más que la anterior: la segunda, 48', nextUpgradeCost(meta, 'filo') === 48);
     assert('con 15 monedas no llega para el segundo nivel', !canBuyUpgrade(meta, 'filo') && !buyUpgrade(meta, 'filo').ok);
-    recordGold(meta, 5);
+    recordGold(meta, 33);
     buyUpgrade(meta, 'filo');
-    assert('el segundo nivel da +2 más: +3 ATK en total', upgradeLevel(meta, 'filo') === 2 && upgradeEffect(meta, 'filo') === 3);
-    assert('el tercero cuesta 40 (10 → 20 → 40)', nextUpgradeCost(meta, 'filo') === 40);
-    recordGold(meta, 40);
+    assert('la segunda da otro +1: +2 ATK en total (sin rampa: ya no es 1, 3, 6…)', upgradeLevel(meta, 'filo') === 2 && upgradeEffect(meta, 'filo') === 2);
+    assert('la tercera cuesta 77 (30 → 48 → 77)', nextUpgradeCost(meta, 'filo') === 77);
+    recordGold(meta, 77);
     buyUpgrade(meta, 'filo');
-    assert('y el tercero da +3 más: +6 ATK en total (1, 3, 6, 10…)', upgradeEffect(meta, 'filo') === 6 && nextUpgradeCost(meta, 'filo') === 80);
+    assert('y con tres lecciones, +3 ATK; la cuarta cuesta 123', upgradeEffect(meta, 'filo') === 3 && nextUpgradeCost(meta, 'filo') === 123);
     const vida = loadMeta(fakeStorage());
     recordGold(vida, 1000);
     for (let i = 0; i < 3; i++) { buyUpgrade(vida, 'constitucion'); buyUpgrade(vida, 'buen_ojo'); }
-    assert('Constitución igual: +1, +2, +3 HP (6 en total) y Buen ojo: +1, +2, +3 de oro por combate (6)',
-        upgradeEffect(vida, 'constitucion') === 6 && upgradeEffect(vida, 'buen_ojo') === 6 && vida.gold === 1000 - 2 * (10 + 20 + 40));
+    assert('Constitución: +4 HP por lección (12 con tres) y Buen ojo: +1 de oro por combate cada una (3)',
+        upgradeEffect(vida, 'constitucion') === 12 && upgradeEffect(vida, 'buen_ojo') === 3 && vida.gold === 1000 - (25 + 40 + 64) - (40 + 72 + 130));
 
     const once = loadMeta(fakeStorage());
     recordGold(once, 10000);

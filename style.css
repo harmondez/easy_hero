@@ -49,7 +49,8 @@
     --parchment-edge: #9c7442;
 }
 
-html { scroll-behavior: smooth; }
+/* overflow-x: nada empuja la página de lado (en el móvil se vio una vez un scroll horizontal sin poder repetirlo) */
+html { scroll-behavior: smooth; overflow-x: clip; }
 
 body {
     font-family: var(--font-body);
@@ -1513,6 +1514,7 @@ body {
 .adv-hero {
     position: absolute; left: 0; top: 0;
     transform-origin: 50% 100%;
+    image-rendering: pixelated;
     filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.55));
     user-select: none;
     will-change: transform;
@@ -1524,9 +1526,7 @@ body {
     user-select: none;
     pointer-events: none;
 }
-/* El paso: un leve balanceo mientras camina (sin sprites) */
-.adv-hero.is-walking { animation: advStep 0.32s ease-in-out infinite; }
-@keyframes advStep { 50% { translate: 0 -1.6px; } }
+/* El paso ya lo dan sus fotogramas (src/hero-sprite.js); antes era un balanceo */
 
 /* Caminos a trazos, como en los mapas antiguos: un halo de pergamino debajo y la tinta encima */
 .adv-paths { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
@@ -1535,6 +1535,17 @@ body {
 
 /* Paradas: puntos rojos que laten, con su icono en una etiqueta debajo */
 .adv-markers { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+/* El telón del cambio de escena: negro con el nombre del lugar; entra de golpe y se levanta despacio */
+.adv-fade {
+    position: absolute; inset: 0; z-index: 4; pointer-events: none;
+    display: grid; place-items: center; padding: 16px; text-align: center;
+    background: var(--bg-main); color: var(--gold);
+    font-family: 'Cinzel', serif; font-size: clamp(1.2rem, 3.2vw, 2rem); letter-spacing: 0.08em;
+    opacity: 0; transition: opacity 0.6s ease-out;
+}
+.adv-fade.is-on { opacity: 1; }
+.adv-fade.is-cut { transition: none; }
+@media (prefers-reduced-motion: reduce) { .adv-fade { transition: none; } }
 .adv-stop {
     --stop: #c8321e;
     position: absolute; left: 0; top: 0;
@@ -2508,3 +2519,26 @@ body.is-intro { overflow: hidden; }
     .adv-bar-buttons { gap: 2px; }
     .adv-bar-btn { padding: 4px 5px; }
 }
+
+/* --- 🧍 El héroe por capas (src/hero-sprite.js): su imagen lleva aire alrededor para que quepa la espada --- */
+/* En el combate, la caja del actor es el cuerpo del héroe; la imagen la desborda, colgada de sus pies (--fx, --fy) */
+.rpg-actor.is-hero.is-layered { aspect-ratio: 0.5; }
+.rpg-actor.is-layered > img, .equip-figure img, .inv-preview.is-hero {
+    position: absolute; left: 50%; bottom: 0;
+    height: calc(100% * var(--hero-zoom)); width: auto; max-width: none; max-height: none;
+    image-rendering: pixelated;
+    transform-origin: calc(var(--hero-fx) * 100%) calc(var(--hero-fy) * 100%);
+    transform: translate(calc(var(--hero-fx) * -100%), calc((1 - var(--hero-fy)) * 100%));
+}
+/* En la ficha de Equipo y en la vista previa del inventario: el héroe a casi todo el alto, con los pies abajo */
+.equip-figure { position: relative; overflow: hidden; }
+.equip-figure img { bottom: 4%; height: calc(86% * var(--hero-zoom)); object-fit: fill; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.75)); }
+.inv-frame { position: relative; overflow: hidden; }
+.inv-frame .inv-preview.is-hero { bottom: 14%; height: calc(66% * var(--hero-zoom)); margin: 0; }
+/* El reposo no está dibujado: respira (se estira un pelín desde los pies) */
+.rpg-actor.is-layered > img.is-idle, .equip-figure img.is-idle { animation: heroBreathe 2.6s ease-in-out infinite; }
+@keyframes heroBreathe { 50% { scale: 0.994 1.018; } }
+@media (prefers-reduced-motion: reduce) { .rpg-actor.is-layered > img.is-idle, .equip-figure img.is-idle { animation: none; } }
+/* La pieza de una armadura es el héroe de pie con ella: en una ranura o una carta, de la cabeza a los pies */
+.equip-slot[data-equip-slot="armor"].has-item .equip-slot-frame img { width: calc(var(--slot) * 0.72); height: calc(var(--slot) * 0.72); }
+.shop-icon-img.is-armor, .inv-preview.is-armor { image-rendering: pixelated; object-fit: contain; }

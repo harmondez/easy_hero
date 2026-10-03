@@ -20,8 +20,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 console.log('\n🪖 Equipo (datos)');
 assert('Hay ocho ranuras, cada una con su nombre y su icono', SLOT_ORDER.length === 8 && new Set(SLOT_ORDER).size === 8
     && SLOT_ORDER.every(s => SLOT_NAMES[s] && ART.icons[SLOT_ICONS[s]]));
-assert('El héroe de cuerpo entero está registrado y es una figura de pie (mucho más alta que ancha)',
-    !!ART.portraits['hero-cuerpo'] && ART.portraits['hero-cuerpo'].h / ART.portraits['hero-cuerpo'].w > 1.7);
+assert('El héroe de frente y de cuerpo entero sigue registrado (referencia de la fábrica)', !!ART.portraits['hero-cuerpo']);
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webp': 'image/webp' };
@@ -65,8 +64,9 @@ assert('Con puntos de nivel sin repartir, el botón de Equipo avisa', /is-new/.t
 await page.click('.adv-equip');
 await sleep(300);
 assert('«Equipo» abre su pantalla', await page.$eval('#panelOverlay', el => getComputedStyle(el).display !== 'none') && !!(await page.$('.equip')));
-const fig = await page.$eval('.equip-figure img', el => ({ src: el.src, ok: el.complete && el.naturalWidth > 0, ratio: el.naturalHeight / el.naturalWidth, h: el.getBoundingClientRect().height }));
-assert('En el centro, el héroe de cuerpo entero', /hero-cuerpo/.test(fig.src) && fig.ok && fig.ratio > 1.7 && fig.h > 250);
+await page.waitForFunction(() => { const i = document.querySelector('.equip-figure img'); return i && i.dataset.armor && i.complete && i.naturalWidth > 0; }, null, { timeout: 5000 }).catch(() => {});
+const fig = await page.$eval('.equip-figure img', el => ({ armor: el.dataset.armor, weapon: el.dataset.weapon, ok: el.complete && el.naturalWidth > 0, h: el.getBoundingClientRect().height }));
+assert('En el centro, el héroe de cuerpo entero, con la armadura y la espada que lleva puestas', fig.ok && fig.armor === 'acero' && fig.weapon === 'mirmulnir' && fig.h > 250);
 const slots = await page.$$eval('[data-equip-slot]', els => els.map(e => ({ slot: e.dataset.equipSlot, name: e.querySelector('.equip-slot-name').textContent,
     item: e.classList.contains('has-item'), rarity: e.dataset.rarity || null, img: e.querySelector('img').getAttribute('src'), x: e.getBoundingClientRect().left })));
 const figX = await page.$eval('.equip-figure', el => { const r = el.getBoundingClientRect(); return [r.left, r.right]; });
@@ -76,7 +76,14 @@ assert('Ocho ranuras con su nombre: cuatro a la izquierda del héroe y cuatro a 
 const weapon = slots.find(s => s.slot === 'weapon');
 assert('La del arma enseña la espada equipada (Mirmulnir, épica) con su +2 de mejora', weapon.item && weapon.rarity === 'epica' && /objeto-mirmulnir/.test(weapon.img)
     && (await page.$eval('[data-equip-slot="weapon"] .equip-slot-plus', el => el.textContent)) === '+2');
-assert('Las otras siete salen vacías, con el icono de su ranura', slots.filter(s => s.slot !== 'weapon').every(s => !s.item && /ranura-/.test(s.img)));
+const armorSlot = slots.find(s => s.slot === 'armor');
+assert('La de la armadura enseña la que llevas (la de acero, común)', armorSlot.item && armorSlot.rarity === 'comun' && /img\/hero\/acero\//.test(armorSlot.img));
+assert('Las otras seis salen vacías, con el icono de su ranura', slots.filter(s => !['weapon', 'armor'].includes(s.slot)).every(s => !s.item && /ranura-/.test(s.img)));
+await page.click('[data-equip-slot="armor"]');
+await sleep(100);
+assert('Su ficha: «Armadura de acero», «Vida +0» y el botón de cambiar', /Armadura de acero/.test(await page.$eval('.equip-detail', el => el.textContent)) && /Vida \+0/.test(await page.$eval('.equip-detail', el => el.textContent)) && !!(await page.$('[data-equip-change]')));
+await page.click('[data-equip-slot="weapon"]');
+await sleep(100);
 const inside = await page.$eval('[data-equip-slot="weapon"]', el => {
     const f = el.querySelector('.equip-slot-frame').getBoundingClientRect(), i = el.querySelector('img').getBoundingClientRect();
     return i.left >= f.left - 1 && i.right <= f.right + 1 && i.top >= f.top - 1 && i.bottom <= f.bottom + 1;
@@ -94,14 +101,14 @@ assert('Pulsar una ranura vacía: «Casco · Sin equipar», sin botón de cambia
     && /is-selected/.test(await page.$eval('[data-equip-slot="helmet"]', el => el.className)));
 
 console.log('\n📊 Las estadísticas');
-// Fuerza 17 → +1 ATK; Destreza 11 → 2,4 % de crítico y 1,8 % de esquiva; Vitalidad 9 → +16 de vida y 1,6 % de resistencia
+// Fuerza 17 → +6 ATK (uno cada 2 puntos); Destreza 11 → 18 % de crítico y 9 % de esquiva; Vitalidad 9 → +16 de vida y 1,6 % de resistencia
 const shown = { level: await stat(page, 'level'), xp: await stat(page, 'xp'), atk: await stat(page, 'atk'), ph: await stat(page, 'ph'), hp: await stat(page, 'hp'), mp: await stat(page, 'mp'),
     en: await stat(page, 'en'), crit: await stat(page, 'crit'), dodge: await stat(page, 'dodge'), pres: await stat(page, 'pres'), eres: await stat(page, 'eres') };
 assert('Nivel y experiencia: «3» y «35/100 XP», con su barra a un tercio', shown.level === '3' && shown.xp === '35/100 XP'
     && Math.abs(parseFloat(await page.$eval('.equip-xp-fill', el => el.style.width)) - 35) < 0.5);
-assert('ATK 7 (espada 4 + 2 de mejora + 1 de Fuerza), PH 5, vida 21/41, maná 12/12 y energía 0/100',
-    shown.atk === '7' && shown.ph === '5' && shown.hp === '21/41' && shown.mp === '12/12' && shown.en === '0/100');
-assert('Crítico 2,4 %, esquiva 1,8 %, resistencia física 1,6 % y elemental 0 %', /^2,4\s%$/.test(shown.crit) && /^1,8\s%$/.test(shown.dodge) && /^1,6\s%$/.test(shown.pres) && /^0\s%$/.test(shown.eres));
+assert('ATK 12 (espada 4 + 2 de mejora + 6 de Fuerza), PH 5, vida 21/41, maná 12/12 y energía 0/100',
+    shown.atk === '12' && shown.ph === '5' && shown.hp === '21/41' && shown.mp === '12/12' && shown.en === '0/100');
+assert('Crítico 18 %, esquiva 9 %, resistencia física 1,6 % y elemental 0 %', /^18\s%$/.test(shown.crit) && /^9\s%$/.test(shown.dodge) && /^1,6\s%$/.test(shown.pres) && /^0\s%$/.test(shown.eres));
 assert('Los cuatro atributos: Fuerza 17, Destreza 11, Inteligencia 5 y Vitalidad 9',
     (await primary(page, 'str')) === 17 && (await primary(page, 'dex')) === 11 && (await primary(page, 'int')) === 5 && (await primary(page, 'vit')) === 9
     && (await page.$$eval('.equip-primary-name', els => els.map(e => e.textContent).join())) === 'Fuerza,Destreza,Inteligencia,Vitalidad');
@@ -118,8 +125,8 @@ assert('La barra de abajo se entera (vida máxima 45)', /\/45$/.test(await page.
 await page.click('[data-equip-spend="dex"]');
 await sleep(200);
 m = await page.evaluate(() => JSON.parse(localStorage.getItem('easy-hero-meta')));
-assert('El último punto, en Destreza: crítico 2,8 %, ya no quedan puntos y los «+» se apagan',
-    (await primary(page, 'dex')) === 12 && /^2,8\s%$/.test(await stat(page, 'crit')) && m.statPoints === 0
+assert('El último punto, en Destreza: crítico 21 %, ya no quedan puntos y los «+» se apagan',
+    (await primary(page, 'dex')) === 12 && /^21\s%$/.test(await stat(page, 'crit')) && m.statPoints === 0
     && !(await page.$('[data-equip-stat="points"]')) && (await page.$$('[data-equip-spend]:not([disabled])')).length === 0);
 assert('…y el botón de Equipo deja de avisar', !/is-new/.test(await page.$eval('.adv-equip', el => el.className)));
 const sheet = { atk: Number(await stat(page, 'atk')), hp: await stat(page, 'hp'), mp: await stat(page, 'mp') };
@@ -166,10 +173,10 @@ await sleep(400);
 const mob = await mobile.evaluate(() => {
     const r = sel => document.querySelector(sel).getBoundingClientRect();
     const slots = [...document.querySelectorAll('[data-equip-slot]')].map(e => e.getBoundingClientRect());
-    return { fig: r('.equip-figure img'), slots: slots.map(s => ({ l: s.left, r: s.right, t: s.top, w: s.width })), scroll: document.documentElement.scrollWidth > window.innerWidth + 1,
+    return { figBox: r('.equip-figure'), slots: slots.map(s => ({ l: s.left, r: s.right, t: s.top, w: s.width })), scroll: document.documentElement.scrollWidth > window.innerWidth + 1,
         sheet: r('.equip-sheet') };
 });
-assert('El héroe arriba y las ocho ranuras debajo, en dos filas de cuatro', mob.slots.every(s => s.t >= mob.fig.bottom - 1)
+assert('El héroe arriba y las ocho ranuras debajo, en dos filas de cuatro', mob.slots.every(s => s.t >= mob.figBox.bottom - 1)
     && new Set(mob.slots.map(s => Math.round(s.t))).size === 2 && mob.slots.slice(0, 4).every(s => Math.round(s.t) === Math.round(mob.slots[0].t)));
 assert('Todo cabe a lo ancho (sin scroll horizontal) y las ranuras se pueden pulsar con el dedo',
     !mob.scroll && mob.slots.every(s => s.l >= 0 && s.r <= 390 && s.w >= 44) && mob.sheet.left >= 0 && mob.sheet.right <= 390);

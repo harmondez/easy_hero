@@ -11,6 +11,8 @@
 //   floor     piso de referencia: fija la fuerza base (ver rpgMonsterStats en engine.js)
 //   pattern   arquetipo de movimientos de PATTERNS (monsters.js)
 //   atkMul / hpMul   multiplican el daño y la vida respecto a su piso
+//   hp / atq         la vida y el ataque escritos a mano (mandan sobre el piso y los multiplicadores)
+//   gold / xp        lo que da al caer (si no, lo de su tipo)
 //   rules     reglas de combate, las mismas que las variantes (variants.js): physResist (defensa), rageBelow…, y los
 //             efectos de estado (src/data/effects.js): onHit [{ id, power, turns, chance }], stunOnHeavy (aturde con
 //             los golpes de ×n o más)
@@ -20,12 +22,13 @@
 //   scale     tamaño en pantalla respecto a su dibujo (los dibujos se normalizan a la altura del héroe: un lobo a
 //             cuatro patas saldría tan alto como él). Se multiplica por el ×1,25 / ×1,5 de los jefes
 // =============================================
-import { PATTERNS } from './monsters.js?v=1.11.0';
+import { PATTERNS } from './monsters.js?v=1.12.0';
 
 export const CREATURES = {
     // --- Lobos ---
     'lobo-de-zafias': {
         name: 'Lobo de Zafias', icon: '🐺', type: 'monster', floor: 1, pattern: 'rapido',
+        hp: 10, atq: 2,
         scale: 0.55,   // a media altura del torso del héroe
         rules: { onHit: [{ id: 'sangrado', power: 1, turns: 3, chance: 0.4 }] },
         drops: 'lobo', rare: 'lobo',
@@ -33,7 +36,7 @@ export const CREATURES = {
     },
     feronius: {
         name: 'Feronius el Feroz', icon: '🐺', type: 'boss', tag: 'Jefe de Zafias', floor: 1, pattern: 'agresivo',
-        atkMul: 0.8, hpMul: 0.85, scale: 0.55,   // con el ×1,5 de jefe: grande, pero sin llenar la pantalla
+        hp: 55, atq: 5, scale: 0.55,   // con el ×1,5 de jefe: grande, pero sin llenar la pantalla
         rules: { rageBelow: 0.3, rageAtkMul: 1.5, onHit: [{ id: 'sangrado', power: 2, turns: 3, chance: 0.5 }], stunOnHeavy: 1.5 },
         drops: 'feronius',
         desc: 'El lobo alfa de Zafias. Su zarpazo aturde, su mordisco hace sangrar y, cuando está herido, se vuelve loco.'

@@ -1,0 +1,17 @@
+{
+  "_doc": "Vestir una hoja: se le pasa una hoja de animación ya hecha (--ref) y se pide la MISMA hoja con otra ropa. Idea del director (sprite-project/: sin armadura → cuero → hierro). El nombre dice la armadura nueva. Si se pasan dos imágenes, la segunda es la muestra de la ropa (UNA figura suelta de otra animación ya vestida: una hoja entera contagiaba sus poses), para que todas las animaciones lleven exactamente lo mismo. La capa azul es la seña del héroe: se conserva salvo que la descripción pida otra.",
+  "kind": "character",
+  "uses_sprite_rules": false,
+  "references": "sheet",
+  "reference_note": false,
+  "subject": "an exact redraw of the attached sprite sheet in which the character now wears {name}{details}",
+  "pose": "IDENTICAL to the attached sheet: the same 2x2 grid, the same 4 frames in the same cells, the same pose, limb positions, body proportions, scale and position of the character in every frame",
+  "mandatory": [
+    "The attached image is the sprite sheet to redraw. Keep its layout EXACTLY: same number of frames, same cells, same poses, same silhouette of head, arms, hands and legs, same scale, same position in each cell.",
+    "If TWO images are attached: image 1 is the sprite sheet to redraw (it alone decides the layout and the pose of every frame); image 2 is a single figure that only shows the outfit to use. Copy the outfit of image 2 exactly: same pieces, same materials and the same colour for every garment (cape, hood, armour, trousers, boots). IGNORE the pose of image 2.",
+    "Change ONLY the armour and clothes. Keep the long dark blue hooded cape EXACTLY as it is in the sheet (same shape, same dark blue, same gold trim) in every frame, unless the outfit description explicitly asks for a different cape. The face, hair, skin and body are the same character.",
+    "The character is the SAME in all frames: the new outfit is identical in every frame.",
+    "Keep the bright MAGENTA (#FF00FF) rod in the hand exactly where it is in each frame: same position, same angle, same length, flat magenta.",
+    "Pure flat white background (#FFFFFF). No grid lines, no borders, no labels, no scenery, no ground, no shadows, no effects."
+  ]
+}

@@ -6,16 +6,19 @@
 //   name    el rótulo de la tienda
 //   note    una línea bajo el rótulo
 //   sells   en orden: 'potion' · 'mana_potion' · 'elixir:<id>' · 'food:<id>' (src/data/effects.js) ·
-//           'gear:<id>' o 'gear:*' para todas las armas a la venta (src/data/gear.js) · 'crystal' (el cristal de mejora) ·
+//           'gear:<id>' o 'gear:*' para todo el equipo a la venta: espadas y armaduras (src/data/gear.js) · 'crystal' (el cristal de mejora) ·
 //           'upgrade:<id>' o 'upgrade:*' (las mejoras permanentes de src/data/upgrades.js: no se devuelven)
+//   buys    lo que además te compra sin venderlo: 'material:<id>' o 'material:*' (todo material con `value` de
+//           src/data/loot.js; se paga ese valor entero)
 // =============================================
 export const SELL_RATE = 0.75;
 
 export const SHOPS = {
     forja: {
         name: 'La Forja de Bram',
-        note: 'Espadas y cristales de mejora. Con un cristal, Bram le saca más filo a tu espada (pídele «Mejorar»).',
-        sells: ['gear:*', 'crystal']
+        note: 'Espadas, armaduras y cristales de mejora. Con un cristal, Bram le saca más filo a tu espada (pídele «Mejorar»). También compra lo que sueltan los goblins y los lobos.',
+        sells: ['gear:*', 'crystal'],
+        buys: ['material:*']
     },
     botica: {
         name: 'La botica de Amelie',

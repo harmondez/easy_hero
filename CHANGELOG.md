@@ -5,6 +5,31 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.12.0] - 2026-10-03
+
+### ✨ Novedades
+- 🧍 **Tu héroe se ve como va equipado.** La armadura y la espada que llevas puestas se ven en el mapa, en el combate, en la pantalla de Equipo y en la vista previa del inventario.
+- 🛡️ **Armaduras** (una sola pieza: el cuerpo entero), en su ranura de Equipo: la de acero con la que despiertas y siete más que hace Bram, de cuero a placas imperiales negras. Cada una da vida máxima.
+- 🚶 **El héroe se mueve**: camina con sus pasos por el mapa, respira cuando espera, alza la espada y la baja al atacar, y la apunta al frente al lanzar la Bola de fuego.
+- 👁️ **Vista previa de verdad**: en el inventario, «Vista previa» enseña a tu héroe con esa espada o esa armadura puesta antes de equiparla.
+
+- 🧭 **Cambias de idea y el héroe te hace caso.** Si pulsas una parada y, mientras va hacia ella, pulsas otra, da la vuelta en el acto.
+- 🎬 **Telón al cambiar de escena**: la pantalla se va a negro con el nombre del lugar y el sitio nuevo aparece poco a poco (ya no parpadea el mapa anterior).
+
+### ⚖️ Equilibrio (dificultad media-alta)
+- 👹 **Los jefes aguantan.** Grask y Feronius tienen bastante más vida y pegan más: ya no caen con dos Bolas de fuego. Los goblins y los lobos también son más duros.
+- 📈 **Subir de nivel se nota.** Fuerza: +1 de ATK cada 2 puntos. Inteligencia: +1 de PH y +2 de maná por punto. Destreza: +3 % de crítico (daño doble) y +1,5 % de esquiva por punto.
+- 🎓 **Las lecciones de Odo** dan siempre lo mismo (+1 de ATK, +4 de vida) y cuestan más cada vez.
+- 🪙 **Más oro y cosas a tu alcance.** Los enemigos dan más oro, Bram compra lo que sueltan (orejas, pieles, dientes…) y las espadas y armaduras bajan de precio.
+- 🧪 **La poción que no te cabe** ya no se pierde: se cambia por monedas.
+- ✨ **Los encuentros raros** pagan cuatro veces más oro y tres veces más experiencia.
+- ⚔️ La **Espada de Zafias** que forja Bram sube a ATK 3.
+
+### 🔧 Por dentro
+- **Sprite Factory** (`npm run sprite-factory`, `tools/sprite-factory/`): el héroe por capas. Las hojas de animación llevan un palo magenta en la mano que marca dónde va la espada; una armadura nueva se hace vistiendo la hoja base (IA) o tiñendo el metal de otra (código). Cada hoja se revisa sola contra su base.
+- `src/hero-sprite.js`: monta cada fotograma (cuerpo + espada girada sobre la mano + el puño encima) y lo anima en un `<img>`.
+- La fábrica de imágenes gana los tipos `sheet` (hoja de animación) y `dress` (vestir una hoja), y la opción `--ref`.
+
 ## [1.11.0] - 2026-10-03
 
 ### ✨ Novedades

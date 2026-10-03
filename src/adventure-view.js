@@ -1,8 +1,9 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.11.0';
-import { ART } from './data/art.js?v=1.11.0';
-import { monsterArt } from './art.js?v=1.11.0';
-import { creatureFor } from './data/creatures.js?v=1.11.0';
-import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.11.0';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.12.0';
+import { ART } from './data/art.js?v=1.12.0';
+import { monsterArt } from './art.js?v=1.12.0';
+import { creatureFor } from './data/creatures.js?v=1.12.0';
+import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.12.0';
+import { HeroAnimator, HERO_FRAME } from './hero-sprite.js?v=1.12.0';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo
@@ -12,7 +13,6 @@ import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.11.0';
 // pantalla, a tamaño fijo con cualquier zoom; los trazos, en el mundo (escalan con él, como la tinta del mapa).
 // =============================================
 const HERO_MAP_H = 34;          // alto del héroe en píxeles del mapa (un árbol mide ~40)
-const HERO_RATIO = 195 / 244;   // ancho/alto de img/sprites/hero_right.png
 const WALK_SPEED = 95;          // píxeles de mapa por segundo
 const CAMERA_EASE = 0.12;       // cuánto se acerca la cámara a su objetivo en cada fotograma
 const ZOOM_MIN = 1.5;           // por debajo, el héroe se ve diminuto
@@ -33,6 +33,7 @@ const st = {
     hooks: { onEnemy: null, onVisit: null, onScene: null, isShown: () => true, isCleared: () => false }
 };
 let els = null;
+let heroAnim = null;   // el héroe por capas (src/hero-sprite.js): su <img> cambia de fotograma al andar
 
 // El lienzo de la escena: su propio cuadro (`image`, `width`, `height` en la escena) o el mapa de la zona
 const canvas = (sc = st.scene) => (sc && sc.image ? { image: sc.image, w: sc.width, h: sc.height } : { image: zone.image, w: zone.width, h: zone.height });
@@ -117,7 +118,8 @@ function applyTransforms() {
     const { w, h } = viewportSize();
     const { x, y, z } = st.cam;
     els.world.style.transform = `translate3d(${(w / 2 - x * z).toFixed(2)}px, ${(h / 2 - y * z).toFixed(2)}px, 0) scale(${z.toFixed(4)})`;
-    els.hero.style.transform = `translate3d(${st.hero.x.toFixed(2)}px, ${st.hero.y.toFixed(2)}px, 0) translate(-50%, -100%) scaleX(${st.hero.facing})`;
+    // La imagen lleva aire alrededor (cabe la espada): se cuelga de sus pies (fx, fy), no de su borde
+    els.hero.style.transform = `translate3d(${st.hero.x.toFixed(2)}px, ${st.hero.y.toFixed(2)}px, 0) translate(${(-HERO_FRAME.fx * 100).toFixed(2)}%, ${(-HERO_FRAME.fy * 100).toFixed(2)}%) scaleX(${st.hero.facing})`;
     els.markers.querySelectorAll('.adv-stop').forEach(m => {
         let p = project(+m.dataset.x, +m.dataset.y);
         // Una salida fuera de la pantalla se queda en el borde, con la flecha apuntando hacia donde está
@@ -162,6 +164,7 @@ function tick(now) {
         }
     }
 
+    if (heroAnim) heroAnim.walk(!!st.path);
     const t = cameraTarget();
     const k = reducedMotion() || st.jump ? 1 : 1 - Math.pow(1 - CAMERA_EASE, dt * 60);
     st.jump = false;
@@ -254,6 +257,7 @@ function renderScene() {
 /** Entra en una escena y pone al héroe en una parada (por defecto, la de inicio de la escena). */
 function enterScene(id, atStop) {
     const before = st.scene ? canvas().image : null;
+    const cameFrom = st.sceneId;
     st.scene = zone.scenes[id];
     st.sceneId = id;
     els.viewport.dataset.scene = id;
@@ -267,12 +271,29 @@ function enterScene(id, atStop) {
         els.paths.setAttribute('viewBox', `0 0 ${cv.w} ${cv.h}`);
         st.jump = true;   // otro lienzo: la cámara no viaja, aparece ya encuadrada
     }
+    if (cameFrom && cameFrom !== id) { st.jump = true; curtain(st.scene.name, els.world.querySelector('img')); }
     st.at = atStop && node(atStop) ? atStop : st.scene.startAt;
     const n = node(st.at);
     st.hero.x = n.x; st.hero.y = n.y;
     st.path = null;
     if (st.hooks.onScene) st.hooks.onScene(id);
     renderScene();
+}
+
+// El telón: al cambiar de escena la pantalla se va a negro con el nombre del lugar y el cuadro nuevo aparece poco a
+// poco, cuando su imagen ya está lista (así no se ve un parpadeo del cuadro anterior)
+const CURTAIN_HOLD_MS = 420;
+let curtainRun = 0;
+function curtain(name, img) {
+    if (!els.fade) return;
+    const run = ++curtainRun;
+    els.fade.textContent = name || '';
+    els.fade.classList.add('is-on', 'is-cut');
+    void els.fade.offsetWidth;   // el negro entra de golpe; lo que se anima es la salida
+    els.fade.classList.remove('is-cut');
+    const lift = () => { if (run === curtainRun) els.fade.classList.remove('is-on'); };
+    const ready = img && img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+    ready.then(() => setTimeout(lift, reducedMotion() ? 0 : CURTAIN_HOLD_MS));
 }
 
 // Los cuadros de todas las escenas, cargados de antemano: al cambiar de escena no se ve el anterior ni un hueco
@@ -409,31 +430,70 @@ function arriveAt(p) {
     else if (fight) fight();
 }
 
+const dist2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+/**
+ * Desde dónde puede salir el héroe ahora mismo. Parado en una parada, desde ella. A medio camino (andando, o plantado
+ * ante un enemigo), está sobre un tramo entre dos paradas: puede seguir hasta la de delante o volver a la de detrás.
+ * → [{ id (la parada a la que sale), lead (los puntos para llegar a ella, el último con `stop`) }]
+ */
+function heroExits() {
+    const here = node(st.at);
+    if (here && dist2(here, st.hero) < 0.5) return [{ id: st.at, lead: [] }];
+    // El tramo de camino más cercano al héroe
+    let best = null;
+    for (const [a, b, via] of visibleLinks()) {
+        const pts = [node(a), ...(via || []), node(b)];
+        for (let i = 0; i < pts.length - 1; i++) {
+            const p = pts[i], q = pts[i + 1], len2 = (q.x - p.x) ** 2 + (q.y - p.y) ** 2 || 1;
+            const t = Math.max(0, Math.min(1, ((st.hero.x - p.x) * (q.x - p.x) + (st.hero.y - p.y) * (q.y - p.y)) / len2));
+            const d = Math.hypot(st.hero.x - (p.x + (q.x - p.x) * t), st.hero.y - (p.y + (q.y - p.y) * t));
+            if (!best || d < best.d) best = { d, a, b, pts, i };
+        }
+    }
+    if (!best) return [{ id: st.at, lead: [] }];
+    const xy = p => ({ x: p.x, y: p.y });
+    const back = best.pts.slice(0, best.i + 1).reverse().map(xy), fwd = best.pts.slice(best.i + 1).map(xy);
+    back[back.length - 1].stop = best.a;
+    fwd[fwd.length - 1].stop = best.b;
+    return [{ id: best.a, lead: back }, { id: best.b, lead: fwd }];
+}
+
 function onStopClick(id) {
-    if (st.dialogue || st.menu || st.path) return;
-    const r = route(st.at, id);
-    if (!r) return;
-    let points = r.points;
+    if (st.dialogue || st.menu) return;
+    // Andando también se puede pulsar otra parada: el héroe cambia de rumbo en el acto, por el camino más corto
+    let plan = null;
+    for (const ex of heroExits()) {
+        const r = route(ex.id, id);
+        if (!r) continue;
+        const points = [...ex.lead, ...r.points];
+        let len = 0, from = st.hero;
+        for (const pt of points) { len += dist2(from, pt); from = pt; }
+        if (!plan || len < plan.len) plan = { points, len };
+    }
+    if (!plan) return;
+    let points = plan.points;
     let target = node(id);
     // Un enemigo sin vencer corta el paso: el camino termina ante él (el primero que haya por delante)
-    const blockIdx = points.length ? r.stops.findIndex(s => { const n = node(s); return n.kind === 'enemy' && !st.hooks.isCleared(n); }) : -1;
-    if (blockIdx >= 0) {
-        const blockId = r.stops[blockIdx];
-        target = node(blockId);
-        points = points.slice(0, points.findIndex(pt => pt.stop === blockId) + 1);
+    const blockAt = points.findIndex(pt => { const n = pt.stop && node(pt.stop); return n && n.kind === 'enemy' && !st.hooks.isCleared(n); });
+    if (blockAt >= 0) {
+        target = node(points[blockAt].stop);
         // Se para a unos pasos, mirándole. Cuenta como si siguiera en la parada anterior: si huye, no se ha colado
+        const before = (points.slice(0, blockAt).reverse().find(pt => pt.stop) || {}).stop || st.at;
+        points = points.slice(0, blockAt + 1);
         const last = points[points.length - 1];
         const prev = points[points.length - 2] || st.hero;
         const len = Math.hypot(last.x - prev.x, last.y - prev.y) || 1;
         const k = Math.min(1, FACE_GAP / len);
-        const before = blockIdx > 0 ? r.stops[blockIdx - 1] : st.at;
         points[points.length - 1] = { x: last.x - (last.x - prev.x) * k, y: last.y - (last.y - prev.y) * k, stop: before };
+        // Ya plantado ante él: no hay nada que andar
+        if (dist2(points[points.length - 1], st.hero) < 0.5 || (points.length === 1 && len <= FACE_GAP + 0.5)) points = [];
     }
     const arrive = () => {
         if (target.kind === 'enemy') st.hero.facing = target.x < st.hero.x ? -1 : 1;
         arriveAt(target);
     };
-    if (!points.length) { arrive(); return; }
+    if (!points.length) { st.path = null; st.onArrive = null; els.hero.classList.remove('is-walking'); arrive(); return; }
     st.path = points;
     st.onArrive = arrive;
     els.hero.classList.add('is-walking');
@@ -464,8 +524,14 @@ function bind() {
     els.paths.setAttribute('class', 'adv-paths');
     els.paths.setAttribute('aria-hidden', 'true');
     els.world.insertBefore(els.paths, els.hero);
-    els.hero.style.height = `${HERO_MAP_H}px`;
-    els.hero.style.width = `${(HERO_MAP_H * HERO_RATIO).toFixed(1)}px`;
+    els.hero.style.height = `${(HERO_MAP_H * HERO_FRAME.zoom).toFixed(1)}px`;
+    els.hero.style.width = `${(HERO_MAP_H * HERO_FRAME.zoom * HERO_FRAME.w / HERO_FRAME.h).toFixed(1)}px`;
+    els.hero.style.transformOrigin = `${(HERO_FRAME.fx * 100).toFixed(2)}% ${(HERO_FRAME.fy * 100).toFixed(2)}%`;
+    heroAnim = new HeroAnimator(els.hero);
+    els.fade = document.createElement('div');
+    els.fade.className = 'adv-fade';
+    els.fade.setAttribute('aria-hidden', 'true');
+    els.viewport.appendChild(els.fade);
     els.markers.addEventListener('click', e => {
         const b = e.target.closest('.adv-stop');
         if (b) onStopClick(b.dataset.point);
@@ -555,13 +621,10 @@ export function inventoryNotice(text) {
     root.querySelector('.adv-inventory').classList.add('is-new');
 }
 
-/** El dibujo del héroe en el mapa (cambia con el arma). sprite: { src, w, h } o null para el de siempre. */
-export function setHeroSprite(sprite) {
+/** Cómo se ve el héroe en el mapa: { armor, weapon (src de la espada), weaponId }. Cambia al equipar algo. */
+export function setHeroLook(look) {
     if (!els && !bind()) return;
-    const s = sprite || { src: 'img/sprites/hero_right.png', w: 195, h: 244 };
-    if (els.hero.getAttribute('src') !== s.src) els.hero.src = s.src;
-    // Misma altura de cuerpo; el ancho, el de su imagen (una espada larga la ensancha)
-    els.hero.style.width = `${(HERO_MAP_H * s.w / s.h).toFixed(1)}px`;
+    return heroAnim.setLook(look);
 }
 
 /** Medidor con el arte de la interfaz (barra-vida / barra-mana sobre barra-vacia): `kind` = 'hp' | 'mp'. */

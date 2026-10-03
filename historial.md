@@ -784,3 +784,55 @@ cofres solo dan objetos · legendarios máx. 1 igual, sin límite total · equip
 - Fábrica: tipos `figure` (cuerpo entero; salió a la primera usando el retrato del héroe como referencia) y `gear` (pieza de
   equipo; con él se hizo la Espada de hierro, la única sin dibujo).
 - La espada va girada 45° en su ranura: vertical no cabía en un marco cuadrado.
+
+## 2026-10-03 · Sprite Factory: el héroe animado por capas (sin publicar todavía)
+- **La prueba** (2 imágenes): una hoja de 2×2 del héroe atacando con un PALO MAGENTA en la mano en vez de espada. El palo da,
+  por su color, dónde está la mano y el giro del arma; se borra y la espada se coloca encima como dibujo aparte. Caminar salió
+  igual, describiendo cada paso. La armadura negra, tiñendo el gris del acero por código.
+- **Investigación**: sprite-gen, agent-sprite-forge, ai-game-spritesheets y sprite-sheet-creator (clonados en `research/`), y
+  el informe del director. De ahí: el ancla neutral, describir el ciclo por fases, igualar alturas entre hojas y anclar los
+  pies. Descartado: Phaser, Spine, Tiled y las capas por pieza (casco, botas…). Nada de eso resolvía el equipo visible.
+- **La idea del director** (`sprite-project/`): vestir la hoja base en vez de pedir un personaje nuevo. Medido: mano a 0-2 px
+  y giro a 0-0,4° de la base. Es lo que permite armaduras de otra forma compartiendo los puntos de la mano.
+- **El factory** (`tools/sprite-factory/`): `armadura` (vestir, con revisión y reintentos), `tinte`, `importar`, `lote`,
+  `reconstruir`, `base`, `ver`. Revisión: figuras, palo, altura, mano, giro, color raro en un fotograma, ropa distinta
+  entre animaciones y figuras fuera del lienzo. Lo aprendido está en su README.
+- **En el juego** (`src/hero-sprite.js`): cada fotograma se monta en un lienzo (cuerpo, espada girada, puño encima) y se
+  entrega como imagen, así el mapa, el combate, el inventario y Equipo siguen usando un `<img>`. Todos los fotogramas
+  miden lo mismo y tienen los pies en el mismo punto. Armaduras como equipo (`slot: 'armor'`, `look`, `hp`).
+- Criterio del director a mitad de trabajo: funcional antes que perfecto; lo que importa es ver la armadura y la espada.
+
+## 2026-10-03 · Pruebas largas (bancos nuevos)
+- `tests/lib/zafias-bot.mjs`: un bot que juega Zafias entera con las reglas de verdad (meta.js): posada de pago, tiendas,
+  lecciones, espadas y armaduras, vender lo viejo, botín y raros, misiones leídas de los datos de la zona, maná, energía y
+  habilidades. `tests/long-sim.mjs` (`npm run sim:largo -- <minutos>`) lo usa y añade: dropeos, raros, compraventa al azar
+  con invariantes y duelos por nivel y equipo. Escribe `docs/pruebas-largas.md` con una lista de hallazgos.
+- `tests/soak.test.mjs`: un mono juega en el navegador (escritorio pobre, escritorio rico y móvil) y vigila errores,
+  pantallas sin salida y cifras imposibles. Escribe `docs/pruebas-largas-navegador.md`.
+- Dos falsos positivos de los propios bancos, corregidos: el generador con semilla enseña su sesgo tras miles de millones
+  de tiradas (10,01 % en vez de 10 %), y el mono daba por atascado un combate en el que el héroe estaba aturdido.
+- Resultado: las reglas (dropeos, compraventa, misiones) están bien; el equilibrio, no. Lista en planning.md.
+
+## 2026-10-03 · Equilibrio de Zafias tras las pruebas largas (dificultad media-alta)
+Las pruebas largas dieron diez problemas de equilibrio; se corrigen todos y se vuelve a medir con el bot.
+- **Jefes con vida**: Grask 10 → 30 (ATK 3) y Feronius 10 → 55 (ATK 5). Ya no caen con dos Bolas de fuego. Los goblins y
+  los lobos también suben (6-14 de vida). La vida, el ataque, el oro y la XP de un enemigo se pueden escribir a mano en
+  sus datos (`hp`, `atq`, `gold`, `xp` en la criatura o en la parada; `Engine.tuneEnemy`).
+- **Subir de nivel se nota**: Fuerza +1 ATK cada 2 puntos (eran 10); Inteligencia +1 PH y +2 de maná por punto (antes
+  nada); Destreza +3 % de crítico (×2) y +1,5 % de esquiva (eran 0,4 % y 0,3 %).
+- **Lecciones de Odo sin rampa**: +1 ATK por lección (30, 48, 77, 123…) y +4 de vida (25, 40, 64…). Antes 70 de oro
+  daban +6 de ATK.
+- **Oro**: un enemigo da 5 (eran 2), Grask 30, Feronius 60 (`RPG_BALANCE.adventure.gold`). Bram compra los materiales
+  (`value` en loot.js, `buys` en shops.js). Espadas y armaduras, un 30-40 % más baratas. La Espada de Zafias, ATK 3.
+- **La poción que no cabe** se cambia por su valor de venta (`Meta.spareDropGold`).
+- **Raros**: doble de vida y de ATK como antes, pero dan ×4 de oro y ×3 de XP.
+- **Odo avisa** de cubrirse y de usar la Bola de fuego (para quien solo ataca).
+- **Antes → después** (jugador medio): 20 combates y 0,2 caídas → 59 combates y 2,9 caídas; Feronius 100 % en 2 turnos
+  → 45 % por intento en 12 turnos; 359 de oro y ninguna espada → 888 de oro, el Aguijón o el cuero al acabar.
+- El bot (`tests/lib/zafias-bot.mjs`) aprende a vender materiales, a beber maná contra jefes y a dormir tras caer
+  ante un raro. El informe ya no avisa de que a un jefe se le venza la mitad de las veces: es lo buscado.
+
+## 2026-10-03 · Rumbo que se rectifica y telón entre escenas
+- **Rectificar a medio camino** (src/adventure-view.js): antes una pulsación con el héroe andando se ignoraba. Ahora se busca el tramo de camino en el que está (`heroExits`), se mira si conviene seguir hasta la parada de delante o volver a la de detrás (la ruta más corta) y se cambia el rumbo en el acto. Un enemigo sin vencer sigue cortando el paso.
+- **Telón** (`curtain`, `.adv-fade`): al cambiar de escena el negro entra de golpe con el nombre del lugar, se espera a que la imagen nueva esté lista y se levanta en 0,6 s. Quita el parpadeo del cuadro anterior. La escena cambia en el mismo instante que antes (las pruebas no esperan más).
+- Prueba: tests/rumbo.test.mjs.

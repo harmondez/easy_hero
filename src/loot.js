@@ -1,4 +1,4 @@
-import { MATERIALS, DROPS } from './data/loot.js?v=1.11.0';
+import { MATERIALS, DROPS } from './data/loot.js?v=1.12.0';
 
 // =============================================
 // 🎒 Botín (motor puro): sortea lo que suelta un enemigo. El azar llega por parámetro.

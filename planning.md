@@ -32,7 +32,7 @@
 - **El Goblin Pícaro** solo sale en los tres goblins que no hablan antes de pelear.
 - **El raro** da el mismo oro y la misma XP que el normal; su premio es el botín seguro.
 - **Premios de las misiones nuevas**: Amelie 40 de oro, 30 XP y 2 pociones; Odo 50 y 40 XP; Hilda 45 y 40 XP.
-- **El bot de equilibrio** (`npm run sim:aventura`) no sabe que dormir cuesta 5 monedas ni usa las tiendas nuevas.
+- **El bot viejo** (`npm run sim:aventura`) no sabe que dormir cuesta ni usa tiendas ni habilidades. El nuevo (`npm run sim:largo`, `tests/lib/zafias-bot.mjs`) sí: usar ese.
 - **Sigue pendiente** del director: las tres pistas del pasado del héroe y de quién es el castillo (ver future.md).
 
 ## ❓ Dudas de la pantalla de Equipo (decidí yo; el director confirma o cambia)
@@ -46,6 +46,48 @@
   Bola de fuego, es una regla nueva.
 - Imágenes: 2 de 10 (el héroe de cuerpo entero y la espada de hierro). No hicieron falta botones nuevos: se usan los
   marcos de ranura que ya había. El prompt de iconos de misión queda guardado para cuando toque el diario.
+
+## ⚖️ Equilibrio de Zafias (3 oct 2026): dudas (decidí yo; el director confirma o cambia)
+
+Los diez puntos de las pruebas largas están corregidos (cómo, en historial.md). Dificultad buscada: **media-alta**.
+Medido con `npm run sim:largo` ([docs/pruebas-largas.md](docs/pruebas-largas.md)): acabar Zafias cuesta unos 59 combates y
+14 noches, con 2,9 caídas; a Grask se le vence el 73 % de los intentos y a Feronius el 45 %.
+
+- **Los números elegidos** (todos en datos, fáciles de mover): goblins de 6 a 14 de vida y 1-2 de ATK; lobo 10/2;
+  Grask 30/3; Feronius 55/5. Lecciones de Odo: +1 ATK por 30, 48, 77…; +4 de vida por 25, 40, 64… Un enemigo da 5 de
+  oro, Grask 30 y Feronius 60. Espadas de 180 a 1500 y armaduras de 90 a 1500.
+- **Atributos**: Fuerza, +1 ATK cada 2 puntos; Inteligencia, +1 PH y +2 de maná por punto; Destreza, +3 % de crítico
+  (daño doble) y +1,5 % de esquiva por punto; Vitalidad, como estaba (+4 de vida).
+- **Todo a Inteligencia o todo a Destreza sale más caro**: unos 80-95 combates en vez de 50-59, porque contra Feronius
+  hace falta vida. No es una trampa (acaban el 100 %), pero conviene mirarlo si se quiere un «mago» de verdad.
+- **Los raros siguen con el doble de vida y de ATK** (como se pidió). Con los enemigos más duros ya cuestan: un tercio de
+  la vida y se pierde 1 de cada 6. Dan ×4 de oro y ×3 de experiencia. Si se quieren más temibles: `atkMul` en rares.js.
+- **La Espada de Zafias** (el premio de Bram) pasa de ATK 2 a 3: si no, el Aguijón comprado antes la dejaba en nada.
+- **Bram compra todos los materiales** (no Hilda las pieles ni Amelie las orejas): una sola tienda donde vender es más
+  claro. Si se quiere repartir, es el campo `buys` de cada tienda en shops.js.
+- **La poción que no cabe** se cambia sola por lo que vale vendida (15 o 18 de oro). El tope de 3 no se ha tocado.
+- **Las lecciones y los atributos también valen para el descenso** (aparcado): no se ha vuelto a medir su equilibrio.
+- **Quien ya tenía lecciones compradas** conserva el nivel, pero ahora dan menos (3 lecciones de Filo eran +6; son +3).
+- **Scroll horizontal en el móvil**: no se ha podido repetir. Se ha puesto una red (la página no se desplaza de lado).
+
+## ❓ Dudas del héroe por capas y las armaduras (decidí yo; el director confirma o cambia)
+
+- **Las armaduras dan vida máxima** (+6 a +40) y cuestan de 150 a 2000. Las vende Bram junto a las espadas. Los
+  números son míos: 6/150 cuero, 10/300 malla, 16/600 negra, 24/1100 imperial, 28/1300 escamas, 36/1900 dorada,
+  40/2000 imperial negra.
+- **La capa azul no cambia** con la armadura: es la seña del héroe (y pedir otra capa daba hojas incoherentes).
+- **Solo se ven la armadura y la espada.** Casco, guantes, botas, cinturón, collar y anillo no cambian el dibujo.
+- **Tres animaciones**: caminar, atacar y lanzar habilidad. El reposo y el golpe recibido son por código. «Lanzar» se
+  usa con cualquier habilidad que haga daño (también el Golpe poderoso, que quizá debería usar «atacar»).
+- **Los enemigos siguen quietos** (se lanzan y vuelven, como antes). Animarlos es una hoja por enemigo, sin capas.
+- **El punto de agarre de la espada** es el mismo para todas (a un 11 % del pomo). Si alguna queda rara, se ajusta.
+- **El retrato de los diálogos** sigue siendo el de la armadura de acero: no cambia con la armadura.
+- **Cada armadura pesa** unos 650 KB (12 fotogramas). Solo se carga la que llevas puesta.
+- Imágenes: 21 de 30 (2 hojas base de prueba, la de lanzar en dos intentos, cuero varias veces hasta dar con la regla
+  de la capa, y 9 del lote de malla, imperial y escamas, que pasaron todas a la primera).
+- En la raíz hay material del director sin subir: `sprite-project/` y el informe «Generación Automatizada de Sprites
+  2D.md». Las hojas vestidas están en `taller/sprite-factory/` (no se sube): sin ellas, `reconstruir` conserva los
+  fotogramas que ya hay en `img/hero/`.
 
 ## 🔥 Siguiente, en este orden
 

@@ -1,6 +1,7 @@
 // El equipo de la aventura y la tienda: armas del mercader, cristales de mejora, comida, el frasco de veneno y el
 // modo pruebas (todo gratis)
-import { GEAR, GEAR_FOR_SALE, ELEMENTS, SLOT_ICONS, WEAPON_UPGRADE, STARTER_GEAR } from '../src/data/gear.js';
+import { GEAR, GEAR_FOR_SALE, ELEMENTS, SLOT_ICONS, WEAPON_UPGRADE, STARTER_GEAR, STARTER_ARMOR } from '../src/data/gear.js';
+import { HERO_SPRITES } from '../src/data/hero-sprites.js';
 import { SHOPS, SELL_RATE } from '../src/data/shops.js';
 import { EFFECTS, ELIXIRS, FOOD } from '../src/data/effects.js';
 import { RARITY_BY_ID } from '../src/data/rarities.js';
@@ -19,14 +20,21 @@ const freshMeta = gold => { const m = Meta.loadMeta({ getItem: () => null }); m.
 
 console.log('\n⚔️ Las armas de la aventura (datos)');
 const ids = Object.keys(GEAR);
-assert('cada arma tiene rareza, elemento, ranura y ATK válidos', ids.every(id => {
+const weapons = ids.filter(id => GEAR[id].slot === 'weapon'), armors = ids.filter(id => GEAR[id].slot === 'armor');
+assert('cada pieza tiene rareza, elemento, ranura, nombre y descripción válidos', ids.every(id => {
     const g = GEAR[id];
-    return RARITY_BY_ID[g.rarity] && ELEMENTS[g.element] && SLOT_ICONS[g.slot] && g.atq > 0 && g.name && g.desc;
+    return RARITY_BY_ID[g.rarity] && ELEMENTS[g.element] && SLOT_ICONS[g.slot] && g.name && g.desc;
 }));
+assert('cada arma da ATK', weapons.length === 10 && weapons.every(id => GEAR[id].atq > 0));
+assert('cada armadura da vida y tiene su aspecto dibujado por el Sprite Factory (look)', armors.length === 8
+    && armors.every(id => GEAR[id].hp >= 0 && HERO_SPRITES.armors[GEAR[id].look]) && new Set(armors.map(id => GEAR[id].look)).size === 8);
+assert('la armadura con la que despiertas es la de acero: no da vida ni se vende', GEAR[STARTER_ARMOR].look === 'acero' && GEAR[STARTER_ARMOR].hp === 0 && GEAR[STARTER_ARMOR].price == null);
+assert('las armaduras, cuanto más caras, más vida dan', armors.filter(id => GEAR[id].price != null).sort((a, b) => GEAR[a].price - GEAR[b].price)
+    .every((id, i, arr) => i === 0 || GEAR[arr[i - 1]].hp < GEAR[id].hp));
 assert('sus efectos existen', ids.every(id => [...(GEAR[id].onHit || []), ...(GEAR[id].onStart || [])].every(f => EFFECTS[f.id] && f.turns > 0)));
-assert('el mercader vende 8 armas, ordenadas por precio', GEAR_FOR_SALE.length === 8
+assert('Bram vende 8 armas y 7 armaduras, ordenadas por precio', GEAR_FOR_SALE.filter(id => GEAR[id].slot === 'weapon').length === 8 && GEAR_FOR_SALE.filter(id => GEAR[id].slot === 'armor').length === 7
     && GEAR_FOR_SALE.every((id, i) => i === 0 || GEAR[GEAR_FOR_SALE[i - 1]].price <= GEAR[id].price));
-assert('cada arma que no es la inicial tiene su imagen de detalle (objeto-<id>)', ids.filter(id => id !== STARTER_GEAR).every(id => ART.icons[`objeto-${id}`]));
+assert('cada arma tiene su imagen de detalle (objeto-<id>): es la que se le pone en la mano al héroe', weapons.every(id => ART.icons[`objeto-${id}`]));
 assert('los iconos de ranura y de elemento existen', Object.values(SLOT_ICONS).every(i => ART.icons[i]) && Object.values(ELEMENTS).every(e => !e.icon || ART.icons[e.icon]));
 assert('los consumibles nuevos tienen imagen (frasco, pan, cristal)', ART.icons[ELIXIRS.veneno.img] && ART.icons[FOOD.pan.img] && ART.icons[WEAPON_UPGRADE.img]);
 
@@ -70,12 +78,20 @@ m.advWeapon = STARTER_GEAR;
 Meta.buyCrystal(m); Meta.upgradeWeapon(m, 'espada-imperial');
 before = m.gold;
 assert('una espada guardada se vende al 75 % y pierde sus cristales', Meta.sellItem(m, 'gear:espada-imperial').ok && !Meta.ownsGear(m, 'espada-imperial')
-    && m.gold === before + 487 && Meta.weaponUpgradeLevel(m, 'espada-imperial') === 0);
+    && m.gold === before + Math.floor(GEAR['espada-imperial'].price * 0.75) && Meta.weaponUpgradeLevel(m, 'espada-imperial') === 0);
 assert('y se puede volver a comprar', Meta.buyGear(m, 'espada-imperial').ok);
+m = freshMeta(3000);
+Meta.buyGear(m, 'cota-de-malla');
+assert('una armadura comprada no admite cristales (son para espadas)', Meta.ownsGear(m, 'cota-de-malla') && !Meta.canUpgradeWeapon({ ...m, crystals: 3 }, 'cota-de-malla'));
+m.advArmor = 'cota-de-malla';
+assert('la armadura que llevas puesta no se vende', Meta.sellInfo(m, 'gear:cota-de-malla').equipped && !Meta.sellItem(m, 'gear:cota-de-malla').ok);
+m.advArmor = STARTER_ARMOR;
+before = m.gold;
+assert('guardada, se vende al 75 %', Meta.sellItem(m, 'gear:cota-de-malla').ok && m.gold === before + Math.floor(GEAR['cota-de-malla'].price * 0.75) && !Meta.ownsGear(m, 'cota-de-malla'));
 assert('las mejoras permanentes y los materiales no se venden', !Meta.sellItem(m, 'upgrade:filo').ok && !Meta.sellItem(m, 'material:piel-lobo').ok);
 
 console.log('\n🛒 Cada tienda vende lo suyo');
-assert('la forja: solo espadas y el cristal', SHOPS.forja.sells.join() === 'gear:*,crystal');
+assert('la forja: el equipo (espadas y armaduras) y el cristal', SHOPS.forja.sells.join() === 'gear:*,crystal');
 assert('la botica: pociones de vida y de maná, elixir de fuerza, elixir arcano y frasco de veneno',
     SHOPS.botica.sells.join() === 'potion,mana_potion,elixir:fuerza,elixir:arcano,elixir:veneno');
 assert('la posada: pan', SHOPS.posada.sells.join() === 'food:pan');

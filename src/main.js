@@ -1,17 +1,17 @@
-import * as UI from './ui.js?v=1.11.0';
-import * as Engine from './engine.js?v=1.11.0';
-import * as Events from './events.js?v=1.11.0';
-import * as Save from './save.js?v=1.11.0';
-import * as Items from './items.js?v=1.11.0';
-import * as Meta from './meta.js?v=1.11.0';
-import * as AdventureMode from './adventure.js?v=1.11.0';
-import { playIntro } from './intro.js?v=1.11.0';
-import { ART } from './data/art.js?v=1.11.0';
-import { heroArt } from './art.js?v=1.11.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.11.0';
-import { tierName } from './data/monsters.js?v=1.11.0';
-import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.11.0';
-import { GAME_VERSION } from './version.js?v=1.11.0';
+import * as UI from './ui.js?v=1.12.0';
+import * as Engine from './engine.js?v=1.12.0';
+import * as Events from './events.js?v=1.12.0';
+import * as Save from './save.js?v=1.12.0';
+import * as Items from './items.js?v=1.12.0';
+import * as Meta from './meta.js?v=1.12.0';
+import * as AdventureMode from './adventure.js?v=1.12.0';
+import { playIntro } from './intro.js?v=1.12.0';
+import { ART } from './data/art.js?v=1.12.0';
+import { heroArt } from './art.js?v=1.12.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.12.0';
+import { tierName } from './data/monsters.js?v=1.12.0';
+import { createRng, newSeed, seedToCode, codeToSeed } from './rng.js?v=1.12.0';
+import { GAME_VERSION } from './version.js?v=1.12.0';
 
 // Expuesto para depuración y para los tests del navegador
 window.Engine = Engine;
@@ -776,10 +776,10 @@ function _rpgEndRun(result, monster) {
 /** Oro y XP de una victoria (descenso y aventura). Se multiplican por la profundidad, la variante y La Forja. */
 function _rpgGrantVictory(m) {
     const depthMul = Math.pow(RPG_BALANCE.depth.goldMul, m.tier || 0);
-    const gold = Math.max(1, Math.round((RPG_BALANCE.gold[m.type] || RPG_BALANCE.gold.monster)
+    const gold = Math.max(1, Math.round((m.gold != null ? m.gold : RPG_BALANCE.gold[m.type] || RPG_BALANCE.gold.monster)
         * depthMul * (m.goldMul || 1))) + Meta.upgradeEffect(meta, 'buen_ojo');   // Buen ojo: oro fijo por combate
     Meta.recordGold(meta, gold);
-    const xp = Math.max(1, Math.round((Meta.XP_REWARD[m.type] || Meta.XP_REWARD.monster)
+    const xp = Math.max(1, Math.round((m.xp != null ? m.xp : Meta.XP_REWARD[m.type] || Meta.XP_REWARD.monster)
         * depthMul * (m.xpMul || 1) * (1 + Meta.upgradeEffect(meta, 'estudio'))));
     const lvl = Meta.recordXp(meta, xp);
     return { gold, xp, lvl };

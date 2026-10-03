@@ -22,6 +22,8 @@ export class PromptBuilder {
             portrait: readJson(path.join(dir, 'prompts', 'portrait.json')),
             figure: readJson(path.join(dir, 'prompts', 'figure.json')),
             gear: readJson(path.join(dir, 'prompts', 'gear.json')),
+            sheet: readJson(path.join(dir, 'prompts', 'sheet.json')),
+            dress: readJson(path.join(dir, 'prompts', 'dress.json')),
             prop: objects.prop, obstacle: objects.obstacle, structure: objects.structure,
             ambient: objects.ambient, terrain: objects.terrain,
             background: scenario.background, map: scenario.map, scene: scenario.scene
@@ -74,7 +76,7 @@ export class PromptBuilder {
             for (const r of layout) lines.push(`- ${CELL[r.cell] || r.cell}: ${r.label}`);
         }
         lines.push('', 'MANDATORY RULES:', ...mandatory.map(r => `- ${r}`));
-        if (hasReferences) lines.push('', 'The attached reference image(s) are ONLY a guide for art style, outline weight, palette, lighting and scale. Do not copy their subject, pose or content.');
+        if (hasReferences && tpl.reference_note !== false) lines.push('', 'The attached reference image(s) are ONLY a guide for art style, outline weight, palette, lighting and scale. Do not copy their subject, pose or content.');
         // «a orc» → «an orc»
         const text = lines.join('\n').replace(/\b([Aa]) ([aeiouAEIOU])/g, '$1n $2');
         return { template: tpl, text };

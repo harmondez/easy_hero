@@ -25,9 +25,11 @@ npm run generate -- list                        # lo generado hasta ahora
 ```
 Tipos: `character`, `enemy`, `npc`, `portrait` (retrato de novela visual: ver [docs/novela-visual.md](../../docs/novela-visual.md)), `boss`, `prop`, `obstacle`, `structure`, `ambient`, `figure` (un personaje de cuerpo entero y de frente, para la pantalla de Equipo; se entrega como un retrato),
 `gear` (una pieza de equipo suelta, vertical y de frente: `--game-id` es su id en `src/data/gear.js`; después, `npm run icons`),
+`sheet` (hoja de animación de 4 poses, con el palo magenta que marca la mano) y `dress` (la misma hoja con otra
+armadura: se le pasa con `--ref`); los usa el Sprite Factory ([tools/sprite-factory](../sprite-factory/README.md)),
 `terrain`, `background`, `scene` (una escena explorable vista desde arriba, a escala de personaje: una aldea, un caserío;
 receta en [docs/zonas.md](../../docs/zonas.md)), `map`.
-Opciones: `--dry-run`, `--force` (rehacer; lo anterior se aparta con fecha), `--variant`, `--details`, `--regions`,
+Opciones: `--ref` (las imágenes que se le pasan, en lugar de las referencias del tipo), `--dry-run`, `--force` (rehacer; lo anterior se aparta con fecha), `--variant`, `--details`, `--regions`,
 `--model`, `--no-game`, `--game-id`.
 
 **El juego busca cada imagen por un id**: en el descenso, el nombre base del monstruo en español («Orco» →

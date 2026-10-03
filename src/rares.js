@@ -1,4 +1,4 @@
-import { RARES } from './data/rares.js?v=1.11.0';
+import { RARES } from './data/rares.js?v=1.12.0';
 
 // =============================================
 // ✨ Encuentros raros (motor puro): sortea si sale el raro y lo monta sobre el enemigo normal
@@ -19,6 +19,8 @@ export function applyRare(m, id) {
     if (R.icon) m.icon = R.icon;
     m.maxHp = m.hp = Math.max(1, Math.round(m.maxHp * (R.hpMul || 1)));
     m.atq = Math.max(1, Math.round(m.atq * (R.atkMul || 1)));
+    if (R.goldMul) m.goldMul = (m.goldMul || 1) * R.goldMul;
+    if (R.xpMul) m.xpMul = (m.xpMul || 1) * R.xpMul;
     if (R.scaleMul) m.scale = (m.scale || 1) * R.scaleMul;
     m.tag = R.tag || m.tag;
     m.rare = id;
