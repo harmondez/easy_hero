@@ -105,6 +105,14 @@ export class AssetFactory {
     async _toGame(plan, pngFile) {
         // Retrato de novela visual: a img/characters/<id>-profile.png (el original) y a img/portraits/<id>.webp
         if (plan.typeConfig.deliver === 'portrait') return this._toPortrait(plan, pngFile);
+        // Pieza de equipo: el original a img/weapons (lo recoge `npm run icons` → img/ui/objeto-<id>.webp)
+        if (plan.typeConfig.deliver === 'gear') {
+            const rel = `img/weapons/weapon_sword-${slug(plan.gameId || plan.id).replace(/-/g, '_')}.png`;
+            fs.mkdirSync(path.join(this.root, 'img/weapons'), { recursive: true });
+            fs.copyFileSync(pngFile, path.join(this.root, rel));
+            this.log.info(`🗡️ Pieza lista: ${rel}. Pásala al juego con: npm run icons`);
+            return { intake: rel, result: [rel] };
+        }
         const prefix = plan.typeConfig.game_prefix;
         if (!prefix) return null;
         const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fabrica-'));

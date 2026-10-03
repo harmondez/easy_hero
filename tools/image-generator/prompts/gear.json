@@ -1,0 +1,12 @@
+{
+  "_doc": "Pieza de equipo suelta para el inventario y la pantalla de Equipo: una sola pieza, de frente, vertical, sobre blanco. Referencia: una espada que ya tiene el juego, para que todas parezcan del mismo pincel.",
+  "kind": "gear",
+  "uses_sprite_rules": true,
+  "references": "gear",
+  "subject": "a single piece of equipment for the inventory of a 2D fantasy RPG: {name}{details}",
+  "pose": "the item alone, perfectly vertical, seen flat from the front like an inventory illustration; a sword is drawn with the hilt at the top and the blade pointing straight down",
+  "mandatory": [
+    "Only the item: no hand, no character, no scabbard, no stand, no glow or magic effects unless described.",
+    "Perfectly vertical, not tilted, not in perspective."
+  ]
+}

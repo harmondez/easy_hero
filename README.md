@@ -18,7 +18,7 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 
 <br>
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.10.0-f59e0b?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.11.0-f59e0b?style=flat-square)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange?style=flat-square)
 ![Gratis](https://img.shields.io/badge/precio-gratis-22c55e?style=flat-square)
 ![Sin instalar](https://img.shields.io/badge/sin%20instalar%20nada-3b82f6?style=flat-square)
@@ -33,7 +33,7 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 
 ## 🆕 Novedades
 
-**Versión 1.10.0** · 3 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
+**Versión 1.11.0** · 3 de octubre de 2026 · [ver el registro completo de cambios](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **Easy Hero es ya, entero, la aventura.** Los combates tienen venenos, sangrados y aturdimientos que se ven sobre
@@ -41,7 +41,14 @@ y una pregunta que nadie en Zafias quiere responder: ¿quién eres?*
 > con su elemento y su efecto; y los vecinos te hablan cara a cara, como en una novela visual. Toda la historia,
 > reescrita.
 
-| | Qué hay de nuevo en la 1.10.0 |
+| | Qué hay de nuevo en la 1.11.0 |
+|:-:|------------------|
+| 🪖 | **Pantalla de Equipo:** un botón nuevo en la barra. Tu héroe de cuerpo entero entre sus ocho ranuras (casco, armadura, guantes, botas, arma, collar, anillo y cinturón) |
+| 📊 | **Todas tus estadísticas a la vista:** nivel y experiencia, ATK, PH, vida, maná, energía, crítico, esquiva y resistencias |
+| ➕ | **Los puntos de nivel se reparten ahí:** un «+» junto a Fuerza, Destreza, Inteligencia y Vitalidad; el botón avisa cuando te quedan puntos |
+| 🗡️ | **La Espada de hierro ya tiene su dibujo**, como las demás |
+
+| | Lo que trajo la 1.10.0 |
 |:-:|------------------|
 | 🏘️ | **La aldea, rehecha:** un cuadro nuevo con la plaza del pozo, la posada, la forja, la botica y el mercado, y calles por las que pasear |
 | ⚒️ | **La Forja de Bram:** Comprar, Mejorar o Salir. Vende espadas y el cristal de mejora (100 de oro); con un cristal te mejora una espada |
@@ -239,7 +246,7 @@ combates, subes de nivel y **repartes tú mismo** los puntos.
 ## 🚧 Estado del juego
 
 > [!NOTE]
-> **Versión 1.10.0, sigue en desarrollo.** El foco es la **aventura**: Zafias se puede jugar de principio a fin, con
+> **Versión 1.11.0, sigue en desarrollo.** El foco es la **aventura**: Zafias se puede jugar de principio a fin, con
 > Grask como primer muro y Feronius como jefe. La mazmorra sin fondo de las primeras versiones está aparcada (sigue
 > en el código, pero no se puede entrar).
 
@@ -329,7 +336,7 @@ npx playwright install chromium    # solo la primera vez
 npm test                           # ejecuta todas las comprobaciones
 ```
 
-Son 1149 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; las del navegador, unos minutos.
+Son 1181 comprobaciones automáticas. Las de la lógica del juego tardan unos segundos; las del navegador, unos minutos.
 
 Para ver cómo está el equilibrio de la aventura: `npm run sim:aventura` juega miles de partidas con un bot.
 
@@ -357,7 +364,7 @@ Receta para meter un NPC con su retrato y su diálogo: [docs/novela-visual.md](d
 
 ```bash
 npm run release              # ¿está todo sincronizado con la versión actual?
-npm run release -- patch     # 1.10.0 → 1.10.1  (también minor o major)
+npm run release -- patch     # 1.11.0 → 1.11.1  (también minor o major)
 ```
 
 Cambia la versión en todos los sitios a la vez y prepara el registro de cambios. Los pasos completos están en [docs/versiones.md](docs/versiones.md).

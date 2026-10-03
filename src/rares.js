@@ -1,4 +1,4 @@
-import { RARES } from './data/rares.js?v=1.10.0';
+import { RARES } from './data/rares.js?v=1.11.0';
 
 // =============================================
 // ✨ Encuentros raros (motor puro): sortea si sale el raro y lo monta sobre el enemigo normal

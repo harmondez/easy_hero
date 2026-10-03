@@ -28,6 +28,10 @@ export const ELEMENTS = {
     luz:    { name: 'Luz',    color: '#f2d27a' }
 };
 
+/** Las ranuras de equipo, en el orden de la pantalla de Equipo (cuatro a cada lado del héroe), y su nombre. */
+export const SLOT_ORDER = ['helmet', 'armor', 'gloves', 'boots', 'weapon', 'necklace', 'ring', 'belt'];
+export const SLOT_NAMES = { weapon: 'Arma', armor: 'Armadura', helmet: 'Casco', gloves: 'Guantes', boots: 'Botas', belt: 'Cinturón', necklace: 'Collar', ring: 'Anillo' };
+
 /** El icono de cada ranura (ART.icons). */
 export const SLOT_ICONS = { weapon: 'ranura-arma', armor: 'ranura-armadura', helmet: 'ranura-casco', gloves: 'ranura-guantes',
     boots: 'ranura-botas', belt: 'ranura-cinturon', necklace: 'ranura-collar', ring: 'ranura-anillo' };

@@ -1,12 +1,12 @@
-import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.10.0';
-import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.10.0';
-import { DAMAGE_TYPES } from './items.js?v=1.10.0';
-import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.10.0';
-import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax, upgradeTotal } from './data/upgrades.js?v=1.10.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.10.0';
-import { ELIXIRS, FOOD } from './data/effects.js?v=1.10.0';
-import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.10.0';
-import { SELL_RATE } from './data/shops.js?v=1.10.0';
+import { ALL_MONSTER_DEFS, SUBBOSS_ROSTER, BOSS_DEF, DEEP_BOSSES } from './data/monsters.js?v=1.11.0';
+import { EVENT_MONSTERS, RPG_EVENTS } from './data/events.js?v=1.11.0';
+import { DAMAGE_TYPES } from './items.js?v=1.11.0';
+import { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext } from './stats.js?v=1.11.0';
+import { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax, upgradeTotal } from './data/upgrades.js?v=1.11.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.11.0';
+import { ELIXIRS, FOOD } from './data/effects.js?v=1.11.0';
+import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.11.0';
+import { SELL_RATE } from './data/shops.js?v=1.11.0';
 export { PRIMARY_KEYS, XP_REWARD, POINTS_PER_LEVEL, xpToNext };
 export { UPGRADES, UPGRADES_BY_ID, upgradeCost, upgradeMax };
 

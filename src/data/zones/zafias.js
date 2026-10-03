@@ -28,7 +28,7 @@
 //   Una escena puede tener su propio cuadro: `image`, `width`, `height` (sus coordenadas van de 0 a ese tamaño)
 // Marcas: `defeated:<id>` al vencer a ese enemigo (permanente) y las que pongan los diálogos.
 // =============================================
-import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.10.0';
+import { ZAFIAS_PATHS } from './zafias-paths.js?v=1.11.0';
 
 // Los goblins de Zafias pelean con cuchillos sucios: a veces envenenan (src/data/effects.js)
 const GOBLIN = { onHit: [{ id: 'veneno', power: 1, turns: 3, chance: 0.35 }] };

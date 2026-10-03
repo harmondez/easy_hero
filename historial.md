@@ -776,3 +776,11 @@ cofres solo dan objetos · legendarios máx. 1 igual, sin límite total · equip
 - **Trazador de caminos**: se quedaba en bucle (comparaba un doble con un float de 32 bits y «mejoraba» siempre); arreglado con
   `Math.fround`. Ahora traza también las escenas con cuadro propio.
 - Decisiones mías, a confirmar por el director: están en planning.md («Dudas de la aldea nueva»).
+
+## 2026-10-03 · La pantalla de Equipo (1.11.0)
+- Botón «Equipo» en la barra (icono del casco). Panel `renderEquipPanel`: figura de cuerpo entero (`ART.portraits['hero-cuerpo']`),
+  ocho ranuras (`SLOT_ORDER`, `SLOT_NAMES` en gear.js), ficha de la ranura elegida y hoja de estadísticas sacadas del mismo héroe
+  con el que se pelea (`_advHero`). Los puntos de nivel se gastan aquí (`Meta.spendStatPoint`); el botón avisa si quedan.
+- Fábrica: tipos `figure` (cuerpo entero; salió a la primera usando el retrato del héroe como referencia) y `gear` (pieza de
+  equipo; con él se hizo la Espada de hierro, la única sin dibujo).
+- La espada va girada 45° en su ranura: vertical no cabía en un marco cuadrado.

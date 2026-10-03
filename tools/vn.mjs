@@ -28,6 +28,8 @@ const CHAR_FILE = path.join(root, 'src/data/characters.js');
 const ART_FILE = path.join(root, 'src/data/art.js');
 // Diálogos que abre el código y no una parada (la posada al dormir)
 const USED_BY_CODE = ['posada-dormir'];
+// Retratos que no son de un diálogo (el héroe de cuerpo entero de la pantalla de Equipo)
+const PORTRAITS_BY_CODE = ['hero-cuerpo'];
 const MAX_LINE = 230;   // más largo y el cuadro de texto se queda corto
 
 const load = async file => import(`${pathToFileURL(file).href}?t=${Date.now()}`);
@@ -72,7 +74,7 @@ export async function checkVN() {
         if (!ART.portraits || !ART.portraits[id]) errors.push(`«${who}» tiene el retrato «${id}», que no está en img/portraits (npm run icons)`);
         if (!speakers[who]) warnings.push(`«${who}» tiene retrato pero no habla en ningún diálogo (¿el nombre está escrito igual?)`);
     }
-    const assigned = new Set(Object.values(PORTRAITS).map(portraitId));
+    const assigned = new Set([...Object.values(PORTRAITS).map(portraitId), ...PORTRAITS_BY_CODE]);
     for (const id of Object.keys(ART.portraits || {})) if (!assigned.has(id)) warnings.push(`El retrato «${id}» no lo lleva nadie (src/data/characters.js)`);
     if (!PORTRAITS[HERO_WHO]) warnings.push('Tu héroe no tiene retrato');
     return { errors, warnings, speakers, portraits: PORTRAITS };

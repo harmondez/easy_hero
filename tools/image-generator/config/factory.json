@@ -137,6 +137,26 @@
       "remove_background": false,
       "game_prefix": "escena",
       "_doc": "Escena explorable vista desde arriba (una aldea, un caserío): el cuadro entero de una escena del Modo Aventura. Admite --regions como los mapas (dónde va cada edificio) pero no se recorta."
+    },
+    "figure": {
+      "category": "figures",
+      "prompt": "figure",
+      "aspect_ratio": "3:4",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": null,
+      "deliver": "portrait",
+      "_doc": "Figura de cuerpo entero, de frente (la pantalla de Equipo). Se entrega como los retratos: img/characters/<id>-profile.png → img/portraits/<id>.webp."
+    },
+    "gear": {
+      "category": "gear",
+      "prompt": "gear",
+      "aspect_ratio": "1:1",
+      "image_size": "1K",
+      "remove_background": true,
+      "game_prefix": null,
+      "deliver": "gear",
+      "_doc": "Pieza de equipo suelta (una espada, un casco), de frente, para el inventario y la pantalla de Equipo. Se entrega a img/weapons/weapon_sword-<id>.png y de ahí, con el taller de iconos, a img/ui/objeto-<id>.webp. El --game-id es el id del objeto en src/data/gear.js."
     }
   },
   "background_removal": {

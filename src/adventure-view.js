@@ -1,8 +1,8 @@
-import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.10.0';
-import { ART } from './data/art.js?v=1.10.0';
-import { monsterArt } from './art.js?v=1.10.0';
-import { creatureFor } from './data/creatures.js?v=1.10.0';
-import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.10.0';
+import { ZAFIAS, ZAFIAS_DIALOGUES } from './data/zones/zafias.js?v=1.11.0';
+import { ART } from './data/art.js?v=1.11.0';
+import { monsterArt } from './art.js?v=1.11.0';
+import { creatureFor } from './data/creatures.js?v=1.11.0';
+import { PORTRAITS, HERO_WHO } from './data/characters.js?v=1.11.0';
 
 // =============================================
 // 🧭 Modo Aventura — visor de escenas, estilo mapa antiguo
@@ -480,6 +480,7 @@ function bind() {
         root.querySelector('.adv-inventory').classList.remove('is-new');
         if (st.hooks.onInventory) st.hooks.onInventory();
     });
+    root.querySelector('.adv-equip').addEventListener('click', () => { if (st.hooks.onEquip) st.hooks.onEquip(); });
     root.querySelector('.adv-quests').addEventListener('click', () => {
         root.querySelector('.adv-quests').classList.remove('is-new');
         if (st.hooks.onQuests) st.hooks.onQuests();
@@ -571,7 +572,7 @@ export function gaugeHtml(kind, now, max, label) {
 }
 
 /**
- * La barra de abajo: { name, hp, maxHp, mp, maxMp, gold, potions, manaPotions, quest }.
+ * La barra de abajo: { name, hp, maxHp, mp, maxMp, gold, potions, manaPotions, quest, points }.
  * Cada dato lleva su data-hud (para leerlo sin depender del texto).
  */
 /** Abre un diálogo de la zona solo para verlo (sin onDone: ni marcas ni recompensas). Devuelve si existe. */
@@ -594,6 +595,9 @@ export function setHud(h) {
                 <span title="Pociones de maná"><img src="img/ui/pocion-mana.webp" alt="Pociones de maná"><b data-hud="mana-potions">${h.manaPotions}</b></span>
             </div>`;
     }
+    // Puntos de nivel sin repartir: el botón de Equipo avisa
+    const eq = document.querySelector('#rpgAdventureView .adv-equip');
+    if (eq) eq.classList.toggle('is-new', (h.points || 0) > 0);
     const q = document.querySelector('#rpgAdventureView .adv-objective');
     if (q) q.textContent = h.quest || '';
 }

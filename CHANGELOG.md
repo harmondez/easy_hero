@@ -5,6 +5,17 @@ Cómo se numeran las versiones y cómo se publica una nueva: [docs/versiones.md]
 
 ## [Sin publicar]
 
+## [1.11.0] - 2026-10-03
+
+### ✨ Novedades
+- 🪖 **Pantalla de Equipo**: un botón nuevo en la barra, entre Inventario y Misiones. Tu héroe de cuerpo entero entre sus ocho ranuras (casco, armadura, guantes, botas, arma, collar, anillo y cinturón); la del arma enseña tu espada con el color de su rareza y sus mejoras. Las demás esperan vacías a que llegue ese equipo.
+- 📊 **Todas tus estadísticas a la vista**: nivel y experiencia, ATK, PH, vida, maná, energía, crítico, esquiva y resistencias.
+- ➕ **Los puntos de nivel se reparten aquí**: un «+» junto a Fuerza, Destreza, Inteligencia y Vitalidad. El botón de Equipo avisa cuando tienes puntos sin gastar.
+- 🗡️ **La Espada de hierro ya tiene su dibujo**, como las demás.
+
+### 🔧 Por dentro
+- La fábrica tiene dos tipos más: `figure` (un personaje de cuerpo entero, de frente) y `gear` (una pieza de equipo suelta).
+
 ## [1.10.0] - 2026-10-03
 
 ### ✨ Novedades

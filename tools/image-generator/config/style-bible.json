@@ -44,7 +44,8 @@
     "object": "Elevated top-down 3/4 view, the same angle as the world map.",
     "background": "Side-view composition (side-scrolling stage): a walkable ground band across the lower third where the fighters stand, depth layers behind.",
     "map": "Elevated isometric / top-down perspective of the whole region, consistent across the entire map.",
-    "portrait": "Front view at eye level, slight three-quarter turn, no strong foreshortening."
+    "portrait": "Front view at eye level, slight three-quarter turn, no strong foreshortening.",
+    "gear": "Flat front view of the item, like an inventory illustration: no perspective, no foreshortening."
   },
   "detail_level": "Readable silhouette first, detail second: clear shapes at small size, then texture in pixel clusters. No tiny noise that turns to mush when scaled down.",
   "references": {
@@ -70,6 +71,12 @@
     ],
     "scene": [
       "tools/image-generator/references/estilo-aldea.webp"
+    ],
+    "figure": [
+      "img/portraits/hero.webp"
+    ],
+    "gear": [
+      "img/ui/objeto-espada-imperial.webp"
     ]
   }
 }

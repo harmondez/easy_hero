@@ -1,0 +1,16 @@
+{
+  "_doc": "Figura de cuerpo entero para la pantalla de Equipo: de pie, de frente, de la cabeza a los pies, sobre blanco para recortarla. Se entrega como un retrato (img/portraits/<id>.webp). Referencia: el retrato del héroe, para que sea el mismo personaje.",
+  "kind": "portrait",
+  "uses_sprite_rules": false,
+  "references": "figure",
+  "subject": "a full-body character figure of {name} for the equipment screen of a fantasy RPG{details}",
+  "pose": "standing upright and still, facing the viewer with a very slight three-quarter turn, feet shoulder-width apart, arms relaxed at the sides, the whole body from the top of the head to the soles of the boots",
+  "mandatory": [
+    "FULL BODY: the whole figure is visible from the top of the head to the soles of the feet, nothing cropped, with a clear empty margin above the head and below the feet.",
+    "The figure is tall and fills most of the height of the image.",
+    "Centered in the image.",
+    "Pure flat white background (#FFFFFF), perfectly uniform.",
+    "No scenery, no ground, no floor line, no cast shadow, no pedestal, no extra objects or characters.",
+    "Single subject only."
+  ]
+}

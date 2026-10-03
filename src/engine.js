@@ -1,11 +1,11 @@
-import { RPG_BALANCE } from './data/balance.js?v=1.10.0';
-import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.10.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.10.0';
-import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.10.0';
-import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.10.0';
-import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.10.0';
-import { ELIXIRS } from './data/effects.js?v=1.10.0';
-import { applyEffect, effectStatMul, tickEffects, consumeStun, effectAppliedEvent } from './effects.js?v=1.10.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.11.0';
+import { pickMonsterDef, PATTERNS } from './data/monsters.js?v=1.11.0';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, adjectivesFor, lineagesFor } from './data/variants.js?v=1.11.0';
+import { DAMAGE_TYPES, equipItem, createStarterItem, ruleSum, ruleMax, hasRule } from './items.js?v=1.11.0';
+import { PRIMARY_BASE, derivePrimary, isElementalDamage } from './stats.js?v=1.11.0';
+import { HEAVY_TELLS, HEAVY_TELL_MIN } from './data/telegraphs.js?v=1.11.0';
+import { ELIXIRS } from './data/effects.js?v=1.11.0';
+import { applyEffect, effectStatMul, tickEffects, consumeStun, effectAppliedEvent } from './effects.js?v=1.11.0';
 
 // =============================================
 // 🗡️ RPG-pack — motor (puro, sin DOM)

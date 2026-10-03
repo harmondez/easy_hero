@@ -1,6 +1,6 @@
 {
   "name": "rpg-pack",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Juego RPG de ruta (estilo Slay the Spire) extraído de Easy Hit. Solo atributos básicos: ATK / HP.",
   "type": "module",
   "private": true,
@@ -17,7 +17,7 @@
     "test:balance": "node tests/balance-guard.mjs",
     "balance": "node tools/balance.mjs",
     "test:browser": "node tests/browser.test.mjs",
-    "test": "npm run test:core && node tests/browser.test.mjs && node tests/adventure-flow.test.mjs && node tests/intro.test.mjs && node tests/quests.test.mjs && node tests/effects.test.mjs && node tests/vn.test.mjs && node tests/loot.test.mjs && node tests/aldea.test.mjs",
+    "test": "npm run test:core && node tests/browser.test.mjs && node tests/adventure-flow.test.mjs && node tests/intro.test.mjs && node tests/quests.test.mjs && node tests/effects.test.mjs && node tests/vn.test.mjs && node tests/loot.test.mjs && node tests/aldea.test.mjs && node tests/equip.test.mjs",
     "test:core": "node tests/version-check.mjs && node tests/rpg-sim.mjs && node tests/events-sim.mjs && node tests/items-sim.mjs && node tests/meta-sim.mjs && node tests/stats-sim.mjs && node tests/save-sim.mjs && node tests/balance-guard.mjs && node tests/sprites-sim.mjs && node tests/zones-sim.mjs && node tests/creatures-sim.mjs && node tests/effects-sim.mjs && node tests/gear-sim.mjs && node tests/vn-sim.mjs && node tests/loot-sim.mjs",
     "build:site": "node tools/build-site.mjs",
     "sprites": "node tools/sprites.mjs",

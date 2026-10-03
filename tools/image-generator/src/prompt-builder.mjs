@@ -20,6 +20,8 @@ export class PromptBuilder {
             boss: readJson(path.join(dir, 'prompts', 'boss.json')),
             npc: readJson(path.join(dir, 'prompts', 'npc.json')),
             portrait: readJson(path.join(dir, 'prompts', 'portrait.json')),
+            figure: readJson(path.join(dir, 'prompts', 'figure.json')),
+            gear: readJson(path.join(dir, 'prompts', 'gear.json')),
             prop: objects.prop, obstacle: objects.obstacle, structure: objects.structure,
             ambient: objects.ambient, terrain: objects.terrain,
             background: scenario.background, map: scenario.map, scene: scenario.scene
@@ -51,7 +53,7 @@ export class PromptBuilder {
         const isCreature = ['character', 'enemy', 'boss', 'npc'].includes(tpl.kind);
         const family = tpl.kind === 'portrait' ? 'portrait' : tpl.kind === 'background' ? 'background' : (tpl.kind === 'map' || tpl.kind === 'terrain') ? 'map' : 'sprite';
         const st = s.styles[family];
-        const perspective = s.perspective[family === 'sprite' && !isCreature ? 'object' : family];
+        const perspective = s.perspective[tpl.kind === 'gear' ? 'gear' : family === 'sprite' && !isCreature ? 'object' : family];
         const mandatory = [...(tpl.uses_sprite_rules ? this.spriteRules : []), ...(tpl.mandatory || []), ...s.common.rules];
 
         const lines = [

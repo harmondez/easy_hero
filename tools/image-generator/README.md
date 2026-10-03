@@ -23,7 +23,9 @@ npm run generate -- map mi_isla --regions "playa:S:sandy beach,pico:N:snowy peak
 npm run generate -- fix enemy orco --flip       # arreglar sin pagar: voltear y volver a entregar al juego
 npm run generate -- list                        # lo generado hasta ahora
 ```
-Tipos: `character`, `enemy`, `npc`, `portrait` (retrato de novela visual: ver [docs/novela-visual.md](../../docs/novela-visual.md)), `boss`, `prop`, `obstacle`, `structure`, `ambient`, `terrain`, `background`, `scene` (una escena explorable vista desde arriba, a escala de personaje: una aldea, un caserío;
+Tipos: `character`, `enemy`, `npc`, `portrait` (retrato de novela visual: ver [docs/novela-visual.md](../../docs/novela-visual.md)), `boss`, `prop`, `obstacle`, `structure`, `ambient`, `figure` (un personaje de cuerpo entero y de frente, para la pantalla de Equipo; se entrega como un retrato),
+`gear` (una pieza de equipo suelta, vertical y de frente: `--game-id` es su id en `src/data/gear.js`; después, `npm run icons`),
+`terrain`, `background`, `scene` (una escena explorable vista desde arriba, a escala de personaje: una aldea, un caserío;
 receta en [docs/zonas.md](../../docs/zonas.md)), `map`.
 Opciones: `--dry-run`, `--force` (rehacer; lo anterior se aparta con fecha), `--variant`, `--details`, `--regions`,
 `--model`, `--no-game`, `--game-id`.

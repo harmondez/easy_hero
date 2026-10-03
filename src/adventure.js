@@ -2,21 +2,22 @@
 // 🧭 Modo Aventura (controlador): Zafias con el héroe de siempre (nivel, primarias, Forja, oro y pociones compartidos).
 // Su vida y lo que ya has vencido se guardan aparte, para no pisar una partida del descenso a medias.
 // =============================================
-import * as UI from './ui.js?v=1.10.0';
-import * as Engine from './engine.js?v=1.10.0';
-import * as Meta from './meta.js?v=1.10.0';
-import * as Adventure from './adventure-view.js?v=1.10.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.10.0';
-import { ZAFIAS } from './data/zones/zafias.js?v=1.10.0';
-import { creatureFor } from './data/creatures.js?v=1.10.0';
-import { QUESTS } from './data/quests.js?v=1.10.0';
-import { GEAR, STARTER_GEAR, WEAPON_UPGRADE } from './data/gear.js?v=1.10.0';
-import { ELIXIRS, FOOD } from './data/effects.js?v=1.10.0';
-import { MATERIALS, rollDrop } from './loot.js?v=1.10.0';
-import { rollRare, applyRare } from './rares.js?v=1.10.0';
-import { ART } from './data/art.js?v=1.10.0';
-import * as Items from './items.js?v=1.10.0';
-import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.10.0';
+import * as UI from './ui.js?v=1.11.0';
+import * as Engine from './engine.js?v=1.11.0';
+import * as Meta from './meta.js?v=1.11.0';
+import * as Adventure from './adventure-view.js?v=1.11.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.11.0';
+import { ZAFIAS } from './data/zones/zafias.js?v=1.11.0';
+import { creatureFor } from './data/creatures.js?v=1.11.0';
+import { QUESTS } from './data/quests.js?v=1.11.0';
+import { GEAR, STARTER_GEAR, WEAPON_UPGRADE, SLOT_ORDER, SLOT_NAMES, SLOT_ICONS, ELEMENTS } from './data/gear.js?v=1.11.0';
+import * as Stats from './stats.js?v=1.11.0';
+import { ELIXIRS, FOOD } from './data/effects.js?v=1.11.0';
+import { MATERIALS, rollDrop } from './loot.js?v=1.11.0';
+import { rollRare, applyRare } from './rares.js?v=1.11.0';
+import { ART } from './data/art.js?v=1.11.0';
+import * as Items from './items.js?v=1.11.0';
+import { questLog, npcQuestMark, countingCreatures } from './quests.js?v=1.11.0';
 
 // Lo que la aventura necesita del resto del juego (main.js se lo da al arrancar): el almacenamiento, el progreso
 // permanente y algunas piezas del descenso (el héroe base, las recompensas, La Forja, bajar a la mazmorra).
@@ -131,6 +132,49 @@ function _advOpenInventory(selected) {
         gold: ctx.meta.gold,
         onEquip: id => _advEquip(id),
         onUse: id => _advUse(id)
+    });
+}
+
+// --- 🪖 La pantalla de Equipo: el héroe de cuerpo entero, sus ocho ranuras y todas sus estadísticas ---
+const _pct = v => `${(Math.round(v * 1000) / 10).toLocaleString('es-ES')} %`;
+
+function _advOpenEquip(selected) {
+    const h = adv.hero;
+    const m = ctx.meta;
+    const wid = _advWeaponId();
+    const w = GEAR[wid];
+    // Hoy solo existe el arma: las otras siete ranuras salen vacías hasta que haya armaduras, cascos…
+    const equipped = { weapon: { id: wid, name: w.name, rarity: w.rarity, element: (ELEMENTS[w.element] || ELEMENTS.neutro).name, desc: w.desc,
+        atq: _advGearAtq(wid), upgrades: Meta.weaponUpgradeLevel(m, wid), effects: UI.gearEffectsText(w),
+        image: (ART.icons[`objeto-${wid}`] || {}).src || null } };
+    UI.openPanel();
+    UI.renderEquipPanel({
+        name: m.heroName || 'Héroe', figure: (ART.portraits['hero-cuerpo'] || ART.portraits.hero || {}).src || null,
+        level: m.charLevel, xp: m.xp, xpNext: Meta.xpToNext(m.charLevel), points: m.statPoints || 0,
+        slots: SLOT_ORDER.map(slot => ({ slot, label: SLOT_NAMES[slot], icon: SLOT_ICONS[slot], item: equipped[slot] || null })),
+        selected: selected || 'weapon',
+        stats: [
+            { id: 'atk', label: 'ATK', img: 'efecto-mas-ataque', value: Engine.rpgAtk(h), title: 'Poder de Ataque: lo que pega tu golpe básico' },
+            { id: 'ph', label: 'PH', img: 'efecto-mas-ph', value: Engine.rpgHeroPh(h), title: 'Poder de Habilidad: lo que pegan tus habilidades (la Bola de fuego)' },
+            { id: 'hp', label: 'Vida', img: 'vida', value: `${h.hp}/${h.maxHp}`, title: 'Vida: si llega a 0, caes' },
+            { id: 'mp', label: 'Maná', img: 'mana', value: `${h.mp}/${h.maxMp}`, title: 'Maná: lo gastan la Bola de fuego y el Grito de guerra' },
+            { id: 'en', label: 'Energía', img: 'rayo', value: `${h.energy || 0}/${h.maxEnergy}`, title: 'Energía: se gana peleando y la gasta el Golpe poderoso' },
+            { id: 'crit', label: 'Crítico', img: 'forja-filo', value: _pct(h.critChance || 0), title: `Probabilidad de golpe crítico (×${h.critMult || 1.5} de daño)` },
+            { id: 'dodge', label: 'Esquiva', img: 'agilidad', value: _pct(h.dodgeChance || 0), title: 'Probabilidad de esquivar un golpe' },
+            { id: 'pres', label: 'Res. física', img: 'defensa', value: _pct(h.physResist || 0), title: 'Parte del daño físico que no recibes' },
+            { id: 'eres', label: 'Res. elem.', img: 'hielo', value: _pct(h.elemResist || 0), title: 'Parte del daño elemental que no recibes' }
+        ],
+        primaries: Stats.PRIMARY_KEYS.map(key => ({ key, name: Stats.PRIMARY_INFO[key].name, desc: Stats.PRIMARY_INFO[key].desc, value: h.primary[key] })),
+        onSpend: key => {
+            if (!Meta.spendStatPoint(m, key)) return;
+            ctx.persistMeta();
+            adv.hero = _advHero();
+            adv.state.hp = adv.hero.hp;   // la Vitalidad sube la vida máxima (y la actual con ella)
+            _advSave();
+            _advRefreshHud();
+            _advOpenEquip(selected);
+        },
+        onChange: () => _advOpenInventory()
     });
 }
 
@@ -317,7 +361,7 @@ function _advRefreshHud() {
     const h = adv.hero;
     Adventure.setHud({ name: ctx.meta.heroName || 'Héroe', hp: h.hp, maxHp: h.maxHp, mp: h.mp, maxMp: h.maxMp, gold: ctx.meta.gold,
         potions: Meta.potionCount(ctx.meta), manaPotions: Meta.manaPotionCount(ctx.meta), quest: _advQuestText(),
-        energy: h.energy || 0, maxEnergy: h.maxEnergy || RPG_BALANCE.energy.max });
+        energy: h.energy || 0, maxEnergy: h.maxEnergy || RPG_BALANCE.energy.max, points: ctx.meta.statPoints || 0 });
 }
 
 export function open() {
@@ -342,7 +386,8 @@ export function open() {
         isSeen: p => _advIsSeen(p),
         npcMark: p => npcQuestMark(p.id, _advQuestState()),
         onQuests: () => _advOpenQuests(),
-        onInventory: () => _advOpenInventory()
+        onInventory: () => _advOpenInventory(),
+        onEquip: () => _advOpenEquip()
     }, adv.state.scene);
     Adventure.setHeroSprite(_advHeroSprite());
     _advRefreshHud();

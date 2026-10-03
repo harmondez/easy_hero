@@ -1,17 +1,17 @@
-import * as Engine from './engine.js?v=1.10.0';
-import * as Items from './items.js?v=1.10.0';
-import * as Meta from './meta.js?v=1.10.0';
-import * as Stats from './stats.js?v=1.10.0';
-import { upgradeAmountText } from './data/upgrades.js?v=1.10.0';
-import { RPG_BALANCE } from './data/balance.js?v=1.10.0';
-import { ART } from './data/art.js?v=1.10.0';
-import { EFFECTS, ELIXIRS, FOOD } from './data/effects.js?v=1.10.0';
-import { GEAR, GEAR_FOR_SALE, STARTER_GEAR, WEAPON_UPGRADE, ELEMENTS, SLOT_ICONS } from './data/gear.js?v=1.10.0';
-import { RARITY_BY_ID } from './data/rarities.js?v=1.10.0';
-import { SHOPS } from './data/shops.js?v=1.10.0';
-import { effectList } from './effects.js?v=1.10.0';
-import { monsterArt, heroArt } from './art.js?v=1.10.0';
-import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.10.0';
+import * as Engine from './engine.js?v=1.11.0';
+import * as Items from './items.js?v=1.11.0';
+import * as Meta from './meta.js?v=1.11.0';
+import * as Stats from './stats.js?v=1.11.0';
+import { upgradeAmountText } from './data/upgrades.js?v=1.11.0';
+import { RPG_BALANCE } from './data/balance.js?v=1.11.0';
+import { ART } from './data/art.js?v=1.11.0';
+import { EFFECTS, ELIXIRS, FOOD } from './data/effects.js?v=1.11.0';
+import { GEAR, GEAR_FOR_SALE, STARTER_GEAR, WEAPON_UPGRADE, ELEMENTS, SLOT_ICONS } from './data/gear.js?v=1.11.0';
+import { RARITY_BY_ID } from './data/rarities.js?v=1.11.0';
+import { SHOPS } from './data/shops.js?v=1.11.0';
+import { effectList } from './effects.js?v=1.11.0';
+import { monsterArt, heroArt } from './art.js?v=1.11.0';
+import { ADJECTIVES_BY_ID, LINEAGES_BY_ID, MONSTER_ADJECTIVES, MONSTER_LINEAGES } from './data/variants.js?v=1.11.0';
 
 // =============================================
 // 🖼️ RPG-pack — capa de presentación (DOM)
@@ -392,6 +392,95 @@ export function renderShop(meta, opts = {}) {
         Las mejoras de La Forja se pueden comprar una y otra vez, cada vez más caras.</p>
         ${section(`${UI_IMG('pocion-vida')} Consumibles`, consumables)}
         ${section('⚒️ La Forja', forge)}`;
+}
+
+/**
+ * La pantalla de Equipo: el héroe de cuerpo entero entre sus ocho ranuras (cuatro a cada lado), la ficha de la ranura
+ * elegida y, debajo, todas sus estadísticas: nivel y experiencia, las de combate y los cuatro atributos (con un «+»
+ * por cada uno mientras queden puntos de nivel por repartir).
+ * opts: {
+ *   name, figure (src), level, xp, xpNext, points, selected (ranura),
+ *   slots: [{ slot, label, icon, item: null | { id, name, rarity, element, desc, atq, upgrades, effects, image } }],
+ *   stats: [{ id, label, img, value, title }], primaries: [{ key, name, desc, value }],
+ *   onSpend(key), onChange(slot)
+ * }
+ */
+// El marco de la ranura según la rareza de lo que lleva (los demás, el de piedra)
+const EQUIP_FRAME = { epica: 'marco-ranura-epica', legendaria: 'marco-ranura-luz' };
+export function renderEquipPanel(opts) {
+    const el = document.getElementById('panelBody');
+    if (!el) return;
+    let selected = opts.selected;
+    const slotHtml = sl => {
+        const it = sl.item;
+        const rar = it ? (RARITY_BY_ID[it.rarity] || RARITY_BY_ID.comun) : null;
+        const frame = ICON((it && EQUIP_FRAME[it.rarity]) || 'marco-ranura');
+        return `
+            <button type="button" class="equip-slot${it ? ' has-item' : ' is-empty'}${sl.slot === selected ? ' is-selected' : ''}" data-equip-slot="${esc(sl.slot)}"
+                ${it ? `data-rarity="${esc(it.rarity)}" style="--rarity:${esc(rar.color)}"` : ''} aria-label="${esc(sl.label)}: ${esc(it ? it.name : 'sin equipar')}">
+                <span class="equip-slot-frame" style="background-image:url('${esc(frame)}')">
+                    <img src="${esc(it && it.image ? it.image : ICON(sl.icon))}" alt="" draggable="false">
+                    ${it && it.upgrades ? `<b class="equip-slot-plus">+${it.upgrades}</b>` : ''}
+                </span>
+                <span class="equip-slot-name">${esc(sl.label)}</span>
+            </button>`;
+    };
+    const draw = () => {
+        const sl = opts.slots.find(x => x.slot === selected) || opts.slots[0];
+        const it = sl.item;
+        const rar = it ? (RARITY_BY_ID[it.rarity] || RARITY_BY_ID.comun) : null;
+        const detail = it ? `
+            <div class="equip-detail-head">
+                <b class="equip-detail-name" style="color:${esc(rar.color)}">${esc(it.name)}${it.upgrades ? ` +${it.upgrades}` : ''}</b>
+                <span class="equip-detail-kind">${esc(sl.label)} · ${esc(rar.name)} · ${esc(it.element)}</span>
+            </div>
+            <p class="equip-detail-text"><b class="equip-num">ATK ${it.atq}</b>${it.upgrades ? ` (+${it.upgrades} de mejora)` : ''}${it.effects ? ` · ${esc(it.effects)}` : ''}</p>
+            <p class="equip-detail-text is-desc">${esc(it.desc || '')}</p>
+            <button type="button" class="btn-secondary equip-change" data-equip-change="${esc(sl.slot)}">Cambiar</button>`
+            : `
+            <div class="equip-detail-head">
+                <b class="equip-detail-name">${esc(sl.label)}</b>
+                <span class="equip-detail-kind">Sin equipar</span>
+            </div>
+            <p class="equip-detail-text is-desc">Todavía no has encontrado nada para esta ranura.</p>`;
+        const pct = opts.xpNext > 0 ? Math.max(0, Math.min(100, opts.xp / opts.xpNext * 100)) : 0;
+        el.innerHTML = `
+        <div class="equip">
+            <h3 class="panel-title">Equipo</h3>
+            <div class="equip-stage">
+                <div class="equip-col">${opts.slots.slice(0, 4).map(slotHtml).join('')}</div>
+                <div class="equip-figure">
+                    ${opts.figure ? `<img src="${esc(opts.figure)}" alt="${esc(opts.name)}" draggable="false">` : ''}
+                </div>
+                <div class="equip-col">${opts.slots.slice(4).map(slotHtml).join('')}</div>
+            </div>
+            <div class="equip-detail" data-equip-detail="${esc(sl.slot)}">${detail}</div>
+            <div class="equip-sheet">
+                <div class="equip-level">
+                    <span class="equip-hero-name">${esc(opts.name)}</span>
+                    <span class="equip-level-num">Nivel <b class="equip-num" data-equip-stat="level">${opts.level}</b></span>
+                    <span class="equip-xp" role="img" aria-label="Experiencia: ${opts.xp} de ${opts.xpNext}"><span class="equip-xp-fill" style="width:${pct.toFixed(1)}%"></span>
+                        <span class="equip-xp-text equip-num" data-equip-stat="xp">${opts.xp}/${opts.xpNext} XP</span></span>
+                </div>
+                <ul class="equip-stats">${opts.stats.map(st => `
+                    <li title="${esc(st.title || '')}"><img src="${esc(ICON(st.img))}" alt="" draggable="false"><span>${esc(st.label)}</span><b class="equip-num" data-equip-stat="${esc(st.id)}">${esc(st.value)}</b></li>`).join('')}
+                </ul>
+                <div class="equip-points${opts.points > 0 ? ' has-points' : ''}">${opts.points > 0
+                    ? `Tienes <b class="equip-num" data-equip-stat="points">${opts.points}</b> ${opts.points === 1 ? 'punto' : 'puntos'} de nivel por repartir`
+                    : 'Atributos · al subir de nivel ganas puntos para repartir'}</div>
+                <ul class="equip-primaries">${opts.primaries.map(p => `
+                    <li title="${esc(p.desc)}"><span class="equip-primary-name">${esc(p.name)}</span><b class="equip-num" data-equip-primary="${esc(p.key)}">${p.value}</b>
+                        <button type="button" class="equip-plus" data-equip-spend="${esc(p.key)}" aria-label="Subir ${esc(p.name)}"${opts.points > 0 ? '' : ' disabled'}>+</button>
+                        <small>${esc(p.desc)}</small></li>`).join('')}
+                </ul>
+            </div>
+        </div>`;
+        el.querySelectorAll('[data-equip-slot]').forEach(b => b.addEventListener('click', () => { selected = b.dataset.equipSlot; draw(); }));
+        el.querySelectorAll('[data-equip-spend]').forEach(b => b.addEventListener('click', () => opts.onSpend && opts.onSpend(b.dataset.equipSpend)));
+        const ch = el.querySelector('[data-equip-change]');
+        if (ch) ch.addEventListener('click', () => opts.onChange && opts.onChange(ch.dataset.equipChange));
+    };
+    draw();
 }
 
 /**

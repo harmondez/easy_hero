@@ -8,7 +8,7 @@
 
 ## 📍 Estado (2026-10-03)
 
-- **Publicado:** la **1.10.0** (https://harmondez.github.io/easy_hero/): Easy Hero es solo la aventura (la mazmorra,
+- **Publicado:** la **1.11.0** (https://harmondez.github.io/easy_hero/): Easy Hero es solo la aventura (la mazmorra,
   aparcada tras la cueva sellada). Zafias con introducción, 4 escenas, 28 paradas, misiones y diario, Grask y
   **Feronius**; combate de lado con **efectos de estado**, **maná**, **PH** y barra de habilidades; 10 armas con rareza,
   elemento y efecto; energía y Golpe poderoso; aturdido que da turno al enemigo; tienda con elixires y cristales; inventario estilo DragonFable; diálogos de novela visual; toda la
@@ -34,6 +34,18 @@
 - **Premios de las misiones nuevas**: Amelie 40 de oro, 30 XP y 2 pociones; Odo 50 y 40 XP; Hilda 45 y 40 XP.
 - **El bot de equilibrio** (`npm run sim:aventura`) no sabe que dormir cuesta 5 monedas ni usa las tiendas nuevas.
 - **Sigue pendiente** del director: las tres pistas del pasado del héroe y de quién es el castillo (ver future.md).
+
+## ❓ Dudas de la pantalla de Equipo (decidí yo; el director confirma o cambia)
+
+- **Los puntos de nivel se reparten desde Equipo** (antes solo se podía en la pantalla de la mazmorra, aparcada).
+- **Una sola imagen del héroe**: no cambia con la espada; la espada se ve en su ranura.
+- **Las siete ranuras sin equipo** salen apagadas con su icono y dicen «Sin equipar».
+- **Los textos de los atributos** vienen de la mazmorra («Daño físico (Filo, Contundente, Perforante)»): convendría
+  reescribirlos para la aventura.
+- **Inteligencia hoy no sube el PH** (solo el daño de armas elementales y la resistencia elemental). Si debe subir la
+  Bola de fuego, es una regla nueva.
+- Imágenes: 2 de 10 (el héroe de cuerpo entero y la espada de hierro). No hicieron falta botones nuevos: se usan los
+  marcos de ranura que ya había. El prompt de iconos de misión queda guardado para cuando toque el diario.
 
 ## 🔥 Siguiente, en este orden
 

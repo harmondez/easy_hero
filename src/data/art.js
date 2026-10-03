@@ -368,6 +368,11 @@ export const ART = {
             "w": 87,
             "h": 256
         },
+        "objeto-espada-de-hierro": {
+            "src": "img/ui/objeto-espada-de-hierro.webp",
+            "w": 58,
+            "h": 256
+        },
         "objeto-espada-de-zafias": {
             "src": "img/ui/objeto-espada-de-zafias.webp",
             "w": 85,
@@ -523,6 +528,11 @@ export const ART = {
         "hero": {
             "src": "img/portraits/hero.webp",
             "w": 618,
+            "h": 640
+        },
+        "hero-cuerpo": {
+            "src": "img/portraits/hero-cuerpo.webp",
+            "w": 312,
             "h": 640
         },
         "herrero-braum": {
